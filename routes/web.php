@@ -14,3 +14,9 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::namespace('Wink\Http\Controllers')
+  ->prefix('api/v1')
+  ->group(function () {
+    Route::get('posts', '\Wink\Http\Controllers\PostsController@index');
+  });
