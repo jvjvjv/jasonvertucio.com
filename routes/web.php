@@ -12,8 +12,10 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('splash');
 });
+
+Route::view('paper', 'paper')->name('paper');
 
 Route::namespace('Wink\Http\Controllers')
   ->prefix('api/v1')
