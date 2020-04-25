@@ -30,9 +30,23 @@ Update settings to match your environment
 php artisan key:generate
 php artisan wink:migrate
 php artisan migrate
-php artisan wink:create-user <new-user-email> <new-user-name> <new-user-password>
 ```
 
 ### Remember to write down generated user credentials
 
 Mine are admin@mail.com / Du6jcxT3rvGpuOaK, but yours may be different.
+
+### Set up new user
+
+```
+php artisan wink:create-user <new-user-email> <new-user-name> [new-user-password]
+```
+
+If not entered, you will be prompted for a password.
+
+### Other user functions
+
+```
+php artisan wink:change-user-password <user-email> [new-user-password]
+```
+If not entered, you will be prompted for a password.
