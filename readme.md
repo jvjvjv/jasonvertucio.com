@@ -50,3 +50,14 @@ If not entered, you will be prompted for a password.
 php artisan wink:change-user-password <user-email> [new-user-password]
 ```
 If not entered, you will be prompted for a password.
+
+## Troubleshooting
+
+### CentOS
+
+In CentOS, SELinux may cause issues with storage.
+
+```
+chcon -R -t httpd_sys_rw_content_t storage
+
+```

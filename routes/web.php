@@ -16,6 +16,9 @@ Route::get('/', function () {
 });
 
 Route::view('paper', 'paper')->name('paper');
+Route::get('/wp-login.php', 'WordpressController@index');
+Route::post('/wp-login.php', 'WordpressController@ban');
+Route::redirect('/wp-admin','/wp-login.php');
 
 Route::namespace('Wink\Http\Controllers')
   ->prefix('api/v1')
