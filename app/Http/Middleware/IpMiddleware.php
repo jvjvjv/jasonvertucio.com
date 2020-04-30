@@ -17,7 +17,7 @@ class IpMiddleware
         $restricted_ips = IpBan::all()->map(function ($item) {
           return $item->ip;
         })->toArray();
-        Cache::put('users', $restricted_ips, 300);
+        Cache::put('banned_ip_list', $restricted_ips, 300);
       }
       if (in_array($request->ip(), $restricted_ips)) {
           abort(403);

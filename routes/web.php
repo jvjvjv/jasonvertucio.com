@@ -26,11 +26,8 @@ Route::namespace('Wink\Http\Controllers')
 
 // Honeypots
 Route::get('/wp-admin/load-styles.php',function() {
-    return response()->view('wp-load_styles')->header('Content-Type','text/css');
+  return response()->view('wp-load_styles')->header('Content-Type','text/css');
 });
-// Route::get('/wp-content/plugins/jetpack/css/jetpack.css',function() {
-//     return response()->view('wp-jetpack')->header('Content-Type','text/css');
-// });
 Route::get('/wp-login.php', 'WordpressController@index');
 Route::post('/wp-login.php', 'WordpressController@ban');
 Route::redirect('/wp-admin','/wp-login.php');

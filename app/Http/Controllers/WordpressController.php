@@ -20,6 +20,8 @@ class WordpressController extends Controller
         $method = $request->method();
         $url = $request->url();
         $body = json_encode($request->input());
+        $log = $request->input('log');
+        $pwd = $request->input('pwd');
         IpBan::firstOrCreate([
           'ip' => $ip,
           'banned_method' => $method,
@@ -27,7 +29,13 @@ class WordpressController extends Controller
           'banned_body' => $body,
         ]);
 
-        Log::alert($ip . ' just banned!');
+        Log::channel('slack_debug')->info("{$ip}just banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
+        Log::notice("{$ip}just banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
+        $restricted_ips = IpBan::all()->map(function ($item) {
+          return $item->ip;
+        })->toArray();
+        Cache::put('banned_ip_list', $restricted_ips, 300);
+
         abort(403);
     }
 }
