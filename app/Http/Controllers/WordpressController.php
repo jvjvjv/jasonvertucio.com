@@ -29,7 +29,7 @@ class WordpressController extends Controller
           'banned_body' => $body,
         ]);
 
-        Log::channel('slack_debug')->info("{$ip}just banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
+        Log::channel('slack_debug')->info("{$ip} just got banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
         Log::notice("{$ip}just banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
         $restricted_ips = IpBan::all()->map(function ($item) {
           return $item->ip;
