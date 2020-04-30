@@ -98,5 +98,6 @@ if(typeof wpOnload=='function')wpOnload();
 
 	<link rel='stylesheet' id='jetpack_css-css'  href='http://levittownnow.com/wp-content/plugins/jetpack/css/jetpack.css?ver=7.1.2' type='text/css' media='all' />
 	<div class="clear"></div>
+  @include('gtag')
 	</body>
 	</html>
