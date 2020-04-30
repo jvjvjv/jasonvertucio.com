@@ -16,12 +16,21 @@ Route::get('/', function () {
 });
 
 Route::view('paper', 'paper')->name('paper');
-Route::get('/wp-login.php', 'WordpressController@index');
-Route::post('/wp-login.php', 'WordpressController@ban');
-Route::redirect('/wp-admin','/wp-login.php');
 
 Route::namespace('Wink\Http\Controllers')
   ->prefix('api/v1')
   ->group(function () {
     Route::get('posts', '\Wink\Http\Controllers\PostsController@index');
   });
+
+
+// Honeypots
+Route::get('/wp-admin/load-styles.php',function() {
+    return response()->view('wp-load_styles')->header('Content-Type','text/css');
+});
+// Route::get('/wp-content/plugins/jetpack/css/jetpack.css',function() {
+//     return response()->view('wp-jetpack')->header('Content-Type','text/css');
+// });
+Route::get('/wp-login.php', 'WordpressController@index');
+Route::post('/wp-login.php', 'WordpressController@ban');
+Route::redirect('/wp-admin','/wp-login.php');

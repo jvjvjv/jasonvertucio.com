@@ -9,7 +9,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>Log In &lsaquo; {{ env('APP_NAME') }} &#8212; WordPress</title>
 	<link rel='dns-prefetch' href='//s.w.org' />
-<link rel='stylesheet' href='http://levittownnow.com/wp-admin/load-styles.php?c=1&amp;dir=ltr&amp;load%5B%5D=dashicons,buttons,forms,l10n,login&amp;ver=4.9.14' type='text/css' media='all' />
+<link rel='stylesheet' href='{{ env('APP_URL' )}}/wp-admin/load-styles.php?c=1&amp;dir=ltr&amp;load%5B%5D=dashicons,buttons,forms,l10n,login&amp;ver=4.9.14' type='text/css' media='all' />
 	<meta name='robots' content='noindex,noarchive' />
 	<meta name='referrer' content='strict-origin-when-cross-origin' />
 	<meta name="viewport" content="width=device-width" />
@@ -95,8 +95,6 @@ if(typeof wpOnload=='function')wpOnload();
 
 	</div>
 
-
-	<link rel='stylesheet' id='jetpack_css-css'  href='http://levittownnow.com/wp-content/plugins/jetpack/css/jetpack.css?ver=7.1.2' type='text/css' media='all' />
 	<div class="clear"></div>
   @include('gtag')
 	</body>
