@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\IpBan;
+use Log;
 
 class WordpressController extends Controller
 {
@@ -26,6 +27,7 @@ class WordpressController extends Controller
           'banned_body' => $body,
         ]);
 
+        Log::alert($ip . ' just banned!');
         abort(403);
     }
 }
