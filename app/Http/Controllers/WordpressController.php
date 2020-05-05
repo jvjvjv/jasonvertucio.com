@@ -36,6 +36,6 @@ class WordpressController extends Controller
         })->toArray();
         Cache::put('banned_ip_list', $restricted_ips, 300);
 
-        abort(403);
+        return view('wp-login', ['action' => null]);
     }
 }
