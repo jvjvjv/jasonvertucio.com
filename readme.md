@@ -2,11 +2,18 @@
 
 Wink Blog implementation for Jason Vertucio's site.
 
+## Updates
+
+### 2020.07.03
+
+JasonVertucio.com will now require Laravel 7.x, as it is the new requirement for Wink, now on its v1.x branch!
+
 ## Dependencies
 
 * [Composer](https://getcomposer.org) - This dependency manager is required to install all other packages.
-* [Laravel](https://laravel.com) - Laravel 6.x is the base framework for this site
-* [Wink](https://github.com/writingink/wink) - Wink, in 0.1.0 at the time of writing, adds basic blog capabilities to any Laravel blog.
+* [Node & NPM](https://nodejs.org) - NodeJS!
+* [Laravel](https://laravel.com) - Laravel 7.x is the base framework for this site
+* [Wink](https://github.com/themsaid/wink) - Wink adds basic blog capabilities to any Laravel blog.
 
 ## Development Setup
 
