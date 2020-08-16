@@ -9,7 +9,7 @@ class HomeController extends Controller
 {
   public function index()
   {
-    $latest_post = WinkPost::published()->orderBy('publish_date','DESC')->get()[0];
+    $latest_post = WinkPost::published()->live()->orderBy('publish_date','DESC')->get()[0];
     return view('home', [
       'blog' => $latest_post
     ]);
