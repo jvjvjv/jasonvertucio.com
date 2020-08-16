@@ -1,3 +1,15 @@
+@use "sass:map";
+// Theme Colours
+$theme-colors: (
+  "primary": #dc3545,
+  "secondary": #343a40,
+  "dark": #495057,
+  "link": #4351a0
+);
+
+
+
+
 // Body
 $body-bg: #f8fafc;
 
@@ -21,6 +33,6 @@ $line-height-base: 1.6;
 // App Specific Colors
 $color-white: #ffffff;
 $text-color: #868e96;
-$color-primary: #dc3545;
-$color-secondary: #343a40;
-$color-secondary-dark: #495057;
+$color-primary: map.get($theme-colors, "primary");;
+$color-secondary: map.get($theme-colors, "secondary");
+$color-secondary-dark: map.get($theme-colors, "dark");

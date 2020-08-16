@@ -27,7 +27,7 @@ if (!isset($links)) {
 
 <body id="page-top">
 
-  <nav class="navbar navbar-default navbar-expand-lg sticky-top" id="navbarTop">
+  <nav class="navbar navbar-default navbar-expand-lg sticky-top navbar-light bg-primary" id="navbarTop">
     {{-- <div class="container-fluid"> --}}
       <div class="navbar-header mr-2">
         <a class="navbar-brand" href="{{ route('home') }} ">Jason Vertucio</a>
@@ -52,7 +52,7 @@ if (!isset($links)) {
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item dropdown">
-            <button class="btn btn-link dropdown-toggle" id="navbarDropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button class="btn btn-primary dropdown-toggle" id="navbarDropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               Places
             </button>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">

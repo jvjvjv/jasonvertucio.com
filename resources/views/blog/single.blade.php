@@ -12,7 +12,9 @@
     {!! $post['content'] !!}
   </div>
   <div class="list-meta">
-    By: {{ $post->author ['name'] }}
+    @if ($post->author)
+      By: {{ $post->author['name'] }}
+    @endif
     | Published: {{ $post['publish_date']->format('m/d/Y g:ia') }} 
   <div>
 @if (env('APP_DEBUG'))

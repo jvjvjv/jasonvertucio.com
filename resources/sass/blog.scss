@@ -1,6 +1,9 @@
 @import "app";
 
 .blog-list {
+  .featured-caption {
+    font-size:0.3rem;
+  }
   .no-img-provided {
     width: 100%; height: 22vh;
     background-color: darken($color-secondary, 0.5);

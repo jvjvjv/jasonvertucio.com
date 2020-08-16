@@ -12,6 +12,9 @@
         <a href="/blog/{{ $post['slug'] }}" class="card-link">
           <img class="card-img-top" alt="{{ $post['featured_image_caption'] }}" src="{{ $post['featured_image'] }}">
         </a>
+        @if ($post['featured_image_caption'])
+          <p class="featured-caption text-center text-lowercase">{!! $post['featured_image_caption'] !!}</p>
+        @endif
       @else
       <div class="no-img-provided">
         <a href="/blog/{{ $post['slug'] }}" class="card-link">
