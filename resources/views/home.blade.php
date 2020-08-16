@@ -168,8 +168,8 @@
             <p class="text-center">{!! $blog['featured_image_caption'] !!}</p>
           @endif
         @endif
-        @if ($blog['except'])
-        <p>{{ $blog['excerpt']}}</p>
+        @if ($blog['excerpt'])
+        <p>{{ $blog['excerpt'] }}</p>
         @else
         <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh well.)</p>
         @endif
