@@ -6,6 +6,7 @@ if (!isset($links)) {
 $meta = [
   'author' => 'Jason Vertucio',
   'description' => 'Jason Vertucio does mobile application development.',
+  'twitter:card' => 'summary',
   'twitter:title' => 'Jason, who did a thing',
   'twitter:image' => 'https://beepbeepritchiellc.com/HDTV.png',
   'twitter:creator' => '@jasondidathing',
@@ -14,24 +15,28 @@ $meta = [
   'og:image' => 'https://beepbeepritchiellc.com/HDTV.png',
 ];
 if (isset($post) && isset($post['meta'])) {
-  if ($post['meta']['meta_description']) $meta['description'] = $post['meta']['meta_description'];
-  if ($post['meta']['twitter_title'])$meta['twitter:title'] = $post['meta']['twitter_title'];
-  if ($post['meta']['twitter_description'])$meta['twitter:description'] = $post['meta']['twitter_description'];
-  if ($post['meta']['opengraph_title'])$meta['og:title'] = $post['meta']['opengraph_title'];
-  if ($post['meta']['opengraph_description'])$meta['og:description'] = $post['meta']['opengraph_description'];
-  if ($post['meta']['opengraph_image'])$meta['og:image'] = $post['meta']['opengraph_image'];
+  $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
+  $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
+  $meta['twitter:image'] = $post['meta']['twitter_image'] ?? $post['featured_image'] ?? null;
+  $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $meta['description'];
+  $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
+  $meta['og:description'] = $post['meta']['opengraph_description'] ?? $meta['description'];
+  $meta['og:image'] = $post['meta']['opengraph_image'] ?? $post['featured_image'] ?? null;
 }
 @endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 @foreach ($meta as $k => $v)
 @if ($k && $v)
-  <meta name="{{ $k }}" value="{{ $v }}">
+  <meta name="{{ $k }}" value="{{ $v }}" />
 @endif
 @endforeach
+{{ print_r($post) }}
+{{ print_r($post['meta']) }}
+{{ die }}
 
   <title>@yield('title', 'Home') | Jason Vertucio</title>
   {{-- Custom styles for this template --}}
