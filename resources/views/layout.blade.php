@@ -34,9 +34,6 @@ if (isset($post) && isset($post['meta'])) {
   <meta name="{{ $k }}" value="{{ $v }}" />
 @endif
 @endforeach
-{{ print_r($post) }}
-{{ print_r($post['meta']) }}
-{{ die }}
 
   <title>@yield('title', 'Home') | Jason Vertucio</title>
   {{-- Custom styles for this template --}}
