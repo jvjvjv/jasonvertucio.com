@@ -41,50 +41,42 @@ if (isset($post) && isset($post['meta'])) {
 <body id="page-top">
 
   <nav class="navbar navbar-default navbar-expand-lg sticky-top navbar-light bg-primary" id="navbarTop">
-    {{-- <div class="container-fluid"> --}}
-      <div class="navbar-header mr-2">
-        <a class="navbar-brand" href="{{ route('home') }} ">Jason Vertucio</a>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#headerNav" aria-controls="headerNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-      </div>
+    <div class="navbar-header mr-2">
+      <a class="navbar-brand" href="{{ route('home') }} ">Jason Vertucio</a>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#headerNav" aria-controls="headerNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-      <div class="collapse navbar-collapse" id="headerNav">
-        <ul class="navbar-nav mr-auto">
-        @foreach($links as $link)
-          <li class="nav-item">
-            <a href="{{ $link['href'] }}">{{ $link['label'] }}</a>
-          </li>
-        @endforeach
-          {{-- <li class="nav-item">
-            <a href="#" class="nav-link">Posts</a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">Tags</a>
-          </li> --}}
-        </ul>
-        <ul class="navbar-nav">
-          <li class="nav-item dropdown">
-            <button class="btn btn-primary dropdown-toggle" id="navbarDropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Places
-            </button>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="{{ route('home') }}">
-                Home
-              </a>
-              <a class="dropdown-item" href="{{ route('blog') }}">
-                Blog
-              </a>
-              <a class="dropdown-item" href="{{ route('paper') }}">
-                Paper
-              </a>
-              {{-- <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#">Something else here</a> --}}
-            </div>
-          </li>
-        </ul>
-      </div><!-- /.navbar-collapse -->
-    {{-- </div><!-- /.container-fluid --> --}}
+    <div class="collapse navbar-collapse" id="headerNav">
+      <ul class="navbar-nav mr-auto">
+      @foreach($links as $link)
+        <li class="nav-item">
+          <a href="{{ $link['href'] }}">{{ $link['label'] }}</a>
+        </li>
+      @endforeach
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <button class="btn btn-primary dropdown-toggle" id="navbarDropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Places
+          </button>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="{{ route('home') }}">
+              Home
+            </a>
+            <a class="dropdown-item" href="{{ route('blog') }}">
+              Blog
+            </a>
+            <a class="dropdown-item" href="{{ route('paper') }}">
+              Paper
+            </a>
+            {{-- <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">Something else here</a> --}}
+          </div>
+        </li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
   </nav>
   
   <div class="container-fluid m-0 p-0">
