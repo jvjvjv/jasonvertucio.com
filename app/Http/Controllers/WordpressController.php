@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\IpBan;
 use Log;
+use Cache;
 
 class WordpressController extends Controller
 {
