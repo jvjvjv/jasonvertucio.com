@@ -161,8 +161,17 @@
       <div class="w-100">
         <h2 class="mb-5">Latest Blog</h2>
         <h4>{{ $blog['title'] }}</h4>
+        @if ($blog['featured_image'])
+        <div class="image">
+          <img src="{{ $blog['featured_image'] }}" style="width: 100%;">
+          @if ($blog['featured_image_caption'])
+            <p class="text-center">{!! $blog['featured_image_caption'] !!}</p>
+          @endif
+        @endif
         @if ($blog['except'])
         <p>{{ $blog['excerpt']}}</p>
+        @else
+        <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh well.)</p>
         @endif
         <p>
           {{ $blog['publish_date']->diffForHumans() }}
