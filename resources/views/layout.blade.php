@@ -1,26 +1,39 @@
-<?php
+@php
 if (!isset($links)) {
   $links = [];
 }
-?>
+
+$meta = [
+  'author' => 'Jason Vertucio',
+  'description' => 'Jason Vertucio does mobile application development.',
+  'twitter:title' => 'Jason, who did a thing',
+  'twitter:image' => 'https://beepbeepritchiellc.com/HDTV.png',
+  'twitter:creator' => '@jasondidathing',
+  'twitter:site' => '@jasondidathing',
+  'og:url' => Request::url(),
+  'og:image' => 'https://beepbeepritchiellc.com/HDTV.png',
+];
+if (isset($post) && isset($post['meta'])) {
+  if ($post['meta']['meta_description']) $meta['description'] = $post['meta']['meta_description'];
+  if ($post['meta']['twitter_title'])$meta['twitter:title'] = $post['meta']['twitter_title'];
+  if ($post['meta']['twitter_description'])$meta['twitter:description'] = $post['meta']['twitter_description'];
+  if ($post['meta']['opengraph_title'])$meta['og:title'] = $post['meta']['opengraph_title'];
+  if ($post['meta']['opengraph_description'])$meta['og:description'] = $post['meta']['opengraph_description'];
+  if ($post['meta']['opengraph_image'])$meta['og:image'] = $post['meta']['opengraph_image'];
+}
+@endphp
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Jason Vertucio does mobile application development.">
-  <meta name="author" content="Jason Vertucio">
-
-  <meta name="twitter:card" value="summary">
-  <meta name="twitter:title" value="Jason, who did a thing">
-  <meta name="twitter:creator" value="@jasondidathing">
-  <meta name="twitter:site" value="@jasondidathing">
-  <meta name="twitter:image" value="https://beepbeepritchiellc.com/HDTV.png">
+@foreach ($meta as $k => $v)
+@if ($k && $v)
+  <meta name="{{ $k }}" value="{{ $v }}">
+@endif
+@endforeach
 
   <title>@yield('title', 'Home') | Jason Vertucio</title>
-
   {{-- Custom styles for this template --}}
   <link href="{{asset('css/blog.css') }}" rel="stylesheet">
 </head>

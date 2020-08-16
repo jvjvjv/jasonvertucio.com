@@ -6,36 +6,36 @@
 
   @if (sizeof($list) > 0)
   <div class="blog-list card-columns my-5">
-    @foreach ($list as $post) 
+    @foreach ($list as $list_item) 
     <div class="card">
-      @if ($post['featured_image'])
-        <a href="/blog/{{ $post['slug'] }}" class="card-link">
-          <img class="card-img-top" alt="{{ $post['featured_image_caption'] }}" src="{{ $post['featured_image'] }}">
+      @if ($list_item['featured_image'])
+        <a href="/blog/{{ $list_item['slug'] }}" class="card-link">
+          <img class="card-img-top" alt="{{ $list_item['featured_image_caption'] }}" src="{{ $list_item['featured_image'] }}">
         </a>
-        @if ($post['featured_image_caption'])
-          <p class="featured-caption text-center text-lowercase">{!! $post['featured_image_caption'] !!}</p>
+        @if ($list_item['featured_image_caption'])
+          <p class="featured-caption text-center text-lowercase">{!! $list_item['featured_image_caption'] !!}</p>
         @endif
       @else
       <div class="no-img-provided">
-        <a href="/blog/{{ $post['slug'] }}" class="card-link">
-          {!! $post['content'] !!}
+        <a href="/blog/{{ $list_item['slug'] }}" class="card-link">
+          {!! $list_item['content'] !!}
         </a>
       </div>
       @endif
       <div class="card-body">
         <h5 class="card-title">
-          <a href="/blog/{{ $post['slug'] }}">{{ $post['title'] }}</a>
+          <a href="/blog/{{ $list_item['slug'] }}">{{ $list_item['title'] }}</a>
         </h5>
-        @if ($post['excerpt'])
-        <p class="excerpt">{!! $post['excerpt'] !!}</p>
+        @if ($list_item['excerpt'])
+        <p class="excerpt">{!! $list_item['excerpt'] !!}</p>
         @else
         @endif
         {{-- @if (env('APP_DEBUG'))
-        <pre>{{ json_encode ($post, JSON_PRETTY_PRINT) }}</pre>
+        <pre>{{ json_encode ($list_item, JSON_PRETTY_PRINT) }}</pre>
         @endif --}}
       </div>
       <div class="card-footer text-muted">
-        <a href="/blog/{{ $post['slug'] }}" class="card-link">Read</a>
+        <a href="/blog/{{ $list_item['slug'] }}" class="card-link">Read</a>
       </div>
     </div>
     @endforeach
