@@ -11,7 +11,7 @@ class BlogController extends Controller
 
     public function index()
     {
-        $list = WinkPost::live()->published()->get();
+        $list = WinkPost::live()->published()->orderBy('publish_date','DESC')->get();
         return view('blog.list', [
             'list' => $list,
             'links' => [

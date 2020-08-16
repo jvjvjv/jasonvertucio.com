@@ -2,15 +2,15 @@
   $links = [
     [
       'href' => '#about',
-      'label' => 'About'
+      'label' => '#About'
     ],
     [
       'href' => '#skills',
-      'label' => 'Skills'
+      'label' => '#Skills'
     ],
     [
       'href' => '#interests',
-      'label' => 'Interests'
+      'label' => '#Interests'
     ],
     [
       'href' => route('blog'),
@@ -155,6 +155,24 @@
     </section>
 
     <hr class="m-0">
+
+@if ($blog)
+    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="blog">
+      <div class="w-100">
+        <h2 class="mb-5">Latest Blog</h2>
+        <h4>{{ $blog['title'] }}</h4>
+        @if ($blog['except'])
+        <p>{{ $blog['excerpt']}}</p>
+        @endif
+        <p>
+          {{ $blog['publish_date']->diffForHumans() }}
+        </p>
+        <a class="btn btn-outline-secondary" href="/blog/{{ $blog['slug'] }}">Read</a>
+      </div>
+    </section>
+
+    <hr class="m-0">
+@endif
 
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="skills">
       <div class="w-100">
