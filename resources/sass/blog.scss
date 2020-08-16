@@ -1,8 +1,27 @@
 @import "app";
 
 .blog-list {
-  list-style: none;
-  margin:2rem 0; padding: 0;
+  .no-img-provided {
+    width: 100%; height: 22vh;
+    background-color: darken($color-secondary, 0.5);
+    opacity: 0.5;
+    color: darken($text-color, 0.25);
+    // display: grid;
+    // place-items: center;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+
+    a {
+      color: darken($text-color, 0.25);
+    }
+    img { max-width: 100%;} 
+    p { display: inline; }
+  }
+
+  .card h5 a {
+    color: $color-secondary;
+  }
 }
 
 .blog-item {
@@ -14,9 +33,9 @@
   }
 
   .title {
-    color: darken($text-color, 50%);
+    color: $color-secondary;
     a { 
-      color: darken($text-color, 50%);
+      color: $color-secondary;
 
       &:visited {
         color: $text-color;

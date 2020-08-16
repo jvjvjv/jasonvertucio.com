@@ -30,7 +30,7 @@ if (!isset($links)) {
   <nav class="navbar navbar-default navbar-expand-lg sticky-top" id="navbarTop">
     {{-- <div class="container-fluid"> --}}
       <div class="navbar-header mr-2">
-        <a class="navbar-brand" href="{{ route('splash') }} ">Jason Vertucio</a>
+        <a class="navbar-brand" href="{{ route('home') }} ">Jason Vertucio</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#headerNav" aria-controls="headerNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -56,7 +56,7 @@ if (!isset($links)) {
               Places
             </button>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="{{ route('splash') }}">
+              <a class="dropdown-item" href="{{ route('home') }}">
                 Home
               </a>
               <a class="dropdown-item" href="{{ route('blog') }}">

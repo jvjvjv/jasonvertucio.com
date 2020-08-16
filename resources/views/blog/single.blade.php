@@ -1,5 +1,5 @@
 @extends('layout')
-@section('title', 'Blog')
+@section('title', $post['title'] . ' | Blog')
 @section('navhome', 'slash')
 
 @section('main')

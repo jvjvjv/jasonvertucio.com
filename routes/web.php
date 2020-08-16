@@ -12,8 +12,8 @@
 */
 
 Route::get('/', function () {
-    return view('splash');
-})->name('splash');
+    return view('home');
+})->name('home');
 
 Route::view('paper', 'paper')->name('paper');
 
