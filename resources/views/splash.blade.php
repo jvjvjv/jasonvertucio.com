@@ -13,6 +13,10 @@
       'label' => 'Interests'
     ],
     [
+      'href' => route('blog'),
+      'label' => 'Blog'
+    ],
+    [
       'href' => route('paper'),
       'label' => 'Paper'
     ],
@@ -95,7 +99,7 @@
   <title>Jason Vertucio</title>
 
   <!-- Custom styles for this template -->
-  <link href="{{asset('css/app.css') }}" rel="stylesheet">
+  <link href="{{asset('css/splash.css') }}" rel="stylesheet">
 
 </head>
 

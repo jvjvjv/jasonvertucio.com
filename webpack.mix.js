@@ -11,10 +11,12 @@ const mix = require('laravel-mix');
  |
  */
 
-mix.js('resources/js/app.js', 'public/js')
-    .sass('resources/sass/app.scss', 'public/css')
-    .copyDirectory('resources/img', 'public/img')
-    .copyDirectory('resources/wp-includes', 'public/wp-includes')
-    .copyDirectory('resources/wp-admin', 'public/wp-admin')
-
+mix
+  .js('resources/js/app.js', 'public/js')
+  .sourceMaps()
+  .sass('resources/sass/splash.scss', 'public/css')
+  .sass('resources/sass/blog.scss', 'public/css')
+  .copyDirectory('resources/img', 'public/img')
+  .copyDirectory('resources/wp-includes', 'public/wp-includes')
+  .copyDirectory('resources/wp-admin', 'public/wp-admin')
 ;

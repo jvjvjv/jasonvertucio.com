@@ -30,6 +30,19 @@ return [
 
     'storage_path' => env('WINK_STORAGE_PATH', 'public/wink/images'),
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wink Domain
+    |--------------------------------------------------------------------------
+    |
+    | This is the subdomain where Wink will be accessible from. By default it
+    | will be accessible on the same domain as your app.
+    |
+    */
+
+    'domain' => env('WINK_DOMAIN'),
+
     /*
     |--------------------------------------------------------------------------
     | Wink Path
@@ -55,4 +68,34 @@ return [
     |
     */
     'middleware_group' => env('WINK_MIDDLEWARE_GROUP', 'web'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wink Post Preview Path
+    |--------------------------------------------------------------------------
+    |
+    | Wink uses this path to display a preview link in the editor. While
+    | building the link tag, the {postSlug} placeholder will be replaced
+    | by the actual post slug.
+    |
+    */
+
+    'preview_path' => '/blog/{postSlug}',
+
+    'editor' => [
+
+        /*
+        |--------------------------------------------------------------------------
+        | Default editor (for when you don't want options)
+        |--------------------------------------------------------------------------
+        |
+        | Wink usually allows either markdown or rich text editing. If you're
+        | setting up an environment where you only want one or the other
+        | you can specify that here. (options: null, 'markdown', 'rich')
+        |
+        */
+
+        'default' => null,
+
+    ],
 ];

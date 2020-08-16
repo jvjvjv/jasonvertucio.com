@@ -13,15 +13,14 @@
 
 Route::get('/', function () {
     return view('splash');
-});
+})->name('splash');
 
 Route::view('paper', 'paper')->name('paper');
 
-Route::namespace('Wink\Http\Controllers')
-  ->prefix('api/v1')
-  ->group(function () {
-    Route::get('posts', '\Wink\Http\Controllers\PostsController@index');
-  });
+Route::group(['prefix'=>'blog'], function($route) {
+  $route->get('/', 'BlogController@index')->name('blog');
+  $route->get("/{slug}", 'BlogController@post')->name('post');
+});
 
 
 // Honeypots

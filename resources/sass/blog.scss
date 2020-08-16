@@ -1,0 +1,58 @@
+@import "app";
+
+.blog-list {
+  list-style: none;
+  margin:2rem 0; padding: 0;
+}
+
+.blog-item {
+  list-style: none;
+  margin:0 2rem; padding: 0;
+
+  &.single {
+    margin-top: 2rem;
+  }
+
+  .title {
+    color: darken($text-color, 50%);
+    a { 
+      color: darken($text-color, 50%);
+
+      &:visited {
+        color: $text-color;
+      }
+    }
+  }
+
+  &.single .embedded_image {
+    &[data-layout="wide"] {
+      margin-left: -2rem;
+      margin-right: -2rem;
+
+      img {
+        min-width: 100%;
+      }
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    p {
+      font-size: 0.75rem;
+      text-align: center;
+    }
+  }
+
+  .embedded_image {
+    img {
+      max-width: 100%;
+      text-align: center;
+    }
+
+    p {
+      font-size: 0.25rem;
+      text-align: center;
+    }
+  }
+}
