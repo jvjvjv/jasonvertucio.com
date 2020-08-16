@@ -50,7 +50,7 @@ class WinkChangeUserPasswordCommand extends Command
           return 1;
         }
       }
-      $user = WinkAuthor::whereEmail($$email)->first();
+      $user = WinkAuthor::whereEmail($email)->first();
       $user->password = Hash::make($password);
       $user->save();
       $this->info("DONE");
