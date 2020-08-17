@@ -67,4 +67,14 @@
       text-align: center;
     }
   }
+
+  .share {
+    display: flex;
+    height: 40px;
+    align-items: center;
+
+    .share-header {
+      font-weight: bold;
+    }
+  }
 }
