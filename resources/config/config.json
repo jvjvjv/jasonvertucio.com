@@ -1,0 +1,221 @@
+{
+  "links": [
+    {
+      "href": "#about",
+      "label": "#About"
+    },
+    {
+      "href": "#skills",
+      "label": "#Skills"
+    },
+    {
+      "href": "#interests",
+      "label": "#Interests"
+    },
+    {
+      "href": "https://jasonvertucio.com/blog",
+      "label": "Blog"
+    },
+    {
+      "href": "https://jasonvertucio.com/paper",
+      "label": "Paper"
+    },
+    {
+      "href": "https://jasonvertucio.com/todo",
+      "label": "To Do App",
+      "target": "_blank"
+    },
+    {
+      "href": "https://jasonvertucio.com/btoatob",
+      "label": "B(to)a(to)B",
+      "target": "_blank"
+    }
+  ],
+  "about_me": {
+    "name": {
+      "given": "Jason",
+      "sur": "Vertucio"
+    },
+    "address": {
+      "city": "Lancaster",
+      "state": "PA",
+      "zip": "17601"
+    },
+    "phone": "(267) 702-5298",
+    "email": {
+      "email_address": "me@jasonvertucio.com",
+      "subject": "Better change this or I'll think you're spamming me",
+      "body": "Hi\r\n"
+    },
+    "sections": [
+      "I specialize in mobile app front-end development and responsive web development both for small companies and for enterprise-level businesses. I am also experienced in Laravel development in a LAMP stack. I operate sites and web applications on CentOS and Ubuntu platforms."
+    ],
+    "social": [
+      {
+        "type": "linkedin",
+        "link": "https://www.linkedin.com/in/jasonvertucio/",
+        "fa_icon": "fa-linkedin-in"
+      },
+      {
+        "type": "twitter",
+        "link": "https://twitter.com/jasondidathing",
+        "fa_icon": "fa-twitter"
+      }
+    ]
+  },
+  "icons": {
+    "lang": [
+      {
+        "icon": "js-square",
+        "label": "ECMAScript/JavaScript"
+      },
+      {
+        "icon": "html5",
+        "label": "HTML"
+      },
+      {
+        "icon": "css3-alt",
+        "label": "CSS"
+      },
+      {
+        "icon": "sass",
+        "label": "Sass"
+      },
+      {
+        "icon": "node",
+        "label": "NodeJS"
+      },
+      {
+        "icon": "php",
+        "label": "PHP"
+      },
+      {
+        "icon": "google-play",
+        "label": "Andrdoid"
+      },
+      {
+        "icon": "app-store",
+        "label": "iOS, iPadOS, Apple TV"
+      }
+    ],
+    "browser": [
+      {
+        "icon": "chrome",
+        "label": "Google Chrome"
+      },
+      {
+        "icon": "firefox-browser",
+        "label": "Mozilla Firefox"
+      },
+      {
+        "icon": "safari",
+        "label": "Safari"
+      }
+    ],
+    "tech": [
+      {
+        "icon": "linode",
+        "label": "linode"
+      },
+      {
+        "icon": "windows",
+        "label": "windows"
+      },
+      {
+        "icon": "linux",
+        "label": "Linux"
+      },
+      {
+        "icon": "centos",
+        "label": "CentOS"
+      },
+      {
+        "icon": "ubuntu",
+        "label": "Ubuntu"
+      },
+      {
+        "icon": "raspberry-pi",
+        "label": "Pi"
+      },
+      {
+        "icon": "chromecast",
+        "label": "Chromecast"
+      },
+      {
+        "icon": "bluetooth-b",
+        "label": "Bluetooth"
+      }
+    ],
+    "framework": [
+      {
+        "icon": "vuejs",
+        "label": "VueJS"
+      },
+      {
+        "icon": "laravel",
+        "label": "Laravel"
+      },
+      {
+        "icon": "bootstrap",
+        "label": "Bootstrap"
+      },
+      {
+        "icon": "angular",
+        "label": "Angular"
+      },
+      {
+        "icon": "react",
+        "label": "ReactJS, ReactNative"
+      }
+    ],
+    "workflow": [
+    {
+      "icon": "slack",
+      "label": "Slack"
+    },
+    {
+      "icon": "sketch",
+      "label": "Sketch"
+    },
+    {
+      "icon": "git-alt",
+      "label": "Git"
+    },
+    {
+      "icon": "sourcetree",
+      "label": "sourcetree"
+    },
+    {
+      "icon": "github",
+      "label": "Github"
+    },
+    {
+      "icon": "bitbucket",
+      "label": "Bitbucket"
+    },
+    {
+      "icon": "jira",
+      "label": "Jira"
+    },
+    {
+      "icon": "confluence",
+      "label": "Confluence"
+    },
+    {
+      "icon": "jenkins",
+      "label": "Jenkins"
+    }
+  ]
+  },
+  "workflow": [
+    "Mobile-First, Responsive Design",
+    "App development using Ionic, VueJS, React, NativeScript",
+    "Lightweight API development using ExpressJS, Lumen, Laravel",
+    "Cross Browser Testing &amp; Debugging",
+    "Agile Development &amp; Scrum"
+  ],
+  "interests": [
+    "I love driving. I play guitar and a couple of other instruments.",
+    "I'm also on the lookout for a ship that can travel through all of <em>Time And Relative Dimension In Space</em>."
+  ]
+}

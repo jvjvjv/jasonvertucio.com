@@ -87,21 +87,15 @@ if (isset($post) && isset($post['meta'])) {
 
   </div>
 
-  {{-- <footer class="footer bg-secondary py-5 text-white">
-    <div class="container m-5">
+  <footer class="footer bg-secondary py-3 text-white position-sticky fixed-bottom">
+    <div class="container-fluid">
       <div class="row">
-        <div class="col-sm">
-          Col
-        </div>
-        <div class="col-sm">
-          Col
-        </div>
-        <div class="col-sm">
-          Col
+        <div class="col-sm text-right">
+          <span class="text-dark">Copyright &copy; {{ date('Y') }}, Jason Vertucio.</span>
         </div>
       </div>
     </div>
-  </footer> --}}
+  </footer>
 
 
   @include('gtag')

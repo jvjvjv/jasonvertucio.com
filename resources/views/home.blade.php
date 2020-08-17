@@ -1,85 +1,3 @@
-<?php
-  $links = [
-    [
-      'href' => '#about',
-      'label' => '#About'
-    ],
-    [
-      'href' => '#skills',
-      'label' => '#Skills'
-    ],
-    [
-      'href' => '#interests',
-      'label' => '#Interests'
-    ],
-    [
-      'href' => route('blog'),
-      'label' => 'Blog'
-    ],
-    [
-      'href' => route('paper'),
-      'label' => 'Paper'
-    ],
-  ];
-
-  $lang_icons = [
-    ['icon' => 'js-square', 'label' => 'ECMAScript/JavaScript'],
-    ['icon' => 'html5', 'label' => 'HTML'],
-    ['icon' => 'css3-alt', 'label' => 'CSS'],
-    ['icon' => 'sass', 'label' => 'Sass'],
-    ['icon' => 'node', 'label' => 'NodeJS'],
-    ['icon' => 'php', 'label' => 'PHP'],
-    ['icon' => 'google-play', 'label' => 'Andrdoid'],
-    ['icon' => 'app-store', 'label' => 'iOS, iPadOS, Apple TV'],
-  ];
-
-  $browser_icons = [
-    ['icon' => 'chrome', 'label' => 'Google Chrome'],
-    ['icon' => 'firefox-browser', 'label' => 'Mozilla Firefox'],
-    ['icon' => 'safari', 'label' => 'Safari'],
-  ];
-
-  $tech_icons = [
-    ['icon' => 'linode', 'label' => 'linode'],
-    ['icon' => 'windows', 'label' => 'windows'],
-    ['icon' => 'linux', 'label' => 'Linux'],
-    ['icon' => 'centos', 'label' => 'CentOS'],
-    ['icon' => 'ubuntu', 'label' => 'Ubuntu'],
-    ['icon' => 'raspberry-pi', 'label' => 'Pi'],
-    ['icon' => 'chromecast', 'label' => 'Chromecast'],
-    ['icon' => 'bluetooth-b', 'label' => 'Bluetooth'],
-  ];
-
-  $framework_icons = [
-    ['icon' => 'vuejs', 'label' => 'VueJS'],
-    ['icon' => 'laravel', 'label' => 'Laravel'],
-    ['icon' => 'bootstrap', 'label' => 'Bootstrap'],
-    ['icon' => 'angular', 'label' => 'Angular'],
-    ['icon' => 'react', 'label' => 'ReactJS, ReactNative'],
-    // ['icon' => 'wordpress', 'label' => 'Wordpress'],
-    // ['icon' => 'empire', 'label' => 'Galactic Empire'],
-  ];
-
-  $workflow_icons = [
-    ['icon' => 'slack', 'label' => 'Slack'],
-    ['icon' => 'sketch', 'label' => 'Sketch'],
-    ['icon' => 'git-alt', 'label' => 'Git'],
-    ['icon' => 'sourcetree', 'label' => 'sourcetree'],
-    ['icon' => 'github', 'label' => 'Github'],
-    ['icon' => 'bitbucket', 'label' => 'Bitbucket'],
-    ['icon' => 'jira', 'label' => 'Jira'],
-    ['icon' => 'confluence', 'label' => 'Confluence'],
-    ['icon' => 'jenkins', 'label' => 'Jenkins'],
-  ];
-
-  $workflow = [
-    'Mobile-First, Responsive Design',
-    'App development using Ionic, VueJS, React, NativeScript',
-    'Lightweight API development using ExpressJS, Lumen, Laravel',
-    'Cross Browser Testing &amp; Debugging',
-    'Agile Development &amp; Scrum',
-  ];
-?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -117,9 +35,13 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav">
-        @foreach($links as $link)
+        @foreach($config['links'] as $link)
         <li class="nav-item">
+          @if (isset($link['target']))
+            <a class="nav-link js-scroll-trigger" href="{{ $link['href'] }}" target="{{ $link['target'] }}">{{ $link['label'] }}</a>
+          @else
           <a class="nav-link js-scroll-trigger" href="{{ $link['href'] }}">{{ $link['label'] }}</a>
+          @endif
         </li>
         @endforeach
       </ul>
@@ -130,26 +52,34 @@
 
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="about">
       <div class="w-100">
-        <h1 class="mb-0">Jason
-          <span class="text-primary">Vertucio</span>
+        <h1 class="mb-0">{{ $config['about_me']['name']['given'] }}
+          <span class="text-primary">{{ $config['about_me']['name']['sur'] }}</span>
         </h1>
-        <div class="subheading mb-5">Lancaster, PA 17601 · (267) 702-5298 ·
-          <a href="mailto:me@jasonvertucio.com?subject=Better%20change%20this%20or%20I'll%20think%20you're%20spamming%20me&body=Hi%0c%0a">me@jasonvertucio.com</a>
+        <div class="subheading mb-5">
+          {{ $config['about_me']['address']['city'] }},
+          {{ $config['about_me']['address']['state'] }}
+          {{ $config['about_me']['address']['zip'] }}
+          ·
+          {{ $config['about_me']['phone'] }}
+          ·
+          <a href="mailto:{{ $config['about_me']['email']['email_address'] }}?subject={{ $config['about_me']['email']['subject'] }}&body={{ $config['about_me']['email']['body'] }}">
+            {{ $config['about_me']['email']['email_address'] }}
+          </a>
         </div>
+        @foreach ($config['about_me']['sections'] as $section)
         <p class="lead mb-5">
-          I specialize in mobile app front-end development and responsive web development both for small companies and for enterprise-level businesses.
-          I am also experienced in Laravel development in a LAMP stack. I operate sites and web applications on CentOS and Ubuntu platforms.
+          {!! $section !!}
         </p>
+      @endforeach
         <!-- <p class="mb-5">
           Check out daily, curated news content on tech and stuff. <a href="/paper">I Did a Thing!</a>
         </p> -->
         <div class="social-icons">
-          <a href="https://www.linkedin.com/in/jasonvertucio/">
-            <i class="fab fa-linkedin-in"></i>
+          @foreach ($config['about_me']['social'] as $item)
+          <a href="{{ $item['link'] }}" target="_blank">
+            <i class="fab {{ $item['fa_icon'] }}"></i>
           </a>
-          <a href="https://twitter.com/jasondidathing">
-            <i class="fab fa-twitter"></i>
-          </a>
+          @endforeach
         </div>
       </div>
     </section>
@@ -189,38 +119,38 @@
 
         <div class="subheading mb-3">Programming Languages &amp; Tools</div>
         <ul class="list-inline dev-icons">
-          @foreach ($lang_icons as $tech)
+          @foreach ($config['icons']['lang'] as $tech)
           <li class="list-inline-item"><i class="fab fa-{{$tech['icon'] }}" title="{{ $tech['label'] }}"></i></li>
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
-          @foreach ($framework_icons as $icon)
+          @foreach ($config['icons']['framework'] as $icon)
           <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
-          @foreach ($browser_icons as $icon)
+          @foreach ($config['icons']['browser'] as $icon)
           <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
-          @foreach ($tech_icons as $icon)
+          @foreach ($config['icons']['tech'] as $icon)
           <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
-          @foreach ($workflow_icons as $icon)
+          @foreach ($config['icons']['workflow'] as $icon)
           <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
           @endforeach
         </ul>
 
         <div class="subheading mb-3">Workflow</div>
         <ul class="fa-ul mb-0">
-          @foreach ($workflow as $line)
+          @foreach ($config['workflow'] as $line)
           <li><i class="fa-li fa fa-check"></i> {!! $line !!}</li>
           @endforeach
         </ul>
@@ -232,8 +162,9 @@
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="interests">
       <div class="w-100">
         <h2 class="mb-5">Interests</h2>
-        <p>I love driving. I play guitar and a couple of other instruments.</p>
-        <p class="mb-0">I'm also on the lookout for a ship that can travel through all of Time And Relative Dimension In Space.</p>
+        @foreach($config['interests'] as $interest)
+        <p>{!! $interest !!}</p>
+        @endforeach
       </div>
     </section>
 

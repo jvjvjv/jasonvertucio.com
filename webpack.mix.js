@@ -13,6 +13,7 @@ const mix = require('laravel-mix');
 
 mix
   .js('resources/js/app.js', 'public/js')
+  .copy('resources/config/config.json','public')
   .sourceMaps()
   .sass('resources/sass/splash.scss', 'public/css')
   .sass('resources/sass/blog.scss', 'public/css')
