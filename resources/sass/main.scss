@@ -3,8 +3,9 @@ body {
   color: $text-color;
 }
 
+/* Navbar
+*******************************************************************************/
 #navbarTop {
-
   button.btn-link, a {
     color: transparentize($color-white,0.25);
 
@@ -15,4 +16,22 @@ body {
       color: $text-color;
     }
   }
+}
+
+/* Headings
+*******************************************************************************/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Saira Extra Condensed', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-weight: 700;
+  text-transform: uppercase;
+  color: $color-secondary;
+}
+
+.footer {
+
 }
