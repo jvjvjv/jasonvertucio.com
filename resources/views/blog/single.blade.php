@@ -3,7 +3,8 @@
 @section('navhome', 'slash')
 
 @section('main')
-
+<div id="fb-root"></div>
+<script async defer cookie-consent="functionality" crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v8.0" nonce="oiR10rcH"></script>
 <div class="blog-item single">
   <h2 class="title">
     {{ $post['title'] }}
@@ -16,8 +17,16 @@
       By: {{ $post->author['name'] }}
       |
     @endif
-    Published: {{ $post['publish_date']->format('m/d/Y g:ia') }} 
+    Published: {{ $post['publish_date']->format('m/d/Y g:ia') }}
   <div>
+    <h3>Comments</h3>
+    <div
+      class="fb-comments"
+      data-href="{{ Request::url() }}"
+      data-lazy="true"
+      data-numposts="10"
+      data-width="100%"
+    />
 @if (env('APP_DEBUG'))
   <pre>
   {{-- @json($post, JSON_PRETTY_PRINT) --}}
