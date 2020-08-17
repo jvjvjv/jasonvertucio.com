@@ -87,7 +87,7 @@ if (isset($post) && isset($post['meta'])) {
 
   </div>
 
-  <footer class="footer bg-secondary py-5 text-white">
+  {{-- <footer class="footer bg-secondary py-5 text-white">
     <div class="container m-5">
       <div class="row">
         <div class="col-sm">
@@ -101,7 +101,7 @@ if (isset($post) && isset($post['meta'])) {
         </div>
       </div>
     </div>
-  </footer>
+  </footer> --}}
 
 
   @include('gtag')
