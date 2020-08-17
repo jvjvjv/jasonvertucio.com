@@ -12,9 +12,11 @@
 */
 
 Route::get('/', 'HomeController@index')->name('home');
+Route::get('/about/{any?}', function() {
+  return redirect('/');
+});
 
 Route::view('paper', 'paper')->name('paper');
-
 Route::group(['prefix'=>'blog'], function($route) {
   $route->get('/', 'BlogController@index')->name('blog');
   $route->get("/{slug}", 'BlogController@post')->name('post');
