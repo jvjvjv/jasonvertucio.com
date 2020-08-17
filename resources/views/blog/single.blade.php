@@ -27,6 +27,7 @@
       data-numposts="10"
       data-width="100%"
     />
+  </div>
 @if (env('APP_DEBUG'))
   <pre>
   {{-- @json($post, JSON_PRETTY_PRINT) --}}
