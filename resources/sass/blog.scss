@@ -18,7 +18,7 @@
     a {
       color: darken($text-color, 0.25);
     }
-    img { max-width: 100%;} 
+    img { max-width: 100%;}
     p { display: inline; }
   }
 
@@ -37,7 +37,7 @@
 
   .title {
     color: $color-secondary;
-    a { 
+    a {
       color: $color-secondary;
 
       &:visited {
@@ -57,23 +57,13 @@
     }
 
     img {
+      display:block;
+      margin:0 auto;
       max-width: 100%;
     }
 
     p {
       font-size: 0.75rem;
-      text-align: center;
-    }
-  }
-
-  .embedded_image {
-    img {
-      max-width: 100%;
-      text-align: center;
-    }
-
-    p {
-      font-size: 0.25rem;
       text-align: center;
     }
   }
