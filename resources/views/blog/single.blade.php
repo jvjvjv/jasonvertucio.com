@@ -31,6 +31,7 @@
         class="fb-share-button"
         data-href="{{ Request::url() }}"
         data-lazy="true"
+        data-order-by="social"
         data-layout="button_count"></div>
     </div>
   </div>
