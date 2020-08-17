@@ -80,12 +80,30 @@ if (isset($post) && isset($post['meta'])) {
       </ul>
     </div><!-- /.navbar-collapse -->
   </nav>
-  
+
   <div class="container-fluid m-0 p-0">
 
   @yield('main')
 
   </div>
+
+  <footer class="footer bg-secondary py-5 text-white">
+    <div class="container m-5">
+      <div class="row">
+        <div class="col-sm">
+          Col
+        </div>
+        <div class="col-sm">
+          Col
+        </div>
+        <div class="col-sm">
+          Col
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
   @include('gtag')
   {{--Custom scripts for this template --}}
   <script src="{{ asset('js/app.js') }}"></script>

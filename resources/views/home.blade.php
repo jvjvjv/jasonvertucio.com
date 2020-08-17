@@ -240,9 +240,9 @@
   </div>
 
   <!-- Custom scripts for this template -->
-  <script src="{{ asset('js/app.js') }}"></script>
-
-@include('gtag')
+  @include('cookies')
+  <script cookie-consent="functionality" src="{{ asset('js/app.js') }}"></script>
+  @include('gtag')
 
 </body>
 
