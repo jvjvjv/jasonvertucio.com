@@ -14,7 +14,7 @@ class HarvestPaperEditions extends Command
    *
    * @var string
    */
-  protected $signature = 'paper:harvest {edition_id?}';
+  protected $signature = 'paper:harvest {edition_id?} {{--l|limit=5}}';
 
   /**
    * The console command description.
@@ -43,18 +43,16 @@ class HarvestPaperEditions extends Command
     $response = Http::get($url);
     $paper = $response->json()['data'];
     try {
-      try {
+      $edition = Paper::where('edition_id',$paper['edition']['id'])->first();
+      if (!$edition) {
         $edition = Paper::create([
           'edition_id' => $paper['edition']['id'],
           'edition' => json_encode($paper['edition']),
           'published_at' => $paper['edition']['published_at']
         ]);
-      } catch (\Illuminate\Database\QueryException $e) {
-        $this->error($e->getMessage());
-        $edition = Paper::where('edition_id', $paper['edition']['id']);
       }
       if ($paper['edition']['previous']) {
-        $this->alert("Found previous edition {$paper['edition']['previous']}.");
+        $this->info("Found previous edition {$paper['edition']['previous']}.");
         return $paper['edition']['previous'];
       } else {
         return null;
@@ -73,17 +71,18 @@ class HarvestPaperEditions extends Command
    */
   public function handle()
   {
+    $limit = $this->option('limit');
     $edition_id = $this->argument('edition_id');
     $count = 0;
+    $this->info("Limit = ${limit}");
     do {
       $edition = Paper::where('edition_id',$edition_id)->first();
       if ($edition) {
-        $this->info("Found ${edition_id} in db");
+        $this->info("Found edition ${edition_id} in db");
         $edition_id = json_decode($edition->edition,true)['previous'];
       } else {
         $edition_id = $this->getEdition($edition_id);
-        $count++;
       }
-    } while ($edition_id != null && $count < 90);
+    } while ($edition_id != null && ++$count < $limit);
   }
 }
