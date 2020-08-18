@@ -73,8 +73,22 @@ if (isset($post) && isset($post['meta'])) {
             <a class="dropdown-item" href="{{ route('paper') }}">
               Paper
             </a>
-            {{-- <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="#">Something else here</a> --}}
+            @if (!env('APP_DEBUG'))
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="/btoatob">
+              B(to)a(to)B
+            </a>
+            <a class="dropdown-item" href="/todo">
+              To Do
+            </a>
+            @endif
+            @if (isset($wink_authenticated) && $wink_authenticated)
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="{{ route('blog') }}">
+              Wink Blog
+            </a>
+            {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
+            @endif
           </div>
         </li>
       </ul>

@@ -6,7 +6,7 @@
 
   @if (sizeof($list) > 0)
   <div class="blog-list card-columns my-5">
-    @foreach ($list as $list_item) 
+    @foreach ($list as $list_item)
     <div class="card">
       @if ($list_item['featured_image'])
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">
@@ -36,6 +36,9 @@
       </div>
       <div class="card-footer text-muted">
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">Read</a>
+        @if ($wink_authenticated)
+        <a href="/wink/posts/{{ $list_item['id'] }}" class="card-link">Edit</a>
+        @endif
       </div>
     </div>
     @endforeach

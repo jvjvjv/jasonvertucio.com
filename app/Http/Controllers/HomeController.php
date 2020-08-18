@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Http\Request;
 use Wink\WinkPost;
 use Artisan;
@@ -9,6 +10,11 @@ use Cache;
 
 class HomeController extends Controller
 {
+  public function __construct(Auth $auth)
+  {
+    $this->auth = $auth;
+  }
+
   public function index()
   {
     $harvested = Cache::get('paper_harvested');
@@ -20,12 +26,15 @@ class HomeController extends Controller
     } else {
       // Already harvested
     }
+
+
     $path = public_path() . "/config.json"; // ie: /var/www/laravel/public/filename.json
     $config = json_decode(file_get_contents($path), true);
     $latest_post = WinkPost::published()->live()->orderBy('publish_date','DESC')->get()[0];
     return view('home', [
       'blog' => $latest_post,
       'config' => $config,
+      'wink_authenticated' => $this->auth->guard('wink')->check()
     ]);
   }
 }

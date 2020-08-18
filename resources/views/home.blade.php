@@ -35,6 +35,11 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav">
+        @if ($wink_authenticated)
+        <li class="nav-item">
+          <a class="nav-link" href="/wink">Go to Wink Blog</a>
+        </li>
+        @endif
         @foreach($config['links'] as $link)
         <li class="nav-item">
           @if (isset($link['target']))
@@ -107,6 +112,9 @@
           {{ $blog['publish_date']->diffForHumans() }}
         </p>
         <a class="btn btn-outline-secondary" href="/blog/{{ $blog['slug'] }}">Read</a>
+        @if ($wink_authenticated)
+          <a class="btn btn-outline-primary" href="/wink/posts/{{ $blog['id'] }}">Edit</a>
+        @endif
       </div>
     </section>
 

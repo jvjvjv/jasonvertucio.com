@@ -18,6 +18,9 @@
       |
     @endif --}}
     <strong>Published:</strong> {{ $post['publish_date']->format('m/d/Y g:ia') }}
+    @if ($wink_authenticated)
+    | <a href="/wink/posts/{{ $post['id'] }}" class="card-link">Edit</a>
+    @endif
   </div>
   <div class="share">
     <span class="share-header">Share:</span>
