@@ -16,7 +16,7 @@ class CreatePapersTable extends Migration
         Schema::create('papers', function (Blueprint $table) {
             $table->id();
             $table->string('edition_id');
-            $table->json('edition');
+            $table->text('edition');
             $table->timestamp('published_at');
             $table->timestamps();
 
