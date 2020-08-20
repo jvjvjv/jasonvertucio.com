@@ -10,12 +10,8 @@ use Cache;
 
 class HomeController extends Controller
 {
-  public function __construct(Auth $auth)
-  {
-    $this->auth = $auth;
-  }
 
-  public function index()
+  public function index(Request $request)
   {
     $harvested = Cache::get('paper_harvested');
     if (!$harvested) {
@@ -34,7 +30,7 @@ class HomeController extends Controller
     return view('home', [
       'blog' => $latest_post,
       'config' => $config,
-      'wink_authenticated' => $this->auth->guard('wink')->check()
+      'wink_authenticated' => $request->is_wink_authenticated
     ]);
   }
 }

@@ -2,16 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Http\Request;
 use \Wink\WinkPost;
 
 class BlogController extends Controller
 {
-  public function __construct(Auth $auth)
-  {
-    $this->auth = $auth;
-  }
 
   public function index()
   {
@@ -21,7 +16,7 @@ class BlogController extends Controller
         'links' => [
           [ 'href' => '#', 'label' => 'Posts' ]
         ],
-        'wink_authenticated' => $this->auth->guard('wink')->check()
+        'wink_authenticated' => request()->is_wink_authenticated
     ]);
   }
 
@@ -30,7 +25,7 @@ class BlogController extends Controller
     $post = WinkPost::where('slug',$slug)->firstOrFail();
     return view('blog.single', [
       'post' => $post,
-      'wink_authenticated' => $this->auth->guard('wink')->check()
+      'wink_authenticated' => request()->is_wink_authenticated
     ]);
   }
 }
