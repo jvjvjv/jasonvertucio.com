@@ -17,11 +17,11 @@ $meta = [
 if (isset($post) && isset($post['meta'])) {
   $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
   $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
-  $meta['twitter:image'] = url($post['meta']['twitter_image'] ?? $post['featured_image'] ?? null);
+  $meta['twitter:image'] = url($post['meta']['twitter_image'] ?? $post['featured_image'] ?? null)->full();
   $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $meta['description'];
   $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
   $meta['og:description'] = $post['meta']['opengraph_description'] ?? $meta['description'];
-  $meta['og:image'] = url($post['meta']['opengraph_image'] ?? $post['featured_image'] ?? null);
+  $meta['og:image'] = url($post['meta']['opengraph_image'] ?? $post['featured_image'] ?? null)->full();
 }
 @endphp
 <!DOCTYPE html>
