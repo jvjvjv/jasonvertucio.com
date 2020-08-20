@@ -29,8 +29,7 @@ class HomeController extends Controller
     $latest_post = WinkPost::published()->live()->orderBy('publish_date','DESC')->get()[0];
     return view('home', [
       'blog' => $latest_post,
-      'config' => $config,
-      'wink_authenticated' => $request->is_wink_authenticated
+      'config' => $config
     ]);
   }
 }

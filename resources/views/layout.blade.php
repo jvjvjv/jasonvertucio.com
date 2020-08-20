@@ -82,13 +82,13 @@ if (isset($post) && isset($post['meta'])) {
               To Do
             </a>
             @endif
-            @if (isset($wink_authenticated) && $wink_authenticated)
+            @ifwinkauthenticated
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="{{ route('blog') }}">
               Wink Blog
             </a>
             {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
-            @endif
+            @endifwinkauthenticated
           </div>
         </li>
       </ul>

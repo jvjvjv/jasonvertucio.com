@@ -16,7 +16,6 @@ class BlogController extends Controller
         'links' => [
           [ 'href' => '#', 'label' => 'Posts' ]
         ],
-        'wink_authenticated' => request()->is_wink_authenticated
     ]);
   }
 
@@ -25,7 +24,6 @@ class BlogController extends Controller
     $post = WinkPost::where('slug',$slug)->firstOrFail();
     return view('blog.single', [
       'post' => $post,
-      'wink_authenticated' => request()->is_wink_authenticated
     ]);
   }
 }
