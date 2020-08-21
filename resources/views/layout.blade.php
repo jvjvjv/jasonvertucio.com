@@ -6,22 +6,25 @@ if (!isset($links)) {
 $meta = [
   'author' => 'Jason Vertucio',
   'description' => 'Jason Vertucio does mobile application development.',
+  'og:title' => 'Jason, who did a thing',
+  'og:url' => Request::url(),
+  'og:image' => 'https://beepbeepritchiellc.com/HDTV.png',
   'twitter:card' => 'summary',
   'twitter:title' => 'Jason, who did a thing',
   'twitter:image' => 'https://beepbeepritchiellc.com/HDTV.png',
   'twitter:creator' => '@jasondidathing',
   'twitter:site' => '@jasondidathing',
-  'og:url' => Request::url(),
-  'og:image' => 'https://beepbeepritchiellc.com/HDTV.png',
 ];
 if (isset($post) && isset($post['meta'])) {
+  $twitter_image = $post['meta']['twitter_image'] ?? url($post['featured_image']) ?? null;
+  $opengraph_image = $post['meta']['opengraph_image'] ?? url($post['featured_image']) ?? null;
   $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
   $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
-  $meta['twitter:image'] = url($post['meta']['twitter_image'] ?? $post['featured_image'] ?? null)->full();
+  $meta['twitter:image'] = $twitter_image;
   $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $meta['description'];
   $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
   $meta['og:description'] = $post['meta']['opengraph_description'] ?? $meta['description'];
-  $meta['og:image'] = url($post['meta']['opengraph_image'] ?? $post['featured_image'] ?? null)->full();
+  $meta['og:image'] = $opengraph_image;
 }
 @endphp
 <!DOCTYPE html>
@@ -84,7 +87,7 @@ if (isset($post) && isset($post['meta'])) {
             @endif
             @ifwinkauthenticated
             <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="{{ route('blog') }}">
+            <a class="dropdown-item" href="/wink">
               Wink Blog
             </a>
             {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
