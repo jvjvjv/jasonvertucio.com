@@ -6,13 +6,15 @@
 <div id="fb-root"></div>
 <script async defer cookie-consent="functionality" crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v8.0" nonce="oiR10rcH"></script>
 <div class="blog-item single">
+
   <h2 class="title">
     {{ $post['title'] }}
   </h2>
   <div class="content">
     {!! $post['content'] !!}
   </div>
-  <div class="list-meta">
+
+    <div class="list-meta">
     {{-- @if ($post->author)
       <strong>By:</strong> {{ $post->author['name'] }}
       |
