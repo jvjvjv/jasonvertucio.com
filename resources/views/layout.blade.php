@@ -21,9 +21,9 @@ if (isset($post) && isset($post['meta'])) {
   $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
   $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
   $meta['twitter:image'] = $twitter_image;
-  $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $meta['description'];
+  $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $post['excerpt'] ?? $meta['description'];
   $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
-  $meta['og:description'] = $post['meta']['opengraph_description'] ?? $meta['description'];
+  $meta['og:description'] = $post['meta']['opengraph_description'] ?? $post['excerpt'] ?? $meta['description'];
   $meta['og:image'] = $opengraph_image;
 }
 @endphp
