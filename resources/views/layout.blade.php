@@ -16,8 +16,8 @@ $meta = [
   'twitter:site' => '@jasondidathing',
 ];
 if (isset($post) && isset($post['meta'])) {
-  $twitter_image = $post['meta']['twitter_image'] ?? url($post['featured_image']) ?? null;
-  $opengraph_image = $post['meta']['opengraph_image'] ?? url($post['featured_image']) ?? null;
+  $twitter_image = $post['meta']['twitter_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
+  $opengraph_image = $post['meta']['opengraph_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
   $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
   $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
   $meta['twitter:image'] = $twitter_image;
