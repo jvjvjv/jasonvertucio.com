@@ -8,17 +8,13 @@
 
 <div class="container">
   <div class="row">
-    <div class="col">
-      <h2 class="title mt-3 mb-5">
-        {{ $post['title'] }}
-      </h2>
-    </div>
-  </div>
-
-  <div class="row">
     <div class="col-sm-8">
 
       <div class="blog-item single">
+        <h2 class="title mt-3 mb-5">
+          {{ $post['title'] }}
+        </h2>
+
         <div class="content">
           {!! $post['content'] !!}
         </div>
@@ -66,6 +62,11 @@
       </div>
     </div>
     <div class="col-sm-4">
+      <h2 class="mt-3 mb-5">
+        <span style="opacity:0;">
+          I'm just here for spacing.
+        </span>
+      </h2>
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
       <!-- JV_Laravel_Sidebar -->
       <ins class="adsbygoogle"
