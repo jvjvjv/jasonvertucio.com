@@ -66,7 +66,6 @@
       </div>
     </div>
     <div class="col-sm-4">
-      <script data-ad-client="ca-pub-0429292532295045" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
       <em>This space intentionally left blank.</em>
     </div>
   </div>

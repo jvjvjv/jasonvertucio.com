@@ -41,7 +41,6 @@
         <a href="/wink/posts/{{ $list_item['id'] }}" class="card-link">Edit</a>
         @endifwinkauthenticated
       </div>
-      <script data-ad-client="ca-pub-0429292532295045" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     </div>
     @endforeach
   </div>
