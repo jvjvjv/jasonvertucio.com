@@ -19,12 +19,12 @@ if (isset($post) && isset($post['meta'])) {
   $twitter_image = $post['meta']['twitter_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
   $opengraph_image = $post['meta']['opengraph_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
   $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
+  $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
+  $meta['og:image'] = $opengraph_image;
+  $meta['og:description'] = $post['meta']['opengraph_description'] ?? $post['excerpt'] ?? $meta['description'];
   $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
   $meta['twitter:image'] = $twitter_image;
   $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $post['excerpt'] ?? $meta['description'];
-  $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
-  $meta['og:description'] = $post['meta']['opengraph_description'] ?? $post['excerpt'] ?? $meta['description'];
-  $meta['og:image'] = $opengraph_image;
 }
 @endphp
 <!DOCTYPE html>
@@ -98,7 +98,7 @@ if (isset($post) && isset($post['meta'])) {
     </div><!-- /.navbar-collapse -->
   </nav>
 
-  <div class="container-fluid m-0 p-0">
+  <div class="container-fluid mx-0 my-1 p-0">
 
   @yield('main')
 
