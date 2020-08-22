@@ -41,6 +41,7 @@ if (isset($post) && isset($post['meta'])) {
   <title>@yield('title', 'Home') | Jason Vertucio</title>
   {{-- Custom styles for this template --}}
   <link href="{{asset('css/blog.css') }}" rel="stylesheet">
+  <script data-ad-client="ca-pub-0429292532295045" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 </head>
 
 <body id="page-top">
