@@ -67,7 +67,13 @@
           I'm just here for spacing.
         </span>
       </h2>
-      <a class="twitter-timeline" data-dnt="true" data-theme="light" href="https://twitter.com/jasondidathing?ref_src=twsrc%5Etfw">Tweets by jasondidathing</a>
+      <a class="twitter-timeline"
+        data-dnt="true"
+        data-theme="light"
+        data-tweet-limit="5"
+        href="https://twitter.com/jasondidathing?ref_src=twsrc%5Etfw">
+        Tweets by jasondidathing
+      </a>
       <script async src="https://platform.twitter.com/widgets.js" charset="utf-8">
       </script>
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
