@@ -6,21 +6,21 @@ use Illuminate\Console\Command;
 use App\User;
 use Hash;
 
-class CreateUserCommand extends Command
+class ChangeUserPasswordCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'user:create {email} {name} {password?}';
+    protected $signature = 'user:password {email} {new-password}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Creates a new user';
+    protected $description = "Changes a user's password";
 
     /**
      * Create a new command instance.
@@ -40,8 +40,7 @@ class CreateUserCommand extends Command
     public function handle()
     {
       $email = $this->argument('email');
-      $name = $this->argument('name');
-      $password = $this->argument('password');
+      $password = $this->argument('new-password');
       if ($password == null) {
         $password = $this->secret('Enter new password');
         $password_confirm = $this->secret('Enter password again to confirm');
@@ -50,11 +49,9 @@ class CreateUserCommand extends Command
           return 1;
         }
       }
-      User::create([
-        'name' => $name,
-        'email' => $email,
-        'password' => Hash::make($password),
-      ]);
+      $user = User::whereEmail($email)->first();
+      $user->password = Hash::make($password);
+      $user->save();
       $this->info("DONE");
     }
 }
