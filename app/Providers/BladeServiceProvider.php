@@ -29,5 +29,9 @@ class BladeServiceProvider extends ServiceProvider
           $auth = Auth::guard('wink');
           return $auth->check();
       });
+
+      Blade::if('ifauthenticated', function () {
+          return Auth::check();
+      });
     }
 }

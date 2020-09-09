@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('layout')
 
-@section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+@section('main')
+
+    <div class="row justify-content-center my-5">
+        <div class="col-md-4">
             <div class="card">
                 <div class="card-header">{{ __('Login') }}</div>
 
@@ -56,18 +56,12 @@
                                 <button type="submit" class="btn btn-primary">
                                     {{ __('Login') }}
                                 </button>
-
-                                @if (Route::has('password.request'))
-                                    <a class="btn btn-link" href="{{ route('password.request') }}">
-                                        {{ __('Forgot Your Password?') }}
-                                    </a>
-                                @endif
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
+
 </div>
 @endsection

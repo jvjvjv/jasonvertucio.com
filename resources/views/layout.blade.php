@@ -28,7 +28,7 @@ if (isset($post) && isset($post['meta'])) {
 }
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -44,7 +44,7 @@ if (isset($post) && isset($post['meta'])) {
   <script data-ad-client="ca-pub-0429292532295045" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 </head>
 
-<body id="page-top">
+<body id="page-top" class="d-flex flex-column h-100">
 
   <nav class="navbar navbar-default navbar-expand-lg sticky-top navbar-light bg-primary" id="navbarTop">
     <div class="navbar-header mr-2">
@@ -93,19 +93,25 @@ if (isset($post) && isset($post['meta'])) {
             </a>
             {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
             @endifwinkauthenticated
+            @ifauthenticated
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="/logout">
+              Log out
+            </a>
+            @endifauthenticated
           </div>
         </li>
       </ul>
     </div><!-- /.navbar-collapse -->
   </nav>
 
-  <div class="container-fluid mx-0 my-1 p-0">
-
+  <div id="main">
+    <div class="container-fluid mx-0 my-1 p-0">
   @yield('main')
-
+    </div>
   </div>
 
-  <footer class="footer bg-secondary py-3 text-white position-sticky fixed-bottom">
+  <footer class="footer bg-secondary mt-auto py-3 text-white position-sticky fixed-bottom">
     <div class="container-fluid">
       <div class="row">
         <div class="col-sm text-right">
