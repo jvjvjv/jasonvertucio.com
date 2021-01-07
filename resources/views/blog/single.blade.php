@@ -59,7 +59,7 @@
           {{ json_encode ($post, JSON_PRETTY_PRINT) }}
           </pre>
         @endif
-        <div class="xc449bad4854773ff" data-options="adblock_only" data-zone="f219238022054560a077e2da484e0cb3" style="width:468px;height:60px;display: inline-block;margin: 0 auto">
+        <div class="xc449bad4854773ff" data-zone="f219238022054560a077e2da484e0cb3" style="width:468px;height:60px;display: inline-block;margin: 0 auto">
           <div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script>
         </div>
       </div>
