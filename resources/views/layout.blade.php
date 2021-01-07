@@ -27,11 +27,6 @@ if (isset($post) && isset($post['meta'])) {
   $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $post['excerpt'] ?? $meta['description'];
 }
 @endphp
-@ifwinkauthenticated
-@php
-$meta['fb:admins'] = env('FB_USER_ADMIN');
-@endphp
-@endifwinkauthenticated
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,6 +37,9 @@ $meta['fb:admins'] = env('FB_USER_ADMIN');
   <meta name="{{ $k }}" value="{{ $v }}" />
 @endif
 @endforeach
+@ifwinkauthenticated
+  <meta property="fb:admins" content="{{ env('FB_USER_ADMIN') }}" />"
+@endifwinkauthenticated
 
   <title>@yield('title', 'Home') | Jason Vertucio</title>
   {{-- Custom styles for this template --}}

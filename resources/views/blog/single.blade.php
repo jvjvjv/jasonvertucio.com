@@ -4,7 +4,7 @@
 
 @section('main')
 <div id="fb-root"></div>
-<script async defer cookie-consent="functionality" crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v8.0" nonce="oiR10rcH"></script>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v9.0" nonce="7J4QKvua"></script>
 
 <div class="container">
   <div class="row">
@@ -40,6 +40,7 @@
               class="fb-share-button"
               data-href="{{ Request::url() }}"
               data-lazy="true"
+              data-colorscheme="dark"
               data-order-by="social"
               data-layout="button_count"></div>
           </div>
@@ -50,6 +51,7 @@
             class="fb-comments"
             data-href="{{ Request::url() }}"
             data-lazy="true"
+            data-colorscheme="dark"
             data-numposts="10"
             data-width="100%"></div>
         </div>
