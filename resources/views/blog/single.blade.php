@@ -59,7 +59,9 @@
           {{ json_encode ($post, JSON_PRETTY_PRINT) }}
           </pre>
         @endif
-        <div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script>
+        <div class="xc449bad4854773ff" data-options="adblock_only" data-zone="f219238022054560a077e2da484e0cb3" style="width:468px;height:60px;display: inline-block;margin: 0 auto">
+          <div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script>
+        </div>
       </div>
     </div>
     <div class="col-sm-4">
@@ -76,17 +78,6 @@
         Tweets by jasondidathing
       </a>
       <script async src="https://platform.twitter.com/widgets.js" charset="utf-8">
-      </script>
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-      <!-- JV_Laravel_Sidebar -->
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-0429292532295045"
-           data-ad-slot="8839999192"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
       </script>
     </div>
   </div>
