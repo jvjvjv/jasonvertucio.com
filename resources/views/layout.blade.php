@@ -37,9 +37,7 @@ if (isset($post) && isset($post['meta'])) {
   <meta name="{{ $k }}" value="{{ $v }}" />
 @endif
 @endforeach
-@ifwinkauthenticated
-  <meta property="fb:admins" content="{{ env('FB_USER_ADMIN') }}" />"
-@endifwinkauthenticated
+  <meta property="fb:app_id" content="{{ env('FB_APP_ID') }}" />
 
   <title>@yield('title', 'Home') | Jason Vertucio</title>
   {{-- Custom styles for this template --}}
@@ -48,6 +46,8 @@ if (isset($post) && isset($post['meta'])) {
 </head>
 
 <body id="page-top">
+  <div id="fb-root"></div>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v9.0&appId=695473097788503&autoLogAppEvents=1" nonce="{{ Str::random(8) }}"></script>
 
   <nav class="navbar navbar-default navbar-expand-lg sticky-top navbar-light bg-primary" id="navbarTop">
     <div class="navbar-header mr-2">
