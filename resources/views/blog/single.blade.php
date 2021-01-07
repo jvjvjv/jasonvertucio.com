@@ -59,6 +59,7 @@
           {{ json_encode ($post, JSON_PRETTY_PRINT) }}
           </pre>
         @endif
+        <div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script>
       </div>
     </div>
     <div class="col-sm-4">
