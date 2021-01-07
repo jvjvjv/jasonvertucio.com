@@ -27,6 +27,11 @@ if (isset($post) && isset($post['meta'])) {
   $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $post['excerpt'] ?? $meta['description'];
 }
 @endphp
+@ifwinkauthenticated
+@php
+$meta['fb:admins'] = env('FB_USER_ADMIN');
+@endphp
+@endifwinkauthenticated
 <!DOCTYPE html>
 <html lang="en">
 <head>
