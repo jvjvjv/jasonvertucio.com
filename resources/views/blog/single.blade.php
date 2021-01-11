@@ -49,6 +49,7 @@
             class="fb-comments"
             data-href="{{ Request::url() }}"
             data-lazy="true"
+            data-order-by="social"
             data-colorscheme="dark"
             data-numposts="10"
             data-width="100%"></div>
