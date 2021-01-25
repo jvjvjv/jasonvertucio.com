@@ -53,12 +53,12 @@
         font-size: 0.75rem;
         text-align: center;
       }
+    }
 
-      blockquote {
-        margin: 0 0 1rem;
-        border-left: 0.25rem solid darken($text-color, 0.25);
-        padding-left: 0.25rem;
-      }
+    blockquote {
+      margin: 0 0 1rem;
+      border-left: 0.25rem solid lighten($text-color, 0.25);
+      padding-left: 0.75rem;
     }
   }
 
