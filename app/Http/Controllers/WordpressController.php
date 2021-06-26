@@ -33,10 +33,10 @@ class WordpressController extends Controller
         if ($action == 'Register') {
           $user_email = $action = $request->input('user_email');
           $user_login = $action = $request->input('user_login');
-          Log::channel('slack_debug')->info("{$ip} just got banned! for trying to register with email \"{$user_email}\" and username \"{$user_login}\"!");
+          // Log::channel('slack_debug')->info("{$ip} just got banned! for trying to register with email \"{$user_email}\" and username \"{$user_login}\"!");
           Log::notice("{$ip} just banned! for trying to register with email \"{$user_email}\" and username \"{$user_login}\"!");
         } else {
-          Log::channel('slack_debug')->info("{$ip} just got banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
+          // Log::channel('slack_debug')->info("{$ip} just got banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
           Log::notice("{$ip} just banned! for trying to log in with username \"{$log}\" and password \"{$pwd}\"!");
         }
         $restricted_ips = IpBan::all()->map(function ($item) {
