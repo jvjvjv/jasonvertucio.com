@@ -37,9 +37,9 @@
       "sur": "Vertucio"
     },
     "address": {
-      "city": "Lancaster",
+      "city": "Philadelphia",
       "state": "PA",
-      "zip": "17601"
+      "zip": "19107"
     },
     "phone": "(267) 702-5298",
     "email": {
@@ -67,15 +67,11 @@
     "lang": [
       {
         "icon": "js-square",
-        "label": "ECMAScript/JavaScript"
+        "label": "ECMAScript/JavaScript & TypeScript"
       },
       {
-        "icon": "html5",
-        "label": "HTML"
-      },
-      {
-        "icon": "css3-alt",
-        "label": "CSS"
+        "icon": "php",
+        "label": "PHP"
       },
       {
         "icon": "sass",
@@ -84,10 +80,6 @@
       {
         "icon": "node",
         "label": "NodeJS"
-      },
-      {
-        "icon": "php",
-        "label": "PHP"
       },
       {
         "icon": "google-play",
@@ -168,51 +160,91 @@
         "label": "ReactJS, ReactNative"
       }
     ],
+    "api": [
+      {
+        "icon": "paypal",
+        "label": "PayPal"
+      },
+      {
+        "icon": "stripe",
+        "label": "Stripe"
+      },
+      {
+        "icon": "twitter",
+        "label": "Twitter"
+      },
+      {
+        "icon": "wordpress-simple",
+        "label": "Wordpress"
+      },
+      {
+        "icon": "facebook-square",
+        "label": "Facebook"
+      },
+      {
+        "icon": "Paper",
+        "label": "Paper"
+      }
+    ],
+    "source_control": [
+      {
+        "icon": "git-alt",
+        "label": "git"
+      },
+      {
+        "icon": "npm",
+        "label": "npm package manager"
+      },
+      {
+        "icon": "sourcetree",
+        "label": "Sourecetree"
+      },
+      {
+        "icon": "github",
+        "label": "Github"
+      },
+      {
+        "icon": "bitbucket",
+        "label": "Bitbucket"
+      },
+      {
+        "icon": "jenkins",
+        "label": "Jenkins"
+      }
+    ],
     "workflow": [
-    {
-      "icon": "slack",
-      "label": "Slack"
-    },
-    {
-      "icon": "sketch",
-      "label": "Sketch"
-    },
-    {
-      "icon": "git-alt",
-      "label": "Git"
-    },
-    {
-      "icon": "sourcetree",
-      "label": "sourcetree"
-    },
-    {
-      "icon": "github",
-      "label": "Github"
-    },
-    {
-      "icon": "bitbucket",
-      "label": "Bitbucket"
-    },
-    {
-      "icon": "jira",
-      "label": "Jira"
-    },
-    {
-      "icon": "confluence",
-      "label": "Confluence"
-    },
-    {
-      "icon": "jenkins",
-      "label": "Jenkins"
-    }
-  ]
+      {
+        "icon": "slack",
+        "label": "Slack"
+      },
+      {
+        "icon": "rocketchat",
+        "label": "Rocket.Chat"
+      },
+      {
+        "icon": "sketch",
+        "label": "Sketch"
+      },
+      {
+        "icon": "jira",
+        "label": "Jira"
+      },
+      {
+        "icon": "confluence",
+        "label": "Confluence"
+      },
+      {
+        "icon": "microsoft",
+        "label": "Azure DevOps"
+      }
+    ]
   },
   "workflow": [
     "Mobile-First, Responsive Design",
     "App development using Ionic, VueJS, React, NativeScript",
     "Lightweight API development using ExpressJS, Lumen, Laravel",
     "Cross Browser Testing &amp; Debugging",
-    "Agile Development &amp; Scrum"
+    "Agile Development"
   ],
   "interests": [
     "I love driving. I play guitar and a couple of other instruments.",

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
+use App\View\Components\TechSkill;
 use Auth;
 
 class BladeServiceProvider extends ServiceProvider
@@ -29,5 +30,6 @@ class BladeServiceProvider extends ServiceProvider
           $auth = Auth::guard('wink');
           return $auth->check();
       });
+      Blade::component('tech-skill', TechSkill::class);
     }
 }
