@@ -127,32 +127,44 @@
 
         <div class="subheading mb-3">Programming Languages &amp; Tools</div>
         <ul class="list-inline dev-icons">
-          @foreach ($config['icons']['lang'] as $tech)
-          <li class="list-inline-item"><i class="fab fa-{{$tech['icon'] }}" title="{{ $tech['label'] }}"></i></li>
+          @foreach ($config['icons']['lang'] as $icon)
+            <x-tech-skill type="Language" :icon="$icon" />
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['framework'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+            <x-tech-skill type="Framework" :icon="$icon" />
           @endforeach
         </ul>
-
+{{-- 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['browser'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" data-toggle="tooltip" data-placement="right" title="{{ $icon['label'] }}"></i></li>
+          @endforeach
+        </ul>
+--}}
+        <ul class="list-inline dev-icons">
+          @foreach ($config['icons']['api'] as $icon)
+            <x-tech-skill type="API" :icon="$icon" />
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['tech'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+            <x-tech-skill type="Tech" :icon="$icon" />
+          @endforeach
+        </ul>
+
+        <ul class="list-inline dev-icons">
+          @foreach ($config['icons']['source_control'] as $icon)
+          <x-tech-skill type="SCM/CI" :icon="$icon" />
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['workflow'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+            <x-tech-skill type="Workflow" :icon="$icon" />
           @endforeach
         </ul>
 

@@ -25,4 +25,7 @@
   //   target: '#sideNav'
   // });
 
+  // Enable tooltips
+  $('[data-toggle="tooltip"]').tooltip();
+
 })(jQuery); // End of use strict
