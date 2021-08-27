@@ -185,6 +185,20 @@
         @foreach($config['interests'] as $interest)
         <p>{!! $interest !!}</p>
         @endforeach
+        @if($btc)
+          <p>Oh. And as of {{ $btc->time->updateduk}}, the price of BTC is:</p>
+          <ul>
+          @foreach($btc->bpi as $item) 
+           <li>
+            <span style="font-family: ui-monospace;"><strong>{{ $item->code }}:</strong></span>
+            {{-- @currency($item->symbol, $item->rate_float) --}}
+            <span style="font-family: monospace;">{!! $item->symbol !!}{{ $item->rate_float }}</span>
+           </li>
+          @endforeach
+          </ul>
+          <p><small>Powered by <a href="https://www.coindesk.com/price/bitcoin" target="_blank">Coindesk</a>. {{ $btc->disclaimer }}</small></p>
+          {{-- @json($btc, JSON_PRETTY_PRINT) --}}
+        @endif
       </div>
     </section>
 
