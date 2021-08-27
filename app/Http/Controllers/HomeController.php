@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Http\Request;
 use Wink\WinkPost;
+use GuzzleHttp\Client as Guzzle;
 use Artisan;
 use Cache;
 
@@ -13,6 +14,17 @@ class HomeController extends Controller
 
   public function index(Request $request)
   {
+    $btc = Cache::get('btc');
+    if (!$btc) {
+      $client = new Guzzle;
+      $response = $client->get("https://api.coindesk.com/v1/bpi/currentprice.json");
+      try {
+        $btc = json_decode((string)$response->getBody());
+        Cache::add('btc', $btc, 60);
+      } catch (\Exception $e) {
+        //
+      }
+    }
     $harvested = Cache::get('paper_harvested');
     if (!$harvested) {
       Artisan::call('paper:harvest',[
@@ -28,7 +40,8 @@ class HomeController extends Controller
     $latest_post = WinkPost::published()->live()->orderBy('publish_date','DESC')->get()[0];
     return view('home', [
       'blog' => $latest_post,
-      'config' => $config
+      'config' => $config,
+      'btc' => $btc,
     ]);
   }
 }
