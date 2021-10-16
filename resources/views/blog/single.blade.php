@@ -60,9 +60,8 @@
           {{ json_encode ($post, JSON_PRETTY_PRINT) }}
           </pre>
         @endif
-        <div class="xc449bad4854773ff" data-zone="f219238022054560a077e2da484e0cb3" style="width:468px;height:60px;display: inline-block;margin: 0 auto">
-          <div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script>
-        </div>
+        {{-- <div class="xc449bad4854773ff" data-zone="f219238022054560a077e2da484e0cb3" style="width:468px;height:60px;display: inline-block;margin: 0 auto"><div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script></div> --}}
+        <div class="alignleft"><script type="text/javascript">amzn_assoc_ad_type = "banner";amzn_assoc_marketplace = "amazon";amzn_assoc_region = "US";amzn_assoc_placement = "assoc_banner_placement_default";amzn_assoc_banner_type = "ez";amzn_assoc_p = "13";amzn_assoc_width = "468";amzn_assoc_height = "60";amzn_assoc_tracking_id = "pk00m-20";amzn_assoc_linkid = "d7baa57a05d736fce70b74278fcab525";</script><script src="//z-na.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&Operation=GetScript&ID=OneJS&WS=1"></script></div>
       </div>
     </div>
     <div class="col-sm-4">
