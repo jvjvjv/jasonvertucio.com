@@ -35,6 +35,9 @@ class MigrateWinkToCanvasCommand extends Command
    */
   protected $description = 'Takes a Wink Blog and moves it to Canvas';
 
+  private $winkAuthorMapping;
+
+
   /**
    * Create a new command instance.
    *
@@ -42,6 +45,7 @@ class MigrateWinkToCanvasCommand extends Command
    */
   public function __construct()
   {
+    $this->winkAuthorMapping = array();
     parent::__construct();
   }
 
@@ -53,13 +57,31 @@ class MigrateWinkToCanvasCommand extends Command
   public function handle()
   {
     // Map WinkAuthor to User wherever possible
-    $wink_author_mapping = array();
+    $this->info("Mapping Wink Authors to users ...");
+    $this->mapWinkAuthors();
+
+    // Map Wink Tags
+    $this->info("Mapping Wink Tags ...");
+    $this->mapWinkTags();
+
+    // Map Wink Pages
+    $this->info("Mapping Wink Pages ...");
+    $this->mapWinkPages();
+
+    // Map Wink Posts
+    $this->info("Mapping Wink Posts ...");
+    $this->mapWinkPosts();
+
+    $this->info("Done");
+  }
+
+  private function mapWinkAuthors() {
     $wink_authors = WinkAuthor::all();
-    $wink_authors->each(function($author) use (&$wink_author_mapping) {
+    $wink_authors->each(function($author) {
       $this->info("Processing Author: {$author->name}");
       $user = User::whereEmail($author->email)->first();
       if ($user) {
-        array_push($wink_author_mapping,[
+        array_push($this->winkAuthorMapping,[
           'user_id' => $user->id,
           'wink_author_id' => $author->id,
         ]);
@@ -81,7 +103,7 @@ class MigrateWinkToCanvasCommand extends Command
           'name' => $author->name,
           'password' => $new_pw,
         ]);
-        array_push($wink_author_mapping,[
+        array_push($this->winkAuthorMapping,[
           'user_id' => $user->id,
           'wink_author_id' => $author->id,
         ]);
@@ -95,41 +117,48 @@ class MigrateWinkToCanvasCommand extends Command
         ]);
       }
     });
+  }
 
-    // Map Wink Tags
+  private function mapWinkTags() {
     $wink_tags = WinkTag::all();
-    $wink_tags->each(function($tag) use ($wink_author_mapping) {
+    $wink_tags->each(function($tag) {
       $this->info("Processing Tag: {$tag->name}");
       Tag::firstOrCreate([
         'id' => $tag->id,
         'slug' => $tag->slug,
         'name' => $tag->name,
-        'user_id' => $wink_author_mapping[0]['user_id'],
+        'user_id' => $this->winkAuthorMapping[0]['user_id'],
       ]);
     });
+  }
 
-    // Map Wink Pages
+  private function mapWinkPages() {
     $wink_pages = WinkPage::all();
     // TODO: If Canvas supports pages, add pages here.
-
-    // Map Wink Posts
+    $this->comment("Or not.... this wasn't really done.");
+  }
+  
+  private function mapWinkPosts() {
     $wink_posts = WinkPost::with('tags')->get();
-    $wink_posts->each(function($post) use ($wink_author_mapping) {
-      $author = collect($wink_author_mapping)->firstWhere('wink_author_id',$post->author_id);
+    $wink_posts->each(function($post) {
+      $author = collect($this->winkAuthorMapping)->firstWhere('wink_author_id',$post->author_id);
       $this->info("Processing Post: {$post->title}");
-      if ( ! Post::where('id', $post->id) ) {
+      if ( ! Post::where('id', $post->id)->first() ) {
+        $this->comment("{$post->id} does not exist, so creating it.");
         Post::firstOrCreate([
           'id' => $post->id,
           'slug' => $post->slug,
           'title' => $post->title,
           'summary' => $post->excerpt,
           'body' => $post->body,
-          'published_at' => $post->published_date,
+          'published_at' => $post->publish_date,
           'featured_image' => $post->featured_image,
           'featured_image_caption' => $post->featured_image_caption,
           'user_id' => $author['user_id'],
           'meta' => $post->meta,
         ]);
+      } else {
+        $this->comment("{$post->id} already exists in database.");
       }
       $tags = $post->tags;
       if (sizeof($tags) > 0) {
@@ -144,7 +173,5 @@ class MigrateWinkToCanvasCommand extends Command
         });
       }
     });
-
-    $this->info("Done");
   }
 }
