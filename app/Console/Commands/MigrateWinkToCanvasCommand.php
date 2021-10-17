@@ -143,7 +143,7 @@ class MigrateWinkToCanvasCommand extends Command
           'title' => $post->title,
           'summary' => $post->excerpt,
           'body' => $post->body,
-          'published_at' => $post->publish_date,
+          'published_at' => $post->published ? $post->publish_date : null,
           'featured_image' => $post->featured_image,
           'featured_image_caption' => $post->featured_image_caption,
           'user_id' => $author['user_id'],
