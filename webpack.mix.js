@@ -13,6 +13,7 @@ const mix = require('laravel-mix');
 
 mix
   .js('resources/js/app.js', 'public/js')
+  .vue()
   .copy('resources/config/config.json','public')
   .sourceMaps()
   .sass('resources/sass/splash.scss', 'public/css')
@@ -21,3 +22,5 @@ mix
   .copyDirectory('resources/wp-includes', 'public/wp-includes')
   .copyDirectory('resources/wp-admin', 'public/wp-admin')
 ;
+mix.js('resources/js/canvas-ui/app.js', 'public/js/canvas-ui.js').vue()
+    .sass('resources/sass/canvas-ui.scss', 'public/css/canvas-ui.css');

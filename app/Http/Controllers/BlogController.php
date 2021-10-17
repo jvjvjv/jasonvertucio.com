@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use \Wink\WinkPost;
+use Canvas\Models\Post;
 
 class BlogController extends Controller
 {
 
   public function index()
   {
-    $list = WinkPost::live()->published()->orderBy('publish_date','DESC')->get();
+    $list = Post::published()->orderBy('published_at','DESC')->get();
     return view('blog.list', [
       'list' => $list,
         'links' => [
@@ -21,7 +21,7 @@ class BlogController extends Controller
 
   public function post($slug)
   {
-    $post = WinkPost::where('slug',$slug)->firstOrFail();
+    $post = Post::where('slug',$slug)->firstOrFail();
     return view('blog.single', [
       'post' => $post,
     ]);

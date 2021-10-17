@@ -14,17 +14,20 @@
         </h2>
 
         <div class="content">
-          {!! $post['content'] !!}
+          {!! $post['body'] !!}
         </div>
         <div class="list-meta">
           {{-- @if ($post->author)
             <strong>By:</strong> {{ $post->author['name'] }}
             |
           @endif --}}
-          <strong>Published:</strong> {{ $post['publish_date']->format('m/d/Y g:ia') }}
-          @ifwinkauthenticated
-          | <a href="/wink/posts/{{ $post['id'] }}" class="card-link">Edit</a>
-          @endifwinkauthenticated
+          <span class="card-link">
+            <strong>Published:</strong> {{ $post['published_at']->format('m/d/Y g:ia') }}
+          </span>
+          @ifcanvasauthenticated
+          <a href="/canvas/posts/{{ $post['id'] }}/stats" class="card-link">Stats</a>
+          <a href="/canvas/posts/{{ $post['id'] }}/edit" class="card-link">Edit</a>
+          @endifcanvasauthenticated
         </div>
         <div class="share">
           <span class="share-header">Share:</span>
