@@ -16,37 +16,43 @@ class BlogController extends Controller
 
   public function index()
   {
-    $list = Post::published()->orderBy('published_at','DESC')->get();
+      $list = Post::published()->orderBy('published_at','DESC')->get();
+      return view('blog.list', [
+          'list' => $list,
+          'links' => [
+              [ 'href' => '#', 'label' => 'Posts' ]
+          ],
+      ]);
+  }
+
+  public function topicList($slug)
+  {
+      $topic = Topic::with('posts')->where('slug',$slug)->firstOrFail();
+      return view('blog.list', [
+          'list' => $topic->posts->whereNotNull('published_at'),
+          'links' => [
+              [ 'href' => '#', 'label' => 'Posts' ]
+          ],
+      ]);
+  }
+
+  public function tagList($slug)
+  {
+    $tag = Tag::with('posts')->where('slug',$slug)->firstOrFail();
     return view('blog.list', [
-        'list' => $list,
-        'links' => [
-            [ 'href' => '#', 'label' => 'Posts' ]
-        ],
+      'list' => $tag->posts->whereNotNull('published_at'),
+      'links' => [
+        [ 'href' => '#', 'label' => 'Posts' ]
+      ],
     ]);
   }
 
   public function topicsOrTags($slug) {
-    $topic = Topic::with('posts')->where('slug',$slug)->first();
-    if ($topic) {
-      return view('blog.list', [
-          'list' => $topic->posts->whereNotNull('published_at'),
-          'links' => [
-            [ 'href' => '#', 'label' => 'Posts' ]
-          ],
-        ]);
-    } else {
-      $tag = Tag::with('posts')->where('slug',$slug)->first();
-      if (!$tag) {
-        abort(404);
-      } else {
-        return view('blog.list', [
-          'list' => $tag->posts->whereNotNull('published_at'),
-          'links' => [
-            [ 'href' => '#', 'label' => 'Posts' ]
-          ],
-        ]);
+      try {
+        return $this->topicList($slug);
+      } catch (\Exception $e) {
+        return $this->tagList($slug);
       }
-    }
   }
 
   public function post($slug)

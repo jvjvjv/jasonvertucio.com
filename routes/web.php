@@ -25,6 +25,8 @@ Route::view('paper', 'paper')->name('paper');
 
 Route::group(['prefix'=>'blog'], function($route) {
   $route->get('/', 'BlogController@index')->name('blog');
+  $route->get('/topics/{slug}', 'BlogController@topicList')->name('topicList');
+  $route->get('/tags/{slug}', 'BlogController@tagList')->name('tagList');
   $route->get("/{slug}", 'BlogController@post')->name('post');
 });
 
@@ -39,7 +41,7 @@ Route::prefix('canvas-ui')->group(function () {
   Route::get('tags/{slug}', [\App\Http\Controllers\CanvasUiController::class, 'showTag']);
   Route::get('tags/{slug}/posts', [\App\Http\Controllers\CanvasUiController::class, 'getPostsForTag']);
 
-  Route::get('topics', [\App\Http\Controllers\CanvasUiController::class, 'getTopics']);
+  Route::get('tag', [\App\Http\Controllers\CanvasUiController::class, 'getTopics']);
   Route::get('topics/{slug}', [\App\Http\Controllers\CanvasUiController::class, 'showTopic']);
   Route::get('topics/{slug}/posts', [\App\Http\Controllers\CanvasUiController::class, 'getPostsForTopic']);
 
