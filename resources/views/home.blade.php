@@ -118,7 +118,7 @@
         </p>
         <a class="btn btn-outline-secondary" href="/blog/{{ $blog['slug'] }}">Read</a>
         @ifcanvasauthenticated
-          <a class="btn btn-outline-primary" href="/canvas/posts/{{ $blog['id'] }}">Edit</a>
+          <a class="btn btn-outline-primary" href="/canvas/posts/{{ $blog['id'] }}/edit">Edit</a>
         @endifcanvasauthenticated
       </div>
     </section>
