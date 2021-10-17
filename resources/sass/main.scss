@@ -35,3 +35,14 @@ h6 {
 .footer {
 
 }
+
+
+/* Sticky footer
+*******************************************************************************/
+#main > .container, #main > .container-fluid {
+  padding: 60px 15px 0;
+}
+.footer > .container, .footer > .container-fluid {
+  padding-right: 15px;
+  padding-left: 15px;
+}

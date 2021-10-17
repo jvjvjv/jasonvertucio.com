@@ -30,16 +30,21 @@
         <p class="excerpt">{!! $list_item['excerpt'] !!}</p>
         @else
         @endif
-        <p class="text-small"><small>{{ $list_item['publish_date']->diffForHumans() }}</small></p>
+        <p class="text-small">
+          <small>
+            {{ $list_item['published_at']->diffForHumans() }} | {{ $list_item->readTime }}
+          </small>
+        </p>
         {{-- @if (env('APP_DEBUG'))
         <pre>{{ json_encode ($list_item, JSON_PRETTY_PRINT) }}</pre>
         @endif --}}
       </div>
       <div class="card-footer text-muted">
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">Read</a>
-        @ifwinkauthenticated
-        <a href="/wink/posts/{{ $list_item['id'] }}" class="card-link">Edit</a>
-        @endifwinkauthenticated
+        @ifcanvasauthenticated
+        <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}/stats" class="card-link">Stats</a>
+        <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}/edit" class="card-link">Edit</a>
+        @endifcanvasauthenticated
       </div>
     </div>
     @endforeach

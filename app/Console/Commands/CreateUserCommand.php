@@ -3,25 +3,24 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Wink\WinkAuthor;
+use Canvas\Models\User as CanvasUser;
 use Hash;
-use Str;
 
-class WinkChangeUserPasswordCommand extends Command
+class CreateUserCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'wink:change-user-password {email} {new-password}';
+    protected $signature = 'user:create {email} {name} {password?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Creates a new Canvas user';
 
     /**
      * Create a new command instance.
@@ -41,7 +40,8 @@ class WinkChangeUserPasswordCommand extends Command
     public function handle()
     {
       $email = $this->argument('email');
-      $password = $this->argument('new-password');
+      $name = $this->argument('name');
+      $password = $this->argument('password');
       if ($password == null) {
         $password = $this->secret('Enter new password');
         $password_confirm = $this->secret('Enter password again to confirm');
@@ -50,9 +50,11 @@ class WinkChangeUserPasswordCommand extends Command
           return 1;
         }
       }
-      $user = WinkAuthor::whereEmail($email)->first();
-      $user->password = Hash::make($password);
-      $user->save();
+      CanvasUser::create([
+        'name' => $name,
+        'email' => $email,
+        'password' => Hash::make($password),
+      ]);
       $this->info("DONE");
     }
 }

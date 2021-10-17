@@ -30,6 +30,16 @@ class BladeServiceProvider extends ServiceProvider
           $auth = Auth::guard('wink');
           return $auth->check();
       });
+
+      Blade::if('ifcanvasauthenticated', function () {
+          $auth = Auth::guard('canvas');
+          return $auth->check();
+      });
+
+      Blade::if('ifauthenticated', function () {
+          return Auth::check();
+      });
+
       Blade::component('tech-skill', TechSkill::class);
     }
 }

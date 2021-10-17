@@ -3,26 +3,24 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Cocur\Slugify\Slugify;
-use Wink\WinkAuthor;
+use Canvas\Models\User as CanvasUser;
 use Hash;
-use Str;
 
-class WinkCreateUserCommand extends Command
+class ChangeUserPasswordCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'wink:create-user {email} {name} {password?}';
+    protected $signature = 'user:password {email} {new-password?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Creates a new Wink user';
+    protected $description = "Changes a Canvas user's password";
 
     /**
      * Create a new command instance.
@@ -42,8 +40,7 @@ class WinkCreateUserCommand extends Command
     public function handle()
     {
       $email = $this->argument('email');
-      $name = $this->argument('name');
-      $password = $this->argument('password');
+      $password = $this->argument('new-password');
       if ($password == null) {
         $password = $this->secret('Enter new password');
         $password_confirm = $this->secret('Enter password again to confirm');
@@ -52,15 +49,9 @@ class WinkCreateUserCommand extends Command
           return 1;
         }
       }
-      $slugify = new Slugify();
-      WinkAuthor::create([
-        'id' => (string) Str::uuid(),
-        'name' => $name,
-        'slug' => $slugify->slugify($name),
-        'bio' => 'I have a bio!',
-        'email' => $email,
-        'password' => Hash::make($password),
-      ]);
+      $user = CanvasUser::whereEmail($email)->firstOrFail();
+      $user->password = Hash::make($password);
+      $user->save();
       $this->info("DONE");
     }
 }
