@@ -20,8 +20,36 @@ class BlogController extends Controller
       return view('blog.list', [
           'list' => $list,
           'links' => [
-              [ 'href' => '#', 'label' => 'Posts' ]
+              [ 'href' => '/blog', 'label' => 'Posts' ],
+              [ 'href' => '/blog/topics', 'label' => 'Topics' ],
+              [ 'href' => '/blog/tags', 'label' => 'Tags' ]
           ],
+      ]);
+  }
+
+  public function topics()
+  {
+      return view('blog.topics', [
+          'list' => Topic::with('user','posts')->get(),
+          'links' => 
+              [ 
+                  [ 'href' => '/blog', 'label' => 'Posts' ],
+                  [ 'href' => '/blog/topics', 'label' => 'Topics' ],
+                  [ 'href' => '/blog/tags', 'label' => 'Tags' ]
+              ]
+      ]);
+  }
+
+  public function tags()
+  {
+      return view('blog.tags', [
+        'list' => Tag::with('user','posts')->get(),
+        'links' => 
+              [ 
+                  [ 'href' => '/blog', 'label' => 'Posts' ],
+                  [ 'href' => '/blog/topics', 'label' => 'Topics' ],
+                  [ 'href' => '/blog/tags', 'label' => 'Tags' ]
+              ]
       ]);
   }
 
@@ -31,20 +59,24 @@ class BlogController extends Controller
       return view('blog.list', [
           'list' => $topic->posts->whereNotNull('published_at'),
           'links' => [
-              [ 'href' => '#', 'label' => 'Posts' ]
+              [ 'href' => '/blog', 'label' => 'Posts' ],
+              [ 'href' => '/blog/topics', 'label' => 'Topics' ],
+              [ 'href' => '/blog/tags', 'label' => 'Tags' ]
           ],
       ]);
   }
 
   public function tagList($slug)
   {
-    $tag = Tag::with('posts')->where('slug',$slug)->firstOrFail();
-    return view('blog.list', [
-      'list' => $tag->posts->whereNotNull('published_at'),
-      'links' => [
-        [ 'href' => '#', 'label' => 'Posts' ]
-      ],
-    ]);
+      $tag = Tag::with('posts')->where('slug',$slug)->firstOrFail();
+      return view('blog.list', [
+          'list' => $tag->posts->whereNotNull('published_at'),
+          'links' => [
+              [ 'href' => '/blog', 'label' => 'Posts' ],
+              [ 'href' => '/blog/topics', 'label' => 'Topics' ],
+              [ 'href' => '/blog/tags', 'label' => 'Tags' ]
+          ],
+      ]);
   }
 
   public function topicsOrTags($slug) {

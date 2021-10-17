@@ -61,7 +61,7 @@ if (isset($post) && isset($post['meta'])) {
       <ul class="navbar-nav mr-auto">
       @foreach($links as $link)
         <li class="nav-item">
-          <a href="{{ $link['href'] }}">{{ $link['label'] }}</a>
+          <a href="{{ $link['href'] }}" class="nav-link">{{ $link['label'] }}</a>
         </li>
       @endforeach
       </ul>

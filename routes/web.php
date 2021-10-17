@@ -25,8 +25,13 @@ Route::view('paper', 'paper')->name('paper');
 
 Route::group(['prefix'=>'blog'], function($route) {
   $route->get('/', 'BlogController@index')->name('blog');
+
+  $route->get('/topics', 'BlogController@topics')->name('topics');
+  $route->get('/tags', 'BlogController@tags')->name('tags');
+
   $route->get('/topics/{slug}', 'BlogController@topicList')->name('topicList');
   $route->get('/tags/{slug}', 'BlogController@tagList')->name('tagList');
+  
   $route->get("/{slug}", 'BlogController@post')->name('post');
 });
 
