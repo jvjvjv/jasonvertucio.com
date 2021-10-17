@@ -132,32 +132,44 @@
 
         <div class="subheading mb-3">Programming Languages &amp; Tools</div>
         <ul class="list-inline dev-icons">
-          @foreach ($config['icons']['lang'] as $tech)
-          <li class="list-inline-item"><i class="fab fa-{{$tech['icon'] }}" title="{{ $tech['label'] }}"></i></li>
+          @foreach ($config['icons']['lang'] as $icon)
+            <x-tech-skill type="Language" :icon="$icon" />
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['framework'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+            <x-tech-skill type="Framework" :icon="$icon" />
           @endforeach
         </ul>
-
+{{-- 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['browser'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" data-toggle="tooltip" data-placement="right" title="{{ $icon['label'] }}"></i></li>
+          @endforeach
+        </ul>
+--}}
+        <ul class="list-inline dev-icons">
+          @foreach ($config['icons']['api'] as $icon)
+            <x-tech-skill type="API" :icon="$icon" />
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['tech'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+            <x-tech-skill type="Tech" :icon="$icon" />
+          @endforeach
+        </ul>
+
+        <ul class="list-inline dev-icons">
+          @foreach ($config['icons']['source_control'] as $icon)
+          <x-tech-skill type="SCM/CI" :icon="$icon" />
           @endforeach
         </ul>
 
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['workflow'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" title="{{ $icon['label'] }}"></i></li>
+            <x-tech-skill type="Workflow" :icon="$icon" />
           @endforeach
         </ul>
 
@@ -178,6 +190,20 @@
         @foreach($config['interests'] as $interest)
         <p>{!! $interest !!}</p>
         @endforeach
+        @if($btc)
+          <p>Oh. And as of {{ $btc->time->updateduk}}, the price of BTC is:</p>
+          <ul>
+          @foreach($btc->bpi as $item) 
+           <li>
+            <span style="font-family: ui-monospace;"><strong>{{ $item->code }}:</strong></span>
+            {{-- @currency($item->symbol, $item->rate_float) --}}
+            <span style="font-family: monospace;">{!! $item->symbol !!}{{ $item->rate_float }}</span>
+           </li>
+          @endforeach
+          </ul>
+          <p><small>Powered by <a href="https://www.coindesk.com/price/bitcoin" target="_blank">Coindesk</a>. {{ $btc->disclaimer }}</small></p>
+          {{-- @json($btc, JSON_PRETTY_PRINT) --}}
+        @endif
       </div>
     </section>
 

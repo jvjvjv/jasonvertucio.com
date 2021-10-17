@@ -3,8 +3,6 @@
 @section('navhome', 'slash')
 
 @section('main')
-<div id="fb-root"></div>
-<script async defer cookie-consent="functionality" crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v8.0" nonce="oiR10rcH"></script>
 
 <div class="container">
   <div class="row">
@@ -43,6 +41,7 @@
               class="fb-share-button"
               data-href="{{ Request::url() }}"
               data-lazy="true"
+              data-colorscheme="dark"
               data-order-by="social"
               data-layout="button_count"></div>
           </div>
@@ -53,6 +52,8 @@
             class="fb-comments"
             data-href="{{ Request::url() }}"
             data-lazy="true"
+            data-order-by="social"
+            data-colorscheme="dark"
             data-numposts="10"
             data-width="100%"></div>
         </div>
@@ -62,6 +63,8 @@
           {{ json_encode ($post, JSON_PRETTY_PRINT) }}
           </pre>
         @endif
+        {{-- <div class="xc449bad4854773ff" data-zone="f219238022054560a077e2da484e0cb3" style="width:468px;height:60px;display: inline-block;margin: 0 auto"><div id="amzn-assoc-ad-edb23f49-7cb1-4556-ad28-fbb495f029ea"></div><script async src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US&adInstanceId=edb23f49-7cb1-4556-ad28-fbb495f029ea"></script></div> --}}
+        <div class="alignleft"><script type="text/javascript">amzn_assoc_ad_type = "banner";amzn_assoc_marketplace = "amazon";amzn_assoc_region = "US";amzn_assoc_placement = "assoc_banner_placement_default";amzn_assoc_banner_type = "ez";amzn_assoc_p = "13";amzn_assoc_width = "468";amzn_assoc_height = "60";amzn_assoc_tracking_id = "pk00m-20";amzn_assoc_linkid = "d7baa57a05d736fce70b74278fcab525";</script><script src="//z-na.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&Operation=GetScript&ID=OneJS&WS=1"></script></div>
       </div>
     </div>
     <div class="col-sm-4">
@@ -78,17 +81,6 @@
         Tweets by jasondidathing
       </a>
       <script async src="https://platform.twitter.com/widgets.js" charset="utf-8">
-      </script>
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-      <!-- JV_Laravel_Sidebar -->
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-0429292532295045"
-           data-ad-slot="8839999192"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
       </script>
     </div>
   </div>

@@ -54,6 +54,12 @@
         text-align: center;
       }
     }
+
+    blockquote {
+      margin: 0 0 1rem;
+      border-left: 0.125rem solid lighten($text-color, 0.25);
+      padding-left: 0.875rem;
+    }
   }
 
   .title {
