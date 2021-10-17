@@ -7,14 +7,16 @@ use Illuminate\Support\Facades\Http;
 
 use App\User;
 use App\CanvasPostsTags as PostsTags;
+
 use \Wink\WinkAuthor;
 use \Wink\WinkPage;
 use \Wink\WinkPost;
 use \Wink\WinkTag;
-use \Canvas\UserMeta;
-use \Canvas\Page;
-use \Canvas\Post;
-use \Canvas\Tag;
+
+use \Canvas\Models\User as CanvasUser;
+use \Canvas\Models\Page as CanvasPage;
+use \Canvas\Models\Post as CanvasPost;
+use \Canvas\Models\Tag  as CanvasTag;
 
 use Str;
 use Hash;
@@ -79,41 +81,31 @@ class MigrateWinkToCanvasCommand extends Command
     $wink_authors = WinkAuthor::all();
     $wink_authors->each(function($author) {
       $this->info("Processing Author: {$author->name}");
-      $user = User::whereEmail($author->email)->first();
+      $user =CanvasUser::whereEmail($author->email)->first();
       if ($user) {
         array_push($this->winkAuthorMapping,[
           'user_id' => $user->id,
           'wink_author_id' => $author->id,
         ]);
-        if (!UserMeta::whereUserId($user->id)->first()) {
-          UserMeta::create([
-            'user_id' => $user->id,
-            'username' => $author->slug,
-            'summary' => $author->bio,
-            'avatar' => $author->avatar,
-            'dark_mode' => 0,
-            'digest' => 0,
-          ]);
-        }
+        $this->comment("{$author->name} already processed");
       } else {
-        $new_pw = Hash::make(Str::random(12));
+        $new_pw = Str::random(12);
         $this->warn("Creating new user: {$author->name}. This new user's password is \"${new_pw}\".");
-        $user = User::create([
+        $user = CanvasUser::create([
+          'id' => $author->id,
           'email' => $author->email,
           'name' => $author->name,
-          'password' => $new_pw,
-        ]);
-        array_push($this->winkAuthorMapping,[
-          'user_id' => $user->id,
-          'wink_author_id' => $author->id,
-        ]);
-        UserMeta::create([
-          'user_id' => $user->id,
+          'password' => Hash::make($new_pw),
           'username' => $author->slug,
           'summary' => $author->bio,
           'avatar' => $author->avatar,
-          'dark_mode' => 0,
+          'dark_mode' => 1,
           'digest' => 0,
+        ]);
+
+        array_push($this->winkAuthorMapping,[
+          'user_id' => $user->id,
+          'wink_author_id' => $author->id,
         ]);
       }
     });
@@ -123,7 +115,7 @@ class MigrateWinkToCanvasCommand extends Command
     $wink_tags = WinkTag::all();
     $wink_tags->each(function($tag) {
       $this->info("Processing Tag: {$tag->name}");
-      Tag::firstOrCreate([
+      CanvasTag::firstOrCreate([
         'id' => $tag->id,
         'slug' => $tag->slug,
         'name' => $tag->name,
@@ -143,9 +135,9 @@ class MigrateWinkToCanvasCommand extends Command
     $wink_posts->each(function($post) {
       $author = collect($this->winkAuthorMapping)->firstWhere('wink_author_id',$post->author_id);
       $this->info("Processing Post: {$post->title}");
-      if ( ! Post::where('id', $post->id)->first() ) {
+      if ( ! CanvasPost::where('id', $post->id)->first() ) {
         $this->comment("{$post->id} does not exist, so creating it.");
-        Post::firstOrCreate([
+        CanvasPost::firstOrCreate([
           'id' => $post->id,
           'slug' => $post->slug,
           'title' => $post->title,

@@ -23,10 +23,10 @@
             <strong>By:</strong> {{ $post->author['name'] }}
             |
           @endif --}}
-          <strong>Published:</strong> {{ $post['publish_date']->format('m/d/Y g:ia') }}
-          @ifwinkauthenticated
-          | <a href="/wink/posts/{{ $post['id'] }}" class="card-link">Edit</a>
-          @endifwinkauthenticated
+          <strong>Published:</strong> {{ $post['published_at']->format('m/d/Y g:ia') }}
+          @ifauthenticated
+          | <a href="/canvas/posts/{{ $post['id'] }}" class="card-link">Edit</a>
+          @endifauthenticated
         </div>
         <div class="share">
           <span class="share-header">Share:</span>

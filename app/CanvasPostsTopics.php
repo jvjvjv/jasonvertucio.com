@@ -3,9 +3,10 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
-use \Canvas\PostsTopics;
 
-class CanvasPostsTopics extends PostsTopics
+class CanvasPostsTopics extends Model
 {
     public $dates = false;
+
+    protected $fillable = ['post_id', 'tag_id'];
 }

@@ -30,7 +30,11 @@
         <p class="excerpt">{!! $list_item['excerpt'] !!}</p>
         @else
         @endif
-        <p class="text-small"><small>{{ $list_item['publish_date']->diffForHumans() }}</small></p>
+        <p class="text-small">
+          <small>
+            {{ $list_item['published_at']->diffForHumans() }} | {{ $list_item->readTime }}
+          </small>
+        </p>
         {{-- @if (env('APP_DEBUG'))
         <pre>{{ json_encode ($list_item, JSON_PRETTY_PRINT) }}</pre>
         @endif --}}

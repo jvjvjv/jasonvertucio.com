@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\User;
+use Canvas\Models\User as CanvasUser;
 use Hash;
 
 class ChangeUserPasswordCommand extends Command
@@ -13,14 +13,14 @@ class ChangeUserPasswordCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'user:password {email} {new-password}';
+    protected $signature = 'user:password {email} {new-password?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = "Changes a user's password";
+    protected $description = "Changes a Canvas user's password";
 
     /**
      * Create a new command instance.
@@ -49,7 +49,7 @@ class ChangeUserPasswordCommand extends Command
           return 1;
         }
       }
-      $user = User::whereEmail($email)->first();
+      $user = CanvasUser::whereEmail($email)->firstOrFail();
       $user->password = Hash::make($password);
       $user->save();
       $this->info("DONE");

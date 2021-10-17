@@ -4,9 +4,9 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-use \Canvas\PostsTags;
-
-class CanvasPostsTags extends PostsTags
+class CanvasPostsTags extends Model
 {
     public $timestamps = false;
+
+    protected $fillable = ['post_id', 'tag_id'];
 }
