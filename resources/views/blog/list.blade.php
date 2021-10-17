@@ -41,9 +41,9 @@
       </div>
       <div class="card-footer text-muted">
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">Read</a>
-        @ifwinkauthenticated
-        <a href="/wink/posts/{{ $list_item['id'] }}" class="card-link">Edit</a>
-        @endifwinkauthenticated
+        @ifcanvasauthenticated
+        <a href="/canvas/posts/{{ $list_item['id'] }}" class="card-link">Edit</a>
+        @endifcanvasauthenticated
       </div>
     </div>
     @endforeach

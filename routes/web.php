@@ -21,11 +21,13 @@ Route::get('/about/{any?}', function() {
 });
 
 Route::view('paper', 'paper')->name('paper');
+
 Route::group(['prefix'=>'blog'], function($route) {
   $route->get('/', 'BlogController@index')->name('blog');
   $route->get("/{slug}", 'BlogController@post')->name('post');
 });
 
+/** Remove Canvas UI 
 Route::prefix('canvas-ui')->group(function () {
   Route::prefix('api')->group(function () {
   Route::get('posts', [\App\Http\Controllers\CanvasUiController::class, 'getPosts']);
@@ -47,6 +49,7 @@ Route::prefix('canvas-ui')->group(function () {
     ->where('view', '(.*)')
     ->name('canvas-ui');
 });
+// */
 
 // Honeypots
 Route::get('/wp-admin/load-styles.php',function() {

@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Http\Request;
-use Wink\WinkPost;
+// use Wink\WinkPost;
+use Canvas\Models\Post;
 use Artisan;
 use Cache;
 
@@ -26,7 +27,7 @@ class HomeController extends Controller
 
     $path = public_path() . "/config.json"; // ie: /var/www/laravel/public/filename.json
     $config = json_decode(file_get_contents($path), true);
-    $latest_post = WinkPost::published()->live()->orderBy('publish_date','DESC')->get()[0];
+    $latest_post = Post::published()->orderBy('published_at','DESC')->first();
     return view('home', [
       'blog' => $latest_post,
       'config' => $config

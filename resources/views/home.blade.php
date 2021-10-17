@@ -40,6 +40,11 @@
           <a class="nav-link" href="/wink">Go to Wink Blog</a>
         </li>
         @endifwinkauthenticated
+        @ifcanvasauthenticated
+        <li class="nav-item">
+          <a class="nav-link" href="/canvas">Go to Canvas Blog</a>
+        </li>
+        @endifcanvasauthenticated
         @foreach($config['links'] as $link)
         <li class="nav-item">
           @if (isset($link['target']))
@@ -109,12 +114,12 @@
         <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh well.)</p>
         @endif
         <p>
-          {{ $blog['publish_date']->diffForHumans() }}
+          {{ $blog['published_at']->diffForHumans() }}
         </p>
         <a class="btn btn-outline-secondary" href="/blog/{{ $blog['slug'] }}">Read</a>
-        @ifwinkauthenticated
-          <a class="btn btn-outline-primary" href="/wink/posts/{{ $blog['id'] }}">Edit</a>
-        @endifwinkauthenticated
+        @ifcanvasauthenticated
+          <a class="btn btn-outline-primary" href="/canvas/posts/{{ $blog['id'] }}">Edit</a>
+        @endifcanvasauthenticated
       </div>
     </section>
 

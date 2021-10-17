@@ -16,7 +16,7 @@
         </h2>
 
         <div class="content">
-          {!! $post['content'] !!}
+          {!! $post['body'] !!}
         </div>
         <div class="list-meta">
           {{-- @if ($post->author)
@@ -24,9 +24,9 @@
             |
           @endif --}}
           <strong>Published:</strong> {{ $post['published_at']->format('m/d/Y g:ia') }}
-          @ifauthenticated
+          @ifcanvasauthenticated
           | <a href="/canvas/posts/{{ $post['id'] }}" class="card-link">Edit</a>
-          @endifauthenticated
+          @endifcanvasauthenticated
         </div>
         <div class="share">
           <span class="share-header">Share:</span>
