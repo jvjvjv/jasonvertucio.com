@@ -96,6 +96,13 @@ if (isset($post) && isset($post['meta'])) {
             </a>
             {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
             @endifwinkauthenticated
+            @ifcanvasauthenticated
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="/{{ config('canvas.path') }}">
+              Canvas Blog
+            </a>
+            {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
+            @endifcanvasauthenticated
             @ifauthenticated
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="/logout">

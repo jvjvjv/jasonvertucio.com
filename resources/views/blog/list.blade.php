@@ -42,8 +42,8 @@
       <div class="card-footer text-muted">
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">Read</a>
         @ifcanvasauthenticated
-        <a href="/canvas/posts/{{ $list_item['id'] }}/stats" class="card-link">Stats</a>
-        <a href="/canvas/posts/{{ $list_item['id'] }}/edit" class="card-link">Edit</a>
+        <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}/stats" class="card-link">Stats</a>
+        <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}/edit" class="card-link">Edit</a>
         @endifcanvasauthenticated
       </div>
     </div>

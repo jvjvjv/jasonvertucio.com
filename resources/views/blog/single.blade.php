@@ -25,8 +25,8 @@
             <strong>Published:</strong> {{ $post['published_at']->format('m/d/Y g:ia') }}
           </span>
           @ifcanvasauthenticated
-          <a href="/canvas/posts/{{ $post['id'] }}/stats" class="card-link">Stats</a>
-          <a href="/canvas/posts/{{ $post['id'] }}/edit" class="card-link">Edit</a>
+          <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}/stats" class="card-link">Stats</a>
+          <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}/edit" class="card-link">Edit</a>
           @endifcanvasauthenticated
         </div>
         <div class="share">

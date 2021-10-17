@@ -42,7 +42,7 @@
         @endifwinkauthenticated
         @ifcanvasauthenticated
         <li class="nav-item">
-          <a class="nav-link" href="/canvas">Go to Canvas Blog</a>
+          <a class="nav-link" href="/{{ config('canvas.path') }}">Go to Canvas Blog</a>
         </li>
         @endifcanvasauthenticated
         @foreach($config['links'] as $link)
@@ -118,7 +118,7 @@
         </p>
         <a class="btn btn-outline-secondary" href="/blog/{{ $blog['slug'] }}">Read</a>
         @ifcanvasauthenticated
-          <a class="btn btn-outline-primary" href="/canvas/posts/{{ $blog['id'] }}/edit">Edit</a>
+          <a class="btn btn-outline-primary" href="/{{ config('canvas.path') }}/posts/{{ $blog['id'] }}/edit">Edit</a>
         @endifcanvasauthenticated
       </div>
     </section>
