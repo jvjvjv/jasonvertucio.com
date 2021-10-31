@@ -9,5 +9,6 @@ class FacebookCallbackController extends Controller
 {
     public function index(Request $request) {
         Log::info($request->input());
+        return response(null,204);
     }
 }
