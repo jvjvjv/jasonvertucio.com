@@ -37,7 +37,7 @@ if (isset($post) && isset($post['meta'])) {
   <meta name="{{ $k }}" value="{{ $v }}" />
 @endif
 @endforeach
-  <meta property="fb:app_id" content="{{ env('FB_APP_ID') }}" />
+  @yield('meta')
 
   <title>@yield('title', 'Home') | Jason Vertucio</title>
   {{-- Custom styles for this template --}}

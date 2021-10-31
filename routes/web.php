@@ -35,6 +35,8 @@ Route::group(['prefix'=>'blog'], function($route) {
   $route->get("/{slug}", 'BlogController@post')->name('post');
 });
 
+Route::post('/mlopnadjs22tn', 'FacebookCallbackController@index');
+
 /** Remove Canvas UI 
 Route::prefix('canvas-ui')->group(function () {
   Route::prefix('api')->group(function () {

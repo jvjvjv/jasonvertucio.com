@@ -87,3 +87,7 @@
 </div>
 
 @endsection
+
+@section('meta')
+<meta property="fb:app_id" content="{{ env('FB_APP_ID') }}" />
+<meta property="fb:admins" content="{{ env('FB_USER_ADMIN') }}" />
