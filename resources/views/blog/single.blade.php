@@ -52,8 +52,8 @@
             class="fb-comments"
             data-href="{{ Request::url() }}"
             data-lazy="true"
-            data-order-by="social"
-            data-colorscheme="dark"
+            data-order-by="reverse_time"
+            data-colorscheme="light"
             data-numposts="10"
             data-width="100%"></div>
         </div>
