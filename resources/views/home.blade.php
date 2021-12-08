@@ -35,11 +35,6 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav">
-        @ifwinkauthenticated
-        <li class="nav-item">
-          <a class="nav-link" href="/wink">Go to Wink Blog</a>
-        </li>
-        @endifwinkauthenticated
         @ifcanvasauthenticated
         <li class="nav-item">
           <a class="nav-link" href="/{{ config('canvas.path') }}">Go to Canvas Blog</a>
@@ -108,8 +103,8 @@
             <p class="text-center">{!! $blog['featured_image_caption'] !!}</p>
           @endif
         @endif
-        @if ($blog['excerpt'])
-        <p>{{ $blog['excerpt'] }}</p>
+        @if ($blog['summary'])
+        <p>{{ $blog['summary'] }}</p>
         @else
         <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh well.)</p>
         @endif

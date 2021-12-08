@@ -90,13 +90,6 @@ if (isset($post) && isset($post['meta'])) {
               To Do
             </a>
             @endif
-            @ifwinkauthenticated
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="/wink">
-              Wink Blog
-            </a>
-            {{-- <a class="dropdown-item" href="#">Something else here</a> --}}
-            @endifwinkauthenticated
             @ifcanvasauthenticated
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="/{{ config('canvas.path') }}">
