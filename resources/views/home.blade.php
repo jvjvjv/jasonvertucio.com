@@ -19,6 +19,8 @@
   <!-- Custom styles for this template -->
   <link href="{{asset('css/splash.css') }}" rel="stylesheet">
 
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045" crossorigin="anonymous"></script>
+
 </head>
 
 <body id="page-top">
