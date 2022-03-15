@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Canvas\Models\User as CanvasUser;
+use App\Models\User;
 use Hash;
 
 class CreateUserCommand extends Command
@@ -20,7 +21,7 @@ class CreateUserCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Creates a new Canvas user';
+    protected $description = 'Creates a new user';
 
     /**
      * Create a new command instance.
@@ -50,7 +51,7 @@ class CreateUserCommand extends Command
           return 1;
         }
       }
-      CanvasUser::create([
+      User::create([
         'name' => $name,
         'email' => $email,
         'password' => Hash::make($password),
