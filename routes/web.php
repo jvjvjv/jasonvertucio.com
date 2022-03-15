@@ -4,6 +4,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\FacebookCallbackController;
 use App\Http\Controllers\WordpressController;
+use App\Http\Controllers\Auth\LoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,10 +17,10 @@ use App\Http\Controllers\WordpressController;
 |
 */
 
-// Route::get('login', 'Auth\LoginController@showLoginForm')->name('login');
-// Route::post('login', 'Auth\LoginController@login');
-// Route::post('logout', 'Auth\LoginController@logout')->name('logout');
-// Route::get('logout', 'Auth\LoginController@logout')->name('get_logout');
+// Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+// Route::post('login', [LoginController::class, 'login']);
+// Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+// Route::get('logout', [LoginController::class, 'logout'])->name('get_logout');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about/{any?}', function() {
