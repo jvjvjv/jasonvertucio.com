@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Paper;
+use App\Models\Paper;
 
 use Illuminate\Support\Facades\Http;
 

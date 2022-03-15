@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Comment;
+use App\Models\Comment;
 use App\Mail\CommentReceivedMail;
 use Mail;
 
@@ -11,7 +11,7 @@ class CommentObserver
     /**
      * Handle the comment "created" event.
      *
-     * @param  \App\Comment  $comment
+     * @param  \App\Models\Comment  $comment
      * @return void
      */
     public function created(Comment $comment)
@@ -22,7 +22,7 @@ class CommentObserver
     /**
      * Handle the comment "updated" event.
      *
-     * @param  \App\Comment  $comment
+     * @param  \App\Models\Comment  $comment
      * @return void
      */
     public function updated(Comment $comment)
@@ -33,7 +33,7 @@ class CommentObserver
     /**
      * Handle the comment "deleted" event.
      *
-     * @param  \App\Comment  $comment
+     * @param  \App\Models\Comment  $comment
      * @return void
      */
     public function deleted(Comment $comment)
@@ -44,7 +44,7 @@ class CommentObserver
     /**
      * Handle the comment "restored" event.
      *
-     * @param  \App\Comment  $comment
+     * @param  \App\Models\Comment  $comment
      * @return void
      */
     public function restored(Comment $comment)
@@ -55,7 +55,7 @@ class CommentObserver
     /**
      * Handle the comment "force deleted" event.
      *
-     * @param  \App\Comment  $comment
+     * @param  \App\Models\Comment  $comment
      * @return void
      */
     public function forceDeleted(Comment $comment)

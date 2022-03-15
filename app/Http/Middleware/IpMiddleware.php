@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Cache;
-use App\IpBan;
+use App\Models\IpBan;
 
 class IpMiddleware
 {

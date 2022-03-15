@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Comment;
+use App\Models\Comment;
 use App\Observers\CommentObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
