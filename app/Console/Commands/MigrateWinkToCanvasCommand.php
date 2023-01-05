@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
-use App\User;
-use App\CanvasPostsTags as PostsTags;
+use App\Models\User;
+use App\Models\CanvasPostsTags as PostsTags;
 
 use \Wink\WinkAuthor;
 use \Wink\WinkPage;

@@ -10,11 +10,13 @@
     <div class="card">
       @if ($list_item['featured_image'])
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">
-          <img class="card-img-top" alt="{{ $list_item['featured_image_caption'] }}" src="{{ $list_item['featured_image'] }}">
+          <div class="image-box" style="background-image: url( {{ $list_item['featured_image'] }}">
+          </div>
+          {{-- <img class="card-img-top" alt="{{ $list_item['featured_image_caption'] }}" src="{{ $list_item['featured_image'] }}"> --}}
         </a>
-        @if ($list_item['featured_image_caption'])
+        {{-- @if ($list_item['featured_image_caption'])
           <p class="featured-caption text-center text-lowercase">{!! $list_item['featured_image_caption'] !!}</p>
-        @endif
+        @endif --}}
       @else
       <div class="no-img-provided">
         <a href="/blog/{{ $list_item['slug'] }}" class="card-link">
