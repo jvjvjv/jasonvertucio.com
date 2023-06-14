@@ -40,9 +40,9 @@ class HarvestPaperEditionsCommand extends Command
       $url .= "?edition_id={$id}";
     }
     $this->info("Fetching {$url}");
-    $response = Http::get($url);
-    $paper = $response->json()['data'];
     try {
+      $response = Http::get($url);
+      $paper = $response->json()['data'];
       $edition = Paper::where('edition_id',$paper['edition']['id'])->first();
       if (!$edition) {
         $edition = Paper::create([

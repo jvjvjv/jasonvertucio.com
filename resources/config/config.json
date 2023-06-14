@@ -17,10 +17,6 @@
       "label": "Blog"
     },
     {
-      "href": "https://jasonvertucio.com/paper",
-      "label": "Paper"
-    },
-    {
       "href": "https://jasonvertucio.com/todo",
       "label": "To Do App",
       "target": "_blank"

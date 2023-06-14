@@ -25,15 +25,17 @@ class HomeController extends Controller
         //
       }
     }
+    /* Paper.li sunset on 20 April 2023
     $harvested = Cache::get('paper_harvested');
     if (!$harvested) {
-      Artisan::call('paper:harvest',[
-        "--limit" => 2
-      ]);
-      Cache::add('paper_harvested',true, 43200);
+        Artisan::call('paper:harvest',[
+            "--limit" => 2
+        ]);
+        Cache::add('paper_harvested',true, 43200);
     } else {
-      // Already harvested
+        // Already harvested
     }
+    */
 
     $path =resource_path() . "/config/config.json"; // ie: /var/www/laravel/public/filename.json
     $config = json_decode(file_get_contents($path), true);
