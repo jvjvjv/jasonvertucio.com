@@ -1,249 +1,294 @@
 {
-  "links": [
-    {
-      "href": "#about",
-      "label": "#About"
-    },
-    {
-      "href": "#skills",
-      "label": "#Skills"
-    },
-    {
-      "href": "#interests",
-      "label": "#Interests"
-    },
-    {
-      "href": "https://jasonvertucio.com/blog",
-      "label": "Blog"
-    },
-    {
-      "href": "https://jasonvertucio.com/todo",
-      "label": "To Do App",
-      "target": "_blank"
-    },
-    {
-      "href": "https://jasonvertucio.com/btoatob",
-      "label": "Btoa(toB)",
-      "target": "_blank"
-    }
-  ],
-  "about_me": {
-    "name": {
-      "given": "Jason",
-      "sur": "Vertucio"
-    },
-    "address": {
-      "city": "Philadelphia",
-      "state": "PA",
-      "zip": "19107"
-    },
-    "phone": "(267) 702-5298",
-    "email": {
-      "email_address": "me@jasonvertucio.com",
-      "subject": "Better change this or I'll think you're spamming me",
-      "body": "Hi\r\n"
-    },
-    "sections": [
-      "I specialize in mobile app front-end development and responsive web development both for small companies and for enterprise-level businesses. I am also experienced in Laravel development in a LAMP stack. I operate sites and web applications on CentOS and Ubuntu platforms."
+    "links": [
+        {
+            "href": "#about",
+            "label": "#About"
+        },
+        {
+            "href": "#skills",
+            "label": "#Skills"
+        },
+        {
+            "href": "#interests",
+            "label": "#Interests"
+        },
+        {
+            "href": "https://jasonvertucio.com/blog",
+            "label": "Blog"
+        },
+        {
+            "href": "https://jasonvertucio.com/todo",
+            "label": "To Do App",
+            "target": "_blank"
+        },
+        {
+            "href": "https://jasonvertucio.com/btoatob",
+            "label": "Btoa(toB)",
+            "target": "_blank"
+        }
     ],
-    "social": [
-      {
-        "type": "linkedin",
-        "link": "https://www.linkedin.com/in/jasonvertucio/",
-        "fa_icon": "fa-linkedin-in"
-      },
-      {
-        "type": "twitter",
-        "link": "https://twitter.com/jasondidathing",
-        "fa_icon": "fa-twitter"
-      }
-    ]
-  },
-  "icons": {
-    "lang": [
-      {
-        "icon": "js-square",
-        "label": "ECMAScript/JavaScript & TypeScript"
-      },
-      {
-        "icon": "php",
-        "label": "PHP"
-      },
-      {
-        "icon": "sass",
-        "label": "Sass"
-      },
-      {
-        "icon": "node",
-        "label": "NodeJS"
-      },
-      {
-        "icon": "google-play",
-        "label": "Andrdoid"
-      },
-      {
-        "icon": "app-store",
-        "label": "iOS, iPadOS, Apple TV"
-      }
-    ],
-    "browser": [
-      {
-        "icon": "chrome",
-        "label": "Google Chrome"
-      },
-      {
-        "icon": "firefox-browser",
-        "label": "Mozilla Firefox"
-      },
-      {
-        "icon": "safari",
-        "label": "Safari"
-      }
-    ],
-    "tech": [
-      {
-        "icon": "linode",
-        "label": "linode"
-      },
-      {
-        "icon": "windows",
-        "label": "windows"
-      },
-      {
-        "icon": "linux",
-        "label": "Linux"
-      },
-      {
-        "icon": "centos",
-        "label": "CentOS"
-      },
-      {
-        "icon": "ubuntu",
-        "label": "Ubuntu"
-      },
-      {
-        "icon": "raspberry-pi",
-        "label": "Pi"
-      },
-      {
-        "icon": "chromecast",
-        "label": "Chromecast"
-      },
-      {
-        "icon": "bluetooth-b",
-        "label": "Bluetooth"
-      }
-    ],
-    "framework": [
-      {
-        "icon": "vuejs",
-        "label": "VueJS"
-      },
-      {
-        "icon": "laravel",
-        "label": "Laravel"
-      },
-      {
-        "icon": "bootstrap",
-        "label": "Bootstrap"
-      },
-      {
-        "icon": "angular",
-        "label": "Angular"
-      },
-      {
-        "icon": "react",
-        "label": "ReactJS, ReactNative"
-      }
-    ],
-    "api": [
-      {
-        "icon": "paypal",
-        "label": "PayPal"
-      },
-      {
-        "icon": "stripe",
-        "label": "Stripe"
-      },
-      {
-        "icon": "twitter",
-        "label": "Twitter"
-      },
-      {
-        "icon": "wordpress-simple",
-        "label": "Wordpress"
-      },
-      {
-        "icon": "facebook-square",
-        "label": "Facebook"
-      },
-      {
-        "icon": "Paper",
-        "label": "Paper"
-      }
-    ],
-    "source_control": [
-      {
-        "icon": "git-alt",
-        "label": "git"
-      },
-      {
-        "icon": "npm",
-        "label": "npm package manager"
-      },
-      {
-        "icon": "sourcetree",
-        "label": "Sourecetree"
-      },
-      {
-        "icon": "github",
-        "label": "Github"
-      },
-      {
-        "icon": "bitbucket",
-        "label": "Bitbucket"
-      },
-      {
-        "icon": "jenkins",
-        "label": "Jenkins"
-      }
-    ],
+    "about_me": {
+        "name": {
+            "given": "Jason",
+            "sur": "Vertucio"
+        },
+        "address": {
+            "city": "Philadelphia",
+            "state": "PA",
+            "zip": "19107"
+        },
+        "phone": "(267) 702-5298",
+        "email": {
+            "email_address": "me@jasonvertucio.com",
+            "subject": "Better change this or I'll think you're spamming me",
+            "body": "Hi\r\n"
+        },
+        "sections": [
+            "I specialize in mobile app front-end development and responsive web development both for small companies and for enterprise-level businesses. I am also experienced in Laravel development in a LAMP stack. I operate sites and web applications on CentOS and Ubuntu platforms."
+        ],
+        "social": [
+            {
+                "type": "linkedin",
+                "link": "https://www.linkedin.com/in/jasonvertucio/",
+                "fa_icon": "fa-linkedin-in"
+            },
+            {
+                "type": "twitter",
+                "link": "https://twitter.com/jasondidathing",
+                "fa_icon": "fa-twitter"
+            }
+        ]
+    },
+    "icons": {
+        "lang": [
+            {
+                "icon": "js-square",
+                "iconType": "fa-brands",
+                "label": "ECMAScript/JavaScript & TypeScript"
+            },
+            {
+                "icon": "php",
+                "iconType": "fa-brands",
+                "label": "PHP"
+            },
+            {
+                "icon": "sass",
+                "iconType": "fa-brands",
+                "label": "Sass"
+            },
+            {
+                "icon": "node",
+                "iconType": "fa-brands",
+                "label": "NodeJS"
+            },
+            {
+                "icon": "google-play",
+                "iconType": "fa-brands",
+                "label": "Andrdoid"
+            },
+            {
+                "icon": "app-store",
+                "iconType": "fa-brands",
+                "label": "iOS, iPadOS, Apple TV"
+            }
+        ],
+        "browser": [
+            {
+                "icon": "chrome",
+                "iconType": "fa-brands",
+                "label": "Google Chrome"
+            },
+            {
+                "icon": "firefox-browser",
+                "iconType": "fa-brands",
+                "label": "Mozilla Firefox"
+            },
+            {
+                "icon": "safari",
+                "iconType": "fa-brands",
+                "label": "Safari"
+            }
+        ],
+        "tech": [
+            {
+                "icon": "linode",
+                "iconType": "fa-brands",
+                "label": "linode"
+            },
+            {
+                "icon": "windows",
+                "iconType": "fa-brands",
+                "label": "windows"
+            },
+            {
+                "icon": "linux",
+                "iconType": "fa-brands",
+                "label": "Linux"
+            },
+            {
+                "icon": "centos",
+                "iconType": "fa-brands",
+                "label": "CentOS"
+            },
+            {
+                "icon": "ubuntu",
+                "iconType": "fa-brands",
+                "label": "Ubuntu"
+            },
+            {
+                "icon": "raspberry-pi",
+                "iconType": "fa-brands",
+                "label": "Pi"
+            },
+            {
+                "icon": "chromecast",
+                "iconType": "fa-brands",
+                "label": "Chromecast"
+            },
+            {
+                "icon": "bluetooth-b",
+                "iconType": "fa-brands",
+                "label": "Bluetooth"
+            }
+        ],
+        "framework": [
+            {
+                "icon": "vuejs",
+                "iconType": "fa-brands",
+                "label": "VueJS"
+            },
+            {
+                "icon": "laravel",
+                "iconType": "fa-brands",
+                "label": "Laravel"
+            },
+            {
+                "icon": "bootstrap",
+                "iconType": "fa-brands",
+                "label": "Bootstrap"
+            },
+            {
+                "icon": "angular",
+                "iconType": "fa-brands",
+                "label": "Angular"
+            },
+            {
+                "icon": "react",
+                "iconType": "fa-brands",
+                "label": "ReactJS, ReactNative"
+            }
+        ],
+        "api": [
+            {
+                "icon": "paypal",
+                "iconType": "fa-brands",
+                "label": "PayPal"
+            },
+            {
+                "icon": "stripe",
+                "iconType": "fa-brands",
+                "label": "Stripe"
+            },
+            {
+                "icon": "twitter",
+                "iconType": "fa-brands",
+                "label": "Twitter"
+            },
+            {
+                "icon": "wordpress-simple",
+                "iconType": "fa-brands",
+                "label": "Wordpress"
+            },
+            {
+                "icon": "facebook-square",
+                "iconType": "fa-brands",
+                "label": "Facebook"
+            },
+            {
+                "icon": "Paper",
+                "iconType": "fa-brands",
+                "label": "Paper"
+            }
+        ],
+        "source_control": [
+            {
+                "icon": "git-alt",
+                "iconType": "fa-brands",
+                "label": "git"
+            },
+            {
+                "icon": "npm",
+                "iconType": "fa-brands",
+                "label": "npm package manager"
+            },
+            {
+                "icon": "sourcetree",
+                "iconType": "fa-brands",
+                "label": "Sourecetree"
+            },
+            {
+                "icon": "github",
+                "iconType": "fa-brands",
+                "label": "Github"
+            },
+            {
+                "icon": "bitbucket",
+                "iconType": "fa-brands",
+                "label": "Bitbucket"
+            },
+            {
+                "icon": "jenkins",
+                "iconType": "fa-brands",
+                "label": "Jenkins"
+            }
+        ],
+        "workflow": [
+            {
+                "icon": "rotate-left",
+                "iconType": "fa-solid",
+                "label": "Agile"
+            },
+            {
+                "icon": "slack",
+                "iconType": "fa-brands",
+                "label": "Slack"
+            },
+            {
+                "icon": "rocketchat",
+                "iconType": "fa-brands",
+                "label": "Rocket.Chat"
+            },
+            {
+                "icon": "sketch",
+                "iconType": "fa-brands",
+                "label": "Sketch"
+            },
+            {
+                "icon": "jira",
+                "iconType": "fa-brands",
+                "label": "Jira"
+            },
+            {
+                "icon": "confluence",
+                "iconType": "fa-brands",
+                "label": "Confluence"
+            },
+            {
+                "icon": "microsoft",
+                "iconType": "fa-brands",
+                "label": "Azure DevOps"
+            }
+        ]
+    },
     "workflow": [
-      {
-        "icon": "slack",
-        "label": "Slack"
-      },
-      {
-        "icon": "rocketchat",
-        "label": "Rocket.Chat"
-      },
-      {
-        "icon": "sketch",
-        "label": "Sketch"
-      },
-      {
-        "icon": "jira",
-        "label": "Jira"
-      },
-      {
-        "icon": "confluence",
-        "label": "Confluence"
-      },
-      {
-        "icon": "microsoft",
-        "label": "Azure DevOps"
-      }
+        "Mobile-First, Responsive Design",
+        "App development using Ionic, VueJS, React, NativeScript",
+        "Lightweight API development using ExpressJS, Lumen, Laravel",
+        "Cross Browser Testing &amp; Debugging",
+        "Agile Development"
+    ],
+    "interests": [
+        "I love driving. I play guitar and a couple of other instruments.",
+        "I'm also on the lookout for a ship that can travel through all of <em>Time And Relative Dimension In Space</em>."
     ]
-  },
-  "workflow": [
-    "Mobile-First, Responsive Design",
-    "App development using Ionic, VueJS, React, NativeScript",
-    "Lightweight API development using ExpressJS, Lumen, Laravel",
-    "Cross Browser Testing &amp; Debugging",
-    "Agile Development"
-  ],
-  "interests": [
-    "I love driving. I play guitar and a couple of other instruments.",
-    "I'm also on the lookout for a ship that can travel through all of <em>Time And Relative Dimension In Space</em>."
-  ]
 }

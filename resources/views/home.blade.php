@@ -84,7 +84,7 @@
         <div class="social-icons">
           @foreach ($config['about_me']['social'] as $item)
           <a href="{{ $item['link'] }}" target="_blank">
-            <i class="fab {{ $item['fa_icon'] }}"></i>
+            <i class="fa-brands {{ $item['fa_icon'] }}"></i>
           </a>
           @endforeach
         </div>
@@ -139,10 +139,10 @@
             <x-tech-skill type="Framework" :icon="$icon" />
           @endforeach
         </ul>
-{{-- 
+{{--
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['browser'] as $icon)
-          <li class="list-inline-item"><i class="fab fa-{{$icon['icon'] }}" data-toggle="tooltip" data-placement="right" title="{{ $icon['label'] }}"></i></li>
+          <li class="list-inline-item"><i class="fa-regular fa-{{$icon['icon'] }}" data-toggle="tooltip" data-placement="right" title="{{ $icon['label'] }}"></i></li>
           @endforeach
         </ul>
 --}}
@@ -190,7 +190,7 @@
         @if($btc)
           <p>Oh. And as of {{ $btc->time->updateduk}}, the price of BTC is:</p>
           <ul>
-          @foreach($btc->bpi as $item) 
+          @foreach($btc->bpi as $item)
            <li>
             <span style="font-family: ui-monospace;"><strong>{{ $item->code }}:</strong></span>
             {{-- @currency($item->symbol, $item->rate_float) --}}
