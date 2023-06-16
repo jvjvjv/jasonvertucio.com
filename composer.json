@@ -9,14 +9,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.1.0",
-        "austintoddj/canvas": "^6.0",
+        "austintoddj/canvas": "^6.0.46",
         "binshops/laravel-blog": "^9.2",
         "cocur/slugify": "^4.0",
-        "spatie/laravel-ignition": "^1.0",
-        "fideloper/proxy": "^4.0",
+        "spatie/laravel-ignition": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
-        "laravel/framework": "^9.0",
-        "laravel/ui": "^3.0",
+        "laravel/framework": "^10.0",
+        "laravel/ui": "^4.0",
         "twilio/sdk": "^6.6"
     },
     "require-dev": {
@@ -50,7 +49,7 @@
             "Tests\\": "tests/"
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "scripts": {
         "post-autoload-dump": [
