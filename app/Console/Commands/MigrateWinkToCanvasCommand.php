@@ -90,7 +90,7 @@ class MigrateWinkToCanvasCommand extends Command
         $this->comment("{$author->name} already processed");
       } else {
         $new_pw = Str::random(12);
-        $this->warn("Creating new user: {$author->name}. This new user's password is \"${new_pw}\".");
+        $this->warn("Creating new user: {$author->name}. This new user's password is \"{$new_pw}\".");
         $user = CanvasUser::create([
           'id' => $author->id,
           'email' => $author->email,

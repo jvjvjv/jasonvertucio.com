@@ -74,11 +74,11 @@ class HarvestPaperEditionsCommand extends Command
     $limit = $this->option('limit');
     $edition_id = $this->argument('edition_id');
     $count = 0;
-    $this->info("Limit = ${limit}");
+    $this->info("Limit = {$limit}");
     do {
       $edition = Paper::where('edition_id',$edition_id)->first();
       if ($edition) {
-        $this->info("Found edition ${edition_id} in db");
+        $this->info("Found edition {$edition_id} in db");
         $edition_id = json_decode($edition->edition,true)['previous'];
       } else {
         $edition_id = $this->getEdition($edition_id);
