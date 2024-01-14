@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use App\View\Components\TechSkill;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class BladeServiceProvider extends ServiceProvider
 {
@@ -26,20 +26,20 @@ class BladeServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-      Blade::if('ifwinkauthenticated', function () {
-          $auth = Auth::guard('wink');
-          return $auth->check();
-      });
+        Blade::if('ifwinkauthenticated', function () {
+            $auth = Auth::guard('wink');
+            return $auth->check();
+        });
 
-      Blade::if('ifcanvasauthenticated', function () {
-          $auth = Auth::guard('canvas');
-          return $auth->check();
-      });
+        Blade::if('ifcanvasauthenticated', function () {
+            $auth = Auth::guard('canvas');
+            return $auth->check();
+        });
 
-      Blade::if('ifauthenticated', function () {
-          return Auth::check();
-      });
+        Blade::if('ifauthenticated', function () {
+            return Auth::check();
+        });
 
-      Blade::component('tech-skill', TechSkill::class);
+        Blade::component('tech-skill', TechSkill::class);
     }
 }

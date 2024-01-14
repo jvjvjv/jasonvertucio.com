@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use Illuminate\Http\Request;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class FacebookCallbackController extends Controller
 {
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         Log::info($request->method(), $request->input());
 
         if ($request->hub_verify_token && $request->hub_verify_token !== 'jasonvertucioisamotherfuckingdog') {
-            return response(null,401);
+            return response(null, 401);
         }
 
         if ($request->hub_mode === "subscribe") {
@@ -53,6 +54,6 @@ class FacebookCallbackController extends Controller
         return response([
             'method' => $request->method(),
             'data' => $request->input()
-        ] ,200);
+        ], 200);
     }
 }

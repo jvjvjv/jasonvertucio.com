@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\Comment;
 use App\Mail\CommentReceivedMail;
-use Mail;
+use Illuminate\Support\Facades\Mail;
 
 class CommentObserver
 {

@@ -40,19 +40,19 @@ class ChangeUserPasswordCommand extends Command
      */
     public function handle()
     {
-      $email = $this->argument('email');
-      $password = $this->argument('new-password');
-      if ($password == null) {
-        $password = $this->secret('Enter new password');
-        $password_confirm = $this->secret('Enter password again to confirm');
-        if ($password != $password_confirm) {
-          $this->error("Passwords don't match!");
-          return 1;
+        $email = $this->argument('email');
+        $password = $this->argument('new-password');
+        if ($password == null) {
+            $password = $this->secret('Enter new password');
+            $password_confirm = $this->secret('Enter password again to confirm');
+            if ($password != $password_confirm) {
+                $this->error("Passwords don't match!");
+                return 1;
+            }
         }
-      }
-      $user = User::whereEmail($email)->firstOrFail();
-      $user->password = Hash::make($password);
-      $user->save();
-      $this->info("DONE");
+        $user = User::whereEmail($email)->firstOrFail();
+        $user->password = Hash::make($password);
+        $user->save();
+        $this->info("DONE");
     }
 }
