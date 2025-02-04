@@ -37,25 +37,30 @@
             "state": "PA",
             "zip": "19107"
         },
-        "phone": "(267) 702-5298",
-        "email": {
-            "email_address": "me@jasonvertucio.com",
-            "subject": "Better change this or I'll think you're spamming me",
-            "body": "Hi\r\n"
-        },
         "sections": [
-            "I specialize in mobile app front-end development and responsive web development both for small companies and for enterprise-level businesses. I am also experienced in Laravel development in a LAMP stack. I operate sites and web applications on CentOS and Ubuntu platforms."
+            "Highly skilled front-end developer with nearly 15 years of experience in web development within a full-stack LAMP environment and proficient in multiple web application frameworks. Demonstrated expertise in delivering software solutions for diverse industries, including entertainment, sports, mobile payment processing, fleet maintenance management, corporate compliance, and corporate travel. Strong ability to excel both independently and collaboratively, effectively communicating requirements across various tech stacks while mentoring junior developers. Combining expertise in web development with Cordova, alongside native plugin development, to deliver powerful and innovative mobile applications.",
+            "<ul type=\"square\"><li>Some highlights include:<ul><li>TypeScript,</li><li>Tailwind,</li><li>Vue,</li><li>Laravel</li></ul></ul>"
         ],
         "social": [
+            {
+                "type": "bluesky",
+                "link": "https://bsky.app/profile/jasonvertucio.com",
+                "fa_icon": "fa-bluesky"
+            },
             {
                 "type": "linkedin",
                 "link": "https://www.linkedin.com/in/jasonvertucio/",
                 "fa_icon": "fa-linkedin-in"
             },
             {
-                "type": "twitter",
-                "link": "https://twitter.com/jasondidathing",
-                "fa_icon": "fa-twitter"
+                "type": "x",
+                "link": "https://x.com/jasondidathing",
+                "fa_icon": "fa-x-twitter"
+            },
+            {
+                "type": "IMDb",
+                "link": "https://www.imdb.com/name/nm5264006/",
+                "fa_icon": "fa-imdb"
             }
         ]
     },
@@ -288,7 +293,9 @@
         "Agile Development"
     ],
     "interests": [
-        "I love driving. I play guitar and a couple of other instruments.",
+        "I love driving.",
+        "I play: clarinet, piano, guitar, bass guitar, and I sing.",
+        "My main video editing software is Da Vinci Resolve. Audio recording? Cakewalk by BandLab.",
         "I'm also on the lookout for a ship that can travel through all of <em>Time And Relative Dimension In Space</em>."
     ]
 }
