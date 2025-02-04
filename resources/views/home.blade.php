@@ -67,11 +67,12 @@
           {{ $config['about_me']['address']['state'] }}
           {{ $config['about_me']['address']['zip'] }}
           ·
-          {{ $config['about_me']['phone'] }}
+          {{-- {{ $config['about_me']['phone'] ?? ''}} --}}
+          <a href="https://jasondidathing.t.me" target="_blank">Let's connect on Telegram!</a>
           ·
-          <a href="mailto:{{ $config['about_me']['email']['email_address'] }}?subject={{ $config['about_me']['email']['subject'] }}&body={{ $config['about_me']['email']['body'] }}">
+            {{-- <a href="mailto:{{ $config['about_me']['email']['email_address'] }}?subject={{ $config['about_me']['email']['subject'] }}&body={{ $config['about_me']['email']['body'] }}">
             {{ $config['about_me']['email']['email_address'] }}
-          </a>
+          </a> --}}
         </div>
         @foreach ($config['about_me']['sections'] as $section)
         <p class="lead mb-5">
