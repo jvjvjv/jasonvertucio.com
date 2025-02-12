@@ -17,8 +17,8 @@ class HomeController extends Controller
         $btc = Cache::get('btc');
         if (!$btc) {
             $client = new Guzzle;
-            $response = $client->get("https://api.coindesk.com/v1/bpi/currentprice.json");
             try {
+                $response = $client->get("https://api.coindesk.com/v1/bpi/currentprice.json");
                 $btc = json_decode((string)$response->getBody());
                 Cache::add('btc', $btc, 60);
             } catch (\Exception $e) {
