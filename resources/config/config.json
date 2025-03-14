@@ -13,6 +13,11 @@
             "label": "#Interests"
         },
         {
+            "href": "https://app.balancecloud.app",
+            "label": "BalanceCloud",
+            "target": "_blank"
+        },
+        {
             "href": "https://jasonvertucio.com/blog",
             "label": "Blog"
         },
