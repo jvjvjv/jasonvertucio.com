@@ -12,7 +12,7 @@
   <meta name="twitter:title" value="Jason, who did a thing">
   <meta name="twitter:creator" value="@jasondidathing">
   <meta name="twitter:site" value="@jasondidathing">
-  <meta name="twitter:image" value="https://beepbeepritchiellc.com/HDTV.png">
+  <meta name="twitter:image" value="https://bspdx.com/images/bspdx.png">
 
   <title>Jason Vertucio</title>
 
@@ -94,7 +94,7 @@
 
     <hr class="m-0">
 
-@if ($blog)
+{{-- @if ($blog)
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="blog">
       <div class="w-100">
         <h2 class="mb-5">Latest Blog</h2>
@@ -122,7 +122,31 @@
     </section>
 
     <hr class="m-0">
-@endif
+
+@endif --}}
+    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="projects">
+      <div class="w-100">
+        <h2 class="mb-5">Projects</h2>
+        <p>What you see on the left are a few personal projects I've made for work purposes, or for personal purposes.
+          I have a few more projects that are not listed here, but if you want to see them, please reach out to me.
+            I am always open to new projects, and I am always looking for new opportunities to learn and grow.</p>
+        @foreach ($config['projects'] as $project)
+          <x-project :project="$project" />
+        @endforeach
+      </div>
+    </section>
+
+    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="experience">
+      <div class="w-100">
+        <h2 class="mb-5">Experience</h2>
+        <p>
+            A selected portion of experience is shown below. For more information, you can reach out to me directly.
+        </p>
+        @foreach ($config['experience'] as $job)
+          <x-job :job="$job" />
+        @endforeach
+      </div>
+    </section>
 
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="skills">
       <div class="w-100">
