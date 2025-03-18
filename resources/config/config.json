@@ -2,41 +2,51 @@
     "links": [
         {
             "href": "#about",
-            "label": "#About"
+            "label": "#About",
+            "hover": "About me!"
         },
         {
             "href": "#projects",
-            "label": "#Projects"
-        },
-        {
-            "href": "#experience",
-            "label": "#Experience"
+            "label": "#Projects",
+            "hover": "Some of the work I've linked in the sidebar."
         },
         {
             "href": "#skills",
-            "label": "#Skills"
+            "label": "#Skills",
+            "hover": "A varied list of tech skillsets."
+        },
+        {
+            "href": "#experience",
+            "label": "#Experience",
+            "hover": "Selected work experience."
         },
         {
             "href": "#interests",
-            "label": "#Interests"
+            "label": "#Interests",
+            "hover": "Stuff I like to do that isn't work related."
+        },
+        {
+            "href": "https://jasonvertucio.com/blog",
+            "label": "Blog",
+            "hover": "My blog, which is mostly empty as I don't write much.",
+            "target": "_blank"
         },
         {
             "href": "https://app.balancecloud.app",
             "label": "BalanceCloud",
+            "hover": "A web application so I can manually manage my budget (requires sign up).",
             "target": "_blank"
-        },
-        {
-            "href": "https://jasonvertucio.com/blog",
-            "label": "Blog"
         },
         {
             "href": "https://jasonvertucio.com/todo",
             "label": "To Do App",
+            "hover": "A simple to-do list application.",
             "target": "_blank"
         },
         {
             "href": "https://jasonvertucio.com/btoatob",
             "label": "Btoa(toB)",
+            "hover": "A web application for encoding and decoding Base64 JSON strings.",
             "target": "_blank"
         }
     ],
@@ -51,7 +61,7 @@
             "zip": "19107"
         },
         "sections": [
-            "Highly skilled front-end developer with nearly 15 years of experience in web development within a full-stack LAMP environment and proficient in multiple web application frameworks. Demonstrated expertise in delivering software solutions for diverse industries, including entertainment, sports, mobile payment processing, fleet maintenance management, corporate compliance, and corporate travel. Strong ability to excel both independently and collaboratively, effectively communicating requirements across various tech stacks while mentoring junior developers. Combining expertise in web development with Cordova, alongside native plugin development, to deliver powerful and innovative mobile applications.",
+            "Highly skilled front-end developer with over 15 years of experience in web development within a full-stack LAMP environment and proficient in multiple web application frameworks. Demonstrated expertise in delivering software solutions for diverse industries, including entertainment, sports, mobile payment processing, fleet maintenance management, corporate compliance, and corporate travel. Strong ability to excel both independently and collaboratively, effectively communicating requirements across various tech stacks while mentoring junior developers. Combining expertise in web development with Cordova, alongside native plugin development, to deliver powerful and innovative mobile applications.",
             "<ul type=\"square\"><li>Some highlights include:<ul><li>TypeScript,</li><li>Tailwind,</li><li>Vue,</li><li>Laravel</li></ul></ul>"
         ],
         "social": [
@@ -79,16 +89,20 @@
     },
     "projects": [
         {
+            "title": "My Blog",
+            "description": "The blog is built using Canvas, assembled using custom Blade components. I'm not much of a writer, so don't expect much great content there."
+        },
+        {
             "title": "BalanceCloud",
-            "description": "A mobile-first, responsive web application for managing fleet maintenance and compliance. Built with Quasar and Laravel"
+            "description": "A mobile-first, responsive web application for managing fleet maintenance and compliance. Built with Quasar and Laravel."
         },
         {
             "title": "Btoa(toB)",
-            "description": "A web application for encoding and decoding Base64 strings. Built with AlpineJS"
+            "description": "A web application for encoding and decoding Base64 JSON objects. Built with AlpineJS. I made this to help out with some parameter encoding/decoding of API requests at one of my jobs. It got a lot of use among the team."
         },
         {
             "title": "To Do App",
-            "description": "A simple to-do list application built with AngularJS, because it is rather ancient"
+            "description": "A simple to-do list application built with AngularJS, because it is rather ancient. Designed to fit my second monitor, e.g. a TV that faces outward, so at a glace I and anyone I work with can see my daily progress."
         }
     ],
     "experience": [

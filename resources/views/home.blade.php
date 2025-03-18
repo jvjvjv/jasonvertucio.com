@@ -94,7 +94,7 @@
 
     <hr class="m-0">
 
-{{-- @if ($blog)
+@if ($blog && $blog['published_at']->diffInDays() < 90)
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="blog">
       <div class="w-100">
         <h2 class="mb-5">Latest Blog</h2>
@@ -123,7 +123,7 @@
 
     <hr class="m-0">
 
-@endif --}}
+@endif
     <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="projects">
       <div class="w-100">
         <h2 class="mb-5">Projects</h2>
@@ -132,18 +132,6 @@
             I am always open to new projects, and I am always looking for new opportunities to learn and grow.</p>
         @foreach ($config['projects'] as $project)
           <x-project :project="$project" />
-        @endforeach
-      </div>
-    </section>
-
-    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="experience">
-      <div class="w-100">
-        <h2 class="mb-5">Experience</h2>
-        <p>
-            A selected portion of experience is shown below. For more information, you can reach out to me directly.
-        </p>
-        @foreach ($config['experience'] as $job)
-          <x-job :job="$job" />
         @endforeach
       </div>
     </section>
@@ -164,13 +152,7 @@
             <x-tech-skill type="Framework" :icon="$icon" />
           @endforeach
         </ul>
-{{--
-        <ul class="list-inline dev-icons">
-          @foreach ($config['icons']['browser'] as $icon)
-          <li class="list-inline-item"><i class="fa-regular fa-{{$icon['icon'] }}" data-toggle="tooltip" data-placement="right" title="{{ $icon['label'] }}"></i></li>
-          @endforeach
-        </ul>
---}}
+
         <ul class="list-inline dev-icons">
           @foreach ($config['icons']['api'] as $icon)
             <x-tech-skill type="API" :icon="$icon" />
@@ -201,6 +183,18 @@
           <li><i class="fa-li fa fa-check"></i> {!! $line !!}</li>
           @endforeach
         </ul>
+      </div>
+    </section>
+
+    <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="experience">
+      <div class="w-100">
+        <h2 class="mb-5">Experience</h2>
+        <p>
+            A selected portion of experience is shown below. For more information, you can reach out to me directly.
+        </p>
+        @foreach ($config['experience'] as $job)
+          <x-job :job="$job" />
+        @endforeach
       </div>
     </section>
 
