@@ -20,7 +20,7 @@
     },
     "devDependencies": {
         "axios": "^1.7.9",
-        "bootstrap": "^5.3.3",
+        "bootstrap": "^4.6.2",
         "cross-env": "^7.0.3",
         "highlight.js": "^11.11.1",
         "jquery": "^3.5.1",

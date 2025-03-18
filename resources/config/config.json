@@ -1,32 +1,32 @@
 {
     "links": [
         {
-            "href": "#about",
+            "href": "/#about",
             "label": "#About",
             "hover": "About me!"
         },
         {
-            "href": "#projects",
+            "href": "/#projects",
             "label": "#Projects",
             "hover": "Some of the work I've linked in the sidebar."
         },
         {
-            "href": "#skills",
+            "href": "/#skills",
             "label": "#Skills",
             "hover": "A varied list of tech skillsets."
         },
         {
-            "href": "#experience",
+            "href": "/#experience",
             "label": "#Experience",
             "hover": "Selected work experience."
         },
         {
-            "href": "#interests",
+            "href": "/#interests",
             "label": "#Interests",
             "hover": "Stuff I like to do that isn't work related."
         },
         {
-            "href": "https://jasonvertucio.com/blog",
+            "href": "/blog",
             "label": "Blog",
             "hover": "My blog, which is mostly empty as I don't write much.",
             "target": "_blank"
@@ -38,13 +38,13 @@
             "target": "_blank"
         },
         {
-            "href": "https://jasonvertucio.com/todo",
+            "href": "/todo",
             "label": "To Do App",
             "hover": "A simple to-do list application.",
             "target": "_blank"
         },
         {
-            "href": "https://jasonvertucio.com/btoatob",
+            "href": "/btoatob",
             "label": "Btoa(toB)",
             "hover": "A web application for encoding and decoding Base64 JSON strings.",
             "target": "_blank"

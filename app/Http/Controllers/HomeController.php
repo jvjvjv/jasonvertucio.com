@@ -14,17 +14,17 @@ class HomeController extends Controller
 
     public function index(Request $request)
     {
-        $btc = Cache::get('btc');
-        if (!$btc) {
-            $client = new Guzzle;
-            try {
-                $response = $client->get("https://api.coindesk.com/v1/bpi/currentprice.json");
-                $btc = json_decode((string)$response->getBody());
-                Cache::add('btc', $btc, 60);
-            } catch (\Exception $e) {
-                //
-            }
-        }
+        // $btc = Cache::get('btc');
+        // if (!$btc) {
+        //     $client = new Guzzle;
+        //     try {
+        //         $response = $client->get("https://api.coindesk.com/v1/bpi/currentprice.json");
+        //         $btc = json_decode((string)$response->getBody());
+        //         Cache::add('btc', $btc, 60);
+        //     } catch (\Exception $e) {
+        //         //
+        //     }
+        // }
 
         $path = resource_path() . "/config/config.json"; // ie: /var/www/laravel/public/filename.json
         $config = json_decode(file_get_contents($path), true);
@@ -32,7 +32,7 @@ class HomeController extends Controller
         return view('home', [
             'blog' => $latest_post,
             'config' => $config,
-            'btc' => $btc,
+            // 'btc' => $btc,
         ]);
     }
 }

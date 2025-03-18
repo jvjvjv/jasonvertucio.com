@@ -45,9 +45,9 @@
         @foreach($config['links'] as $link)
         <li class="nav-item">
           @if (isset($link['target']))
-            <a class="nav-link js-scroll-trigger" href="{{ $link['href'] }}" target="{{ $link['target'] }}">{{ $link['label'] }}</a>
+            <a class="nav-link js-scroll-trigger" href="{{ $link['href'] }}" target="{{ $link['target'] }}" title="{{ $link['hover']}}">{{ $link['label'] }}</a>
           @else
-          <a class="nav-link js-scroll-trigger" href="{{ $link['href'] }}">{{ $link['label'] }}</a>
+          <a class="nav-link js-scroll-trigger" href="{{ $link['href'] }}" title="{{ $link['hover']}}">{{ $link['label'] }}</a>
           @endif
         </li>
         @endforeach
@@ -206,20 +206,6 @@
         @foreach($config['interests'] as $interest)
         <p>{!! $interest !!}</p>
         @endforeach
-        @if($btc)
-          <p>Oh. And as of {{ $btc->time->updateduk}}, the price of BTC is:</p>
-          <ul>
-          @foreach($btc->bpi as $item)
-           <li>
-            <span style="font-family: ui-monospace;"><strong>{{ $item->code }}:</strong></span>
-            {{-- @currency($item->symbol, $item->rate_float) --}}
-            <span style="font-family: monospace;">{!! $item->symbol !!}{{ $item->rate_float }}</span>
-           </li>
-          @endforeach
-          </ul>
-          <p><small>Powered by <a href="https://www.coindesk.com/price/bitcoin" target="_blank">Coindesk</a>. {{ $btc->disclaimer }}</small></p>
-          {{-- @json($btc, JSON_PRETTY_PRINT) --}}
-        @endif
       </div>
     </section>
 

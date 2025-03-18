@@ -3,6 +3,22 @@ if (!isset($links)) {
   $links = [];
 }
 
+$config = json_decode(file_get_contents(resource_path() . "/config/config.json" ), true);
+$places = collect([]);
+collect($config['links'])->each(function($p) use ($places) {
+    Log::debug($p['href']);
+    if (count($places) > 0 && $p['href'] == '/blog') {
+        $places->push('<div class="dropdown-divider"></div>');
+        Log::debug('Added divider');
+        return;
+    }
+    if ($p['href'] != '/blog') {
+        $places->push($p);
+        Log::debug('Added link: ' . $p['label']);
+        return;
+    }
+});
+
 $meta = [
   'author' => 'Jason Vertucio',
   'description' => 'Jason Vertucio does mobile application development.',
@@ -72,24 +88,19 @@ if (isset($post) && isset($post['meta'])) {
             Places
           </button>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="{{ route('home') }}">
-              Home
+            <a class="dropdown-item" href="{{ route('home') }}" title="Go back home">
+                Home
             </a>
-            <a class="dropdown-item" href="{{ route('blog') }}">
-              Blog
+@foreach($places as $link)
+@if (is_string($link))
+            {!! $link !!}
+@else
+            <a class="dropdown-item" href="{{ $link['href'] }}" title="{{ $link['label'] }}"{{ isset($link['target']) ? ' target="' . $link['target'] . '"' : '' }}>
+              {{ $link['label'] }}
             </a>
-            <a class="dropdown-item" href="{{ route('paper') }}">
-              Paper
-            </a>
-            @if (!env('APP_DEBUG'))
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="/btoatob">
-              B(to)a(to)B
-            </a>
-            <a class="dropdown-item" href="/todo">
-              To Do
-            </a>
-            @endif
+@endif
+@endforeach
+          </div>
             @ifcanvasauthenticated
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="/{{ config('canvas.path') }}">
@@ -119,7 +130,7 @@ if (isset($post) && isset($post['meta'])) {
     <div class="container-fluid">
       <div class="row">
         <div class="col-sm text-right">
-          <span class="text-dark">Copyright &copy; {{ date('Y') }}, Jason Vertucio.</span>
+          <span>Copyright &copy; {{ date('Y') }}, Jason Vertucio.</span>
         </div>
       </div>
     </div>
