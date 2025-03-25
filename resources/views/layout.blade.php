@@ -100,7 +100,6 @@ if (isset($post) && isset($post['meta'])) {
             </a>
 @endif
 @endforeach
-          </div>
             @ifcanvasauthenticated
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="/{{ config('canvas.path') }}">

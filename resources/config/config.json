@@ -28,8 +28,7 @@
         {
             "href": "/blog",
             "label": "Blog",
-            "hover": "My blog, which is mostly empty as I don't write much.",
-            "target": "_blank"
+            "hover": "My blog, which is mostly empty as I don't write much."
         },
         {
             "href": "https://app.balancecloud.app",
@@ -47,6 +46,12 @@
             "href": "/btoatob",
             "label": "Btoa(toB)",
             "hover": "A web application for encoding and decoding Base64 JSON strings.",
+            "target": "_blank"
+        },
+        {
+            "href": "https://ghostletter.jasonvertucio.com",
+            "label": "Ghost Letter",
+            "hover": "A web application for sending anonymous letters to people.",
             "target": "_blank"
         }
     ],
@@ -94,7 +99,7 @@
         },
         {
             "title": "BalanceCloud",
-            "description": "A mobile-first, responsive web application for managing fleet maintenance and compliance. Built with Quasar and Laravel."
+            "description": "A mobile-first, responsive web application for managing your bank accounts. Built with Quasar and Laravel."
         },
         {
             "title": "Btoa(toB)",
@@ -103,6 +108,10 @@
         {
             "title": "To Do App",
             "description": "A simple to-do list application built with AngularJS, because it is rather ancient. Designed to fit my second monitor, e.g. a TV that faces outward, so at a glace I and anyone I work with can see my daily progress."
+        },
+        {
+            "title": "Ghost Letter",
+            "description": "A UI-only demo application to send disappearing messages to your friends! Built with net.js."
         }
     ],
     "experience": [
