@@ -10,10 +10,10 @@ JasonVertucio.com will now require Laravel 7.x, as it is the new requirement for
 
 ## Dependencies
 
-* [Composer](https://getcomposer.org) - This dependency manager is required to install all other packages.
-* [Node & NPM](https://nodejs.org) - NodeJS!
-* [Laravel](https://laravel.com) - Laravel 7.x is the base framework for this site
-* [Wink](https://github.com/themsaid/wink) - Wink adds basic blog capabilities to any Laravel blog.
+-   [Composer](https://getcomposer.org) - This dependency manager is required to install all other packages.
+-   [Node & NPM](https://nodejs.org) - NodeJS!
+-   [Laravel](https://laravel.com) - Laravel 7.x is the base framework for this site
+-   [Wink](https://github.com/themsaid/wink) - Wink adds basic blog capabilities to any Laravel blog.
 
 ## Development Setup
 
@@ -56,7 +56,20 @@ If not entered, you will be prompted for a password.
 ```
 php artisan wink:change-user-password <user-email> [new-user-password]
 ```
+
 If not entered, you will be prompted for a password.
+
+## Production Deployment
+
+Deployment to a new server:
+
+1. Clone the repository.
+2. Fetch the latest changes.
+3. Set up the environment file.
+4. Set up database.
+5. Download dependencies with `composer install && npm ci`.
+6. Run migrations with `php artisan migrate` and `php artisan db:seed`.
+7. Set up Apache/Nginx to point to the `public` directory.
 
 ## Troubleshooting
 
