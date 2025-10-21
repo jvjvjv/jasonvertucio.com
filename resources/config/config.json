@@ -2,28 +2,35 @@
     "links": [
         {
             "href": "#about",
-            "label": "#About"
+            "label": "#About",
+            "ariaLabel": "About"
         },
         {
             "href": "#skills",
-            "label": "#Skills"
+            "label": "#Skills",
+            "ariaLabel": "Skills"
         },
         {
             "href": "#interests",
-            "label": "#Interests"
+            "label": "#Interests",
+            "ariaLabel": "Interests"
         },
         {
             "href": "https://jasonvertucio.com/blog",
-            "label": "Blog"
+            "label": "Blog",
+            "ariaLabel": "Blog"
+
         },
         {
             "href": "https://jasonvertucio.com/todo",
             "label": "To Do App",
+            "ariaLabel": "To Do App",
             "target": "_blank"
         },
         {
             "href": "https://jasonvertucio.com/btoatob",
             "label": "Btoa(toB)",
+            "ariaLabel": "B to A to B",
             "target": "_blank"
         }
     ],
