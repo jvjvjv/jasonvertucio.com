@@ -66,8 +66,7 @@
             "zip": "19107"
         },
         "sections": [
-            "Seasoned front-end engineer with 20 years of experience creating intuitive web applications across diverse technology stacks. Expert in delivering scalable solutions with a proven track record across multiple enterprise platforms. Excels both independently and within teams, effectively communicating technical requirements across departments and collaborating with developers at all experience levels.",
-            "<ul type=\"square\"><li>Some highlights include:<ul><li>TypeScript,</li><li>Tailwind,</li><li>Vue,</li><li>Laravel</li></ul></ul>"
+            "Senior Front-End Engineer specializing in modernization, design systems, and accessible enterprise applications across Vue 3/TypeScript and React/Next.js. Led migrations from legacy stacks and built reusable component libraries that improved delivery speed and UI consistency. Proven impact in TDD-driven quality (100% unit test coverage on micro-frontends), performance optimization, and cross-functional collaboration with design and backend teams."
         ],
         "social": [
             {
@@ -116,30 +115,45 @@
     ],
     "experience": [
         {
+            "id": "5",
+            "company": "Subaru of America",
+            "location": "Camden, NJ",
+            "date": "2025 - ",
+            "description": null,
+            "highlights": [
+                "Modernized legacy UI (Vue, AngularJS, jQuery) to React/Next.js to improve maintainability",
+                "Built React component library from Figma designs and established design system standards, cutting new feature UI build time by approximately 40% and improving cross-team consistency across development team",
+                "Drove accessibility remediation (WCAG 2.1 AA) across legacy and modern apps, resolving keyboard navigation, ARIA labeling, and color contrast issues to pass internal audits",
+                "Achieved 100% unit test coverage across micro-frontend applications via Jest and React Testing Library, reducing post-release regressions",
+                "Optimized E2E test suites and CI runtime by 50% to accelerate deployment cycles and increase developer feedback speed"
+            ]
+        },
+        {
             "id": 4,
             "company": "ERM, Inc.",
             "location": "Remote",
             "date": "2023 - 2025",
             "description": null,
             "highlights": [
-                "Maintained an internal compliance register application built with Vue, Tailwind, and .NET",
-                "Created online potential applicability compliance mapping tools, migrating from clunky Excel workbooks to sleek web applications",
-                "Refactored importer to parse old Word 97-2003 documents, converting them to HTML and readying them for integration into database"
+                "Maintained an internal compliance register application built with Vue, Tailwind, and .NET, serving regulatory compliance teams across multiple industries",
+                "Optimized workflow efficiency by digitalizing Excel-based processes into responsive web applications, reducing manual data entry and improving data accuracy",
+                "Refactored legacy document processing API to handle Word 97-2003 formats and convert to HTML, automating regulation synchronization processes"
             ]
         },
         {
             "id": 3,
             "company": "AMCS Group",
-            "location": "Remote (2020 - 2023) / King of Prussia, PA (2019 - 2020)",
+            "location": "Hybrid",
             "date": "2019 - 2023",
             "description": null,
             "highlights": [
-                "Developed enterprise-level web and hybrid mobile application for fleet maintenance management and compliance built with Vue, Kendo UI, and .NET",
-                "Led UI development team, overseeing successful project delivery in a fast-paced Agile/Scrum environment",
-                "Architected new features",
-                "Implemented codebase migration from JavaScript to TypeScript, and from Vue to Vue 3",
-                "Streamlined development processes by utilizing node to create API procies for in-development microservices, for mocking APIs, and for boilerplate Vue components",
-                "Prepared comprehensive API and technical documentation for internal use"
+                "Led development of enterprise-level fleet maintenance management application built on Vue.js, TypeScript, and Entity Framework, serving thousands of users across browser, mobile, and SSR platforms",
+                "Spearheaded migration from Vue.js/JavaScript to Vue 3/TypeScript, improving code maintainability and establishing type safety standards across the development team",
+                "Architected reusable Vue component library optimized for performance and intuitive UX, used across browser, mobile, and SSR applications to ensure consistency",
+                "Consolidated three separate codebases (Browser, Mobile, SSR) into unified architecture, reducing maintenance overhead by approximately 60% and streamlining development workflows",
+                "Established comprehensive testing strategy using Jest and Vue Test Utils with TDD methodology, ensuring reliable code quality and preventing regression issues",
+                "Led UI development team in fast-paced Agile/Scrum environment with weekly production deployments, mentoring junior developers and ensuring successful project delivery",
+                "Collaborated with backend developers to design JSON API architecture and prepared comprehensive technical specifications for cross-functional teams"
             ]
         },
         {
@@ -149,12 +163,11 @@
             "date": "2017 - 2019",
             "description": null,
             "highlights": [
-                "Played a key role in developing and maintaining white-label implementations for a video streaming platform built with Laravel",
-                [
-                    "Established SSO architecture for platform and integrated Facebook login",
-                    "Maintained and updated iOS and Android mobile applications in Objective-C and Java",
-                    "Developed smart TV apps for Apple TV and Android TV in Swift and Java"
-                ]
+                "Contributed to a streaming platform development using Laravel and Drupal CMS, serving the largest privately-owned movie streaming service in the U.S.",
+                "Developed white-label solutions for streaming partners, creating customized platforms meeting specific client functional requirements",
+                "Built cross-platform applications for iOS, Android, Android TV, and Apple TV, implementing PayPal integration and SSO architecture",
+                "Implemented Digital Rights Management technologies including PlayReady, Widevine, and FairPlay Streaming for content protection",
+                "Developed new exclusive content streaming platform with subscription-based monetization"
             ]
         },
         {
@@ -164,11 +177,10 @@
             "date": "2012 - 2017",
             "description": null,
             "highlights": [
-                "Led development of multiple hybrid mobile applications for iOS and Android using Cordova, AngularJS, jQuery Mobile, and a custom mobile framework",
-                [
-                    "Integrated high-speed video for golf-swing analysis",
-                    "Integrated streaming music provider APIs and utilized custom Bluetooth plugin for audio streaming"
-                ]
+                "Led development of multiple hybrid mobile applications using proprietary front-end frameworks, managing international contractor teams and client relationships",
+                "Built innovative mobile solutions including high-speed camera integration for B-Fit ball fitting app and live music streaming capabilities for entertainment platform",
+                "Developed social platform combining geofencing, real-time chat, and psychometric assessment tools for university environments",
+                "Created secure payment processing mobile app featuring custom authentication patterns, GPS integration, and encrypted API communications"
             ]
         }
     ],
