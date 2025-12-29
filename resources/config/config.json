@@ -33,7 +33,6 @@
             "label": "Blog",
             "hover": "My blog, which is mostly empty as I don't write much.",
             "ariaLabel": "Blog"
-
         },
         {
             "href": "https://balancecloud.app",
@@ -71,6 +70,12 @@
             "city": "Philadelphia",
             "state": "PA",
             "zip": "19107"
+        },
+        "phone": "(267)",
+        "email": {
+            "email_address": "me@jasonvertucio.com",
+            "subject": "Better change this or I'll think you're spamming me",
+            "body": "Hi\r\n"
         },
         "sections": [
             "Senior Front-End Engineer specializing in modernization, design systems, and accessible enterprise applications across Vue 3/TypeScript and React/Next.js. Led migrations from legacy stacks and built reusable component libraries that improved delivery speed and UI consistency. Proven impact in TDD-driven quality (100% unit test coverage on micro-frontends), performance optimization, and cross-functional collaboration with design and backend teams."
