@@ -1,0 +1,61 @@
+@import "tailwindcss";
+@import "@fortawesome/fontawesome-free/css/fontawesome.css";
+@import "@fortawesome/fontawesome-free/css/regular.css";
+@import "@fortawesome/fontawesome-free/css/solid.css";
+@import "@fortawesome/fontawesome-free/css/brands.css";
+
+@theme {
+    --color-primary: #1b587c;
+    --color-secondary: #b35e06;
+    --color-dark: #25292c;
+    --color-link: #4351a0;
+
+    --font-family-heading: "Convection Condensed", "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    --font-family-subheading: "Saira Extra Condensed", "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    --font-family-body: Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        sans-serif;
+
+    /* Custom text sizes to match production */
+    --text-9xl: 6rem; /* 96px - h1 main heading */
+    --text-7xl: 3.5rem; /* 56px - h2 section headings */
+    --text-4xl: 2rem; /* 32px - h3 */
+    --text-2xl: 1.5rem; /* 24px - subheading */
+    --text-sm: 0.9rem; /* 14.4px - body text */
+}
+
+/* Apply fonts globally */
+body {
+    @apply text-dark;
+    font-family: var(--font-family-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    @apply text-secondary;
+    font-family: var(--font-family-heading);
+}
+
+/* Make font utilities available */
+.font-heading {
+    font-family: var(--font-family-heading);
+}
+
+.font-body {
+    font-family: var(--font-family-body);
+}
+
+/* Other classes */
+.subheading {
+    @apply text-2xl;
+    font-family: var(--font-family-subheading);
+}
+
+.site-section {
+    @apply min-h-screen py-12 px-6 lg:px-20 lg:w-2/3 flex items-center;
+}

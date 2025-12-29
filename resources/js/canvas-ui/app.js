@@ -6,10 +6,6 @@ import base from './mixins/base';
 import moment from 'moment';
 import routes from './routes';
 
-require('bootstrap');
-
-window.Popper = require('popper.js').default;
-
 Vue.prototype.moment = moment;
 
 Vue.config.productionTip = false;

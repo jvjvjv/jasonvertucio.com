@@ -16,92 +16,102 @@
 
     <title>Jason Vertucio</title>
 
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700&display=swap" rel="stylesheet">
+    <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
+
     <!-- Custom styles for this template -->
-    <link href="{{asset('css/splash.css') }}" rel="stylesheet">
+    <link href="{{asset('css/app.css') }}" rel="stylesheet">
 
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
         crossorigin="anonymous"></script>
 
 </head>
 
-<body id="page-top">
+<body id="page-top" class="font-body text-dark bg-gray-50">
 
     <x-navigation :config="$config" />
 
-    <div class="container-fluid p-0">
+    <div class="p-0 lg:ml-64">
 
-        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="about">
-            <div class="w-100">
-                <h1 class="mb-0">{{ $config['about_me']['name']['given'] }}
+        <section class="site-section" id="about">
+            <div class="w-full">
+                <h1 class="text-9xl uppercase tracking-tight mb-0 font-bold">
+                    {{ $config['about_me']['name']['given'] }}
                     <span class="text-primary">{{ $config['about_me']['name']['sur'] }}</span>
                 </h1>
-                <div class="subheading mb-5">
+                <div class="subheading font-family-heading text-base uppercase font-medium tracking-wide mb-6">
                     {{ $config['about_me']['address']['city'] }},
                     {{ $config['about_me']['address']['state'] }}
                     {{ $config['about_me']['address']['zip'] }}
                     ·
                     {{ $config['about_me']['phone'] }}
                     ·
-                    <a
+                    <a class="text-primary hover:text-secondary"
                         href="mailto:{{ $config['about_me']['email']['email_address'] }}?subject={{ $config['about_me']['email']['subject'] }}&body={{ $config['about_me']['email']['body'] }}">
                         {{ $config['about_me']['email']['email_address'] }}
                     </a>
                 </div>
                 @foreach ($config['about_me']['sections'] as $section)
-                    <p class="lead mb-5">
+                    <p class="text-lg font-light mb-5">
                         {!! $section !!}
                     </p>
                 @endforeach
 
-                <x-currently-watching />
-
-                <div class="social-icons">
+                <div class="flex gap-4">
                     @foreach ($config['about_me']['social'] as $item)
-                        <a href="{{ $item['link'] }}" target="_blank">
+                        <a href="{{ $item['link'] }}" target="_blank"
+                            class="inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:text-secondary transition-colors">
                             <i class="fa-brands {{ $item['fa_icon'] }}"></i>
                         </a>
                     @endforeach
                 </div>
+                <div class="self-start mt-8">
+                    <x-currently-watching />
+                </div>
             </div>
         </section>
 
-        <hr class="m-0">
+        <hr class="m-0 border-0 border-t border-gray-200">
 
         @if ($blog && $blog['published_at']->diffInDays() < 90)
-        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="blog">
-            <div class="w-100">
-                <h2 class="mb-5">Latest Blog</h2>
-                <h4>{{ $blog['title'] }}</h4>
+        <section class="site-section" id="blog">
+            <div class="w-full">
+                <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Latest Blog</h2>
+                <h4 class="font-heading text-xl mb-2 font-bold">{{ $blog['title'] }}</h4>
                 @if ($blog['featured_image'])
-                    <div class="image">
-                        <img src="{{ $blog['featured_image'] }}" style="width: 100%;">
+                    <div>
+                        <img src="{{ $blog['featured_image'] }}" class="w-full">
                         @if ($blog['featured_image_caption'])
                             <p class="text-center">{!! $blog['featured_image_caption'] !!}</p>
                         @endif
+                    </div>
                 @endif
-                    @if ($blog['summary'])
-                        <p>{{ $blog['summary'] }}</p>
-                    @else
-                        <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh
-                            well.)</p>
-                    @endif
-                    <p>
-                        {{ $blog['published_at']->diffForHumans() }}
-                    </p>
-                    <a class="btn btn-outline-secondary" href="/blog/{{ $blog['slug'] }}">Read</a>
-                    @ifcanvasauthenticated
-                    <a class="btn btn-outline-primary"
-                        href="/{{ config('canvas.path') }}/posts/{{ $blog['id'] }}/edit">Edit</a>
-                    @endifcanvasauthenticated
-                </div>
+                @if ($blog['summary'])
+                    <p>{{ $blog['summary'] }}</p>
+                @else
+                    <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh
+                        well.)</p>
+                @endif
+                <p>
+                    {{ $blog['published_at']->diffForHumans() }}
+                </p>
+                <a class="inline-block font-normal text-center whitespace-nowrap align-middle select-none border border-secondary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-secondary hover:bg-secondary hover:text-white"
+                    href="/blog/{{ $blog['slug'] }}">Read</a>
+                @ifcanvasauthenticated
+                <a class="inline-block font-normal text-center whitespace-nowrap align-middle select-none border border-primary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-primary hover:bg-primary hover:text-white ml-2"
+                    href="/{{ config('canvas.path') }}/posts/{{ $blog['id'] }}/edit">Edit</a>
+                @endifcanvasauthenticated
+            </div>
         </section>
 
-        <hr class="m-0">
+        <hr class="m-0 border-0 border-t border-gray-200">
         @endif
 
-        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="projects">
-            <div class="w-100">
-                <h2 class="mb-5">Projects</h2>
+        <section class="site-section" id="projects">
+            <div class="w-full">
+                <h2 class="text-3xl uppercase mb-5 font-bold">Projects</h2>
                 <p>What you see on the left are a few personal projects I've made for work purposes, or for personal
                     purposes.
                     I have a few more projects that are not listed here, but if you want to see them, please reach out
@@ -114,68 +124,64 @@
             </div>
         </section>
 
-        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="skills">
-            <div class="w-100">
-                <h2 class="mb-5">Skills</h2>
+        <section class="site-section" id="skills">
+            <div class="w-full">
+                <h2 class="text-3xl uppercase mb-5 font-bold">Skills</h2>
 
-                <div class="subheading mb-3">Programming Languages &amp; Tools</div>
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['lang'] as $icon)
-                        <x-tech-skill type="Language" :icon="$icon" />
-                    @endforeach
-                </ul>
+                <div class="text-base uppercase font-medium tracking-wide mb-3">Programming Languages
+                    &amp; Tools</div>
+                <div class="mb-3 flex flex-col gap-y-4">
+                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
+                        @foreach ($config['icons']['lang'] as $icon)
+                            <x-tech-skill type="Language" :icon="$icon" />
+                        @endforeach
+                    </ul>
 
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['framework'] as $icon)
-                        <x-tech-skill type="Framework" :icon="$icon" />
-                    @endforeach
-                </ul>
-                {{--
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['browser'] as $icon)
-                    <li class="list-inline-item"><i class="fa-regular fa-{{$icon['icon'] }}" data-toggle="tooltip"
-                            data-placement="right" title="{{ $icon['label'] }}"></i></li>
-                    @endforeach
-                </ul>
-                --}}
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['api'] as $icon)
-                        <x-tech-skill type="API" :icon="$icon" />
-                    @endforeach
-                </ul>
+                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
+                        @foreach ($config['icons']['framework'] as $icon)
+                            <x-tech-skill type="Framework" :icon="$icon" />
+                        @endforeach
+                    </ul>
 
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['tech'] as $icon)
-                        <x-tech-skill type="Tech" :icon="$icon" />
-                    @endforeach
-                </ul>
+                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
+                        @foreach ($config['icons']['api'] as $icon)
+                            <x-tech-skill type="API" :icon="$icon" />
+                        @endforeach
+                    </ul>
 
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['source_control'] as $icon)
-                        <x-tech-skill type="SCM/CI" :icon="$icon" />
-                    @endforeach
-                </ul>
+                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
+                        @foreach ($config['icons']['tech'] as $icon)
+                            <x-tech-skill type="Tech" :icon="$icon" />
+                        @endforeach
+                    </ul>
 
-                <ul class="list-inline dev-icons">
-                    @foreach ($config['icons']['workflow'] as $icon)
-                        <x-tech-skill type="Workflow" :icon="$icon" />
-                    @endforeach
-                </ul>
+                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
+                        @foreach ($config['icons']['source_control'] as $icon)
+                            <x-tech-skill type="SCM/CI" :icon="$icon" />
+                        @endforeach
+                    </ul>
 
-                <div class="subheading mb-3">Workflow</div>
-                <ul class="fa-ul mb-0">
+                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
+                        @foreach ($config['icons']['workflow'] as $icon)
+                            <x-tech-skill type="Workflow" :icon="$icon" />
+                        @endforeach
+                    </ul>
+                </div>
+
+                <div class="text-base uppercase font-medium tracking-wide mb-3">Workflow</div>
+                <ul class="list-none pl-0 ml-10">
                     @foreach ($config['workflow'] as $line)
-                        <li><i class="fa-li fa fa-check"></i> {!! $line !!}</li>
+                        <li class="relative"><i class="fa fa-check absolute -left-10"></i> {!! $line !!}</li>
                     @endforeach
                 </ul>
             </div>
         </section>
 
-        <hr class="m-0">
+        <hr class="m-0 border-0 border-t border-gray-200">
 
-        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="experience">
-            <div class="w-100">
-                <h2 class="mb-5">Experience</h2>
+        <section class="site-section" id="experience">
+            <div class="w-full">
+                <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Experience</h2>
                 <p>
                     A selected portion of experience is shown below. For more information, you can reach out to me
                     directly.
@@ -186,11 +192,11 @@
             </div>
         </section>
 
-        <hr class="m-0">
+        <hr class="m-0 border-0 border-t border-gray-200">
 
-        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="interests">
-            <div class="w-100">
-                <h2 class="mb-5">Interests</h2>
+        <section class="site-section" id="interests">
+            <div class="w-full">
+                <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Interests</h2>
                 @foreach($config['interests'] as $interest)
                     <p>{!! $interest !!}</p>
                 @endforeach
@@ -199,15 +205,13 @@
                     <ul>
                         @foreach($btc->bpi as $item)
                             <li>
-                                <span style="font-family: ui-monospace;"><strong>{{ $item->code }}:</strong></span>
-                                {{-- @currency($item->symbol, $item->rate_float) --}}
-                                <span style="font-family: monospace;">{!! $item->symbol !!}{{ $item->rate_float }}</span>
+                                <span class="font-mono"><strong>{{ $item->code }}:</strong></span>
+                                <span class="font-mono">{!! $item->symbol !!}{{ $item->rate_float }}</span>
                             </li>
                         @endforeach
                     </ul>
                     <p><small>Powered by <a href="https://www.coindesk.com/price/bitcoin" target="_blank">Coindesk</a>.
                             {{ $btc->disclaimer }}</small></p>
-                    {{-- @json($btc, JSON_PRETTY_PRINT) --}}
                 @endif
             </div>
         </section>
@@ -217,6 +221,7 @@
     <!-- Custom scripts for this template -->
     @include('cookies')
     <script cookie-consent="functionality" src="{{ asset('js/app.js') }}"></script>
+    <script cookie-consent="functionality" src="{{ asset('js/resume.js') }}"></script>
     @include('gtag')
 
 </body>

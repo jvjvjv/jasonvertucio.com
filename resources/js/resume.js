@@ -15,17 +15,9 @@
     }
   });
 
-  // Closes responsive menu when a scroll trigger link is clicked
+  // Close mobile menu when a scroll trigger link is clicked (Tailwind version)
   $('.js-scroll-trigger').click(function() {
-    $('.navbar-collapse').collapse('hide');
+    $('#navbarSupportedContent').addClass('hidden');
   });
-
-  // Activate scrollspy to add active class to navbar items on scroll
-  // $('body').scrollspy({
-  //   target: '#sideNav'
-  // });
-
-  // Enable tooltips
-  $('[data-toggle="tooltip"]').tooltip();
 
 })(jQuery); // End of use strict

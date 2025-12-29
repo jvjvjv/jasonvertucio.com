@@ -71,7 +71,7 @@
             "state": "PA",
             "zip": "19107"
         },
-        "phone": "(267)",
+        "phone": "(267) 323-5171",
         "email": {
             "email_address": "me@jasonvertucio.com",
             "subject": "Better change this or I'll think you're spamming me",
@@ -118,7 +118,7 @@
         },
         {
             "title": "To Do App",
-            "description": "A simple to-do list application built with AngularJS, because it is rather ancient &mdash; but later migrated to AlpineJS which was more lightweight. Designed to fit my second monitor, e.g. a TV that faces outward, so at a glace I and anyone I work with can see my daily progress. Also, sound effects because they're fun."
+            "description": "Everyong has built a simple to-do list. This application was first built with AngularJS, because it is rather ancient &mdash; but later migrated to AlpineJS which was more lightweight. Designed to fit my second monitor, e.g. a TV that faces outward, so at a glace I and anyone I work with can see my daily progress. Also, sound effects because they're fun."
         },
         {
             "title": "Ghost Letter",

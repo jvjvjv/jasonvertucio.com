@@ -65,6 +65,21 @@ class CurrentlyWatching extends Component {
         return null;
     }
 
+    public function description() {
+        if (!$this->media?->webhook_data) {
+            return null;
+        }
+
+        $data = [];
+        try {
+            $data = $this->media->webhook_data;
+        } catch (\Exception $exception) {
+            return null;
+        }
+
+        return $data['Overview'];
+    }
+
     public function mediaType() {
         if (!$this->media || !$this->media->media_type) {
             return 'Media';
