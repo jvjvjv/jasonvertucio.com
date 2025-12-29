@@ -99,6 +99,21 @@
         <hr class="m-0">
         @endif
 
+        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="projects">
+            <div class="w-100">
+                <h2 class="mb-5">Projects</h2>
+                <p>What you see on the left are a few personal projects I've made for work purposes, or for personal
+                    purposes.
+                    I have a few more projects that are not listed here, but if you want to see them, please reach out
+                    to me.
+                    I am always open to new projects, and I am always looking for new opportunities to learn and grow.
+                </p>
+                @foreach ($config['projects'] as $project)
+                    <x-project :project="$project" />
+                @endforeach
+            </div>
+        </section>
+
         <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="skills">
             <div class="w-100">
                 <h2 class="mb-5">Skills</h2>
@@ -153,6 +168,21 @@
                         <li><i class="fa-li fa fa-check"></i> {!! $line !!}</li>
                     @endforeach
                 </ul>
+            </div>
+        </section>
+
+        <hr class="m-0">
+
+        <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="experience">
+            <div class="w-100">
+                <h2 class="mb-5">Experience</h2>
+                <p>
+                    A selected portion of experience is shown below. For more information, you can reach out to me
+                    directly.
+                </p>
+                @foreach ($config['experience'] as $job)
+                    <x-job :job="$job" />
+                @endforeach
             </div>
         </section>
 
