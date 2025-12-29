@@ -1,20 +1,17 @@
 @use "sass:map";
 // Theme Colours
 $theme-colors: (
-  "primary": #dc3545,
-  "secondary": #343a40,
-  "dark": #495057,
-  "link": #4351a0
+    "primary": #1b587c,
+    "secondary": #b35e06,
+    "dark": #495057,
+    "link": #4351a0
 );
-
-
-
 
 // Body
 $body-bg: #f8fafc;
 
 // Typography
-$font-family-sans-serif: 'Nunito', sans-serif;
+$font-family-sans-serif: "Nunito", sans-serif;
 $font-size-base: 0.9rem;
 $line-height-base: 1.6;
 
@@ -33,6 +30,6 @@ $line-height-base: 1.6;
 // App Specific Colors
 $color-white: #ffffff;
 $text-color: #868e96;
-$color-primary: map.get($theme-colors, "primary");;
+$color-primary: map.get($theme-colors, "primary");
 $color-secondary: map.get($theme-colors, "secondary");
 $color-secondary-dark: map.get($theme-colors, "dark");

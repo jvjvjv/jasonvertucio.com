@@ -119,7 +119,8 @@ class CurrentlyWatching extends HTMLElement {
         return;
       }
 
-      const isMusic = data.media_type === 'Album' || data.media_type === 'Song';
+      const isMusic = data.media_type === 'Album' || data.media_type === 'Song' || data.media_type === 'Audio';
+      const isTVShow = data.media_type === 'Episode' || data.media_type === 'Season' || data.media_type === 'Series';
       let title = data.title;
       let subtitle = null;
 
@@ -133,15 +134,18 @@ class CurrentlyWatching extends HTMLElement {
         }
         // Show album as subtitle
         if (data.album_name) {
-          subtitle = data.album_name;
+          subtitle = `From the Album <em>${data.album_name}</em>`;
         }
-      } else if (data.series_name) {
-        title = `${data.series_name}`;
+      } else if (isTVShow) {
+        // For TV shows, series name is the title
+        title = data.series_name || data.title;
+
+        // Episode info goes in subtitle
         if (data.season_number && data.episode_number) {
-          title += ` S${String(data.season_number).padStart(2, '0')}E${String(data.episode_number).padStart(2, '0')}`;
-        }
-        if (data.title) {
-          title += ` - ${data.title}`;
+          subtitle = ` S${String(data.season_number).padStart(2, '0')}E${String(data.episode_number).padStart(2, '0')}`;
+          if (data.title) {
+            subtitle += ` - ${data.title}`;
+          }
         }
       } else if (data.year) {
         title += ` (${data.year})`;
@@ -157,10 +161,10 @@ class CurrentlyWatching extends HTMLElement {
       sectionHeader.textContent = header;
 
       content.innerHTML = `
-        <span class="badge">${mediaType}</span>
+        <span class="badge" style="font-size: 1rem;">${mediaType}</span>
         <h5 class="card-title">${this.escapeHtml(title)}</h5>
-        ${subtitle ? `<p class="card-text" style="margin-bottom: 0.5rem;"><small style="color: #6c757d;">${this.escapeHtml(subtitle)}</small></p>` : ''}
-        <p class="card-text">
+        ${subtitle ? `<p style="margin-bottom: 0.5rem;"><small style="color: #6c757d;">${subtitle}</small></p>` : ''}
+        <p style="color: #6c757d; margin-bottom: 0;">
           <small>${this.escapeHtml(timestampLabel)} ${this.escapeHtml(lastWatched)}</small>
         </p>
       `;
@@ -180,6 +184,7 @@ class CurrentlyWatching extends HTMLElement {
       'Episode': 'TV Show',
       'Season': 'TV Season',
       'Series': 'TV Series',
+      'Audio': 'Song',
       'Album': 'Album',
       'Song': 'Song',
       'Video': 'Video',
@@ -190,13 +195,13 @@ class CurrentlyWatching extends HTMLElement {
 
   getHeader(eventType, isMusic = false) {
     if (!eventType) {
-      return isMusic ? 'Currently Listening' : 'Currently Watching';
+      return isMusic ? 'Currently Listening To' : 'Currently Watching';
     }
 
     switch (eventType) {
       case 'PlaybackStart':
       case 'PlaybackProgress':
-        return isMusic ? 'Currently Listening' : 'Currently Watching';
+        return isMusic ? 'Currently Listening To' : 'Currently Watching';
       case 'PlaybackStop':
         return isMusic ? 'Last Listened' : 'Last Watched';
       case 'ItemAdded':
@@ -204,7 +209,7 @@ class CurrentlyWatching extends HTMLElement {
       case 'ItemDeleted':
         return 'Media Deleted';
       default:
-        return isMusic ? 'Currently Listening' : 'Currently Watching';
+        return isMusic ? 'Currently Listening To' : 'Currently Watching';
     }
   }
 
