@@ -29,7 +29,7 @@
           <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}/edit" class="card-link">Edit</a>
           @endifcanvasauthenticated
         </div>
-        <div class="share">
+        {{-- <div class="share">
           <span class="share-header">Share:</span>
           <div class="social-icons px-2">
             <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" target="_blank" class="twitter-share-button" data-show-count="false">
@@ -45,7 +45,7 @@
               data-order-by="social"
               data-layout="button_count"></div>
           </div>
-        </div>
+        </div> --}}
         <div class="comments">
           <h3>Comments</h3>
           <div
@@ -67,7 +67,7 @@
         <div class="alignleft"><script type="text/javascript">amzn_assoc_ad_type = "banner";amzn_assoc_marketplace = "amazon";amzn_assoc_region = "US";amzn_assoc_placement = "assoc_banner_placement_default";amzn_assoc_banner_type = "ez";amzn_assoc_p = "13";amzn_assoc_width = "468";amzn_assoc_height = "60";amzn_assoc_tracking_id = "pk00m-20";amzn_assoc_linkid = "d7baa57a05d736fce70b74278fcab525";</script><script src="//z-na.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&Operation=GetScript&ID=OneJS&WS=1"></script></div>
       </div>
     </div>
-    <div class="col-sm-4">
+    {{-- <div class="col-sm-4">
       <h2 class="mt-3 mb-5">
         <span style="opacity:0;">
           I'm just here for spacing.
@@ -82,7 +82,7 @@
       </a>
       <script async src="https://platform.twitter.com/widgets.js" charset="utf-8">
       </script>
-    </div>
+    </div> --}}
   </div>
 </div>
 

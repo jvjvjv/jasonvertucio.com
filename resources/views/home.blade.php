@@ -12,7 +12,7 @@
     <meta name="twitter:title" value="Jason, who did a thing">
     <meta name="twitter:creator" value="@jasondidathing">
     <meta name="twitter:site" value="@jasondidathing">
-    <meta name="twitter:image" value="https://beepbeepritchiellc.com/HDTV.png">
+    <meta name="twitter:image" value="https://bspdx.com/images/bspdx.png">
 
     <title>Jason Vertucio</title>
 
@@ -67,7 +67,7 @@
 
         <hr class="m-0">
 
-        @if ($blog)
+        @if ($blog && $blog['published_at']->diffInDays() < 90)
         <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="blog">
             <div class="w-100">
                 <h2 class="mb-5">Latest Blog</h2>

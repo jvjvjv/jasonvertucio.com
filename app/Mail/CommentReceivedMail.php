@@ -33,6 +33,6 @@ class CommentReceivedMail extends Mailable
     public function build()
     {
         return $this->from('me@jasonvertucio.com')
-                    ->view('mail.mail');
+            ->view('mail.mail');
     }
 }

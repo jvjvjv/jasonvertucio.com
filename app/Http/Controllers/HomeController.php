@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+
 use Canvas\Models\Post;
 use GuzzleHttp\Client as Guzzle;
-use Artisan;
-use Cache;
 
 class HomeController extends Controller {
 

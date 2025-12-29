@@ -40,22 +40,22 @@ class CreateUserCommand extends Command
      */
     public function handle()
     {
-      $email = $this->argument('email');
-      $name = $this->argument('name');
-      $password = $this->argument('password');
-      if ($password == null) {
-        $password = $this->secret('Enter new password');
-        $password_confirm = $this->secret('Enter password again to confirm');
-        if ($password != $password_confirm) {
-          $this->error("Passwords don't match!");
-          return 1;
+        $email = $this->argument('email');
+        $name = $this->argument('name');
+        $password = $this->argument('password');
+        if ($password == null) {
+            $password = $this->secret('Enter new password');
+            $password_confirm = $this->secret('Enter password again to confirm');
+            if ($password != $password_confirm) {
+                $this->error("Passwords don't match!");
+                return 1;
+            }
         }
-      }
-      User::create([
-        'name' => $name,
-        'email' => $email,
-        'password' => Hash::make($password),
-      ]);
-      $this->info("DONE");
+        User::create([
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make($password),
+        ]);
+        $this->info("DONE");
     }
 }
