@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\LocalMediaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +17,8 @@ use Illuminate\Http\Request;
 Route::group(['prefix'=>'v1','namespace'=>'Wink\Http\Controllers'], function () {
     Route::get('posts', '\Wink\Http\Controllers\PostsController@index');
   });
+
+// Jellyfin Webhook and Currently Watching API
+// These will be accessible at /api/event/@2028 and /api/currently-watching
+Route::post('/event/@2028', [LocalMediaController::class, 'index']);
+Route::get('/currently-watching', [LocalMediaController::class, 'currentlyWatching']);

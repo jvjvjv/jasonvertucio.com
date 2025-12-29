@@ -13,6 +13,7 @@ const mix = require('laravel-mix');
 
 mix
   .js('resources/js/app.js', 'public/js')
+  .js('resources/js/currently-watching.js', 'public/js')
   .vue()
   .copy('resources/config/config.json','public')
   .sourceMaps()
