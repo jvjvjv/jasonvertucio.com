@@ -57,16 +57,15 @@
     @yield('meta')
 
     <title>@yield('title', 'Home') | Jason Vertucio</title>
-
-    <!-- Fonts -->
+    {{-- Fonts --}}
     <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700&display=swap" rel="stylesheet">
     <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
-
     {{-- Custom styles for this template --}}
     <link href="{{asset('css/blog.css') }}" rel="stylesheet">
+    {{--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
-        crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script> --}}
 </head>
 
 <body id="page-top" class="font-body flex flex-col min-h-screen bg-gray-50">

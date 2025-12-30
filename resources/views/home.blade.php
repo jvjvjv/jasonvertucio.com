@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="Jason Vertucio does mobile application development.">
@@ -15,18 +14,15 @@
     <meta name="twitter:image" value="https://bspdx.com/images/bspdx.png">
 
     <title>Jason Vertucio</title>
-
-    <!-- Fonts -->
+    {{-- Fonts --}}
     <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700&display=swap" rel="stylesheet">
     <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
+    {{-- Custom styles for this template --}}
     <link href="{{asset('css/app.css') }}" rel="stylesheet">
-
+    {{--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
-        crossorigin="anonymous"></script>
-
+        crossorigin="anonymous"></script> --}}
 </head>
 
 <body id="page-top" class="font-body text-dark bg-gray-50">
