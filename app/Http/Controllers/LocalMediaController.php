@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LocalMedia;
 use Illuminate\Http\Request;
+use Log;
 
 class LocalMediaController extends Controller {
     public function index(Request $request) {
