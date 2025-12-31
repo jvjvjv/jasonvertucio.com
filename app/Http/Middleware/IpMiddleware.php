@@ -3,14 +3,13 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Log;
 use Illuminate\Support\Facades\Cache;
 use App\Models\IpBan;
 
-class IpMiddleware
-{
+class IpMiddleware {
 
-    public function handle($request, Closure $next)
-    {
+    public function handle($request, Closure $next) {
         if (Cache::has('banned_ip_list')) {
             $restricted_ips = Cache::get('banned_ip_list');
         } else {
@@ -19,7 +18,12 @@ class IpMiddleware
             })->toArray();
             Cache::put('banned_ip_list', $restricted_ips, 300);
         }
-        if (in_array($request->ip(), $restricted_ips)) {
+        $ip = $request->header('CF-Connecting-IP') ?? $request->ip();
+        if (time() < strtotime('2026-01-05T00:00:00Z')) {
+            Log::debug("IP to check: {$ip} - Source: " . ($request->header('CF-Connecting-IP') ? 'CF-Connecting-IP' : 'request->ip()'));
+        }
+        if (in_array($ip, $restricted_ips)) {
+            Log::debug("{$ip} banned. Sending 403.");
             abort(403);
         }
 
