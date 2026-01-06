@@ -35,6 +35,12 @@
             "ariaLabel": "Blog"
         },
         {
+            "href": "https://ghostletter.jasonvertucio.com",
+            "label": "Ghost Letter",
+            "hover": "A web application for sending anonymous letters to people.",
+            "target": "_blank"
+        },
+        {
             "href": "https://balancecloud.app",
             "label": "BalanceCloud",
             "hover": "A web application so I can manually manage my budget (requires sign up).",
@@ -52,12 +58,6 @@
             "label": "Btoa(toB)",
             "ariaLabel": "B to A to B",
             "hover": "A web application for encoding and decoding Base64 JSON strings.",
-            "target": "_blank"
-        },
-        {
-            "href": "https://ghostletter.jasonvertucio.com",
-            "label": "Ghost Letter",
-            "hover": "A web application for sending anonymous letters to people.",
             "target": "_blank"
         }
     ],
@@ -109,6 +109,10 @@
             "description": "The blog is built using Canvas, assembled using custom Blade components. I'm not much of a writer, so don't expect much great content there."
         },
         {
+            "title": "Ghost Letter",
+            "description": "A full-stack demo application to send disappearing messages to your friends! Best when used on a mobile device. Built with Laravel and next.js. <em>Note: Sign in as <code>demo01</code> with password <code>demo01</code></em>."
+        },
+        {
             "title": "BalanceCloud",
             "description": "A mobile-first, responsive web application for managing your bank accounts. Built with Quasar and Laravel."
         },
@@ -119,10 +123,6 @@
         {
             "title": "To Do App",
             "description": "Everyong has built a simple to-do list. This application was first built with AngularJS, because it is rather ancient &mdash; but later migrated to AlpineJS which was more lightweight. Designed to fit my second monitor, e.g. a TV that faces outward, so at a glace I and anyone I work with can see my daily progress. Also, sound effects because they're fun."
-        },
-        {
-            "title": "Ghost Letter",
-            "description": "A UI-only demo application to send disappearing messages to your friends! Built with next.js."
         }
     ],
     "experience": [
