@@ -65,6 +65,33 @@ class CurrentlyWatching extends Component {
         return null;
     }
 
+    public function playbackTime() {
+        if (!$this->media->playback_position) {
+            return null;
+        }
+
+        // Convert ticks (100-nanosecond intervals) to hh:mm:ss format
+        // 10,000,000 ticks = 1 second
+        $formatTime = function ($ticks) {
+            $seconds = floor($ticks / 10000000);
+            $hours = floor($seconds / 3600);
+            $minutes = floor(($seconds % 3600) / 60);
+            $secs = $seconds % 60;
+            $time = sprintf('%02d:%02d:%02d', $hours, $minutes, $secs);
+
+            if (str_starts_with($time, '00:')) {
+                $time = substr($time, 3);
+            }
+            if (str_starts_with($time, '0')) {
+                $time = substr($time, 1);
+            }
+
+            return $time;
+        };
+
+        return $formatTime($this->media->playback_position) . " / " . $formatTime($this->media->playback_duration);
+    }
+
     public function description() {
         if (!$this->media?->webhook_data) {
             return null;

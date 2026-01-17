@@ -69,6 +69,17 @@ class LocalMediaController extends Controller {
         ]);
     }
 
+    public function mediaStats() {
+        $last_media_watched = LocalMedia::whereNotNull('last_playback_at')->orderBy('last_playback_at', 'desc')->first();
+        $last_media_added = LocalMedia::where('event_type', 'ItemAdded')->orderBy('created_at', 'desc')->first();
+        $last_media_deleted = LocalMedia::where('event_type', 'ItemDeleted')->orderBy('updated_at', 'desc')->first();
+        return response()->json([
+            'last_watched' => $last_media_watched,
+            'last_added' => $last_media_added,
+            'last_deleted' => $last_media_deleted,
+        ]);
+    }
+
     protected function handleItemAdded($data) {
         if (!isset($data['ItemId']))
             return;
@@ -105,7 +116,8 @@ class LocalMediaController extends Controller {
 
         $media = LocalMedia::where('jellyfin_item_id', $data['ItemId'])->first();
         if ($media) {
-            $media->delete();
+            $media->event_type = $data['ItemDeleted'];
+            $media->save();
             Log::info('Deleted media item', ['jellyfin_item_id' => $data['ItemId']]);
         }
     }
