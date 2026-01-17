@@ -29,7 +29,7 @@
 
     <x-navigation :config="$config" />
 
-    <div class="p-0 lg:ml-64">
+    <div role="main" class="p-0 lg:ml-64">
 
         <section class="site-section" id="about">
             <div class="w-full">
@@ -83,7 +83,7 @@
         <section class="site-section" id="blog">
             <div class="w-full">
                 <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Latest Blog</h2>
-                <h4 class="font-heading text-xl mb-2 font-bold">{{ $blog['title'] }}</h4>
+                <h3 class="font-heading text-xl mb-2 font-bold">{{ $blog['title'] }}</h3>
                 @if ($blog['featured_image'])
                     <div>
                         <img src="{{ $blog['featured_image'] }}" class="w-full">

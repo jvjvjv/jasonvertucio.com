@@ -18,6 +18,10 @@ class Navigation extends Component
         $this->config = $config;
     }
 
+    public function link_label($link) {
+        return $link['ariaLabel'] ?? $link['label'] . ": " . $link['hover'];
+    }
+
     /**
      * Get the view / contents that represent the component.
      *
@@ -27,4 +31,5 @@ class Navigation extends Component
     {
         return view('components.navigation');
     }
+
 }

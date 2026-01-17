@@ -59,3 +59,8 @@ h6 {
 .site-section {
     @apply min-h-screen py-12 px-6 lg:px-20 lg:w-2/3 flex items-center;
 }
+
+:focus-visible {
+  outline: 3px solid var(--color-link);
+  outline-offset: 3px;
+}

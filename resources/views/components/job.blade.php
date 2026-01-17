@@ -17,7 +17,7 @@ if (!function_exists('show_nested_highlights')) {
 ?>
 
 <div>
-    <h4 class="font-heading text-xl mb-2 font-bold">{{ $job['date'] }}</h4>
+    <h3 class="font-heading text-xl mb-2 font-bold">{{ $job['date'] }}</h3>
     <p class="italic">{{ $job['location'] }}</p>
     <p class="mb-0">{{ $job['description'] }}</p>
     <ul>
