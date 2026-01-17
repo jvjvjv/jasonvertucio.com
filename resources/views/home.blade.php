@@ -41,13 +41,20 @@
                     {{ $config['about_me']['address']['city'] }},
                     {{ $config['about_me']['address']['state'] }}
                     {{ $config['about_me']['address']['zip'] }}
-                    ·
+                    &middot;
                     {{ $config['about_me']['phone'] }}
-                    ·
+                    &middot;
+                    @if($config['about_me']['telgram'])
+                        <a class="text-primary underline hover:text-secondary" href="{{ $config['about_me']['telgram']['url'] }}"
+                            target="_blank">
+                            {{ $config['about_me']['telgram']['label'] }}
+                        </a>
+                    @else
                     <a class="text-primary hover:text-secondary"
                         href="mailto:{{ $config['about_me']['email']['email_address'] }}?subject={{ $config['about_me']['email']['subject'] }}&body={{ $config['about_me']['email']['body'] }}">
                         {{ $config['about_me']['email']['email_address'] }}
                     </a>
+                    @endif
                 </div>
                 @foreach ($config['about_me']['sections'] as $section)
                     <p class="text-lg font-light mb-5">
@@ -57,8 +64,9 @@
 
                 <div class="flex gap-4">
                     @foreach ($config['about_me']['social'] as $item)
-                        <a href="{{ $item['link'] }}" target="_blank"
-                            class="inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:text-secondary transition-colors">
+                        <a href="{{ $item['link'] }}" target="_blank" role="link" rel="noopener noreferrer"
+                            class="inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:text-secondary transition-colors"
+                            title="{{ $item['label'] }}">
                             <i class="fa-brands {{ $item['fa_icon'] }}"></i>
                         </a>
                     @endforeach

@@ -72,31 +72,39 @@
             "zip": "19107"
         },
         "phone": "(267) 323-5171",
+        "telgram": {
+            "label": "Contact me on Telegram!",
+            "url": "https://t.me/jasondidathing"
+        },
         "email": {
             "email_address": "me@jasonvertucio.com",
             "subject": "Better change this or I'll think you're spamming me",
             "body": "Hi\r\n"
         },
         "sections": [
-            "Senior Front-End Engineer specializing in modernization, design systems, and accessible enterprise applications across Vue 3/TypeScript and React/Next.js. Led migrations from legacy stacks and built reusable component libraries that improved delivery speed and UI consistency. Proven impact in TDD-driven quality (100% unit test coverage on micro-frontends), performance optimization, and cross-functional collaboration with design and backend teams."
+            "Senior Front-End Engineer with 20+ years architecting scalable solutions across Vue, React, and legacy stacks. Built design systems and component libraries that cut development time by 40-75%, led modernization initiatives achieving 100% unit test coverage, and drove accessibility compliance (WCAG 2.1 AA) across enterprise applications. Proven impact establishing TDD practices, optimizing performance, and collaborating cross-functionally to deliver products at scale."
         ],
         "social": [
             {
+                "label": "Visit me on Bluesky",
                 "type": "bluesky",
                 "link": "https://bsky.app/profile/jasonvertucio.com",
                 "fa_icon": "fa-bluesky"
             },
             {
+                "label": "Visit me on LinkedIn",
                 "type": "linkedin",
                 "link": "https://www.linkedin.com/in/jasonvertucio/",
                 "fa_icon": "fa-linkedin-in"
             },
             {
+                "label": "Visit me on X",
                 "type": "x",
                 "link": "https://x.com/jasondidathing",
                 "fa_icon": "fa-x-twitter"
             },
             {
+                "label": "View my IMDb profile",
                 "type": "IMDb",
                 "link": "https://www.imdb.com/name/nm5264006/",
                 "fa_icon": "fa-imdb"
