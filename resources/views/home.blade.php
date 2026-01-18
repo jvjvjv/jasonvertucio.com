@@ -26,11 +26,14 @@
 </head>
 
 <body id="page-top" class="font-body text-dark bg-gray-50">
-    <h1 class="sr-only">{{ $config['aria_title'] }}</h1>
+    <header>
+        <h1 class="sr-only">{{ $config['aria_title'] }}</h1>
+
+    </header>
 
     <x-navigation :config="$config" />
 
-    <div role="main" class="p-0 lg:ml-64">
+    <main class="p-0 lg:ml-64">
 
         <section class="site-section" id="about">
             <div class="w-full">
@@ -66,7 +69,7 @@
                 <div class="flex gap-4">
                     @foreach ($config['about_me']['social'] as $item)
                         <a href="{{ $item['link'] }}" target="_blank" role="link" rel="noopener noreferrer"
-                            class="inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:text-secondary transition-colors"
+                            class="inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:rounded-md hover:bg-gray-50 hover:border-2 hover:border-primary hover:text-primary focus:bg-gray-50 focus:border-2 focus:border-primary focus:text-primary transition-colors"
                             title="{{ $item['label'] }}">
                             <i class="fa-brands {{ $item['fa_icon'] }}"></i>
                         </a>
@@ -102,10 +105,10 @@
                 <p>
                     {{ $blog['published_at']->diffForHumans() }}
                 </p>
-                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border border-secondary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-secondary hover:bg-secondary hover:text-white"
+                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary hover:bg-primary hover:text-white"
                     href="/blog/{{ $blog['slug'] }}">Read</a>
                 @ifcanvasauthenticated
-                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border border-primary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-primary hover:bg-primary hover:text-white ml-2"
+                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary hover:bg-primary hover:text-white ml-2"
                     href="/{{ config('canvas.path') }}/posts/{{ $blog['id'] }}/edit">Edit</a>
                 @endifcanvasauthenticated
             </div>
@@ -221,7 +224,7 @@
             </div>
         </section>
 
-    </div>
+    </main>
 
     <!-- Custom scripts for this template -->
     @include('cookies')
