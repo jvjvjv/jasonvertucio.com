@@ -80,7 +80,7 @@
 
         <hr class="m-0 border-0 border-t border-gray-200">
 
-        @if ($blog && $blog['published_at']->diffInDays() < 90)
+        @if ($blog && (env('APP_DEBUG') || $blog['published_at']->diffInDays() < 90))
         <section class="site-section" id="blog">
             <div class="w-full">
                 <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Latest Blog</h2>
@@ -102,10 +102,10 @@
                 <p>
                     {{ $blog['published_at']->diffForHumans() }}
                 </p>
-                <a class="inline-block font-normal text-center whitespace-nowrap align-middle select-none border border-secondary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-secondary hover:bg-secondary hover:text-white"
+                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border border-secondary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-secondary hover:bg-secondary hover:text-white"
                     href="/blog/{{ $blog['slug'] }}">Read</a>
                 @ifcanvasauthenticated
-                <a class="inline-block font-normal text-center whitespace-nowrap align-middle select-none border border-primary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-primary hover:bg-primary hover:text-white ml-2"
+                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border border-primary px-3 py-2 text-base leading-6 rounded transition-colors bg-transparent text-primary hover:bg-primary hover:text-white ml-2"
                     href="/{{ config('canvas.path') }}/posts/{{ $blog['id'] }}/edit">Edit</a>
                 @endifcanvasauthenticated
             </div>

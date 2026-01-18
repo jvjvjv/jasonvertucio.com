@@ -10,6 +10,9 @@ use App\Models\IpBan;
 class IpMiddleware {
 
     public function handle($request, Closure $next) {
+        if (env('APP_DEBUG'))
+            return $next($request);
+
         if (Cache::has('banned_ip_list')) {
             $restricted_ips = Cache::get('banned_ip_list');
         } else {
