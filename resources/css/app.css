@@ -51,6 +51,11 @@ h6 {
 }
 
 /* Other classes */
+
+.sr-only {
+    color: #0000 !important;
+}
+
 .subheading {
     @apply text-2xl;
     font-family: var(--font-family-subheading);

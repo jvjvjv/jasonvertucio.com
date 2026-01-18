@@ -36,7 +36,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['daily','slack'],
+            'channels' => ['app-error', 'app-debug', 'app-info'],
             'ignore_exceptions' => false,
         ],
 
@@ -46,9 +46,33 @@ return [
             'level' => 'debug',
         ],
 
+        'app-error' => [
+            'driver' => 'daily',
+            'days' => 7,
+            'bubble' => false,
+            'path' => storage_path('logs/site-error.log'),
+            'level' => 'error',
+        ],
+
+        'app-debug' => [
+            'driver' => 'daily',
+            'days' => 7,
+            'bubble' => true,
+            'path' => storage_path('logs/site-debug.log'),
+            'level' => 'debug',
+        ],
+
+        'app-info' => [
+            'driver' => 'daily',
+            'days' => 7,
+            'bubble' => false,
+            'path' => storage_path('logs/site-info.log'),
+            'level' => 'info',
+        ],
+
         'daily' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/laravel.log'),
+            'path' => storage_path('logs/site.log'),
             'level' => 'debug',
             'days' => 14,
         ],

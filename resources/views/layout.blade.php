@@ -1,47 +1,44 @@
 @php
-    if (!isset($links)) {
-        $links = [];
-    }
+        if (!isset($links)) {
+            $links = [];
+        }
 
-    $config = json_decode(file_get_contents(resource_path() . "/config/config.json"), true);
-    $places = collect([]);
+        $config = json_decode(file_get_contents(resource_path() . "/config/config.json"), true);
+        $places = collect([]);
     collect($config['links'])->each(function ($p) use ($places) {
-        Log::debug($p['href']);
         if (count($places) > 0 && $p['href'] == '/blog') {
             $places->push('<div class="border-t border-gray-200"></div>');
-            Log::debug('Added divider');
             return;
         }
         if ($p['href'] != '/blog') {
             $places->push($p);
-            Log::debug('Added link: ' . $p['label']);
-            return;
-        }
-    });
+                return;
+            }
+        });
 
-    $meta = [
-        'author' => 'Jason Vertucio',
-        'description' => 'Jason Vertucio does mobile application development.',
-        'og:title' => 'Jason, who did a thing',
-        'og:url' => Request::url(),
-        'og:image' => 'https://beepbeepritchiellc.com/HDTV.png',
-        'twitter:card' => 'summary',
-        'twitter:title' => 'Jason, who did a thing',
-        'twitter:image' => 'https://beepbeepritchiellc.com/HDTV.png',
-        'twitter:creator' => '@jasondidathing',
-        'twitter:site' => '@jasondidathing',
-    ];
-    if (isset($post) && isset($post['meta'])) {
-        $twitter_image = $post['meta']['twitter_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
-        $opengraph_image = $post['meta']['opengraph_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
-        $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
-        $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
-        $meta['og:image'] = $opengraph_image;
-        $meta['og:description'] = $post['meta']['opengraph_description'] ?? $post['excerpt'] ?? $meta['description'];
-        $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
-        $meta['twitter:image'] = $twitter_image;
-        $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $post['excerpt'] ?? $meta['description'];
-    }
+        $meta = [
+            'author' => 'Jason Vertucio',
+            'description' => 'Jason Vertucio does mobile application development.',
+            'og:title' => 'Jason, who did a thing',
+            'og:url' => Request::url(),
+            'og:image' => 'https://beepbeepritchiellc.com/HDTV.png',
+            'twitter:card' => 'summary',
+            'twitter:title' => 'Jason, who did a thing',
+            'twitter:image' => 'https://beepbeepritchiellc.com/HDTV.png',
+            'twitter:creator' => '@jasondidathing',
+            'twitter:site' => '@jasondidathing',
+        ];
+        if (isset($post) && isset($post['meta'])) {
+            $twitter_image = $post['meta']['twitter_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
+            $opengraph_image = $post['meta']['opengraph_image'] ?? ($post['featured_image'] ? url($post['featured_image']) : null);
+            $meta['description'] = $post['meta']['meta_description'] ?? $meta['description'];
+            $meta['og:title'] = $post['meta']['opengraph_title'] ?? $post['title'];
+            $meta['og:image'] = $opengraph_image;
+            $meta['og:description'] = $post['meta']['opengraph_description'] ?? $post['excerpt'] ?? $meta['description'];
+            $meta['twitter:title'] = $post['meta']['twitter_title'] ?? $post['title'];
+            $meta['twitter:image'] = $twitter_image;
+            $meta['twitter:description'] = $post['meta']['twitter_description'] ?? $post['excerpt'] ?? $meta['description'];
+        }
 @endphp
 <!DOCTYPE html>
 <html lang="en" class="h-full">

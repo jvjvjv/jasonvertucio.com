@@ -13,7 +13,7 @@
     <meta name="twitter:site" value="@jasondidathing">
     <meta name="twitter:image" value="https://bspdx.com/images/bspdx.png">
 
-    <title>Jason Vertucio</title>
+    <title>{{ env('APP_ENV', '') == 'dev' ? 'DEV:' : ''}}{{ $config['html_title'] }}</title>
     {{-- Fonts --}}
     <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700&display=swap" rel="stylesheet">
     <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
@@ -26,6 +26,7 @@
 </head>
 
 <body id="page-top" class="font-body text-dark bg-gray-50">
+    <h1 class="sr-only">{{ $config['aria_title'] }}</h1>
 
     <x-navigation :config="$config" />
 
@@ -33,7 +34,7 @@
 
         <section class="site-section" id="about">
             <div class="w-full">
-                <h1 class="text-9xl uppercase tracking-tight mb-0 font-bold">
+                <h1 class="text-9xl uppercase tracking-tight mb-0 font-bold" aria-hidden>
                     {{ $config['about_me']['name']['given'] }}
                     <span class="text-primary">{{ $config['about_me']['name']['sur'] }}</span>
                 </h1>
@@ -86,7 +87,7 @@
                 <h3 class="font-heading text-xl mb-2 font-bold">{{ $blog['title'] }}</h3>
                 @if ($blog['featured_image'])
                     <div>
-                        <img src="{{ $blog['featured_image'] }}" class="w-full">
+                        <img src="{{ $blog['featured_image'] }}" class="w-full" alt="{{ $blog['featured_image_caption'] }}">
                         @if ($blog['featured_image_caption'])
                             <p class="text-center">{!! $blog['featured_image_caption'] !!}</p>
                         @endif
