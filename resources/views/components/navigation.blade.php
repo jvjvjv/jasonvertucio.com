@@ -1,6 +1,6 @@
 <nav class="fixed top-0 left-0 w-full lg:w-64 lg:h-screen bg-primary text-white z-50 flex flex-col" id="sideNav"
     role="navigation">
-    <a class="p-4 lg:flex lg:justify-center lg:items-center lg:mb-0" href="#page-top">
+    <a class="me m-2 p-2 lg:flex lg:justify-center lg:items-center lg:mb-0 rounded-2xl" href="#page-top">
         <span class="block lg:hidden text-xl">Jason Vertucio</span>
         <span class="hidden lg:block">
             <img class="w-40 h-40 rounded-full border-4 border-white/20 mx-auto" src="{{ asset('img/jv.png') }}"
@@ -18,18 +18,18 @@
         <ul class="flex flex-col gap-y-2">
             @ifcanvasauthenticated
             <li>
-                <a class="block px-4 py-1 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors"
+                <a class="block px-4 py-1 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
                     href="/{{ config('canvas.path') }}">Go to Canvas Blog</a>
             </li>
             @endifcanvasauthenticated
             @foreach($config['links'] as $link)
                 <li>
                     @if (isset($link['target']))
-                        <a class="block px-4 py-2 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors"
+                        <a class="block px-4 py-2 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
                             href="{{ $link['href'] }}" target="{{ $link['target'] }}"
                             role="link" title="{{ $link_label($link) }}">{{ $link['label'] }}</a>
                     @else
-                        <a class="block px-4 py-1 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors"
+                        <a class="block px-4 py-1 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
                             href="{{ $link['href'] }}" role="link" title="{{ $link_label($link) }}">{{ $link['label'] }}</a>
                     @endif
                 </li>

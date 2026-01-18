@@ -66,6 +66,14 @@ h6 {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-link);
-  outline-offset: 3px;
+    @apply rounded outline-offset-2 outline-2 outline-link;
+    /* outline: 3px solid var(--color-link); */
+}
+
+nav :focus-visible {
+    outline-color: #ffffff;
+
+    &.me {
+        outline-offset: -4px;
+    }
 }
