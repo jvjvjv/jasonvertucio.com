@@ -4,6 +4,16 @@
 @import "@fortawesome/fontawesome-free/css/solid.css";
 @import "@fortawesome/fontawesome-free/css/brands.css";
 
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
 @theme {
     --color-primary: #1b587c;
     --color-secondary: #b35e06;
@@ -63,6 +73,13 @@ h6 {
 
 .site-section {
     @apply min-h-screen py-12 px-6 lg:px-20 lg:w-2/3 flex items-center;
+    scroll-margin-top: 2rem;
+}
+
+@media (min-width: 1024px) {
+    .site-section {
+        scroll-margin-top: 0;
+    }
 }
 
 :focus-visible {

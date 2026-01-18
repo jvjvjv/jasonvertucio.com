@@ -37,7 +37,7 @@
 
         <section class="site-section" id="about">
             <div class="w-full">
-                <h1 class="text-9xl uppercase tracking-tight mb-0 font-bold" aria-hidden>
+                <h1 class="text-9xl uppercase tracking-tight mb-0 font-bold" aria-hidden="true">
                     {{ $config['about_me']['name']['given'] }}
                     <span class="text-primary">{{ $config['about_me']['name']['sur'] }}</span>
                 </h1>

@@ -18,18 +18,18 @@
         <ul class="flex flex-col gap-y-2">
             @ifcanvasauthenticated
             <li>
-                <a class="block px-4 py-1 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
+                <a class="block px-4 py-1 text-white hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
                     href="/{{ config('canvas.path') }}">Go to Canvas Blog</a>
             </li>
             @endifcanvasauthenticated
             @foreach($config['links'] as $link)
                 <li>
                     @if (isset($link['target']))
-                        <a class="block px-4 py-2 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
+                        <a class="block px-4 py-2 text-white hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
                             href="{{ $link['href'] }}" target="{{ $link['target'] }}"
                             role="link" title="{{ $link_label($link) }}">{{ $link['label'] }}</a>
                     @else
-                        <a class="block px-4 py-1 text-white/75 hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
+                        <a class="block px-4 py-1 text-white hover:text-white uppercase tracking-wider font-bold transition-colors rounded-md"
                             href="{{ $link['href'] }}" role="link" title="{{ $link_label($link) }}">{{ $link['label'] }}</a>
                     @endif
                 </li>
