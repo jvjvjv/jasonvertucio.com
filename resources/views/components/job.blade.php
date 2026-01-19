@@ -17,10 +17,12 @@ if (!function_exists('show_nested_highlights')) {
 ?>
 
 <div>
-    <h3 class="font-heading text-xl mb-2 font-bold">{{ $job['date'] }}</h3>
-    <p class="italic">{{ $job['location'] }}</p>
-    <p class="mb-0">{{ $job['description'] }}</p>
-    <ul>
+    <h3 class="font-heading text-xl mb-2 font-bold">{{ $job['company'] }}</h3>
+    <p class="italic">{{ $job['location'] }} &middot; {{  $job['date'] }}</p>
+    @if($job['description'])
+        <p class="mb-0">{{ $job['description'] }}</p>
+    @endif
+    <ul class="mt-4 pl-4 list-disc">
         {!! show_nested_highlights($job['highlights']) !!}
     </ul>
 </div>

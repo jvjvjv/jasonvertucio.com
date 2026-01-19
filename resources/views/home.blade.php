@@ -37,7 +37,7 @@
 
         <section class="site-section" id="about">
             <div class="w-full">
-                <h1 class="text-9xl uppercase tracking-tight mb-0 font-bold" aria-hidden="true">
+                <h1 class="text-4xl sm:text-8xl uppercase tracking-tight mt-4 sm:mt-4 mb-0 font-bold" aria-hidden="true">
                     {{ $config['about_me']['name']['given'] }}
                     <span class="text-primary">{{ $config['about_me']['name']['sur'] }}</span>
                 </h1>
@@ -69,7 +69,7 @@
                 <div class="flex gap-4">
                     @foreach ($config['about_me']['social'] as $item)
                         <a href="{{ $item['link'] }}" target="_blank" role="link" rel="noopener noreferrer"
-                            class="inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:rounded-md hover:bg-gray-50 hover:border-2 hover:border-primary hover:text-primary focus:bg-gray-50 focus:border-2 focus:border-primary focus:text-primary transition-colors"
+                            class="3xl inline-flex items-center justify-center w-14 h-14 text-3xl text-white bg-dark rounded-full hover:rounded-md hover:bg-gray-50 hover:border-2 hover:border-primary hover:text-primary focus:bg-gray-50 focus:border-2 focus:border-primary focus:text-primary transition-colors"
                             title="{{ $item['label'] }}">
                             <i class="fa-brands {{ $item['fa_icon'] }}"></i>
                         </a>
@@ -86,7 +86,7 @@
         @if ($blog && (env('APP_DEBUG') || $blog['published_at']->diffInDays() < 90))
         <section class="site-section" id="blog">
             <div class="w-full">
-                <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Latest Blog</h2>
+                <h2 class="3xl font-heading text-3xl uppercase mb-5 font-bold">Latest Blog</h2>
                 <h3 class="font-heading text-xl mb-2 font-bold">{{ $blog['title'] }}</h3>
                 @if ($blog['featured_image'])
                     <div>
@@ -119,7 +119,7 @@
 
         <section class="site-section" id="projects">
             <div class="w-full">
-                <h2 class="text-3xl uppercase mb-5 font-bold">Projects</h2>
+                <h2 class="3xl text-3xl uppercase mb-5 font-bold">Projects</h2>
                 <p>What you see on the left are a few personal projects I've made for work purposes, or for personal
                     purposes.
                     I have a few more projects that are not listed here, but if you want to see them, please reach out
@@ -134,7 +134,7 @@
 
         <section class="site-section" id="skills">
             <div class="w-full">
-                <h2 class="text-3xl uppercase mb-5 font-bold">Skills</h2>
+                <h2 class="3xl text-3xl uppercase mb-5 font-bold">Skills</h2>
 
                 <div class="text-base uppercase font-medium tracking-wide mb-3">Programming Languages
                     &amp; Tools</div>
@@ -189,7 +189,7 @@
 
         <section class="site-section" id="experience">
             <div class="w-full">
-                <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Experience</h2>
+                <h2 class="3xl font-heading text-3xl uppercase mb-5 font-bold">Experience</h2>
                 <p>
                     A selected portion of experience is shown below. For more information, you can reach out to me
                     directly.
@@ -204,7 +204,7 @@
 
         <section class="site-section" id="interests">
             <div class="w-full">
-                <h2 class="font-heading text-3xl uppercase mb-5 font-bold">Interests</h2>
+                <h2 class="3xl font-heading text-3xl uppercase mb-5 font-bold">Interests</h2>
                 @foreach($config['interests'] as $interest)
                     <p>{!! $interest !!}</p>
                 @endforeach

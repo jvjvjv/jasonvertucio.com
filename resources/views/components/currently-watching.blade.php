@@ -1,7 +1,7 @@
 @if($shouldDisplay())
     <div class="mb-4">
         <div class="flex items-center gap-4">
-            <h2 class="text-3xl uppercase mb-2 font-bold">{{ $header() }}</h2>
+            <h2 class="3xl text-3xl uppercase mb-2 font-bold">{{ $header() }}</h2>
             <span
                 class="inline-block px-2 py-1 font-bold leading-none whitespace-nowrap align-baseline rounded bg-primary text-white mb-2"
                 style="font-size: 1rem;">{{ $mediaType() }}</span>

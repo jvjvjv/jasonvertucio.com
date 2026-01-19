@@ -26,13 +26,6 @@ html {
         "Helvetica Neue", Arial, sans-serif;
     --font-family-body: Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial,
         sans-serif;
-
-    /* Custom text sizes to match production */
-    --text-9xl: 6rem; /* 96px - h1 main heading */
-    --text-7xl: 3.5rem; /* 56px - h2 section headings */
-    --text-4xl: 2rem; /* 32px - h3 */
-    --text-2xl: 1.5rem; /* 24px - subheading */
-    --text-sm: 0.9rem; /* 14.4px - body text */
 }
 
 /* Apply fonts globally */

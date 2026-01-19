@@ -139,72 +139,77 @@
     ],
     "experience": [
         {
-            "id": "5",
+            "id": "6",
             "company": "Subaru of America",
             "location": "Camden, NJ",
-            "date": "2025 - ",
+            "date": "2025 - Present",
             "description": null,
             "highlights": [
-                "Modernized legacy UI (Vue, AngularJS, jQuery) to React/Next.js to improve maintainability",
-                "Built React component library from Figma designs and established design system standards, cutting new feature UI build time by approximately 40% and improving cross-team consistency across development team",
+                "Architected dynamic SNET Form framework for React apps, slashing form creation by 75% and nearly halving VIP Program project development time",
+                "Built component library from Figma designs and established design system standards, cutting new feature UI dev time by approximately 40%",
+                "Modernized legacy UI applications to React/Next.js with Redux and Context API, improving maintainability and reducing open UI defects by 35% within two quarters",
+                "Built front-end for Tier 3 Marketing platform centralizing dealership information management, replacing vendor dependency and reducing annual operational costs",
                 "Drove accessibility remediation (WCAG 2.1 AA) across legacy and modern apps, resolving keyboard navigation, ARIA labeling, and color contrast issues to pass internal audits",
-                "Achieved 100% unit test coverage across micro-frontend applications via Jest and React Testing Library, reducing post-release regressions",
-                "Optimized E2E test suites and CI runtime by 50% to accelerate deployment cycles and increase developer feedback speed"
+                "Achieved 100% unit test coverage across micro-frontend applications, reducing post-release regressions",
+                "Optimized E2E test suites and CI runtime by 50% to accelerate deployment cycles"
             ]
         },
         {
-            "id": 4,
+            "id": "5",
             "company": "ERM, Inc.",
             "location": "Remote",
             "date": "2023 - 2025",
             "description": null,
             "highlights": [
-                "Maintained an internal compliance register application built with Vue, Tailwind, and .NET, serving regulatory compliance teams across multiple industries",
-                "Optimized workflow efficiency by digitalizing Excel-based processes into responsive web applications, reducing manual data entry and improving data accuracy",
-                "Refactored legacy document processing API to handle Word 97-2003 formats and convert to HTML, automating regulation synchronization processes"
+                "Refactored legacy document processing API to handle Word 97-2003 formats and convert to HTML, automating regulation synchronization processes",
+                "Optimized workflow efficiency by digitalizing Excel-based processes into responsive web applications, reducing manual data entry and improving data accuracy by 80%",
+                "Developed web scraping and data integration solutions supporting multiple data sources including static pages, PDFs, REST APIs, GraphQL, and specialized platforms",
+                "Maintained and enhanced Themis compliance app serving regulatory compliance teams across multiple industries"
             ]
         },
         {
-            "id": 3,
-            "company": "AMCS Group",
-            "location": "Hybrid",
+            "id": "4",
+            "company": "AMCS Group / Dossier Systems",
+            "location": "Remote",
             "date": "2019 - 2023",
             "description": null,
             "highlights": [
-                "Led development of enterprise-level fleet maintenance management application built on Vue.js, TypeScript, and Entity Framework, serving thousands of users across browser, mobile, and SSR platforms",
+                "Led development of enterprise-level fleet maintenance management application serving thousands of users across browser, mobile, and SSR platforms",
                 "Spearheaded migration from Vue.js/JavaScript to Vue 3/TypeScript, improving code maintainability and establishing type safety standards across the development team",
-                "Architected reusable Vue component library optimized for performance and intuitive UX, used across browser, mobile, and SSR applications to ensure consistency",
-                "Consolidated three separate codebases (Browser, Mobile, SSR) into unified architecture, reducing maintenance overhead by approximately 60% and streamlining development workflows",
-                "Established comprehensive testing strategy using Jest and Vue Test Utils with TDD methodology, ensuring reliable code quality and preventing regression issues",
-                "Led UI development team in fast-paced Agile/Scrum environment with weekly production deployments, mentoring junior developers and ensuring successful project delivery",
+                "Architected reusable Vue component library with KendoUI and Element UI integration, optimized for performance and intuitive UX across browser, mobile (OnsenUI), and SSR applications",
+                "Consolidated three separate codebases (Browser, Mobile, SSR) into unified architecture, reducing maintenance overhead by approximately 60%",
+                "Established comprehensive testing strategy with BDD/TDD methodology, ensuring reliable code quality and preventing regression issues",
+                "Led UI development team in fast-paced Agile/Scrum environment with weekly production deployments, mentoring junior developers",
                 "Collaborated with backend developers to design JSON API architecture and prepared comprehensive technical specifications for cross-functional teams"
             ]
         },
         {
-            "id": 2,
-            "company": "Libery Fox Technologies",
-            "location": "Hybrid",
-            "date": "2017 - 2019",
+            "id": "3",
+            "company": "Liberty Fox Technologies",
+            "location": "Philadelphia, PA / Hybrid",
+            "date": "2017 - 2019, 2025 - Present",
             "description": null,
             "highlights": [
-                "Contributed to a streaming platform development using Laravel and Drupal CMS, serving the largest privately-owned movie streaming service in the U.S.",
-                "Developed white-label solutions for streaming partners, creating customized platforms meeting specific client functional requirements",
-                "Built cross-platform applications for iOS, Android, Android TV, and Apple TV, implementing PayPal integration and SSO architecture",
-                "Implemented Digital Rights Management technologies including PlayReady, Widevine, and FairPlay Streaming for content protection",
-                "Developed new exclusive content streaming platform with subscription-based monetization"
+                "Modernized FlixFling platform, upgrading codebase from Laravel 5 to 10, improving security, performance, maintainability",
+                "Built UI for exclusive content streaming platform with subscription-based monetization utilizing Stripe and PayPal APIs",
+                "Contributed to original FlixFling streaming platform development, serving one of the largest privately-owned movie streaming services in the U.S.",
+                "Utilized Docker for local development environment configuration, ensuring parity with production infrastructure",
+                "Developed white-label partner solutions and created customized platforms meeting specific client requirements",
+                "Implemented PayPal integration, SSO architecture, and Digital Rights Management technologies for cross-platform content protection"
             ]
         },
         {
-            "id": 1,
-            "company": "Northdate Digital Corporation",
+            "id": "2",
+            "company": "Northgate Digital Corporation",
             "location": "Newtown, PA",
-            "date": "2012 - 2017",
+            "date": "2013 - 2017",
             "description": null,
             "highlights": [
-                "Led development of multiple hybrid mobile applications using proprietary front-end frameworks, managing international contractor teams and client relationships",
-                "Built innovative mobile solutions including high-speed camera integration for B-Fit ball fitting app and live music streaming capabilities for entertainment platform",
-                "Developed social platform combining geofencing, real-time chat, and psychometric assessment tools for university environments",
-                "Created secure payment processing mobile app featuring custom authentication patterns, GPS integration, and encrypted API communications"
+                "Owned end-to-end product development for client-facing mobile applications, translating business requirements into technical specifications and shipped products across iOS and Android platforms",
+                "Managed international contractor teams and maintained direct client relationships throughout product lifecycle",
+                "Built innovative mobile solutions including high-speed camera integration for Bridgestone Golf ball fitting app and live music streaming capabilities for Wolfgang's entertainment platform",
+                "Developed Thryver social platform combining geofencing, real-time chat, and psychometric assessment tools for university environments",
+                "Created secure payment processing mobile app for StraightPay featuring custom authentication patterns, GPS integration, and encrypted API communications"
             ]
         }
     ],
