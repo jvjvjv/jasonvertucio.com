@@ -236,7 +236,6 @@
     <!-- Custom scripts for this template -->
     @include('cookies')
     <script cookie-consent="functionality" src="{{ asset('js/app.js') }}"></script>
-    <script cookie-consent="functionality" src="{{ asset('js/resume.js') }}"></script>
     @include('gtag')
 
 </body>

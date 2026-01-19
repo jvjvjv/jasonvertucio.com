@@ -1,9 +1,17 @@
-(function($) {
-  "use strict";
+(function ($) {
+    "use strict";
 
-  // Close mobile menu when an anchor link is clicked
-  $('a[href*="#"]').click(function() {
-    $('#navbarSupportedContent').addClass('hidden');
-  });
+    // Close mobile menu when an anchor link is clicked
+    $('a[href*="#"]').click(function () {
+        $('#navbarSupportedContent').addClass('hidden');
+    });
+
+    $(document).on('keypress', function (e) {
+        const { key, shiftKey } = e
+
+        if (shiftKey && key.toUpperCase() == 'C') {
+            window.location.href = '/canvas';
+        }
+    })
 
 })(jQuery);
