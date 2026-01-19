@@ -4,14 +4,10 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 
-class TechSkill extends Component
-{
-    public $type;
+class TechSkill extends Component {
     public $icon;
 
-    public function __construct($type, $icon)
-    {
-        $this->type = $type;
+    public function __construct($icon) {
         $this->icon = $icon;
     }
 

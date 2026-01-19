@@ -134,58 +134,7 @@
             </div>
         </section>
 
-        <section class="site-section" id="skills">
-            <div class="w-full">
-                <h2 class="3xl text-3xl uppercase mb-5 font-bold">Skills</h2>
-
-                <div class="text-base uppercase font-medium tracking-wide mb-3">Programming Languages
-                    &amp; Tools</div>
-                <div class="mb-3 flex flex-col gap-y-4">
-                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
-                        @foreach ($config['icons']['lang'] as $icon)
-                            <x-tech-skill type="Language" :icon="$icon" />
-                        @endforeach
-                    </ul>
-
-                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
-                        @foreach ($config['icons']['framework'] as $icon)
-                            <x-tech-skill type="Framework" :icon="$icon" />
-                        @endforeach
-                    </ul>
-
-                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
-                        @foreach ($config['icons']['api'] as $icon)
-                            <x-tech-skill type="API" :icon="$icon" />
-                        @endforeach
-                    </ul>
-
-                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
-                        @foreach ($config['icons']['tech'] as $icon)
-                            <x-tech-skill type="Tech" :icon="$icon" />
-                        @endforeach
-                    </ul>
-
-                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
-                        @foreach ($config['icons']['source_control'] as $icon)
-                            <x-tech-skill type="SCM/CI" :icon="$icon" />
-                        @endforeach
-                    </ul>
-
-                    <ul class="list-none pl-0 flex flex-wrap gap-x-4">
-                        @foreach ($config['icons']['workflow'] as $icon)
-                            <x-tech-skill type="Workflow" :icon="$icon" />
-                        @endforeach
-                    </ul>
-                </div>
-
-                <div class="text-base uppercase font-medium tracking-wide mb-3">Workflow</div>
-                <ul class="list-none pl-0 ml-10">
-                    @foreach ($config['workflow'] as $line)
-                        <li class="relative"><i class="fa fa-check absolute -left-10"></i> {!! $line !!}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </section>
+        <x-skills :icons="$config['icons']" :workflow="$config['workflow']" />
 
         <hr class="m-0 border-0 border-t border-gray-200">
 
