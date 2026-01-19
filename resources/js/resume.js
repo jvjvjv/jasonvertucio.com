@@ -6,7 +6,7 @@
         $('#navbarSupportedContent').addClass('hidden');
     });
 
-    $(document).on('keypress', function (e) {
+    $(document).on('keydown', function (e) {
         const { key, shiftKey } = e
 
         if (shiftKey && key.toUpperCase() == 'C') {
