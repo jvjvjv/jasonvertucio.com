@@ -21,12 +21,6 @@
             "hover": "A varied list of tech skillsets."
         },
         {
-            "href": "/#experience",
-            "label": "#Experience",
-            "ariaLabel": "Experience",
-            "hover": "Selected work experience."
-        },
-        {
             "href": "/#interests",
             "label": "#Interests",
             "ariaLabel": "Interests",

@@ -189,7 +189,7 @@
 
         <hr class="m-0 border-0 border-t border-gray-200">
 
-        <section class="site-section" id="experience">
+        {{-- <section class="site-section" id="experience">
             <div class="w-full">
                 <h2 class="3xl font-heading text-3xl uppercase mb-5 font-bold">Experience</h2>
                 <p>
@@ -200,7 +200,7 @@
                     <x-job :job="$job" />
                 @endforeach
             </div>
-        </section>
+        </section> --}}
 
         <hr class="m-0 border-0 border-t border-gray-200">
 
