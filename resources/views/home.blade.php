@@ -29,9 +29,13 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
         crossorigin="anonymous"></script>
     --}}
+    <noscript>
+        <style>.fonts-loading { opacity: 1 !important; }</style>
+    </noscript>
 </head>
 
-<body id="page-top" class="font-body text-dark bg-gray-50">
+<body id="page-top" class="fonts-loading font-body text-dark bg-gray-50">
+
     <header>
         <h1 class="sr-only">{{ $config['aria_title'] }}</h1>
 
@@ -39,7 +43,8 @@
 
     <x-navigation :links="$config['links']" />
 
-    <main class="p-0 md:ml-52 lg:ml-64">
+    <main id="main-content" class="p-0 md:ml-52 lg:ml-64">
+
 
         <x-about :about-me="$config['about_me']" />
 
@@ -63,6 +68,14 @@
         </section>
 
     </main>
+
+    {{-- Font loading progress --}}
+    <script src="{{ asset('js/font-loader.js') }}"></script>
+    <script>
+        if (typeof initFontLoader === 'function') {
+            initFontLoader();
+        }
+    </script>
 
     <!-- Custom scripts for this template -->
     @include('cookies')

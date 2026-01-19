@@ -1,0 +1,28 @@
+/* Font loading states */
+.fonts-loading {
+    opacity: 0;
+    transition: none;
+}
+
+.fonts-loaded {
+    opacity: 1;
+    transition: opacity 100ms ease-in;
+}
+
+/* NProgress bar customization */
+#nprogress .bar {
+    background: var(--color-primary);
+    height: 3px;
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 10px var(--color-primary), 0 0 5px var(--color-primary);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .fonts-loading,
+    .fonts-loaded {
+        transition: none !important;
+    }
+}

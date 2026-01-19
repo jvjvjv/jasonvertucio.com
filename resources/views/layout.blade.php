@@ -54,8 +54,13 @@
     @yield('meta')
 
     <title>@yield('title', 'Home') | Jason Vertucio</title>
+    {{-- Preconnect to font CDNs for faster loading --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://db.onlinewebfonts.com">
+    <link rel="preconnect" href="https://fonts.cdnfonts.com">
     {{-- Fonts --}}
-    <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet">
     <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
     {{-- Custom styles for this template --}}
@@ -63,6 +68,9 @@
     {{--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
         crossorigin="anonymous"></script> --}}
+    <noscript>
+        <style>.fonts-loading { opacity: 1 !important; }</style>
+    </noscript>
 </head>
 
 <body id="page-top" class="font-body flex flex-col min-h-screen bg-gray-50">
@@ -150,7 +158,7 @@
         </div>
     </nav>
 
-    <div id="main" class="grow">
+    <div id="main" class="fonts-loading grow">
         <div class="mx-0 my-4 p-0">
             @yield('main')
         </div>
@@ -163,6 +171,14 @@
             </div>
         </div>
     </footer>
+
+    {{-- Font loading progress --}}
+    <script src="{{ asset('js/font-loader.js') }}"></script>
+    <script>
+        if (typeof initFontLoader === 'function') {
+            initFontLoader('#main');
+        }
+    </script>
 
     @include('gtag')
     {{--Custom scripts for this template --}}
