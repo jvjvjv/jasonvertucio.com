@@ -214,7 +214,13 @@
             {
                 "icon": "js-square",
                 "iconType": "fa-brands",
-                "label": "ECMAScript/JavaScript & TypeScript"
+                "label": "ECMAScript/JavaScript & TypeScript",
+                "animation": "beat"
+            },
+            {
+                "icon": "css3",
+                "iconType": "fa-brands",
+                "label": "CSS"
             },
             {
                 "icon": "php",
@@ -222,22 +228,23 @@
                 "label": "PHP"
             },
             {
+                "icon": "node-js",
+                "iconType": "fa-brands",
+                "label": "NodeJS"
+            },
+            {
                 "icon": "sass",
                 "iconType": "fa-brands",
                 "label": "Sass"
             },
             {
-                "icon": "node",
+                "icon": "android",
                 "iconType": "fa-brands",
-                "label": "NodeJS"
+                "label": "Android",
+                "animation": "bounce"
             },
             {
-                "icon": "google-play",
-                "iconType": "fa-brands",
-                "label": "Android"
-            },
-            {
-                "icon": "app-store",
+                "icon": "apple",
                 "iconType": "fa-brands",
                 "label": "iOS, iPadOS, Apple TV"
             }
@@ -261,6 +268,16 @@
         ],
         "tech": [
             {
+                "icon": "cloudflare",
+                "iconType": "fa-brands",
+                "label": "CloudFlare"
+            },
+            {
+                "icon": "docker",
+                "iconType": "fa-brands",
+                "label": "Docker"
+            },
+            {
                 "icon": "linode",
                 "iconType": "fa-brands",
                 "label": "linode"
@@ -283,7 +300,8 @@
             {
                 "icon": "ubuntu",
                 "iconType": "fa-brands",
-                "label": "Ubuntu"
+                "label": "Ubuntu",
+                "animation": "spin-pulse"
             },
             {
                 "icon": "raspberry-pi",
@@ -293,24 +311,34 @@
             {
                 "icon": "chromecast",
                 "iconType": "fa-brands",
-                "label": "Chromecast"
+                "label": "Chromecast",
+                "animation": "shake"
             },
             {
                 "icon": "bluetooth-b",
                 "iconType": "fa-brands",
-                "label": "Bluetooth"
+                "label": "Bluetooth",
+                "animation": "shake"
             }
         ],
         "framework": [
             {
                 "icon": "vuejs",
                 "iconType": "fa-brands",
-                "label": "VueJS"
+                "label": "VueJS",
+                "animation": "flip"
             },
             {
                 "icon": "laravel",
                 "iconType": "fa-brands",
-                "label": "Laravel"
+                "label": "Laravel",
+                "animation": "spin-pulse"
+            },
+            {
+                "icon": "react",
+                "iconType": "fa-brands",
+                "label": "ReactJS, ReactNative",
+                "animation": "shake"
             },
             {
                 "icon": "bootstrap",
@@ -321,11 +349,6 @@
                 "icon": "angular",
                 "iconType": "fa-brands",
                 "label": "Angular"
-            },
-            {
-                "icon": "react",
-                "iconType": "fa-brands",
-                "label": "ReactJS, ReactNative"
             }
         ],
         "api": [
@@ -353,11 +376,6 @@
                 "icon": "facebook-square",
                 "iconType": "fa-brands",
                 "label": "Facebook"
-            },
-            {
-                "icon": "Paper",
-                "iconType": "fa-brands",
-                "label": "Paper"
             }
         ],
         "source_control": [
@@ -374,12 +392,14 @@
             {
                 "icon": "sourcetree",
                 "iconType": "fa-brands",
-                "label": "Sourecetree"
+                "label": "Sourecetree",
+                "animation": "flip"
             },
             {
                 "icon": "github",
                 "iconType": "fa-brands",
-                "label": "Github"
+                "label": "Github",
+                "animation": "flip"
             },
             {
                 "icon": "bitbucket",
@@ -389,19 +409,33 @@
             {
                 "icon": "jenkins",
                 "iconType": "fa-brands",
-                "label": "Jenkins"
+                "label": "Jenkins",
+                "animation": "bounce"
             }
         ],
         "workflow": [
             {
-                "icon": "rotate-left",
+                "icon": "figma",
+                "iconType": "fa-brands",
+                "label": "Figma"
+            },
+            {
+                "icon": "arrows-rotate",
                 "iconType": "fa-solid",
-                "label": "Agile"
+                "label": "Agile",
+                "animation": "spin"
+            },
+            {
+                "icon": "arrows-spin",
+                "iconType": "fa-solid",
+                "label": "Scrum",
+                "animation": "spin"
             },
             {
                 "icon": "slack",
                 "iconType": "fa-brands",
-                "label": "Slack"
+                "label": "Slack",
+                "animation": "beat-fade"
             },
             {
                 "icon": "rocketchat",
@@ -416,7 +450,8 @@
             {
                 "icon": "jira",
                 "iconType": "fa-brands",
-                "label": "Jira"
+                "label": "Jira",
+                "animation": "spin-pulse"
             },
             {
                 "icon": "confluence",

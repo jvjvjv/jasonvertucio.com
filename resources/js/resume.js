@@ -7,9 +7,9 @@
     });
 
     $(document).on('keydown', function (e) {
-        const { key, shiftKey } = e
+        const { key, shiftKey, ctrlKey } = e
 
-        if (shiftKey && key.toUpperCase() == 'C') {
+        if (shiftKey && key.toUpperCase() == 'C' && !ctrlKey) {
             window.location.href = '/canvas';
         }
     })

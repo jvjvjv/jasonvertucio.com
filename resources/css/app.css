@@ -87,3 +87,38 @@ nav :focus-visible {
         outline-offset: -4px;
     }
 }
+
+/* Font Awesome hover animations */
+@layer components {
+    .fa-hover-spin:hover {
+        animation: fa-spin 2s linear infinite;
+    }
+
+    .fa-hover-spin-pulse:hover {
+        animation: fa-spin 1s steps(8) infinite;
+    }
+
+    .fa-hover-beat:hover {
+        animation: fa-beat 1s ease-in-out infinite;
+    }
+
+    .fa-hover-beat-fade:hover {
+        animation: fa-beat-fade 1s ease-in-out infinite;
+    }
+
+    .fa-hover-bounce:hover {
+        animation: fa-bounce 1s ease-in-out infinite;
+    }
+
+    .fa-hover-shake:hover {
+        animation: fa-shake 1s ease-in-out infinite;
+    }
+
+    .fa-hover-fade:hover {
+        animation: fa-fade 1s ease-in-out infinite;
+    }
+
+    .fa-hover-flip:hover {
+        animation: fa-flip 1s ease-in-out infinite;
+    }
+}
