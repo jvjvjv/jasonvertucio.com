@@ -33,7 +33,7 @@
 
     <x-navigation :config="$config" />
 
-    <main class="p-0 lg:ml-64">
+    <main class="p-0 md:ml-52 lg:ml-64">
 
         <section class="site-section" id="about">
             <div class="w-full">
@@ -46,8 +46,10 @@
                     {{ $config['about_me']['address']['state'] }}
                     {{ $config['about_me']['address']['zip'] }}
                     &middot;
-                    {{ $config['about_me']['phone'] }}
-                    &middot;
+                    {{--
+                        {{ $config['about_me']['phone'] }}
+                        &middot;
+                    --}}
                     @if($config['about_me']['telegram'])
                         <a class="text-primary underline hover:text-secondary transition-all duration-500"
                             href="{{ $config['about_me']['telegram']['url'] }}" target="_blank">
@@ -222,6 +224,11 @@
                             {{ $btc->disclaimer }}</small></p>
                 @endif
             </div>
+        </section>
+
+        <section class="site-section md:!hidden" id="image">
+            <img class="my-8 w-full h-full rounded-full border-4 border-white/20 mx-auto" src="{{ asset('img/jv.png') }}"
+                alt="Jason Vertucio">
         </section>
 
     </main>
