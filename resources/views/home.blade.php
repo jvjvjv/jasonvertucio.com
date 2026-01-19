@@ -48,10 +48,10 @@
                     &middot;
                     {{ $config['about_me']['phone'] }}
                     &middot;
-                    @if($config['about_me']['telgram'])
-                        <a class="text-primary underline hover:text-secondary" href="{{ $config['about_me']['telgram']['url'] }}"
-                            target="_blank">
-                            {{ $config['about_me']['telgram']['label'] }}
+                    @if($config['about_me']['telegram'])
+                        <a class="text-primary underline hover:text-secondary transition-all duration-500"
+                            href="{{ $config['about_me']['telegram']['url'] }}" target="_blank">
+                            {{ $config['about_me']['telegram']['label'] }}
                         </a>
                     @else
                     <a class="text-primary hover:text-secondary"
@@ -105,10 +105,10 @@
                 <p>
                     {{ $blog['published_at']->diffForHumans() }}
                 </p>
-                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary hover:bg-primary hover:text-white"
+                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary hover:bg-primary hover:text-white focus:bg-primary focus:text-white transition-all duration-300"
                     href="/blog/{{ $blog['slug'] }}">Read</a>
                 @ifcanvasauthenticated
-                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary hover:bg-primary hover:text-white ml-2"
+                <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary focus:bg-primary focus:text-white hover:bg-primary hover:text-white ml-2 transition-all duration-300"
                     href="/{{ config('canvas.path') }}/posts/{{ $blog['id'] }}/edit">Edit</a>
                 @endifcanvasauthenticated
             </div>
