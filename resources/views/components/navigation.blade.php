@@ -23,7 +23,7 @@
                     href="/{{ config('canvas.path') }}">Go to Canvas Blog</a>
             </li>
             @endifcanvasauthenticated
-            @foreach($config['links'] as $link)
+            @foreach($links as $link)
                 <li>
                     @if (isset($link['target']))
                         <a class="block px-4 py-2 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md"

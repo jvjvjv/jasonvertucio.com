@@ -1,6 +1,6 @@
 @if (isset($icon['icon']))
     <li class="inline-block text-5xl w-14" aria-label="{{ $icon['label'] }}">
-        <i class="{{ $icon['iconType'] }} fa-{{$icon['icon'] }} {{ isset($icon['animation']) ? "fa-hover-${icon['animation']}" : "" }}"
+        <i class="text-dark {{ $icon['iconType'] }} fa-{{$icon['icon'] }} {{ isset($icon['animation']) ? "fa-hover-${icon['animation']}" : "" }}"
             title="{{ $icon['label'] }}"
             aria-hidden="true"></i>
     </li>

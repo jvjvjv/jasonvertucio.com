@@ -6,16 +6,16 @@ use Illuminate\View\Component;
 
 class Navigation extends Component
 {
-    public $config;
+    public $links;
 
     /**
      * Create a new component instance.
      *
      * @return void
      */
-    public function __construct($config)
+    public function __construct($links)
     {
-        $this->config = $config;
+        $this->links = $links;
     }
 
     public function link_label($link) {
