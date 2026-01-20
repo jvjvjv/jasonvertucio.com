@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Canvas\Models\User as CanvasUser;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
 class CreateUserCommand extends Command
@@ -14,14 +15,14 @@ class CreateUserCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'user:create {email} {name} {password?}';
+    protected $signature = 'user:create {email} {name} {password?} {--role= : Assign a role}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Creates a new user';
+    protected $description = 'Creates a new user with optional role assignment';
 
     /**
      * Create a new command instance.
@@ -43,6 +44,14 @@ class CreateUserCommand extends Command
         $email = $this->argument('email');
         $name = $this->argument('name');
         $password = $this->argument('password');
+        $roleName = $this->option('role');
+
+        // Validate user doesn't exist
+        if (User::where('email', $email)->exists()) {
+            $this->error("User with email '{$email}' already exists.");
+            return 1;
+        }
+
         if ($password == null) {
             $password = $this->secret('Enter new password');
             $password_confirm = $this->secret('Enter password again to confirm');
@@ -51,12 +60,31 @@ class CreateUserCommand extends Command
                 return 1;
             }
         }
-        User::create([
+
+        $user = User::create([
             'name' => $name,
             'email' => $email,
             'password' => Hash::make($password),
         ]);
-        $this->info("DONE");
+
+        $this->info("User created successfully!");
+
+        // Role assignment
+        if ($roleName) {
+            try {
+                $role = Role::findByName($roleName);
+                $user->assignRole($role);
+                $this->info("Role '{$roleName}' assigned.");
+            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+                $this->warn("Role '{$roleName}' does not exist. User created without role.");
+                $availableRoles = Role::pluck('name')->toArray();
+                $this->info("Available roles: " . implode(', ', $availableRoles));
+            }
+        }
+
+        $this->line("Email: {$email}");
+        $this->line("Roles: " . ($user->getRoleNames()->join(', ') ?: '<none>'));
+
         return 0;
     }
 }
