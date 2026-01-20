@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use BSPDX\AuthKit\Traits\HasAuthKit;
@@ -9,7 +10,7 @@ use BSPDX\AuthKit\Contracts\HasPasskeys;
 
 class User extends Authenticatable implements HasPasskeys
 {
-    use Notifiable, HasAuthKit;
+    use HasUuids, Notifiable, HasAuthKit;
 
     /**
      * The attributes that are mass assignable.
@@ -51,5 +52,55 @@ class User extends Authenticatable implements HasPasskeys
     public function canManageBinshopsBlogPosts(): bool
     {
         return $this->hasAnyRole(['super-admin', 'admin', 'editor']);
+    }
+
+    /**
+     * Canvas compatibility: Check if user is an Admin.
+     *
+     * @return bool
+     */
+    public function getIsAdminAttribute(): bool
+    {
+        return $this->hasAnyRole(['super-admin', 'admin']);
+    }
+
+    /**
+     * Canvas compatibility: Check if user is an Editor.
+     *
+     * @return bool
+     */
+    public function getIsEditorAttribute(): bool
+    {
+        return $this->hasAnyRole(['super-admin', 'admin', 'editor']);
+    }
+
+    /**
+     * Canvas compatibility: Check if user is a Contributor.
+     *
+     * @return bool
+     */
+    public function getIsContributorAttribute(): bool
+    {
+        return $this->hasAnyRole(['super-admin', 'admin', 'editor', 'contributor']);
+    }
+
+    /**
+     * Canvas compatibility: Return a default avatar.
+     *
+     * @return string
+     */
+    public function getDefaultAvatarAttribute(): string
+    {
+        return 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($this->email ?? ''))) . '?d=mp';
+    }
+
+    /**
+     * Canvas compatibility: Return a default locale.
+     *
+     * @return string
+     */
+    public function getDefaultLocaleAttribute(): string
+    {
+        return config('app.locale');
     }
 }

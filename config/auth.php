@@ -41,6 +41,11 @@ return [
             'provider' => 'users',
         ],
 
+        'canvas' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
         'api' => [
             'driver' => 'token',
             'provider' => 'users',

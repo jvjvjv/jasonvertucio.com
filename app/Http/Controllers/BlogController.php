@@ -93,8 +93,8 @@ class BlogController extends Controller
             return $this->topicsOrTags($slug);
         }
         $auth = Auth::guard('canvas');
-        if ($auth->check() && $post->user->id === $auth->user()->id) {
-            // Do nothing
+        if ($auth->check() && $post->user && $post->user->id === $auth->user()->id) {
+            // Do nothing - author viewing their own post
         } else {
             // If it's not the author, or if there IS no user
             event(new PostViewed($post));

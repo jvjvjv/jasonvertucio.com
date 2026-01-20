@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\HomeController;
@@ -23,6 +24,13 @@ use App\Http\Controllers\WordpressController;
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login')->middleware('guest');
+
+Route::get('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
 
 // Fortify auto-registers these routes:
 // POST /login - Login handler
