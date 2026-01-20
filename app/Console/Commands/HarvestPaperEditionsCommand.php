@@ -33,7 +33,7 @@ class HarvestPaperEditionsCommand extends Command
         parent::__construct();
     }
 
-    public function getEdition(String $id = null)
+    public function getEdition(?string $id = null)
     {
         $url = 'http://paper.li/~api/papers/' . env('PAPER_ID');
         if ($id) {
