@@ -3,13 +3,15 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Log;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use App\Models\IpBan;
+use Symfony\Component\HttpFoundation\Response;
 
 class IpMiddleware {
 
-    public function handle($request, Closure $next) {
+    public function handle(Request $request, Closure $next): Response {
         if (env('APP_DEBUG'))
             return $next($request);
 

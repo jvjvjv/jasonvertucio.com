@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Canvas\Models\User as CanvasUser;
 use App\Models\User;
-use Hash;
+use Illuminate\Support\Facades\Hash;
 
 class CreateUserCommand extends Command
 {
@@ -36,9 +36,9 @@ class CreateUserCommand extends Command
     /**
      * Execute the console command.
      *
-     * @return mixed
+     * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $email = $this->argument('email');
         $name = $this->argument('name');
@@ -57,5 +57,6 @@ class CreateUserCommand extends Command
             'password' => Hash::make($password),
         ]);
         $this->info("DONE");
+        return 0;
     }
 }

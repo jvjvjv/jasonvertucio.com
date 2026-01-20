@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Canvas\Models\User as CanvasUser;
 use App\Models\User;
-use Hash;
+use Illuminate\Support\Facades\Hash;
 
 class ChangeUserPasswordCommand extends Command
 {
@@ -36,9 +36,9 @@ class ChangeUserPasswordCommand extends Command
     /**
      * Execute the console command.
      *
-     * @return mixed
+     * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $email = $this->argument('email');
         $password = $this->argument('new-password');
@@ -54,5 +54,6 @@ class ChangeUserPasswordCommand extends Command
         $user->password = Hash::make($password);
         $user->save();
         $this->info("DONE");
+        return 0;
     }
 }

@@ -84,5 +84,6 @@ class HarvestPaperEditionsCommand extends Command
                 $edition_id = $this->getEdition($edition_id);
             }
         } while ($edition_id != null && ++$count < $limit);
+        return 0;
     }
 }

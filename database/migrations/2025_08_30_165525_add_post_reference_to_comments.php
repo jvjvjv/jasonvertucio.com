@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('comments', function (Blueprint $table) {
-            $table->unsignedBigInteger('post_id')->nullable()->after('id');
-            $table->foreign('post_id')->references('id')->on('posts')->onDelete('set null');
+            if (!Schema::hasColumn('comments', 'post_id')) {
+                $table->unsignedBigInteger('post_id')->nullable()->after('id');
+            }
+            // Reference Canvas posts table - only add foreign key if it doesn't exist
+            if (!Schema::hasColumn('comments', 'post_id')) {
+                $table->foreign('post_id')->references('id')->on('canvas_posts')->onDelete('set null');
+            }
         });
     }
 
