@@ -80,6 +80,7 @@
     <!-- Custom scripts for this template -->
     @include('cookies')
     <script cookie-consent="functionality" src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/home.js') }}"></script>
     @include('gtag')
 
 </body>

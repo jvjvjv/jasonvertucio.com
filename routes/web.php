@@ -19,10 +19,16 @@ use App\Http\Controllers\WordpressController;
 |
 */
 
-// Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-// Route::post('login', [LoginController::class, 'login']);
-// Route::post('logout', [LoginController::class, 'logout'])->name('logout');
-// Route::get('logout', [LoginController::class, 'logout'])->name('get_logout');
+// AuthKit/Fortify authentication routes
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login')->middleware('guest');
+
+// Fortify auto-registers these routes:
+// POST /login - Login handler
+// POST /logout - Logout handler
+// GET/POST /password/reset - Password reset
+// POST /two-factor-challenge - 2FA challenge
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about/{any?}', function () {

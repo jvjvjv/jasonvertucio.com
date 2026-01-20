@@ -16,6 +16,7 @@ mix
   .js('resources/js/resume.js', 'public/js')
   .js('resources/js/currently-watching.js', 'public/js')
   .js('resources/js/font-loader.js', 'public/js')
+  .js('resources/js/home.js', 'public/js')
   .vue()
   .copy('resources/config/config.json','public')
   .sourceMaps()

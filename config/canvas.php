@@ -26,7 +26,7 @@ return [
     |
     */
 
-    'user' => Illuminate\Foundation\Auth\User::class,
+    'user' => App\Models\User::class,
 
     /*
     |--------------------------------------------------------------------------

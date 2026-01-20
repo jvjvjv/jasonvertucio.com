@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use BSPDX\AuthKit\Traits\HasAuthKit;
+use BSPDX\AuthKit\Contracts\HasPasskeys;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasPasskeys
 {
-    use Notifiable;
+    use Notifiable, HasAuthKit;
 
     /**
      * The attributes that are mass assignable.
@@ -25,7 +26,10 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -35,32 +39,17 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     /**
-     * Enter your own logic (e.g. if ($this->id === 1) to
-     *   enable this user to be able to add/edit blog posts
+     * Check if user can manage Canvas blog posts.
+     * Now uses RBAC instead of hardcoded email check.
      *
-     * @return bool - true = they can edit / manage blog posts,
-     *        false = they have no access to the blog admin panel
+     * @return bool
      */
-    public function canManageBinshopsBlogPosts()
+    public function canManageBinshopsBlogPosts(): bool
     {
-        // Enter the logic needed for your app.
-        // Maybe you can just hardcode in a user id that you
-        //   know is always an admin ID?
-
-        if ($this->email === 'me@jasonvertucio.com') {
-
-            // return true so this user CAN edit/post/delete
-            // blog posts (and post any HTML/JS)
-
-            return true;
-        }
-
-        // otherwise return false, so they have no access
-        // to the admin panel (but can still view posts)
-
-        return false;
+        return $this->hasAnyRole(['super-admin', 'admin', 'editor']);
     }
 }

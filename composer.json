@@ -10,6 +10,7 @@
     "require": {
         "php": "^8.2.0",
         "austintoddj/canvas": "^6.0.55",
+        "bspdx/authkit": "^0.3.0",
         "cocur/slugify": "^4.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^12.0",
@@ -38,7 +39,7 @@
             "App\\": "app/"
         },
         "classmap": [
-            "database/seeds",
+            "database/seeders",
             "database/factories"
         ]
     },

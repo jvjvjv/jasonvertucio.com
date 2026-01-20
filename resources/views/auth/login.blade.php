@@ -1,68 +1,82 @@
 @extends('layout')
 
 @section('main')
-
-    <div class="row justify-content-center my-5">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">{{ __('Login') }}</div>
-
-                <div class="card-body">
-                    <form method="POST" action="{{ route('login') }}">
-                        @csrf
-
-                        <div class="form-group row">
-                            <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
-
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            @csrf
-                            <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <div class="col-md-6 offset-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-
-                                    <label class="form-check-label" for="remember">
-                                        {{ __('Remember Me') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group row mb-0">
-                            <div class="col-md-8 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Login') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="max-w-md w-full">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-heading text-secondary mb-2">Welcome Back</h1>
+            <p class="text-dark/70">Sign in to manage your blog</p>
         </div>
 
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            @if ($errors->any())
+                <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded" role="alert">
+                    <ul class="list-disc list-inside text-sm">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login') }}">
+                @csrf
+
+                <div class="mb-6">
+                    <label for="email" class="block text-sm font-medium text-dark mb-2">
+                        Email Address
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        value="{{ old('email') }}"
+                        required
+                        autofocus
+                        autocomplete="email"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-link focus:border-transparent transition"
+                    >
+                </div>
+
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-dark mb-2">
+                        Password
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        required
+                        autocomplete="current-password"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-link focus:border-transparent transition"
+                    >
+                </div>
+
+                <div class="mb-6 flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input
+                            type="checkbox"
+                            name="remember"
+                            class="rounded border-gray-300 text-primary focus:ring-link"
+                        >
+                        <span class="ml-2 text-sm text-dark">Remember me</span>
+                    </label>
+
+                    @if (Route::has('password.request'))
+                        <a href="{{ route('password.request') }}" class="text-sm text-link hover:underline">
+                            Forgot password?
+                        </a>
+                    @endif
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
