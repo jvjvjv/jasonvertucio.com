@@ -19,6 +19,9 @@ class User extends Authenticatable implements HasPasskeys
      */
     protected $fillable = [
         'name', 'email', 'password',
+        'allow_passkey_login',
+        'allow_totp_login',
+        'require_password',
     ];
 
     /**
@@ -41,6 +44,9 @@ class User extends Authenticatable implements HasPasskeys
     protected $casts = [
         'email_verified_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
+        'allow_passkey_login' => 'boolean',
+        'allow_totp_login' => 'boolean',
+        'require_password' => 'boolean',
     ];
 
     /**

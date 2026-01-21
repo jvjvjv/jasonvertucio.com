@@ -54,6 +54,38 @@ return [
 
         // Enable account deletion
         'account_deletion' => false,
+
+        // Enable profile page
+        'profile' => true,
+
+        // Enable passwordless authentication
+        'passwordless_login' => true,
+
+        // Show permissions on profile page
+        'show_permissions' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profile Page Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the user profile page.
+    |
+    */
+
+    'profile' => [
+        // Profile route path
+        'path' => '/profile',
+
+        // Middleware for profile routes
+        'middleware' => ['web', 'auth'],
+
+        // Require password confirmation for sensitive operations
+        'require_password_confirm' => true,
+
+        // Password confirmation timeout (seconds)
+        'password_timeout' => 10800, // 3 hours
     ],
 
     /*
@@ -117,8 +149,8 @@ return [
 
         // Require passkey for specific user roles
         'required_for_roles' => [
-            // 'admin',
-            // 'super-admin',
+            'admin',
+            'super-admin',
         ],
     ],
 
@@ -158,9 +190,9 @@ return [
     */
 
     'redirects' => [
-        'login' => '/canvas',
+        'login' => '/',
         'logout' => '/',
-        'register' => '/canvas',
+        'register' => '/',
         'password_reset' => '/login',
         'email_verification' => '/canvas',
         'two_factor_challenge' => '/canvas',

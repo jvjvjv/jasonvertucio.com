@@ -5,12 +5,12 @@
 (function ($) {
     "use strict";
 
-    // SHIFT + C keyboard shortcut to navigate to Canvas
+    // SHIFT + L keyboard shortcut to log in
     $(document).on('keydown', function (e) {
         const { key, shiftKey, ctrlKey } = e;
 
-        if (shiftKey && key.toUpperCase() === 'C' && !ctrlKey) {
-            window.location.href = '/canvas';
+        if (shiftKey && key.toUpperCase() === 'L' && !ctrlKey) {
+            window.location.href = '/login';
         }
     });
 

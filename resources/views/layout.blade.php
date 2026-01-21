@@ -130,6 +130,9 @@
                             @endifcanvasauthenticated
                             @ifauthenticated
                             <div class="border-t border-gray-200"></div>
+                            <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="{{ route('authkit.profile.show') }}">
+                                My Profile
+                            </a>
                             <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="/logout">
                                 Log out
                             </a>

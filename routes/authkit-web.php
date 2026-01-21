@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use BSPDX\AuthKit\Http\Controllers\TwoFactorAuthController;
 use BSPDX\AuthKit\Http\Controllers\PasskeyAuthController;
+use BSPDX\AuthKit\Http\Controllers\ProfileController;
+use BSPDX\AuthKit\Http\Controllers\LoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,10 +18,24 @@ use BSPDX\AuthKit\Http\Controllers\PasskeyAuthController;
 |
 */
 
-// Splash Page
-Route::get('/', function () {
-    return view('splash');
-})->name('home');
+
+// Profile Routes
+Route::middleware(config('authkit.profile.middleware', ['web', 'auth']))->group(function () {
+    Route::get(config('authkit.profile.path', '/profile'), [ProfileController::class, 'show'])
+        ->name('authkit.profile.show');
+
+    Route::put(config('authkit.profile.path', '/profile') . '/auth-preferences', [ProfileController::class, 'updateAuthPreferences'])
+        ->name('authkit.profile.auth-preferences.update');
+});
+
+// Passwordless Login Routes
+Route::middleware(['web', 'guest'])->group(function () {
+    Route::post('/login/methods', [LoginController::class, 'getAuthMethods'])
+        ->name('authkit.login.methods');
+
+    Route::post('/login/totp', [LoginController::class, 'authenticateWithTotp'])
+        ->name('authkit.login.totp');
+});
 
 // Two-Factor Authentication Routes
 Route::middleware(['web', 'auth'])->group(function () {
@@ -74,26 +90,5 @@ Route::middleware(['web'])->group(function () {
 
         Route::delete('/user/passkeys/{passkey}', [PasskeyAuthController::class, 'destroy'])
             ->name('passkeys.destroy');
-    });
-});
-
-// Example protected routes using AuthKit middleware
-Route::middleware(['web', 'auth', '2fa'])->group(function () {
-    // Routes that require 2FA to be enabled (if required by role)
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
-
-// Example RBAC protected routes
-Route::middleware(['web', 'auth', 'role:admin'])->group(function () {
-    Route::get('/admin', function () {
-        return 'Admin Dashboard';
-    });
-});
-
-Route::middleware(['web', 'auth', 'permission:edit-posts'])->group(function () {
-    Route::get('/posts/edit', function () {
-        return 'Edit Posts';
     });
 });
