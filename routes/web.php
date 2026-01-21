@@ -7,7 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\FacebookCallbackController;
 use App\Http\Controllers\WordpressController;
-// use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\LoginMethodsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +24,10 @@ use App\Http\Controllers\WordpressController;
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login')->middleware('guest');
+
+Route::post('/login/check-email', [LoginMethodsController::class, 'check'])
+    ->middleware(['web', 'guest'])
+    ->name('login.check-email');
 
 Route::get('/logout', function () {
     Auth::logout();

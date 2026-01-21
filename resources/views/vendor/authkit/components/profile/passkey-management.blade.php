@@ -236,6 +236,9 @@
 
             const options = await optionsResponse.json();
 
+            // Store original options to send back to server for validation
+            const originalOptions = JSON.parse(JSON.stringify(options));
+
             // Prepare options for WebAuthn
             options.challenge = Uint8Array.from(atob(options.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
             options.user.id = Uint8Array.from(atob(options.user.id.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
@@ -269,6 +272,7 @@
                         },
                         type: credential.type,
                     },
+                    options: originalOptions,
                 }),
             });
 
