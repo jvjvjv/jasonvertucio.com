@@ -12,7 +12,7 @@
     "require": {
         "php": "^8.2.0",
         "austintoddj/canvas": "^6.0.55",
-        "bspdx/authkit": "^0.3.2",
+        "bspdx/authkit": "^0.5.0",
         "cocur/slugify": "^4.7.1",
         "guzzlehttp/guzzle": "^7.10.0",
         "laravel/framework": "^12.47",

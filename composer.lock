@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4102826606382b62fe3db5e4089128c9",
+    "content-hash": "f7cf8b1ee443617e22497a6f8b2f676f",
     "packages": [
         {
             "name": "austintoddj/canvas",
@@ -192,16 +192,16 @@
         },
         {
             "name": "bspdx/authkit",
-            "version": "v0.3.2",
+            "version": "v0.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/TheBootstrapParadox/AuthKit.git",
-                "reference": "ca81a3c782e3ce0c34ceab4fcae053ec1fb4a8e5"
+                "reference": "0ca8d511222860b582d5e7d8edf8641d619d6f38"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/TheBootstrapParadox/AuthKit/zipball/ca81a3c782e3ce0c34ceab4fcae053ec1fb4a8e5",
-                "reference": "ca81a3c782e3ce0c34ceab4fcae053ec1fb4a8e5",
+                "url": "https://api.github.com/repos/TheBootstrapParadox/AuthKit/zipball/0ca8d511222860b582d5e7d8edf8641d619d6f38",
+                "reference": "0ca8d511222860b582d5e7d8edf8641d619d6f38",
                 "shasum": ""
             },
             "require": {
@@ -259,9 +259,9 @@
             ],
             "support": {
                 "issues": "https://github.com/TheBootstrapParadox/AuthKit/issues",
-                "source": "https://github.com/TheBootstrapParadox/AuthKit/tree/v0.3.2"
+                "source": "https://github.com/TheBootstrapParadox/AuthKit/tree/v0.5.1"
             },
-            "time": "2026-01-20T20:10:47+00:00"
+            "time": "2026-01-21T11:31:33+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -1486,16 +1486,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v12.47.0",
+            "version": "v12.48.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "ab8114c2e78f32e64eb238fc4b495bea3f8b80ec"
+                "reference": "0f0974a9769378ccd9c9935c09b9927f3a606830"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/ab8114c2e78f32e64eb238fc4b495bea3f8b80ec",
-                "reference": "ab8114c2e78f32e64eb238fc4b495bea3f8b80ec",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/0f0974a9769378ccd9c9935c09b9927f3a606830",
+                "reference": "0f0974a9769378ccd9c9935c09b9927f3a606830",
                 "shasum": ""
             },
             "require": {
@@ -1608,7 +1608,7 @@
                 "league/flysystem-sftp-v3": "^3.25.1",
                 "mockery/mockery": "^1.6.10",
                 "opis/json-schema": "^2.4.1",
-                "orchestra/testbench-core": "^10.8.1",
+                "orchestra/testbench-core": "^10.9.0",
                 "pda/pheanstalk": "^5.0.6|^7.0.0",
                 "php-http/discovery": "^1.15",
                 "phpstan/phpstan": "^2.0",
@@ -1704,7 +1704,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2026-01-13T15:29:06+00:00"
+            "time": "2026-01-20T16:12:36+00:00"
         },
         {
             "name": "laravel/prompts",
