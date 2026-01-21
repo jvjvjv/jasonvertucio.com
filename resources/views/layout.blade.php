@@ -17,6 +17,8 @@
         });
 
         $meta = [
+    'viewport' => 'width=device-width, initial-scale=1, shrink-to-fit=no',
+    'csrf-token' => csrf_token(),
             'author' => 'Jason Vertucio',
             'description' => 'Jason Vertucio does mobile application development.',
             'og:title' => 'Jason, who did a thing',

@@ -5,10 +5,10 @@
             --authkit-primary-hover: var(--primary-strong, #0067a6);
             --authkit-secondary: var(--secondary, #10b981);
             --authkit-danger: var(--danger, #ef4444);
-            --authkit-text: var(--text-primary, #e2e8f0);
+            --authkit-text: #311f13;
             --authkit-text-muted: var(--text-muted, #94a3b8);
             --authkit-border: var(--border, rgba(15, 23, 42, 0.12));
-            --authkit-bg: var(--surface, #0b1021);
+            --authkit-bg: #f9f9ff;
             --authkit-bg-secondary: var(--panel, rgba(15, 23, 42, 0.55));
             --authkit-radius: 0.85rem;
             --authkit-shadow: 0 24px 40px rgba(5, 6, 21, 0.35);
