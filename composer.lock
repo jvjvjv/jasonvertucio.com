@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e21eab19550f9b6a5b16cac11d55272c",
+    "content-hash": "4102826606382b62fe3db5e4089128c9",
     "packages": [
         {
             "name": "austintoddj/canvas",
@@ -192,16 +192,16 @@
         },
         {
             "name": "bspdx/authkit",
-            "version": "v0.3.1",
+            "version": "v0.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/TheBootstrapParadox/AuthKit.git",
-                "reference": "18945b36d78c90651580927764c9808e8b1fa322"
+                "reference": "ca81a3c782e3ce0c34ceab4fcae053ec1fb4a8e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/TheBootstrapParadox/AuthKit/zipball/18945b36d78c90651580927764c9808e8b1fa322",
-                "reference": "18945b36d78c90651580927764c9808e8b1fa322",
+                "url": "https://api.github.com/repos/TheBootstrapParadox/AuthKit/zipball/ca81a3c782e3ce0c34ceab4fcae053ec1fb4a8e5",
+                "reference": "ca81a3c782e3ce0c34ceab4fcae053ec1fb4a8e5",
                 "shasum": ""
             },
             "require": {
@@ -259,9 +259,9 @@
             ],
             "support": {
                 "issues": "https://github.com/TheBootstrapParadox/AuthKit/issues",
-                "source": "https://github.com/TheBootstrapParadox/AuthKit/tree/v0.3.1"
+                "source": "https://github.com/TheBootstrapParadox/AuthKit/tree/v0.3.2"
             },
-            "time": "2026-01-20T19:42:57+00:00"
+            "time": "2026-01-20T20:10:47+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
