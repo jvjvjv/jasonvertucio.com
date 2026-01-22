@@ -22,17 +22,11 @@ export default defineConfig({
                 { src: 'resources/img/*', dest: 'img' },
                 { src: 'resources/wp-includes/*', dest: 'wp-includes' },
                 { src: 'resources/wp-admin/*', dest: 'wp-admin' },
+                { src: 'node_modules/@fortawesome/fontawesome-free/webfonts/*', dest: 'webfonts' },
             ],
         }),
     ],
     build: {
-        sourcemap: true,
-        rollupOptions: {
-            output: {
-                manualChunks: {
-                    'axios': ['axios'],
-                },
-            },
-        },
+        sourcemap: process.env.NODE_ENV !== 'production',
     },
 });
