@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import vue from '@vitejs/plugin-vue';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
@@ -12,14 +11,11 @@ export default defineConfig({
                 'resources/js/currently-watching.js',
                 'resources/js/font-loader.js',
                 'resources/js/home.js',
-                'resources/js/canvas-ui/app.js',
                 'resources/css/app.css',
                 'resources/css/blog.css',
-                'resources/css/canvas-ui.css',
             ],
             refresh: true,
         }),
-        vue(),
         viteStaticCopy({
             targets: [
                 { src: 'resources/config/config.json', dest: '' },
@@ -34,13 +30,7 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    // Vue ecosystem
-                    'vue-vendor': ['vue', 'vue-router', '@unhead/vue'],
-                    // Utilities
-                    'moment': ['moment'],
                     'axios': ['axios'],
-                    // Highlight.js (large)
-                    'highlight': ['highlight.js'],
                 },
             },
         },
