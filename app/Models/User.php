@@ -22,6 +22,13 @@ class User extends Authenticatable implements HasPasskeys
         'allow_passkey_login',
         'allow_totp_login',
         'require_password',
+        'username',
+        'summary',
+        'avatar',
+        'dark_mode',
+        'digest',
+        'locale',
+        'role',
     ];
 
     /**
@@ -47,6 +54,9 @@ class User extends Authenticatable implements HasPasskeys
         'allow_passkey_login' => 'boolean',
         'allow_totp_login' => 'boolean',
         'require_password' => 'boolean',
+        'dark_mode' => 'boolean',
+        'digest' => 'boolean',
+        'role' => 'integer',
     ];
 
     /**
