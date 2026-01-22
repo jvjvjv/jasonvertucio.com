@@ -31,5 +31,18 @@ export default defineConfig({
     ],
     build: {
         sourcemap: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // Vue ecosystem
+                    'vue-vendor': ['vue', 'vue-router', '@unhead/vue'],
+                    // Utilities
+                    'moment': ['moment'],
+                    'axios': ['axios'],
+                    // Highlight.js (large)
+                    'highlight': ['highlight.js'],
+                },
+            },
+        },
     },
 });

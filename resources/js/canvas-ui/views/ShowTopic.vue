@@ -76,7 +76,7 @@ import { useHead } from '@unhead/vue';
 import { useRoute, useRouter } from 'vue-router';
 import NProgress from 'nprogress';
 import PageHeader from '../components/PageHeaderComponent.vue';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from '../utils/isEmpty.js';
 import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {

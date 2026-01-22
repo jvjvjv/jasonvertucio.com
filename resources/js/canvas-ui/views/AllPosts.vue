@@ -75,7 +75,7 @@ import 'v3-infinite-loading/lib/style.css';
 import { useHead } from '@unhead/vue';
 import NProgress from 'nprogress';
 import PageHeader from '../components/PageHeaderComponent.vue';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from '../utils/isEmpty.js';
 import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {
