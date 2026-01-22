@@ -27,6 +27,7 @@ class LoginMethodsController extends Controller
                 'methods' => ['password'],
                 'require_2fa' => false,
                 'blocked' => false,
+                'csrf_token' => csrf_token(),
             ]);
         }
 
@@ -39,6 +40,7 @@ class LoginMethodsController extends Controller
                 'methods' => [],
                 'require_2fa' => false,
                 'blocked' => true,
+                'csrf_token' => csrf_token(),
             ]);
         }
 
@@ -53,6 +55,7 @@ class LoginMethodsController extends Controller
             'methods' => $methods,
             'require_2fa' => $require2fa,
             'blocked' => false,
+            'csrf_token' => csrf_token(),
         ]);
     }
 }
