@@ -60,14 +60,20 @@
 
 <script>
 import axios from 'axios';
+import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {
     name: 'page-header-component',
 
+    setup() {
+        const { CanvasUI, isAdmin } = useCanvasUI();
+        return { CanvasUI, isAdmin };
+    },
+
     data() {
         return {
-            user: CanvasUI.user, // eslint-disable-line no-undef
-            canvasPath: CanvasUI.canvasPath, // eslint-disable-line no-undef
+            user: window.CanvasUI?.user || null,
+            canvasPath: window.CanvasUI?.canvasPath || 'canvas',
         };
     },
 

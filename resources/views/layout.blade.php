@@ -66,7 +66,7 @@
     <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
     {{-- Custom styles for this template --}}
-    <link href="{{asset('css/blog.css') }}" rel="stylesheet">
+    @vite(['resources/css/blog.css'])
     {{--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
         crossorigin="anonymous"></script> --}}
@@ -181,8 +181,10 @@
         </div>
     </footer>
 
+    {{-- Vite assets --}}
+    @vite(['resources/js/font-loader.js', 'resources/js/app.js'])
+
     {{-- Font loading progress --}}
-    <script src="{{ asset('js/font-loader.js') }}"></script>
     <script>
         if (typeof initFontLoader === 'function') {
             initFontLoader('#main');
@@ -190,8 +192,6 @@
     </script>
 
     @include('gtag')
-    {{--Custom scripts for this template --}}
-    <script src="{{ asset('js/app.js') }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 

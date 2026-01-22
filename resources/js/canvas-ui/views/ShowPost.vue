@@ -1,7 +1,7 @@
 <template>
     <section>
         <page-header>
-            <template slot="options">
+            <template #options>
                 <div class="dropdown">
                     <a
                         href="#"
@@ -73,7 +73,7 @@
                             </span>
                         </p>
                         <span class="text-secondary"
-                            >{{ moment(post.published_at).format('MMM D, Y') }} — {{ post.read_time }}</span
+                            >{{ $moment(post.published_at).format('MMM D, Y') }} — {{ post.read_time }}</span
                         >
                     </div>
                 </div>
@@ -125,10 +125,13 @@
 </template>
 
 <script>
+import { useHead } from '@unhead/vue';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import NProgress from 'nprogress';
-import PageHeader from '../components/PageHeaderComponent';
+import PageHeader from '../components/PageHeaderComponent.vue';
 import hljs from 'highlight.js';
 import mediumZoom from 'medium-zoom';
+import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {
     name: 'show-post',
@@ -137,25 +140,23 @@ export default {
         PageHeader,
     },
 
-    metaInfo() {
-        return {
-            title: this.post?.meta?.title,
-            meta: [
-                { name: 'description', content: this.post?.meta?.description || null },
-                { property: 'og:title', content: this.post?.meta?.title || null },
-                { property: 'og:image', content: this.post?.featured_image || null },
-                { property: 'og:description', content: this.post?.meta?.description || null },
-                { name: 'twitter:card', content: 'summary' },
-                { name: 'twitter:title', content: this.post?.meta?.title || null },
-                { name: 'twitter:description', content: this.post?.meta?.description || null },
-                { name: 'twitter:image', content: this.post?.featured_image || null },
-            ],
-        };
+    setup() {
+        const route = useRoute();
+        const router = useRouter();
+        const { request, parseURL, CanvasUI, isAdmin, isEditor } = useCanvasUI();
+
+        // Handle canonical link cleanup on route leave
+        onBeforeRouteLeave((to, from, next) => {
+            document.querySelector('link[rel="canonical"]')?.remove();
+            next();
+        });
+
+        return { route, router, request, parseURL, CanvasUI, isAdmin, isEditor };
     },
 
     data() {
         return {
-            uri: this.$route.params.slug,
+            uri: this.route.params.slug,
             page: 1,
             post: null,
             isReady: false,
@@ -172,10 +173,33 @@ export default {
         },
     },
 
+    watch: {
+        post: {
+            handler(newPost) {
+                if (newPost) {
+                    useHead({
+                        title: newPost.meta?.title,
+                        meta: [
+                            { name: 'description', content: newPost.meta?.description || null },
+                            { property: 'og:title', content: newPost.meta?.title || null },
+                            { property: 'og:image', content: newPost.featured_image || null },
+                            { property: 'og:description', content: newPost.meta?.description || null },
+                            { name: 'twitter:card', content: 'summary' },
+                            { name: 'twitter:title', content: newPost.meta?.title || null },
+                            { name: 'twitter:description', content: newPost.meta?.description || null },
+                            { name: 'twitter:image', content: newPost.featured_image || null },
+                        ],
+                    });
+                }
+            },
+            immediate: true,
+        },
+    },
+
     async created() {
         await Promise.all([this.fetchPost()]);
 
-        // Hack since vue-meta doesn't seem to like canonical tags
+        // Hack since useHead doesn't seem to like canonical tags
         if (this.post?.meta?.canonical_link != null) {
             let link = document.createElement('link');
             link.rel = 'canonical';
@@ -197,12 +221,6 @@ export default {
         });
     },
 
-    beforeRouteLeave(to, from, next) {
-        // Hack to remove the canonical tag when you navigate away
-        document.querySelector('link[rel="canonical"]')?.remove();
-        next();
-    },
-
     methods: {
         fetchPost() {
             return this.request()
@@ -212,7 +230,7 @@ export default {
                     NProgress.inc();
                 })
                 .catch(() => {
-                    this.$router.push({ name: 'posts' });
+                    this.router.push({ name: 'posts' });
                 });
         },
     },

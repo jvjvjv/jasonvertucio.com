@@ -7,16 +7,11 @@
     {{-- CSRF Token --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
-    {{-- Scripts --}}
-    <script src="{{ asset('js/app.js') }}" defer></script>
-    {{--
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
-        crossorigin="anonymous"></script> --}}
+    {{-- Vite assets --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     {{-- Fonts --}}
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-    {{-- Styles --}}
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 </head>
 
 <body>

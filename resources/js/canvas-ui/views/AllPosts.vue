@@ -39,7 +39,7 @@
                                                     <span v-if="post.topic.length"> in {{ post.topic[0].name }} </span>
                                                 </p>
                                                 <p class="card-text text-secondary">
-                                                    {{ moment(post.published_at).format('MMM D, Y') }} —
+                                                    {{ $moment(post.published_at).format('MMM D, Y') }} —
                                                     {{ post.read_time }}
                                                 </p>
                                             </section>
@@ -49,16 +49,18 @@
                             </router-link>
                         </div>
 
-                        <infinite-loading spinner="spiral" @infinite="fetchPosts">
-                            <span slot="no-more" />
-                            <div slot="no-results" class="text-left">
-                                <div class="my-5">
-                                    <p class="lead text-center text-muted mt-5">You have no published posts</p>
-                                    <p class="lead text-center text-muted mt-1">
-                                        Write on the go with our mobile-ready app!
-                                    </p>
+                        <infinite-loading @infinite="fetchPosts">
+                            <template #complete><span></span></template>
+                            <template #error>
+                                <div class="text-left">
+                                    <div class="my-5">
+                                        <p class="lead text-center text-muted mt-5">You have no published posts</p>
+                                        <p class="lead text-center text-muted mt-1">
+                                            Write on the go with our mobile-ready app!
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
                         </infinite-loading>
                     </div>
                 </main>
@@ -68,10 +70,13 @@
 </template>
 
 <script>
-import InfiniteLoading from 'vue-infinite-loading';
+import InfiniteLoading from 'v3-infinite-loading';
+import 'v3-infinite-loading/lib/style.css';
+import { useHead } from '@unhead/vue';
 import NProgress from 'nprogress';
-import PageHeader from '../components/PageHeaderComponent';
+import PageHeader from '../components/PageHeaderComponent.vue';
 import isEmpty from 'lodash/isEmpty';
+import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {
     name: 'all-posts',
@@ -81,10 +86,10 @@ export default {
         PageHeader,
     },
 
-    metaInfo() {
-        return {
-            title: 'Canvas',
-        };
+    setup() {
+        useHead({ title: 'Canvas' });
+        const { request } = useCanvasUI();
+        return { request };
     },
 
     data() {

@@ -1,10 +1,10 @@
-import AllPosts from './views/AllPosts';
-import AllTags from './views/AllTags';
-import AllTopics from './views/AllTopics';
-import ShowPost from './views/ShowPost';
-import ShowTag from './views/ShowTag';
-import ShowTopic from './views/ShowTopic';
-import ShowUser from './views/ShowUser';
+import AllPosts from './views/AllPosts.vue';
+import AllTags from './views/AllTags.vue';
+import AllTopics from './views/AllTopics.vue';
+import ShowPost from './views/ShowPost.vue';
+import ShowTag from './views/ShowTag.vue';
+import ShowTopic from './views/ShowTopic.vue';
+import ShowUser from './views/ShowUser.vue';
 
 export default [
     {
@@ -43,8 +43,8 @@ export default [
         component: ShowUser,
     },
     {
-        path: '*',
+        path: '/:pathMatch(.*)*',
         name: 'catch-all',
-        redirect: '/canvas-ui',
+        redirect: '/',
     },
 ];

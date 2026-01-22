@@ -44,8 +44,10 @@
 </template>
 
 <script>
+import { useHead } from '@unhead/vue';
 import NProgress from 'nprogress';
-import PageHeader from '../components/PageHeaderComponent';
+import PageHeader from '../components/PageHeaderComponent.vue';
+import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {
     name: 'all-tags',
@@ -54,10 +56,10 @@ export default {
         PageHeader,
     },
 
-    metaInfo() {
-        return {
-            title: 'Canvas',
-        };
+    setup() {
+        useHead({ title: 'Canvas' });
+        const { request } = useCanvasUI();
+        return { request };
     },
 
     data() {

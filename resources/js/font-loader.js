@@ -114,3 +114,10 @@ function showContent(element) {
 
 // Expose globally for Blade template inline scripts
 window.initFontLoader = initFontLoader;
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initFontLoader());
+} else {
+    initFontLoader();
+}

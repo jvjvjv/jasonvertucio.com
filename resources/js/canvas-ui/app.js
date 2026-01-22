@@ -1,20 +1,10 @@
+import { createApp } from 'vue';
+import { createRouter, createWebHistory } from 'vue-router';
+import { createHead } from '@unhead/vue/client';
 import NProgress from 'nprogress';
-import Router from 'vue-router';
-import Vue from 'vue';
-import VueMeta from 'vue-meta';
-import base from './mixins/base';
 import moment from 'moment';
 import routes from './routes';
-
-Vue.prototype.moment = moment;
-
-Vue.config.productionTip = false;
-
-Vue.mixin(base);
-
-Vue.use(VueMeta);
-
-Vue.use(Router);
+import App from './App.vue';
 
 NProgress.configure({
     showSpinner: false,
@@ -22,9 +12,8 @@ NProgress.configure({
     speed: 300,
 });
 
-const router = new Router({
-    base: 'canvas-ui',
-    mode: 'history',
+const router = createRouter({
+    history: createWebHistory('/canvas-ui'),
     routes,
 });
 
@@ -33,7 +22,14 @@ router.beforeEach((to, from, next) => {
     next();
 });
 
-new Vue({
-    el: '#ui',
-    router,
-});
+const head = createHead();
+
+const app = createApp(App);
+
+// Make moment available globally via $moment
+app.config.globalProperties.$moment = moment;
+
+app.use(router);
+app.use(head);
+
+app.mount('#ui');

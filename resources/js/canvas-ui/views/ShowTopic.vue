@@ -5,7 +5,7 @@
         <div v-if="isReady" class="mt-5">
             <div class="col-xl-8 offset-xl-2 col-lg-10 offset-lg-1 col-md-12 mt-3">
                 <h3 class="my-0">Topic: {{ topic.name }}</h3>
-                <p class="text-secondary">Created {{ moment(topic.created_at).fromNow() }}</p>
+                <p class="text-secondary">Created {{ $moment(topic.created_at).fromNow() }}</p>
 
                 <main role="main" class="mt-5">
                     <div>
@@ -39,7 +39,7 @@
                                                     <span v-if="post.topic.length"> in {{ post.topic[0].name }} </span>
                                                 </p>
                                                 <p class="card-text text-secondary">
-                                                    {{ moment(post.published_at).format('MMM D, Y') }} —
+                                                    {{ $moment(post.published_at).format('MMM D, Y') }} —
                                                     {{ post.read_time }}
                                                 </p>
                                             </section>
@@ -49,16 +49,18 @@
                             </router-link>
                         </div>
 
-                        <infinite-loading spinner="spiral" @infinite="fetchPosts">
-                            <span slot="no-more" />
-                            <div slot="no-results" class="text-left">
-                                <div class="my-5">
-                                    <p class="lead text-center text-muted mt-5">You have no published posts</p>
-                                    <p class="lead text-center text-muted mt-1">
-                                        Write on the go with our mobile-ready app!
-                                    </p>
+                        <infinite-loading @infinite="fetchPosts">
+                            <template #complete><span></span></template>
+                            <template #error>
+                                <div class="text-left">
+                                    <div class="my-5">
+                                        <p class="lead text-center text-muted mt-5">You have no published posts</p>
+                                        <p class="lead text-center text-muted mt-1">
+                                            Write on the go with our mobile-ready app!
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
                         </infinite-loading>
                     </div>
                 </main>
@@ -68,10 +70,14 @@
 </template>
 
 <script>
-import InfiniteLoading from 'vue-infinite-loading';
+import InfiniteLoading from 'v3-infinite-loading';
+import 'v3-infinite-loading/lib/style.css';
+import { useHead } from '@unhead/vue';
+import { useRoute, useRouter } from 'vue-router';
 import NProgress from 'nprogress';
-import PageHeader from '../components/PageHeaderComponent';
+import PageHeader from '../components/PageHeaderComponent.vue';
 import isEmpty from 'lodash/isEmpty';
+import { useCanvasUI } from '../composables/useCanvasUI';
 
 export default {
     name: 'show-topic',
@@ -81,20 +87,32 @@ export default {
         PageHeader,
     },
 
-    metaInfo() {
-        return {
-            title: this.topic ? this.topic.name : 'Canvas',
-        };
+    setup() {
+        const route = useRoute();
+        const router = useRouter();
+        const { request } = useCanvasUI();
+        return { route, router, request };
     },
 
     data() {
         return {
-            uri: this.$route.params.slug,
+            uri: this.route.params.slug,
             topic: null,
             posts: [],
             page: 1,
             isReady: false,
         };
+    },
+
+    watch: {
+        topic: {
+            handler(newTopic) {
+                if (newTopic) {
+                    useHead({ title: newTopic.name });
+                }
+            },
+            immediate: true,
+        },
     },
 
     async created() {
@@ -112,7 +130,7 @@ export default {
                     NProgress.inc();
                 })
                 .catch(() => {
-                    this.$router.push({ name: 'topics' });
+                    this.router.push({ name: 'topics' });
                 });
         },
 

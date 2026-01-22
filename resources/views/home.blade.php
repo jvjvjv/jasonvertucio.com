@@ -24,7 +24,7 @@
     <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
     {{-- Custom styles for this template --}}
-    <link href="{{asset('css/app.css') }}" rel="stylesheet">
+    @vite(['resources/css/app.css'])
     {{--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
         crossorigin="anonymous"></script>
@@ -69,18 +69,17 @@
 
     </main>
 
+    {{-- Vite assets --}}
+    @vite(['resources/js/font-loader.js', 'resources/js/app.js', 'resources/js/home.js'])
+
     {{-- Font loading progress --}}
-    <script src="{{ asset('js/font-loader.js') }}"></script>
     <script>
         if (typeof initFontLoader === 'function') {
             initFontLoader();
         }
     </script>
 
-    <!-- Custom scripts for this template -->
     @include('cookies')
-    <script cookie-consent="functionality" src="{{ asset('js/app.js') }}"></script>
-    <script src="{{ asset('js/home.js') }}"></script>
     @include('gtag')
 
 </body>
