@@ -3,4 +3,3 @@
  */
 
 import './bootstrap';
-import './resume';
