@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\LoginMethodsController;
 use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ResumeShareCodeController;
+use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Middleware\ResumeShareCodeMiddleware;
 
 /*
@@ -78,14 +79,23 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
         Route::delete('/resume/codes/{code}', [ResumeShareCodeController::class, 'destroy'])->name('resume.codes.destroy');
     });
 
+// Resume editor routes - requires auth + edit-resume permission
+Route::middleware(['auth', 'can:edit-resume'])
+    ->prefix('admin/resume')
+    ->name('admin.resume.')
+    ->group(function () {
+        Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
+        Route::post('/editor', [ResumeEditorController::class, 'update'])->name('editor.save');
+        Route::get('/preview', [ResumeEditorController::class, 'preview'])->name('preview');
+        Route::post('/generate', [ResumeEditorController::class, 'generate'])->name('generate');
+    });
+
 // Resume routes - supports both authenticated users and share codes
 Route::middleware([ResumeShareCodeMiddleware::class])->prefix('resume')->group(function () {
     Route::get('/', [ResumeController::class, 'index'])->name('resume.index');
 
-    // DOCX download routes - share code users get full access
-    Route::post('/docx', [ResumeController::class, 'initiateDownload'])->name('resume.docx.initiate');
-    Route::get('/docx', [ResumeController::class, 'downloadDocx'])->name('resume.docx.download');
-    Route::post('/docx/completed', [ResumeController::class, 'storeGeneratedDocx'])->name('resume.docx.completed');
+    // Direct download of pre-generated DOCX
+    Route::get('/download', [ResumeController::class, 'download'])->name('resume.download');
 });
 
 // Honeypots

@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ResumeDownload;
 use App\Services\ResumeDataService;
+use App\Services\ResumeVersionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cookie;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResumeController extends Controller
 {
     protected ResumeDataService $resumeData;
+    protected ResumeVersionService $versionService;
 
-    public function __construct(ResumeDataService $resumeData)
+    public function __construct(ResumeDataService $resumeData, ResumeVersionService $versionService)
     {
         $this->resumeData = $resumeData;
+        $this->versionService = $versionService;
     }
 
     /**
@@ -53,88 +56,50 @@ class ResumeController extends Controller
     }
 
     /**
-     * POST /resume/docx
-     * Create hyperbole cookie and redirect to GET /resume/docx
+     * GET /resume/download
+     * Download the pre-generated DOCX file
      */
-    public function initiateDownload(Request $request): RedirectResponse
+    public function download(Request $request): BinaryFileResponse|JsonResponse
     {
         // Share code users get full access, authenticated users need save-resume permission
         if (!session('resume_share_code') && !$request->user()?->can('save-resume')) {
-            abort(403, 'You do not have permission to download the resume.');
-        }
-
-        $timestamp = time();
-        $cookie = Cookie::make('hyperbole', $timestamp, config('resume.download_expiration'));
-
-        return redirect()
-            ->route('resume.docx.download')
-            ->withCookie($cookie);
-    }
-
-    /**
-     * GET /resume/docx
-     * Validate cookie and serve DOCX generation page
-     */
-    public function downloadDocx(Request $request): Response|View|JsonResponse
-    {
-        $cookieValue = $request->cookie('hyperbole');
-        $serverTime = time();
-
-        // Validate cookie exists and is within 10 minutes
-        if (!$cookieValue || abs($serverTime - (int)$cookieValue) > 600) {
             if ($request->wantsJson()) {
                 return response()->json([
                     'code' => 403,
                     'status' => 'failed',
-                    'message' => 'Direct download forbidden.',
+                    'message' => 'You do not have permission to download the resume.',
                 ], 403);
             }
-
-            abort(403, 'Direct download forbidden.');
+            abort(403, 'You do not have permission to download the resume.');
         }
 
-        // Load template and data
-        $templatePath = config('resume.template');
-        $templateContent = file_get_contents($templatePath);
-        $templateBase64 = base64_encode($templateContent);
+        $docxPath = $this->versionService->getLatestDocxPath();
 
-        $data = $this->resumeData->getDocxData();
-
-        return view('resume.docx-download', [
-            'templateBase64' => $templateBase64,
-            'resumeData' => $data,
-        ]);
-    }
-
-    /**
-     * POST /resume/docx/completed
-     * Accept uploaded file and store it
-     */
-    public function storeGeneratedDocx(Request $request): JsonResponse
-    {
-        $request->validate([
-            'file' => 'required|file|max:10240', // 10MB max
-        ]);
-
-        // Validate file extension manually since browser-generated blobs may have different MIME types
-        $file = $request->file('file');
-        if (strtolower($file->getClientOriginalExtension()) !== 'docx') {
-            abort(422, 'The file must be a .docx file.');
-        }
-        $path = config('resume.saved_documents');
-
-        // Ensure directory exists
-        if (!file_exists($path)) {
-            mkdir($path, 0755, true);
+        if (!$docxPath) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'code' => 404,
+                    'status' => 'failed',
+                    'message' => 'Resume not available for download.',
+                ], 404);
+            }
+            abort(404, 'Resume not available for download.');
         }
 
-        $filename = $file->getClientOriginalName();
-        $file->move($path, $filename);
+        // Track the download
+        $version = $this->versionService->getCurrentVersion();
+        ResumeDownload::record(
+            version: $version,
+            ipAddress: $request->ip(),
+            userAgent: $request->userAgent(),
+            shareCodeId: session('resume_share_code'),
+            userId: $request->user()?->id
+        );
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Resume saved successfully.',
-            'filename' => $filename,
+        $filename = basename($docxPath);
+
+        return response()->download($docxPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ]);
     }
 }

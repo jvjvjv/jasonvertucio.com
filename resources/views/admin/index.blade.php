@@ -9,6 +9,11 @@
         <x-admin.nav-block route="admin.resume.index" icon="file-code" label="Resume Share Codes"
             description="Manage share codes for unauthenticated resume access" />
 
+        @can('edit-resume')
+        <x-admin.nav-block route="admin.resume.editor" icon="file-pen" label="Resume Editor"
+            description="Edit resume content and generate DOCX files" />
+        @endcan
+
         {{-- <div class="grid gap-6 md:grid-cols-2">
             <a href="{{ route('admin.resume.index') }}"
                 class="block p-6 bg-white rounded-lg hover:shadow-sm transition-shadow border border-gray-200">

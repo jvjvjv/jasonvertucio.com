@@ -4,6 +4,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Resume Version File Path
+    |--------------------------------------------------------------------------
+    |
+    | The path to the version.json file that tracks the current resume version.
+    | Version format: YYYY.X.X (e.g., 2026.1.0)
+    |
+    */
+
+    'version_file' => resource_path('resume/version.json'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Resume Template Path
     |--------------------------------------------------------------------------
     |
