@@ -51,14 +51,18 @@ async function uploadGeneratedFile(blob, filename) {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
+            credentials: 'same-origin', // Ensure cookies/session are sent
             body: formData,
         });
 
         if (!response.ok) {
-            console.warn('Failed to upload generated resume:', response.statusText);
+            const text = await response.text();
+            console.warn('Failed to upload generated resume:', response.status, response.statusText, text);
         } else {
-            console.log('Resume copy saved to server');
+            const result = await response.json();
+            console.log('Resume copy saved to server:', result);
         }
     } catch (error) {
         console.warn('Error uploading generated resume:', error);

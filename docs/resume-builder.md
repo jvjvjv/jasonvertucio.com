@@ -176,17 +176,17 @@ type TechnicalSkills = {
 }
 ```
 
-# Future work
+# Phase 2
 
 Create another migration to create
 - the permissions 'admin' and 'manage-unauthenticated-viewers' and add to the admin and super-admin roles
 - a new table (and matching model) for providing and storing share codes called resume_share_codes
-    - id varchar(16)
+    - id varchar(6)
     - expiration date
     - softDeletes
 - a new table (and matching model) for storing usage of these share codes called resume_views
     - id unsignedBigInt
-    - share_code_id varchar(16) FK to resume_share_codes.id
+    - share_code_id varchar(6) FK to resume_share_codes.id
     - ip (max length of ipv6)
     - user agent (max length of user agent)
     - softDeletes
@@ -202,3 +202,17 @@ Users who have access to manage unauthenticated-viewers can
     - user must have 
 
 These codes will be implemented into the /resume routes and any visitor with that code will effectively have read-resume and save-resume permissions.
+
+# Phase 3
+
+We will no longer generate a resume with a timestamp each time someone downloads it. Well, let's be honest. This phase will _truly_ rewrite how we are managing this resume!
+
+1. Version will now be <year>.<semver>, and the file `<Version> Jason Vertucio.docx.`
+2. /resources/resume/version.json will be a string, like "2026.1.1" -- actually that's a good start.
+3. A new editor page will be created allowing the user to edit each of the JSON files in /resources/resume. MUST have edit-resume permission.
+4. Examine the structure of each so you know how to do so. for example, the Personal Information block, each one of those props can be a text field on its own. The Summary is a text field all its own as well, even though it's in Personal Information. For Technical Skills, we have the headings, and we just need to be able to edit the contents. It can be as simple as access to the arrays themselves, or using alpineJs or Livewire make it interactive!
+5. On the editor page, the VERSION is at the very top.
+6. All of the JSON files will be editable on a single page, with tabs across the top for sectionsm, and a single save button on the bottom right (like a FAB or something).
+7. Once all of the JSON is validated and saved, the admin will be brought to a page similar to GET /resume, but this one will have a button stating "Generate DOCX" which will then store this version to config('resume.saved_documents').
+8. Then when a visitor navigates to GET /resume - they will see what they see onscreen with the option to download it; clicking on the download will track the download and send the latest version (derived from /resources/resume/version.json) of the resume to the visitor. 
+

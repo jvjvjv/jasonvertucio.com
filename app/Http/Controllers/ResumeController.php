@@ -113,10 +113,14 @@ class ResumeController extends Controller
     public function storeGeneratedDocx(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => 'required|file|mimes:docx|max:10240', // 10MB max
+            'file' => 'required|file|max:10240', // 10MB max
         ]);
 
+        // Validate file extension manually since browser-generated blobs may have different MIME types
         $file = $request->file('file');
+        if (strtolower($file->getClientOriginalExtension()) !== 'docx') {
+            abort(422, 'The file must be a .docx file.');
+        }
         $path = config('resume.saved_documents');
 
         // Ensure directory exists

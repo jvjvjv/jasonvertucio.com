@@ -63,7 +63,11 @@ class ResumeShareCodeMiddleware
             session()->forget('resume_share_code');
         }
 
-        // No valid access - redirect to login
+        // No valid access - return appropriate response
+        if ($request->expectsJson() || $request->ajax()) {
+            abort(401, 'Unauthorized');
+        }
+
         return redirect()->route('login');
     }
 }
