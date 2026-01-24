@@ -1,0 +1,198 @@
+@import "tailwindcss";
+@import "@fortawesome/fontawesome-free/css/fontawesome.css";
+@import "@fortawesome/fontawesome-free/css/solid.css";
+
+/* Resume page styles - following home page patterns */
+
+@theme {
+    --color-primary: #1b587c;
+    --color-secondary: #b35e06;
+    --color-dark: #495057;
+    --color-link: #4351a0;
+
+    --font-family-heading: "Convection Condensed", "Bebas Neue", "Impact", "Arial Black", sans-serif;
+    --font-family-subheading: "Saira Extra Condensed", "Impact", sans-serif;
+    --font-family-body: Corbel, "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "DejaVu Sans", "Bitstream Vera Sans", "Liberation Sans", Verdana, sans-serif;
+}
+
+/* Resume container */
+.resume-container {
+    @apply bg-white shadow-lg rounded-lg;
+}
+
+.resume-header {
+    @apply border-b border-gray-200 pb-6;
+}
+
+.resume-summary {
+    @apply max-w-3xl;
+}
+
+/* Section styling */
+.resume-section {
+    @apply py-6 border-b border-gray-100 last:border-b-0;
+}
+
+/* Skill display */
+.skill-category {
+    @apply mb-4;
+}
+
+.skill-list {
+    @apply text-dark;
+}
+
+/* Job entry styling */
+.job-entry {
+    @apply pb-6 border-b border-gray-100 last:border-b-0;
+}
+
+.job-bullets {
+    @apply list-disc list-inside text-dark space-y-1;
+}
+
+/* Project entry styling */
+.project-entry {
+    @apply pb-4;
+}
+
+.project-bullets {
+    @apply list-disc list-inside text-dark space-y-1;
+}
+
+/* FAB download button */
+.fab-download {
+    @apply fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg;
+    @apply hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/50;
+    @apply transition-all flex items-center justify-center;
+    @apply transform hover:scale-110;
+}
+
+/* Print message - hidden by default, shown only in print */
+.print-message {
+    display: none;
+}
+
+/* ============================================
+   PRINT STYLES
+   Hide everything except name/summary + show URL message
+   ============================================ */
+@media print {
+    /* Hide navigation, footer, and interactive elements */
+    nav,
+    footer,
+    .fab-download,
+    form,
+    button,
+    #navbarTop,
+    #mobileMenu {
+        display: none !important;
+    }
+
+    /* Hide all resume sections except header */
+    .resume-skills,
+    .resume-experience,
+    .resume-projects {
+        display: none !important;
+    }
+
+    /* Show the print message */
+    .print-message {
+        display: block !important;
+        margin-top: 3rem;
+        padding: 2rem;
+        border: 3px solid var(--color-primary);
+        text-align: center;
+        page-break-inside: avoid;
+    }
+
+    .print-message p {
+        font-size: 14pt;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin: 0;
+    }
+
+    /* Keep header visible */
+    .resume-header {
+        display: block !important;
+        border: none;
+        padding-bottom: 1rem;
+    }
+
+    /* Keep name and title visible */
+    .resume-header h1,
+    .resume-header .resume-title {
+        display: block !important;
+    }
+
+    /* Keep summary visible */
+    .resume-summary {
+        display: block !important;
+    }
+
+    /* Hide the "Summary" heading in print */
+    .resume-header h2 {
+        display: none !important;
+    }
+
+    /* Clean print layout */
+    body {
+        background: white !important;
+        font-size: 12pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .resume-container {
+        box-shadow: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+    }
+
+    /* Main content area adjustments */
+    #main,
+    .fonts-loading {
+        opacity: 1 !important;
+    }
+
+    /* Ensure page doesn't break in awkward places */
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+
+    p {
+        orphans: 3;
+        widows: 3;
+    }
+
+    /* Remove any background colors */
+    * {
+        background: white !important;
+    }
+
+    /* Ensure text is black for readability */
+    .resume-header h1 {
+        color: var(--color-secondary) !important;
+    }
+
+    .resume-summary {
+        color: black !important;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .resume-header h1 {
+        @apply text-3xl;
+    }
+
+    .resume-section h2 {
+        @apply text-xl;
+    }
+
+    .fab-download {
+        @apply bottom-4 right-4 w-12 h-12;
+    }
+}

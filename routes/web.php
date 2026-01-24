@@ -8,6 +8,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\FacebookCallbackController;
 use App\Http\Controllers\WordpressController;
 use App\Http\Controllers\Auth\LoginMethodsController;
+use App\Http\Controllers\ResumeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,18 @@ Route::group(['prefix' => 'blog'], function ($route) {
 });
 
 Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
+
+// Resume routes - requires authentication and read-resume permission
+Route::middleware(['auth', 'can:read-resume'])->prefix('resume')->group(function () {
+    Route::get('/', [ResumeController::class, 'index'])->name('resume.index');
+
+    // DOCX download routes - require save-resume permission
+    Route::middleware(['can:save-resume'])->group(function () {
+        Route::post('/docx', [ResumeController::class, 'initiateDownload'])->name('resume.docx.initiate');
+        Route::get('/docx', [ResumeController::class, 'downloadDocx'])->name('resume.docx.download');
+        Route::post('/docx/completed', [ResumeController::class, 'storeGeneratedDocx'])->name('resume.docx.completed');
+    });
+});
 
 // Honeypots
 Route::get('/wp-admin/load-styles.php', function () {

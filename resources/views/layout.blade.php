@@ -67,6 +67,7 @@
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
     {{-- Custom styles for this template --}}
     @vite(['resources/css/blog.css'])
+    @stack('styles')
     {{--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0429292532295045"
         crossorigin="anonymous"></script> --}}
@@ -193,6 +194,7 @@
 
     @include('gtag')
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @stack('scripts')
 </body>
 
 </html>

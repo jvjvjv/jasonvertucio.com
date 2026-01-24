@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/js/home.js',
                 'resources/css/app.css',
                 'resources/css/blog.css',
+                'resources/css/resume.css',
             ],
             refresh: true,
         }),
