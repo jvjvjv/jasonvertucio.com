@@ -39,7 +39,7 @@ Route::get('/logout', function () {
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/');
-})->name('logout');
+})->name('logout.get');
 
 // Fortify auto-registers these routes:
 // POST /login - Login handler
