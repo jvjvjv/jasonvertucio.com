@@ -20,9 +20,15 @@
             @ifcanvasauthenticated
             <li>
                 <a class="block px-4 py-1 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md"
-                    href="/{{ config('canvas.path') }}">Go to Canvas Blog</a>
+                    href="/{{ config('canvas.path') }}">Canvas</a>
             </li>
             @endifcanvasauthenticated
+            @can('manage-unauthenticated-viewers')
+                <li>
+                    <a href="{{ route('admin.index') }}"
+                        class="block px-4 py-1 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md">Admin</a>
+                </li>
+            @endcan
             @foreach($links as $link)
                 <li>
                     @if (isset($link['target']))
