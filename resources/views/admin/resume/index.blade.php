@@ -1,0 +1,171 @@
+@extends('layout')
+
+@section('title', 'Resume Share Codes')
+
+@section('main')
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <a href="{{ route('admin.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Admin</a>
+            <h1 class="text-3xl font-heading font-bold text-primary mt-2">Resume Share Codes</h1>
+        </div>
+    </div>
+
+    @if(session('success'))
+        <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    {{-- Create New Code Form --}}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Share Code</h2>
+        <form action="{{ route('admin.resume.codes.store') }}" method="POST" class="flex flex-wrap items-end gap-4">
+            @csrf
+            <div class="flex-1 min-w-[200px]">
+                <label for="expires_at" class="block text-sm font-medium text-gray-700 mb-1">
+                    Expiration Date (optional)
+                </label>
+                <input type="date"
+                       name="expires_at"
+                       id="expires_at"
+                       min="{{ date('Y-m-d') }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                @error('expires_at')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+            <button type="submit"
+                    class="px-6 py-2 bg-primary text-white font-medium rounded-md hover:bg-primary/90 transition-colors">
+                Generate Code
+            </button>
+        </form>
+    </div>
+
+    {{-- Share Codes Table --}}
+    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" x-data="{ expanded: null }">
+                @forelse($codes as $code)
+                    <tr class="{{ $code->trashed() ? 'bg-gray-50 opacity-60' : '' }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <code class="px-2 py-1 bg-gray-100 rounded text-sm font-mono">{{ $code->id }}</code>
+                            @if(!$code->trashed() && !$code->isExpired())
+                                <button type="button"
+                                        onclick="navigator.clipboard.writeText('{{ url('/resume?code=' . $code->id) }}')"
+                                        class="ml-2 text-xs text-primary hover:underline">
+                                    Copy URL
+                                </button>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ $code->created_at->format('M j, Y g:i A') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if($code->expires_at)
+                                {{ $code->expires_at->format('M j, Y') }}
+                            @else
+                                <span class="text-gray-400">Never</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if($code->views_count > 0)
+                                <button type="button"
+                                        @click="expanded = expanded === '{{ $code->id }}' ? null : '{{ $code->id }}'"
+                                        class="text-primary hover:underline">
+                                    {{ $code->views_count }} view{{ $code->views_count === 1 ? '' : 's' }}
+                                </button>
+                            @else
+                                0 views
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($code->trashed())
+                                <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                    Invalidated
+                                </span>
+                            @elseif($code->isExpired())
+                                <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                                    Expired
+                                </span>
+                            @else
+                                <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                    Active
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            @if(!$code->trashed())
+                                <form action="{{ route('admin.resume.codes.destroy', $code->id) }}"
+                                      method="POST"
+                                      class="inline"
+                                      onsubmit="return confirm('Are you sure you want to invalidate this code?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-800 hover:underline">
+                                        Invalidate
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                    </tr>
+                    {{-- Expanded views row --}}
+                    @if($code->views->count() > 0)
+                        <tr x-show="expanded === '{{ $code->id }}'" x-cloak class="bg-gray-50">
+                            <td colspan="6" class="px-6 py-4">
+                                <div class="text-sm">
+                                    <h4 class="font-medium text-gray-700 mb-2">View History</h4>
+                                    <div class="max-h-48 overflow-y-auto">
+                                        <table class="min-w-full text-xs">
+                                            <thead>
+                                                <tr class="text-gray-500">
+                                                    <th class="text-left pr-4 pb-1">Date</th>
+                                                    <th class="text-left pr-4 pb-1">IP Address</th>
+                                                    <th class="text-left pb-1">User Agent</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-gray-600">
+                                                @foreach($code->views as $view)
+                                                    <tr>
+                                                        <td class="pr-4 py-1">{{ $view->created_at->format('M j, Y g:i A') }}</td>
+                                                        <td class="pr-4 py-1 font-mono">{{ $view->ip_address }}</td>
+                                                        <td class="py-1 truncate max-w-xs" title="{{ $view->user_agent }}">
+                                                            {{ Str::limit($view->user_agent, 60) }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @endif
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            No share codes created yet.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+@endsection

@@ -98,6 +98,12 @@
                                             class="text-white/75 hover:text-white px-3 py-2 rounded-md">{{ $link['label'] }}</a>
                                     </li>
                                 @endforeach
+                                @can('manage-unauthenticated-viewers')
+                                    <li>
+                                        <a href="{{ route('admin.index') }}"
+                                            class="text-white/75 hover:text-white px-3 py-2 rounded-md">Admin</a>
+                                    </li>
+                                @endcan
                             </ul>
                         </div>
                         <div class="flex items-center">
@@ -135,6 +141,12 @@
                                         Canvas Blog
                                     </a>
                                     @endifcanvasauthenticated
+                                    @can('manage-unauthenticated-viewers')
+                                    <div class="border-t border-gray-200"></div>
+                                    <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="{{ route('admin.index') }}">
+                                        Admin
+                                    </a>
+                                    @endcan
                                     @ifauthenticated
                                     <div class="border-t border-gray-200"></div>
                                     <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="{{ route('authkit.profile.show') }}">

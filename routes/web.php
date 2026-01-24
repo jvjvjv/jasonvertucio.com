@@ -9,6 +9,9 @@ use App\Http\Controllers\FacebookCallbackController;
 use App\Http\Controllers\WordpressController;
 use App\Http\Controllers\Auth\LoginMethodsController;
 use App\Http\Controllers\ResumeController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\ResumeShareCodeController;
+use App\Http\Middleware\ResumeShareCodeMiddleware;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,16 +67,25 @@ Route::group(['prefix' => 'blog'], function ($route) {
 
 Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
 
-// Resume routes - requires authentication and read-resume permission
-Route::middleware(['auth', 'can:read-resume'])->prefix('resume')->group(function () {
+// Admin routes - requires auth + manage-unauthenticated-viewers permission
+Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+        Route::get('/resume', [ResumeShareCodeController::class, 'index'])->name('resume.index');
+        Route::post('/resume/codes', [ResumeShareCodeController::class, 'store'])->name('resume.codes.store');
+        Route::delete('/resume/codes/{code}', [ResumeShareCodeController::class, 'destroy'])->name('resume.codes.destroy');
+    });
+
+// Resume routes - supports both authenticated users and share codes
+Route::middleware([ResumeShareCodeMiddleware::class])->prefix('resume')->group(function () {
     Route::get('/', [ResumeController::class, 'index'])->name('resume.index');
 
-    // DOCX download routes - require save-resume permission
-    Route::middleware(['can:save-resume'])->group(function () {
-        Route::post('/docx', [ResumeController::class, 'initiateDownload'])->name('resume.docx.initiate');
-        Route::get('/docx', [ResumeController::class, 'downloadDocx'])->name('resume.docx.download');
-        Route::post('/docx/completed', [ResumeController::class, 'storeGeneratedDocx'])->name('resume.docx.completed');
-    });
+    // DOCX download routes - share code users get full access
+    Route::post('/docx', [ResumeController::class, 'initiateDownload'])->name('resume.docx.initiate');
+    Route::get('/docx', [ResumeController::class, 'downloadDocx'])->name('resume.docx.download');
+    Route::post('/docx/completed', [ResumeController::class, 'storeGeneratedDocx'])->name('resume.docx.completed');
 });
 
 // Honeypots

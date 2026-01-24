@@ -26,7 +26,11 @@ class ResumeController extends Controller
     public function index(Request $request): Response|View|JsonResponse
     {
         $data = $this->resumeData->getDisplayData();
-        $canSave = $request->user()->can('save-resume');
+
+        // Share code users get full access (read + save), authenticated users need permission
+        $canSave = session('resume_share_code')
+            ? true
+            : ($request->user()?->can('save-resume') ?? false);
 
         // Content negotiation based on Accept header
         $acceptHeader = $request->header('Accept', 'text/html');
@@ -54,6 +58,11 @@ class ResumeController extends Controller
      */
     public function initiateDownload(Request $request): RedirectResponse
     {
+        // Share code users get full access, authenticated users need save-resume permission
+        if (!session('resume_share_code') && !$request->user()?->can('save-resume')) {
+            abort(403, 'You do not have permission to download the resume.');
+        }
+
         $timestamp = time();
         $cookie = Cookie::make('hyperbole', $timestamp, config('resume.download_expiration'));
 
