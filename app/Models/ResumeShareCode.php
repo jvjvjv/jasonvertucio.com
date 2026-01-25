@@ -26,7 +26,11 @@ class ResumeShareCode extends Model
      */
     protected $fillable = [
         'id',
+        'name',
+        'email',
         'expires_at',
+        'email_sent',
+        'notify_on_update',
     ];
 
     /**
@@ -34,6 +38,8 @@ class ResumeShareCode extends Model
      */
     protected $casts = [
         'expires_at' => 'date',
+        'email_sent' => 'boolean',
+        'notify_on_update' => 'boolean',
     ];
 
     /**
@@ -53,6 +59,22 @@ class ResumeShareCode extends Model
             $q->whereNull('expires_at')
               ->orWhere('expires_at', '>=', now()->toDateString());
         });
+    }
+
+    /**
+     * Scope to get only codes with email addresses.
+     */
+    public function scopeWithEmail($query)
+    {
+        return $query->whereNotNull('email')->where('email', '!=', '');
+    }
+
+    /**
+     * Scope to get only codes that should receive update notifications.
+     */
+    public function scopeShouldNotifyOnUpdate($query)
+    {
+        return $query->withEmail()->where('notify_on_update', true)->valid();
     }
 
     /**
@@ -92,11 +114,18 @@ class ResumeShareCode extends Model
     /**
      * Create a new share code with auto-generated ID.
      */
-    public static function generate(?string $expiresAt = null): self
-    {
+    public static function generate(
+        ?string $expiresAt = null,
+        ?string $name = null,
+        ?string $email = null,
+        bool $notifyOnUpdate = false
+    ): self {
         return self::create([
             'id' => self::generateCode(),
+            'name' => $name ?? '',
+            'email' => $email,
             'expires_at' => $expiresAt,
+            'notify_on_update' => $notifyOnUpdate && !empty($email),
         ]);
     }
 }

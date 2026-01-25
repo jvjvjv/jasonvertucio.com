@@ -1,71 +1,12 @@
 {
     "top": [
         {
-            "title": "Architecture & Tools",
+            "title": "Languages",
             "list": [
-                "Design Systems",
-                "Component Libraries",
-                "Micro-Frontends",
-                "Low-Code/No-Code Tooling",
-                "Custom DSL Development",
-                "SSR",
-                "API Integration (REST, GraphQL)",
-                "Git",
-                "Agile/Scrum",
-                "Web Performance Optimization",
-                "Built Tools (Vite, Webpack)",
-                "Code Quality (ESLint, Prettier)",
-                "AI-Assisted Development (Claude Code, GitHub Copilot)"
+                "PHP",
+                "JavaScript"
             ]
         }
     ],
-    "other": [
-        {
-            "title": "Testing & Quality",
-            "list": [
-                "TDD",
-                "Unit Testing",
-                "E2E Testing",
-                "Web Accessibility (WCAG 2.1 AA — 508 Compliance)",
-                "Jest",
-                "Vue Test Utils",
-                "Cypress",
-                "Playwright",
-                "PHPUnit"
-            ]
-        },
-        {
-            "title": "State Management",
-            "list": ["Vuex", "Pinia", "Redux", "Context API"]
-        },
-        {
-            "title": "Front-End",
-            "list": [
-                "TypeScript",
-                "JavaScript",
-                "React",
-                "Next.js",
-                "Vue",
-                "Angular",
-                "inertia.js",
-                "LIvewire",
-                "HTML5",
-                "CSS3",
-                "Tailwind CSS",
-                "SCSS"
-            ]
-        },
-        {
-            "title": "UI Component Libraries",
-            "list": ["MUI, PrimeVue, Vuetify, Quasar, KendoUI"]
-        },
-        {
-            "title": "Development",
-            "list": ["React Native, Expo, Ionic, Capacitor, Cordova"]
-        },
-        {
-            "title": "Backend & Databases",
-            "list": ["Node.js, Express, Laravel, .NET, MySQL, T-SQL"]
-        }
-    ]
+    "other": []
 }

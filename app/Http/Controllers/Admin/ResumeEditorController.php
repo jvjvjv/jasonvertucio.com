@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ResumeUpdated;
+use App\Models\ResumeShareCode;
 use App\Services\ResumeDataService;
 use App\Services\ResumeVersionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class ResumeEditorController extends Controller
 {
@@ -22,6 +25,17 @@ class ResumeEditorController extends Controller
     }
 
     /**
+     * Check if mail is properly configured.
+     */
+    protected function isMailConfigured(): bool
+    {
+        $host = config('mail.host');
+        $username = config('mail.username');
+
+        return !empty($host) && !empty($username);
+    }
+
+    /**
      * GET /admin/resume/editor
      * Show the resume editor with all JSON data
      */
@@ -32,11 +46,16 @@ class ResumeEditorController extends Controller
         $docxExists = $this->versionService->docxExistsForCurrentVersion();
         $availableVersions = $this->versionService->getAvailableVersions();
 
+        // Get count of recipients who will be notified on update
+        $notificationRecipientCount = ResumeShareCode::shouldNotifyOnUpdate()->count();
+
         return view('admin.resume.editor', [
             'data' => $data,
             'version' => $version,
             'docxExists' => $docxExists,
             'availableVersions' => $availableVersions,
+            'mailConfigured' => $this->isMailConfigured(),
+            'notificationRecipientCount' => $notificationRecipientCount,
         ]);
     }
 
@@ -55,6 +74,7 @@ class ResumeEditorController extends Controller
             'data.experience' => ['required', 'array'],
             'data.education' => ['required', 'array'],
             'data.projects' => ['required', 'array'],
+            'notify_recipients' => ['boolean'],
         ]);
 
         try {
@@ -64,16 +84,40 @@ class ResumeEditorController extends Controller
             // Save all data
             $this->dataService->saveAllEditableData($validated['data']);
 
+            // Send update notifications if requested and mail is configured
+            $notifyRecipients = $validated['notify_recipients'] ?? false;
+            $successMessage = 'Resume data saved successfully.';
+
+            if ($this->isMailConfigured() && $notifyRecipients) {
+                $recipientCodes = ResumeShareCode::shouldNotifyOnUpdate()->get();
+
+                if ($recipientCodes->count() > 0) {
+                    foreach ($recipientCodes as $code) {
+                        try {
+                            Mail::to($code->email)->queue(new ResumeUpdated($code, $validated['version']));
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::error('Failed to queue resume update email', [
+                                'code' => $code->id,
+                                'email' => $code->email,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+
+                    $successMessage = "Resume data saved successfully. Update notifications queued for {$recipientCodes->count()} recipient(s).";
+                }
+            }
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Resume data saved successfully.',
+                    'message' => $successMessage,
                 ]);
             }
 
             return redirect()
                 ->route('admin.resume.editor')
-                ->with('success', 'Resume data saved successfully.');
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
@@ -99,10 +143,15 @@ class ResumeEditorController extends Controller
         $version = $this->versionService->getCurrentVersion();
         $docxExists = $this->versionService->docxExistsForCurrentVersion();
 
+        // Get count of recipients who will be notified on update
+        $notificationRecipientCount = ResumeShareCode::shouldNotifyOnUpdate()->count();
+
         return view('admin.resume.preview', [
             'data' => $data,
             'version' => $version,
             'docxExists' => $docxExists,
+            'mailConfigured' => $this->isMailConfigured(),
+            'notificationRecipientCount' => $notificationRecipientCount,
         ]);
     }
 

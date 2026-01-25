@@ -3,7 +3,9 @@
 @section('title', 'Resume Editor')
 
 @section('main')
-<div x-data="resumeEditor()" class="max-w-6xl mx-auto px-4 py-8">
+<div x-data="resumeEditor()"
+     x-init="mailConfigured = {{ $mailConfigured ? 'true' : 'false' }}; notificationRecipientCount = {{ $notificationRecipientCount }};"
+     class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-8">
         <div>
             <a href="{{ route('admin.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Admin</a>
@@ -130,7 +132,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
-                        <input type="url" x-model="data.personal.linkedin"
+                        <input type="text" x-model="data.personal.linkedin"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
                     </div>
                     <div class="md:col-span-2">
@@ -517,8 +519,34 @@
             </div>
         </div>
 
-        {{-- FAB Save Button --}}
-        <div class="fixed bottom-8 right-8 flex gap-3">
+        {{-- FAB Save Button with Options --}}
+        <div class="fixed bottom-8 right-8 flex flex-col gap-3 items-end" x-data="{ showOptions: false }">
+            <div x-show="showOptions" x-cloak class="bg-white rounded-lg shadow-lg border border-gray-200 p-4 mb-2 w-64">
+                <label class="flex items-start gap-3 mb-3">
+                    <input type="checkbox"
+                           name="notify_recipients"
+                           x-model="notifyRecipients"
+                           :disabled="!mailConfigured"
+                           class="w-4 h-4 rounded cursor-pointer mt-1">
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Send email notification to share code recipients</span>
+                        <template x-if="!mailConfigured">
+                            <p class="text-xs text-gray-500 mt-1">(mail not configured)</p>
+                        </template>
+                        <template x-if="mailConfigured && notificationRecipientCount > 0">
+                            <p class="text-xs text-blue-600 mt-1">Will notify {{ $notificationRecipientCount }} recipient(s)</p>
+                        </template>
+                    </div>
+                </label>
+            </div>
+
+            <button type="button"
+                    @click="showOptions = !showOptions"
+                    class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-full hover:bg-gray-300 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i>
+                Options
+            </button>
+
             <button type="submit"
                     :disabled="saving"
                     class="px-6 py-3 bg-primary text-white font-medium rounded-full shadow-lg hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center gap-2">
@@ -539,6 +567,9 @@ function resumeEditor() {
         activeTab: 'version',
         saving: false,
         errors: [],
+        notifyRecipients: false,
+        mailConfigured: false,
+        notificationRecipientCount: 0,
         version: @json($version),
         data: @json($data),
         tabs: [
@@ -639,6 +670,7 @@ function resumeEditor() {
                     body: JSON.stringify({
                         version: this.version,
                         data: this.data,
+                        notify_recipients: this.notifyRecipients,
                     }),
                 });
 

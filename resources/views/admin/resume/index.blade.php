@@ -20,21 +20,75 @@
     {{-- Create New Code Form --}}
     <div class="bg-white rounded-lg shadow-md p-6 mb-8 border border-gray-200">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Share Code</h2>
-        <form action="{{ route('admin.resume.codes.store') }}" method="POST" class="flex flex-wrap items-end gap-4">
+        <form action="{{ route('admin.resume.codes.store') }}" method="POST" x-data="{ emailProvided: false, mailConfigured: {{ $mailConfigured ? 'true' : 'false' }} }">
             @csrf
-            <div class="flex-1 min-w-[200px]">
-                <label for="expires_at" class="block text-sm font-medium text-gray-700 mb-1">
-                    Expiration Date (optional)
-                </label>
-                <input type="date"
-                       name="expires_at"
-                       id="expires_at"
-                       min="{{ date('Y-m-d') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
-                @error('expires_at')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                        Recipient Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text"
+                           name="name"
+                           id="name"
+                           required
+                           value="{{ old('name') }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    @error('name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Recipient Email (optional)
+                    </label>
+                    <input type="email"
+                           name="email"
+                           id="email"
+                           value="{{ old('email') }}"
+                           @input="emailProvided = $el.value.trim() !== ''"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    @error('email')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="expires_at" class="block text-sm font-medium text-gray-700 mb-1">
+                        Expiration Date (optional)
+                    </label>
+                    <input type="date"
+                           name="expires_at"
+                           id="expires_at"
+                           min="{{ date('Y-m-d') }}"
+                           value="{{ old('expires_at') }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    @error('expires_at')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="flex items-center gap-3">
+                    <input type="checkbox"
+                           name="send_email"
+                           value="1"
+                           :disabled="!mailConfigured || !emailProvided"
+                           {{ old('send_email') ? 'checked' : '' }}
+                           class="w-4 h-4 rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">Send email notification</span>
+                </label>
+                <template x-if="!mailConfigured">
+                    <p class="mt-1 text-xs text-gray-500">(mail not configured)</p>
+                </template>
+            </div>
+
+            <template x-if="emailProvided && mailConfigured">
+                <p class="mb-4 text-sm text-blue-600">An email will be sent to this address once the code is created.</p>
+            </template>
+
             <button type="submit"
                     class="px-6 py-2 bg-primary text-white font-medium rounded-md hover:bg-primary/90 transition-colors">
                 Generate Code
@@ -48,6 +102,8 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
@@ -66,6 +122,23 @@
                                         class="ml-2 text-xs text-primary hover:underline">
                                     Copy URL
                                 </button>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {{ $code->name ?: '-' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if($code->email)
+                                <span class="flex items-center gap-1">
+                                    @if($code->email_sent)
+                                        <span class="text-green-600" title="Email sent">✓</span>
+                                    @endif
+                                    <span class="truncate max-w-xs" title="{{ $code->email }}">
+                                        {{ $code->email }}
+                                    </span>
+                                </span>
+                            @else
+                                <span class="text-gray-400">-</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
