@@ -1,3 +1,5 @@
+@props(['projects'])
+
 <section class="site-section" id="projects">
     <div class="w-full">
         <h2 class="3xl text-3xl uppercase mb-5 font-bold">Projects</h2>

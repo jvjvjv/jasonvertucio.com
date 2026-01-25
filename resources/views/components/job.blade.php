@@ -1,3 +1,5 @@
+@props(['job'])
+
 <?php
 if (!function_exists('show_nested_highlights')) {
     function show_nested_highlights($description, $tag = "li") {

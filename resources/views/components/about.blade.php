@@ -1,3 +1,5 @@
+@props(['aboutMe'])
+
 <section class="site-section" id="about">
     <div class="w-full">
         <h1 class="text-4xl sm:text-8xl uppercase tracking-tight mt-4 sm:mt-4 mb-0 font-bold" aria-hidden="true">

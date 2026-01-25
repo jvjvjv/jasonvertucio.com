@@ -1,3 +1,5 @@
+@props(['interests', 'btc' => null])
+
 <section class="site-section" id="interests">
     <div class="w-full">
         <h2 class="3xl font-heading text-3xl uppercase mb-5 font-bold">Interests</h2>
