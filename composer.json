@@ -14,15 +14,11 @@
         "php": "^8.2.0",
         "austintoddj/canvas": "^6.0.55",
         "bspdx/authkit": "^0.5.2",
-        "cocur/slugify": "^4.7.1",
         "guzzlehttp/guzzle": "^7.10.0",
         "laravel/fortify": "^1.33",
         "laravel/framework": "^12.48.1",
         "laravel/tinker": "^2.11",
         "laravel/ui": "^4.6.1",
-        "pragmarx/google2fa-laravel": "^2.3",
-        "spatie/laravel-ignition": "^2.10",
-        "spatie/laravel-passkeys": "^1.5.3",
         "twilio/sdk": "^6.44.4"
     },
     "require-dev": {
