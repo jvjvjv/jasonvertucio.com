@@ -45,14 +45,14 @@
             "category": "Frontend Architecture & Frameworks",
             "skills": [
                 {
-                    "skill": "Vue/Vue.js",
+                    "skill": "Vue\/Vue.js",
                     "years": 6,
-                    "description": "AMCS/Dossier Systems, ERM, BalanceCloud, Bootstrap Paradox, PSMF"
+                    "description": "AMCS\/Dossier Systems, ERM, BalanceCloud, Bootstrap Paradox, PSMF"
                 },
                 {
                     "skill": "TypeScript",
                     "years": 4,
-                    "description": "AMCS/Dossier Systems, Subaru of America"
+                    "description": "AMCS\/Dossier Systems, Subaru of America"
                 },
                 {
                     "skill": "React",
@@ -65,7 +65,7 @@
                     "description": "Subaru of America, Ghost Letter"
                 },
                 {
-                    "skill": "Angular/AngularJS",
+                    "skill": "Angular\/AngularJS",
                     "years": 3,
                     "description": "Subaru of America legacy modernization, Liberty Fox"
                 },
@@ -75,7 +75,7 @@
                     "description": "All professional roles and projects"
                 },
                 {
-                    "skill": "HTML5/CSS3",
+                    "skill": "HTML5\/CSS3",
                     "years": 15,
                     "description": "All professional roles and projects since 201"
                 },
@@ -97,24 +97,24 @@
                 {
                     "skill": "Design Systems",
                     "years": 2,
-                    "description": "Subaru of America, AMCS/Dossier Systems"
+                    "description": "Subaru of America, AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "Component Libraries",
                     "years": 4,
-                    "description": "Subaru of America, AMCS/Dossier Systems"
+                    "description": "Subaru of America, AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "KendoUI",
-                    "description": "AMCS/Dossier Systems"
+                    "description": "AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "Element UI",
-                    "description": "AMCS/Dossier Systems"
+                    "description": "AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "OnsenUI",
-                    "description": "AMCS/Dossier Systems mobile applications"
+                    "description": "AMCS\/Dossier Systems mobile applications"
                 },
                 {
                     "skill": "MUI",
@@ -149,7 +149,7 @@
                 {
                     "skill": "Server-Side Rendering",
                     "years": 0.5,
-                    "description": "AMCS/Dossier Systems"
+                    "description": "AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "Multi-Tenant Architecture",
@@ -160,7 +160,7 @@
                     "description": "BalanceCloud"
                 },
                 {
-                    "skill": "Low-Code/No-Code Tooling",
+                    "skill": "Low-Code\/No-Code Tooling",
                     "description": "Subaru of America (custom markdown DSL, SNET Dynamic Form)"
                 },
                 {
@@ -189,11 +189,11 @@
                 {
                     "skill": "Test-Driven Development",
                     "years": 4,
-                    "description": "AMCS/Dossier Systems, current projects"
+                    "description": "AMCS\/Dossier Systems, current projects"
                 },
                 {
                     "skill": "Behavior-Driven Development (BDD)",
-                    "description": "AMCS/Dossier Systems"
+                    "description": "AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "Unit Testing",
@@ -273,7 +273,7 @@
                 {
                     "skill": ".NET",
                     "years": 1.5,
-                    "description": "ERM backend integration, AMCS/Dossier Systems API development"
+                    "description": "ERM backend integration, AMCS\/Dossier Systems API development"
                 },
                 {
                     "skill": "MySQL",
@@ -283,12 +283,12 @@
                 {
                     "skill": "T-SQL",
                     "years": 4,
-                    "description": "ERM database work, AMCS/Dossier Systems"
+                    "description": "ERM database work, AMCS\/Dossier Systems"
                 },
                 {
                     "skill": "Entity Framework",
                     "years": 1,
-                    "description": "AMCS/Dossier Systems"
+                    "description": "AMCS\/Dossier Systems"
                 }
             ]
         },
@@ -319,13 +319,13 @@
             "category": "Enterprise & Agile Methodologies",
             "skills": [
                 {
-                    "skill": "Agile/Scrum",
+                    "skill": "Agile\/Scrum",
                     "years": 15,
                     "description": "All professional roles"
                 },
                 {
                     "skill": "Team Leadership",
-                    "description": "AMCS/Dossier Systems UI development team"
+                    "description": "AMCS\/Dossier Systems UI development team"
                 },
                 {
                     "skill": "Mentoring",
@@ -337,10 +337,10 @@
                 },
                 {
                     "skill": "Weekly Production Deployments",
-                    "description": "AMCS/Dossier Systems"
+                    "description": "AMCS\/Dossier Systems"
                 },
                 {
-                    "skill": "CI/CD Optimization",
+                    "skill": "CI\/CD Optimization",
                     "description": "Subaru of America (50% runtime improvement)"
                 }
             ]
@@ -429,7 +429,7 @@
                 },
                 {
                     "skill": "Development Environment Management",
-                    "description": "Docker, local/production parity"
+                    "description": "Docker, local\/production parity"
                 }
             ]
         }

@@ -284,7 +284,7 @@
                                         <div class="flex-1 grid gap-2 md:grid-cols-3">
                                             <input type="text" x-model="skill.skill" placeholder="Skill"
                                                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                            <input type="number" x-model.number="skill.years" placeholder="Years" min="0"
+                                            <input type="text" x-model="skill.years" placeholder="Years" inputmode="numeric"
                                                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
                                             <input type="text" x-model="skill.description" placeholder="Description"
                                                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
@@ -583,28 +583,47 @@ function resumeEditor() {
         ],
 
         init() {
-            // Ensure arrays exist
-            if (!this.data.skills) this.data.skills = { top: [], other: [] };
-            if (!this.data.skills.top) this.data.skills.top = [];
-            if (!this.data.skills.other) this.data.skills.other = [];
-            if (!this.data.technicalProfile) this.data.technicalProfile = { main: { category: '', skills: [] }, secondary: [] };
-            if (!this.data.technicalProfile.main) this.data.technicalProfile.main = { category: '', skills: [] };
-            if (!this.data.technicalProfile.secondary) this.data.technicalProfile.secondary = [];
-            if (!this.data.experience) this.data.experience = [];
-            if (!this.data.education) this.data.education = [];
-            if (!this.data.projects) this.data.projects = [];
+            // Ensure top-level structures exist (don't overwrite if they already exist with data)
+            if (!this.data.skills || typeof this.data.skills !== 'object') {
+                this.data.skills = { top: [], other: [] };
+            } else {
+                // Only set defaults if the nested arrays are truly missing
+                if (!Array.isArray(this.data.skills.top)) this.data.skills.top = [];
+                if (!Array.isArray(this.data.skills.other)) this.data.skills.other = [];
+            }
+
+            if (!this.data.technicalProfile || typeof this.data.technicalProfile !== 'object') {
+                this.data.technicalProfile = { main: { category: '', skills: [] }, secondary: [] };
+            } else {
+                if (!this.data.technicalProfile.main || typeof this.data.technicalProfile.main !== 'object') {
+                    this.data.technicalProfile.main = { category: '', skills: [] };
+                }
+                if (!Array.isArray(this.data.technicalProfile.secondary)) {
+                    this.data.technicalProfile.secondary = [];
+                }
+            }
+
+            if (!Array.isArray(this.data.experience)) this.data.experience = [];
+            if (!Array.isArray(this.data.education)) this.data.education = [];
+            if (!Array.isArray(this.data.projects)) this.data.projects = [];
 
             // Ensure dates arrays exist for experience and education
-            this.data.experience.forEach(job => {
-                if (!job.dates) job.dates = ['', ''];
-                if (!job.bullets) job.bullets = [];
-            });
-            this.data.education.forEach(edu => {
-                if (!edu.dates) edu.dates = ['', ''];
-            });
-            this.data.projects.forEach(proj => {
-                if (!proj.bullets) proj.bullets = [];
-            });
+            if (Array.isArray(this.data.experience)) {
+                this.data.experience.forEach(job => {
+                    if (!job.dates) job.dates = ['', ''];
+                    if (!job.bullets) job.bullets = [];
+                });
+            }
+            if (Array.isArray(this.data.education)) {
+                this.data.education.forEach(edu => {
+                    if (!edu.dates) edu.dates = ['', ''];
+                });
+            }
+            if (Array.isArray(this.data.projects)) {
+                this.data.projects.forEach(proj => {
+                    if (!proj.bullets) proj.bullets = [];
+                });
+            }
         },
 
         addSkillCategory(type) {

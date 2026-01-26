@@ -123,6 +123,12 @@ class ResumeDataService
             ]);
         }
 
+        if (count($data) === 0) {
+            throw ValidationException::withMessages([
+                'experience' => 'At least one job experience is required.',
+            ]);
+        }
+
         foreach ($data as $index => $job) {
             if (empty($job['jobTitle'])) {
                 throw ValidationException::withMessages([
@@ -148,6 +154,12 @@ class ResumeDataService
             ]);
         }
 
+        if (count($data) === 0) {
+            throw ValidationException::withMessages([
+                'education' => 'At least one education entry is required.',
+            ]);
+        }
+
         foreach ($data as $index => $edu) {
             if (empty($edu['institution'])) {
                 throw ValidationException::withMessages([
@@ -165,6 +177,12 @@ class ResumeDataService
         if (!is_array($data)) {
             throw ValidationException::withMessages([
                 'projects' => 'Projects must be an array.',
+            ]);
+        }
+
+        if (count($data) === 0) {
+            throw ValidationException::withMessages([
+                'projects' => 'At least one project is required.',
             ]);
         }
 

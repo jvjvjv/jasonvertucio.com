@@ -1,14 +1,17 @@
 [
     {
-        "jobTitle": "Angular/React/Vue Developer (Contract)",
+        "jobTitle": "Angular\/React\/Vue Developer (Contract)",
         "company": "Subaru of America via Insight Global",
-        "dates": ["2025", "Present"],
+        "dates": [
+            "2025",
+            "Present"
+        ],
         "location": "Camden, NJ",
         "bullets": [
             "Architected and implemented dynamic SNET Form framework for use across React apps, enabling configuration-based form creation that slashed form creation by 75% and nearly halved VIP Program project development time (supporting VIP Program's 90% YoY sales increase).",
             "Developed low-code content management system with custom markdown DSL, enabling marketing teams to deploy content changes without developer intervention or app redeployment, eliminating deployment bottlenecks for routine updates.",
             "Built component library from Figma designs and established design system standards, cutting new feature UI dev time by approximately 40% and improving cross-team consistency across Subarunet development team.",
-            "Modernized legacy UI applications to React/Next.js with Redux and Context API for state management, improving maintainability and reducing open UI defects by 35% within two quarters.",
+            "Modernized legacy UI applications to React\/Next.js with Redux and Context API for state management, improving maintainability and reducing open UI defects by 35% within two quarters.",
             "Built front-end for Tier 3 Marketing platform centralizing dealership information management, replacing vendor dependency and reducing annual operational costs. Achieved strong early adoption with majority of users completing setup in first week.",
             "Drove accessibility remediation across legacy and modern apps, resolving keyboard navigation, ARIA labeling, and color contrast issues to pass internal audits.",
             "Achieved 100%-unit test coverage across micro-frontend applications, reducing post-release regressions.",
@@ -18,7 +21,10 @@
     {
         "jobTitle": "Front-End Web Application Developer",
         "company": "ERM, Inc.",
-        "dates": ["2023", "2025"],
+        "dates": [
+            "2023",
+            "2025"
+        ],
         "location": "Remote",
         "bullets": [
             "Refactored legacy document processing API to handle Word 97-2003 formats and convert to HTML, automating regulation synchronization processes.",
@@ -29,24 +35,31 @@
     },
     {
         "jobTitle": "Senior Front-End Web Application Developer",
-        "company": "AMCS Group / Dossier Systems",
-        "dates": ["2019", "2023"],
+        "company": "AMCS Group \/ Dossier Systems",
+        "dates": [
+            "2019",
+            "2023"
+        ],
         "location": "Remote",
         "bullets": [
             "Led development of enterprise-level fleet maintenance management application serving thousands of users across browser, mobile, and SSR platforms.",
-            "Spearheaded migration from Vue.js/JavaScript to Vue 3/TypeScript, improving code maintainability and establishing type safety standards across the development team.",
+            "Spearheaded migration from Vue.js\/JavaScript to Vue 3\/TypeScript, improving code maintainability and establishing type safety standards across the development team.",
             "Architected reusable Vue component library with KendoUI and Element UI integration, optimized for performance and intuitive UX across browser, mobile (OnsenUI), and SSR applications to ensure consistency.",
             "Consolidated three separate codebases (Browser, Mobile, SSR) into unified architecture, reducing maintenance overhead by approximately 60% and streamlining development workflows.",
-            "Established comprehensive testing strategy with BDD/TDD methodology, ensuring reliable code quality and preventing regression issues.",
-            "Led UI development team in fast-paced Agile/Scrum environment with weekly production deployments, mentoring junior developers and ensuring successful project delivery.",
+            "Established comprehensive testing strategy with BDD\/TDD methodology, ensuring reliable code quality and preventing regression issues.",
+            "Led UI development team in fast-paced Agile\/Scrum environment with weekly production deployments, mentoring junior developers and ensuring successful project delivery.",
             "Collaborated with backend developers to design JSON API architecture and prepared comprehensive technical specifications for cross-functional teams."
         ]
     },
     {
         "jobTitle": "Full-Stack Developer (Contract)",
         "company": "Liberty Fox Technologies",
-        "dates": ["2017", "2019", "2025"],
-        "location": "Philadelphia, PA / Hybrid",
+        "dates": [
+            "2017",
+            "2019",
+            "2025"
+        ],
+        "location": "Philadelphia, PA \/ Hybrid",
         "bullets": [
             "Modernized FlixFling platform, upgrading codebase from Laravel 5 to 10, improving security, performance, maintainability.",
             "Built UI for exclusive content streaming platform with subscription-based monetization utilizing Stripe and PayPal APIs and leveraging existing FlixFling backend infrastructure.",
@@ -59,7 +72,10 @@
     {
         "jobTitle": "Mobile Architect",
         "company": "Northgate Digital Corporation",
-        "dates": ["2013", "2017"],
+        "dates": [
+            "2013",
+            "2017"
+        ],
         "location": "Newtown, PA",
         "bullets": [
             "Owned end-to-end product development for client-facing mobile applications, translating business requirements into technical specifications and shipped products across iOS and Android platforms.",
