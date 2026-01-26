@@ -1,11 +1,8 @@
 [
     {
-        "institution": "University",
-        "degree": "BS Computer Science",
-        "dates": [
-            "2016",
-            "2020"
-        ],
-        "description": "Good standing"
+        "institution": "Drexel University",
+        "degree": "Computer Science Coursework",
+        "dates": ["1996", "1999"],
+        "description": "Foundational coursework in programming and software development"
     }
 ]
