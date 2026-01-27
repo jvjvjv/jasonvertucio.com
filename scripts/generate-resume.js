@@ -15,6 +15,8 @@
  * Output: JSON to stdout with success status and path or error details
  */
 
+import { execSync } from 'child_process';
+
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import fs from 'fs';
@@ -85,6 +87,11 @@ try {
         path: outputPath,
         size: outputBuffer.length
     }));
+
+    // Convert to PDF also
+    execSync(`libreoffice --headless --convert-to pdf "${outputPath}"`, {
+        cwd: path.dirname(outputPath)
+    });
 
 } catch (error) {
     // Handle docxtemplater-specific errors
