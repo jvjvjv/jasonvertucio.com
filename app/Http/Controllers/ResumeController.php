@@ -56,37 +56,46 @@ class ResumeController extends Controller
     }
 
     /**
-     * GET /resume/download
-     * Download the pre-generated DOCX file
+     * Validate user has permission to download resume
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
      */
-    public function download(Request $request): BinaryFileResponse|JsonResponse
+    private function validateDownloadPermission(Request $request): void
     {
-        // Share code users get full access, authenticated users need save-resume permission
         if (!session('resume_share_code') && !$request->user()?->can('save-resume')) {
             if ($request->wantsJson()) {
-                return response()->json([
+                response()->json([
                     'code' => 403,
                     'status' => 'failed',
                     'message' => 'You do not have permission to download the resume.',
-                ], 403);
+                ], 403)->send();
+                exit;
             }
             abort(403, 'You do not have permission to download the resume.');
         }
+    }
 
-        $docxPath = $this->versionService->getLatestDocxPath();
-
-        if (!$docxPath) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'code' => 404,
-                    'status' => 'failed',
-                    'message' => 'Resume not available for download.',
-                ], 404);
-            }
-            abort(404, 'Resume not available for download.');
+    /**
+     * Handle file not found scenario
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     */
+    private function handleFileNotFound(Request $request): never
+    {
+        if ($request->wantsJson()) {
+            response()->json([
+                'code' => 404,
+                'status' => 'failed',
+                'message' => 'Resume not available for download.',
+            ], 404)->send();
+            exit;
         }
+        abort(404, 'Resume not available for download.');
+    }
 
-        // Track the download
+    /**
+     * Track resume download in database
+     */
+    private function trackDownload(Request $request): void
+    {
         $version = $this->versionService->getCurrentVersion();
         ResumeDownload::record(
             version: $version,
@@ -95,11 +104,69 @@ class ResumeController extends Controller
             shareCodeId: session('resume_share_code'),
             userId: $request->user()?->id
         );
+    }
 
-        $filename = basename($docxPath);
-
-        return response()->download($docxPath, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    /**
+     * Return binary file download response
+     */
+    private function downloadFile(string $path, string $mimeType): BinaryFileResponse
+    {
+        $filename = basename($path);
+        return response()->download($path, $filename, [
+            'Content-Type' => $mimeType,
         ]);
+    }
+
+    /**
+     * GET /resume/download
+     * Display download page with options for DOCX and PDF
+     */
+    public function download(Request $request): Response|View|JsonResponse
+    {
+        $this->validateDownloadPermission($request);
+
+        return view('resume.download.index', [
+            'docx_exists' => !!$this->versionService->getLatestDocxPath(),
+            'pdf_exists' => !!$this->versionService->getLatestPdfPath(),
+        ]);
+    }
+
+    /**
+     * GET /resume/download/docx
+     * Download the pre-generated DOCX file
+     */
+    public function downloadDocx(Request $request): BinaryFileResponse|JsonResponse
+    {
+        $this->validateDownloadPermission($request);
+
+        $docxPath = $this->versionService->getLatestDocxPath();
+        if (!$docxPath) {
+            $this->handleFileNotFound($request);
+        }
+
+        $this->trackDownload($request);
+
+        return $this->downloadFile(
+            $docxPath,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+    }
+
+    /**
+     * GET /resume/download/pdf
+     * Download the pre-generated PDF file
+     */
+    public function downloadPdf(Request $request): BinaryFileResponse|JsonResponse
+    {
+        $this->validateDownloadPermission($request);
+
+        $pdfPath = $this->versionService->getLatestPdfPath();
+        if (!$pdfPath) {
+            $this->handleFileNotFound($request);
+        }
+
+        $this->trackDownload($request);
+
+        return $this->downloadFile($pdfPath, 'application/pdf');
     }
 }

@@ -157,36 +157,55 @@ class ResumeEditorController extends Controller
 
     /**
      * POST /admin/resume/generate
-     * Generate DOCX for the current version
+     * Generate DOCX and PDF for the current version
      */
     public function generate(Request $request): JsonResponse|RedirectResponse
     {
-        $result = $this->versionService->generateDocx();
+        $docxResult = $this->versionService->generateDocx();
 
-        if ($request->wantsJson()) {
-            if ($result['success']) {
+        if (!$docxResult['success']) {
+            if ($request->wantsJson()) {
                 return response()->json([
-                    'status' => 'success',
-                    'message' => 'DOCX generated successfully.',
-                    'path' => $result['path'],
-                    'size' => $result['size'] ?? null,
-                ]);
+                    'status' => 'error',
+                    'message' => $docxResult['error'] ?? 'Failed to generate DOCX.',
+                ], 500);
             }
 
-            return response()->json([
-                'status' => 'error',
-                'message' => $result['error'] ?? 'Failed to generate DOCX.',
-            ], 500);
-        }
-
-        if ($result['success']) {
             return redirect()
                 ->route('admin.resume.preview')
-                ->with('success', 'DOCX generated successfully.');
+                ->with('error', $docxResult['error'] ?? 'Failed to generate DOCX.');
+        }
+
+        // Generate PDF from DOCX
+        $pdfResult = $this->versionService->generatePdf();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => $pdfResult['success']
+                    ? 'DOCX and PDF generated successfully.'
+                    : 'DOCX generated successfully, but PDF generation failed.',
+                'docx' => [
+                    'path' => $docxResult['path'],
+                    'size' => $docxResult['size'] ?? null,
+                ],
+                'pdf' => $pdfResult['success'] ? [
+                    'path' => $pdfResult['path'],
+                    'size' => $pdfResult['size'] ?? null,
+                ] : [
+                    'error' => $pdfResult['error'] ?? 'Unknown error',
+                ],
+            ]);
+        }
+
+        if ($pdfResult['success']) {
+            return redirect()
+                ->route('admin.resume.preview')
+                ->with('success', 'DOCX and PDF generated successfully.');
         }
 
         return redirect()
             ->route('admin.resume.preview')
-            ->with('error', $result['error'] ?? 'Failed to generate DOCX.');
+            ->with('warning', 'DOCX generated successfully, but PDF generation failed: ' . ($pdfResult['error'] ?? 'Unknown error'));
     }
 }

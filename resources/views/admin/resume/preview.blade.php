@@ -57,7 +57,7 @@
                         :disabled="generating"
                         class="px-4 py-2 bg-primary text-white font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2">
                     <i class="fa-solid" :class="generating ? 'fa-spinner fa-spin' : 'fa-file-word'"></i>
-                    <span x-text="generating ? 'Generating...' : '{{ $docxExists ? 'Regenerate DOCX' : 'Generate DOCX' }}'"></span>
+                    <span x-text="generating ? 'Generating...' : '{{ $docxExists ? 'Regenerate Documents' : 'Generate Documents' }}'"></span>
                 </button>
             </form>
         </div>

@@ -95,7 +95,11 @@ Route::middleware([ResumeShareCodeMiddleware::class])->prefix('resume')->group(f
     Route::get('/', [ResumeController::class, 'index'])->name('resume.index');
 
     // Direct download of pre-generated DOCX
-    Route::get('/download', [ResumeController::class, 'download'])->name('resume.download');
+    Route::prefix('/download')->name('resume.download.')->group(function () {
+        Route::get('/', [ResumeController::class, 'download'])->name('index');
+        Route::get('/docx', [ResumeController::class, 'downloadDocx'])->name('docx');
+        Route::get('/pdf', [ResumeController::class, 'downloadPdf'])->name('pdf');
+    });
 });
 
 // Honeypots

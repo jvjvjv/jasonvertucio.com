@@ -36,7 +36,12 @@
         },
         {
             "title": "State Management",
-            "list": ["Vuex", "Pinia", "Redux", "Context API"]
+            "list": [
+                "Vuex",
+                "Pinia",
+                "Redux",
+                "Context API"
+            ]
         },
         {
             "title": "Front-End",
@@ -57,15 +62,34 @@
         },
         {
             "title": "UI Component Libraries",
-            "list": ["MUI", "PrimeVue", "Vuetify", "Quasar", "KendoUI"]
+            "list": [
+                "MUI",
+                "PrimeVue",
+                "Vuetify",
+                "Quasar",
+                "KendoUI"
+            ]
         },
         {
             "title": "Development",
-            "list": ["React Native", "Expo", "Ionic", "Capacitor", "Cordova"]
+            "list": [
+                "React Native",
+                "Expo",
+                "Ionic",
+                "Capacitor",
+                "Cordova"
+            ]
         },
         {
             "title": "Backend & Databases",
-            "list": ["Node.js", "Express", "Laravel", ".NET", "MySQL", "T-SQL"]
+            "list": [
+                "Node.js",
+                "Express",
+                "Laravel",
+                ".NET",
+                "MySQL",
+                "T-SQL"
+            ]
         }
     ]
 }

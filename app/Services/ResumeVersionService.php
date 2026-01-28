@@ -64,6 +64,18 @@ class ResumeVersionService
     }
 
     /**
+     * Get the path to the latest PDF file by current version
+     */
+    public function getLatestPdfPath(): ?string
+    {
+        $version = $this->getCurrentVersion();
+        $filename = "{$version} Jason Vertucio.pdf";
+        $path = $this->savedDocumentsPath . '/' . $filename;
+
+        return file_exists($path) ? $path : null;
+    }
+
+    /**
      * Get the DOCX filename for a given version
      */
     public function getDocxFilename(string $version): string
@@ -150,6 +162,81 @@ class ResumeVersionService
             if (file_exists($tempDataPath)) {
                 unlink($tempDataPath);
             }
+        }
+    }
+
+    /**
+     * Generate a PDF from the DOCX file for the current version
+     *
+     * @return array{success: bool, path?: string, error?: string}
+     */
+    public function generatePdf(): array {
+        $docxPath = $this->getLatestDocxPath();
+
+        if (!$docxPath) {
+            return [
+                'success' => false,
+                'error' => 'DOCX file not found. Generate DOCX first.',
+            ];
+        }
+
+        $version = $this->getCurrentVersion();
+        $pdfFilename = "{$version} Jason Vertucio.pdf";
+        $outputDir = $this->savedDocumentsPath;
+        $pdfPath = $outputDir . '/' . $pdfFilename;
+
+        try {
+            // Build LibreOffice command
+            $command = sprintf(
+                'libreoffice --headless --convert-to pdf --outdir %s %s 2>&1',
+                escapeshellarg($outputDir),
+                escapeshellarg($docxPath)
+            );
+
+            exec($command, $output, $exitCode);
+
+            if ($exitCode !== 0) {
+                Log::error('PDF conversion failed', [
+                    'command' => $command,
+                    'output' => implode("\n", $output),
+                    'exitCode' => $exitCode,
+                ]);
+
+                return [
+                    'success' => false,
+                    'error' => 'LibreOffice conversion failed: ' . implode("\n", $output),
+                ];
+            }
+
+            if (!file_exists($pdfPath)) {
+                return [
+                    'success' => false,
+                    'error' => 'PDF file was not created.',
+                ];
+            }
+
+            Log::info('Resume PDF generated successfully', [
+                'version' => $version,
+                'path' => $pdfPath,
+                'size' => filesize($pdfPath),
+            ]);
+
+            return [
+                'success' => true,
+                'path' => $pdfPath,
+                'size' => filesize($pdfPath),
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('PDF generation exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
         }
     }
 

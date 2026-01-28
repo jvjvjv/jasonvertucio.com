@@ -88,11 +88,6 @@ try {
         size: outputBuffer.length
     }));
 
-    // Convert to PDF also
-    execSync(`libreoffice --headless --convert-to pdf "${outputPath}"`, {
-        cwd: path.dirname(outputPath)
-    });
-
 } catch (error) {
     // Handle docxtemplater-specific errors
     let errorDetails = {
