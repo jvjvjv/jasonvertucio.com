@@ -77,7 +77,8 @@ class ResumeShareCodeController extends Controller
         // Send email if configured and requested
         if ($mailConfigured && $sendEmail && $email) {
             try {
-                Mail::to($email)->queue(new ResumeShareCodeCreated($code));
+                $version = json_decode(require_once(resource_path('/resume/version.json')));
+                Mail::to($email)->queue(new ResumeShareCodeCreated($code, $version));
                 $code->update(['email_sent' => true]);
 
                 return redirect()

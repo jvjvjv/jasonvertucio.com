@@ -27,7 +27,8 @@ class ResumeUpdated extends Mailable
      */
     public static function preview(): self {
         $code = ResumeShareCode::factory()->make();
-        return new static($code, '2026.1.0');
+        $version = json_decode(file_get_contents(resource_path('resume/version.json')));
+        return new static($code, $version);
     }
 
     /**
@@ -46,7 +47,7 @@ class ResumeUpdated extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mail.resume-updated',
+            markdown: 'mail.resume-updated',
             with: [
                 'code' => $this->code,
                 'version' => $this->version,

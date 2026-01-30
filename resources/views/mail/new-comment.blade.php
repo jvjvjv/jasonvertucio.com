@@ -1,3 +1,4 @@
+<x-mail::message>
 # A New comment on {{ $comment->post->title }}
 
 **From:** {{ $comment->name }} <[{{ $comment->email  }}]({{ $comment->email  }})><br>
@@ -8,3 +9,5 @@
 **Comment:**
 
 {{ $comment->message }}
+
+</x-mail::message>

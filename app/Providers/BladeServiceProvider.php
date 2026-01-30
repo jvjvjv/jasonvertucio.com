@@ -26,6 +26,8 @@ class BladeServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Blade::componentNamespace('Illuminate\Mail\Mailables\Components', 'mail');
+
         Blade::if('ifwinkauthenticated', function () {
             $auth = Auth::guard('wink');
             return $auth->check();
