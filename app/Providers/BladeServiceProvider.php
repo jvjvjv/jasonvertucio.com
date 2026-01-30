@@ -39,7 +39,5 @@ class BladeServiceProvider extends ServiceProvider
         Blade::if('ifauthenticated', function () {
             return Auth::check();
         });
-
-        Blade::component('tech-skill', TechSkill::class);
     }
 }
