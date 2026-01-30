@@ -13,7 +13,7 @@
     "require": {
         "php": "^8.2.0",
         "austintoddj/canvas": "^6.0.55",
-        "bspdx/authkit": "^0.5.2",
+        "bspdx/keystone": "^0.6.0",
         "guzzlehttp/guzzle": "^7.10.0",
         "laravel/fortify": "^1.33",
         "laravel/framework": "^12.48.1",
