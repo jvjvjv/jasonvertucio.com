@@ -68,6 +68,14 @@ class ResumeShareCodeMiddleware
             abort(401, 'Unauthorized');
         }
 
-        return redirect()->route('login');
+        // If code was provided but invalid, redirect to entry page with error
+        if ($code) {
+            return redirect()
+                ->route('resume.enter-code')
+                ->with('error', 'Invalid or expired access code. Please try again.');
+        }
+
+        // No code provided, redirect to entry page
+        return redirect()->route('resume.enter-code');
     }
 }

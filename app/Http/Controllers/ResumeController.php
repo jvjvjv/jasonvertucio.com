@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\ResumeDownload;
+use App\Models\ResumeShareCode;
 use App\Services\ResumeDataService;
 use App\Services\ResumeVersionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -20,6 +22,30 @@ class ResumeController extends Controller
     {
         $this->resumeData = $resumeData;
         $this->versionService = $versionService;
+    }
+
+    /**
+     * GET /resume/enter-code
+     * Display page for manually entering a share code
+     */
+    public function enterCode(Request $request): View|RedirectResponse
+    {
+        // If already authenticated, redirect to resume page
+        if ($request->user()) {
+            return redirect()->route('resume.index');
+        }
+
+        // If already have valid code in session, redirect to resume
+        if (session('resume_share_code')) {
+            $shareCode = ResumeShareCode::valid()->find(session('resume_share_code'));
+            if ($shareCode) {
+                return redirect()->route('resume.index');
+            }
+            // Invalid/expired code in session - clear it
+            session()->forget('resume_share_code');
+        }
+
+        return view('resume.enter-code');
     }
 
     /**

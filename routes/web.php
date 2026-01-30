@@ -90,6 +90,9 @@ Route::middleware(['auth', 'can:edit-resume'])
         Route::post('/generate', [ResumeEditorController::class, 'generate'])->name('generate');
     });
 
+// Manual code entry page for unauthenticated users
+Route::get('/resume/enter-code', [ResumeController::class, 'enterCode'])->name('resume.enter-code');
+
 // Resume routes - supports both authenticated users and share codes
 Route::middleware([ResumeShareCodeMiddleware::class])->prefix('resume')->group(function () {
     Route::get('/', [ResumeController::class, 'index'])->name('resume.index');

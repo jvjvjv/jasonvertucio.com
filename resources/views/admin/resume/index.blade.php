@@ -107,6 +107,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Downloads</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -162,6 +163,17 @@
                                 0 views
                             @endif
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if($code->downloads_count > 0)
+                                <button type="button"
+                                        @click="expanded = expanded === '{{ $code->id }}-downloads' ? null : '{{ $code->id }}-downloads'"
+                                        class="text-primary hover:underline">
+                                    {{ $code->downloads_count }} download{{ $code->downloads_count === 1 ? '' : 's' }}
+                                </button>
+                            @else
+                                0 downloads
+                            @endif
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($code->trashed())
                                 <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
@@ -197,7 +209,7 @@
                     {{-- Expanded views row --}}
                     @if($code->views->count() > 0)
                         <tr x-show="expanded === '{{ $code->id }}'" x-cloak class="bg-gray-50">
-                            <td colspan="6" class="px-6 py-4">
+                            <td colspan="7" class="px-6 py-4">
                                 <div class="text-sm">
                                     <h4 class="font-medium text-gray-700 mb-2">View History</h4>
                                     <div class="max-h-48 overflow-y-auto">
@@ -226,9 +238,43 @@
                             </td>
                         </tr>
                     @endif
+                    {{-- Expanded downloads row --}}
+                    @if($code->downloads->count() > 0)
+                        <tr x-show="expanded === '{{ $code->id }}-downloads'" x-cloak class="bg-blue-50">
+                            <td colspan="8" class="px-6 py-4">
+                                <div class="text-sm">
+                                    <h4 class="font-medium text-gray-700 mb-2">Download History</h4>
+                                    <div class="max-h-48 overflow-y-auto">
+                                        <table class="min-w-full text-xs">
+                                            <thead>
+                                                <tr class="text-gray-500">
+                                                    <th class="text-left pr-4 pb-1">Date</th>
+                                                    <th class="text-left pr-4 pb-1">Version</th>
+                                                    <th class="text-left pr-4 pb-1">IP Address</th>
+                                                    <th class="text-left pb-1">User Agent</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-gray-600">
+                                                @foreach($code->downloads as $download)
+                                                    <tr>
+                                                        <td class="pr-4 py-1">{{ $download->created_at->format('M j, Y g:i A') }}</td>
+                                                        <td class="pr-4 py-1 font-mono">{{ $download->version }}</td>
+                                                        <td class="pr-4 py-1 font-mono">{{ $download->ip_address }}</td>
+                                                        <td class="py-1 truncate max-w-xs" title="{{ $download->user_agent }}">
+                                                            {{ Str::limit($download->user_agent, 60) }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @endif
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                             No share codes created yet.
                         </td>
                     </tr>

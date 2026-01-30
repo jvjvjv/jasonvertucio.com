@@ -51,6 +51,14 @@ class ResumeShareCode extends Model
     }
 
     /**
+     * Get all downloads for this share code.
+     */
+    public function downloads(): HasMany
+    {
+        return $this->hasMany(ResumeDownload::class, 'share_code_id');
+    }
+
+    /**
      * Scope to get only valid (not expired) codes.
      */
     public function scopeValid($query)

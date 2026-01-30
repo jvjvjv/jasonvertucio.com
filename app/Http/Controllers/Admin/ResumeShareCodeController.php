@@ -29,9 +29,15 @@ class ResumeShareCodeController extends Controller
     {
         $codes = ResumeShareCode::withTrashed()
             ->withCount('views')
-            ->with(['views' => function ($query) {
-                $query->orderBy('created_at', 'desc');
-            }])
+            ->withCount('downloads')
+            ->with([
+                'views' => function ($query) {
+                    $query->orderBy('created_at', 'desc');
+                },
+                'downloads' => function ($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
 
