@@ -3,26 +3,30 @@
 namespace App\Mail;
 
 use App\Models\Comment;
-
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class CommentReceivedMail extends Mailable
-{
+class CommentReceivedMail extends Mailable {
     use Queueable, SerializesModels;
-
-    public $comment;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(Comment $comment)
-    {
-        $this->comment = $comment;
+    public function __construct(Comment $comment) {
+    }
+
+    /**
+     * Get the message envelope.
+     */
+    public function envelope(): Envelope {
+        return new Envelope(
+            subject: 'Your Resume Share Code',
+        );
     }
 
     /**
@@ -30,9 +34,9 @@ class CommentReceivedMail extends Mailable
      *
      * @return $this
      */
-    public function build()
-    {
-        return $this->from('me@jasonvertucio.com')
-            ->view('mail.mail');
+    public function content(): Content {
+        return new Content(
+            view: 'mail.mail',
+        );
     }
 }
