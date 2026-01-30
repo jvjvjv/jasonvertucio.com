@@ -1,6 +1,8 @@
-@extends('layouts.app')
+@extends('layout')
 
-@section('content')
+@section('title', 'Mail Preview')
+
+@section('main')
 <div class="p-6 max-w-2xl mx-auto">
     <h1 class="text-2xl font-bold mb-6">Mail Preview</h1>
 

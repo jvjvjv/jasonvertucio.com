@@ -36,7 +36,7 @@ class CommentReceivedMail extends Mailable {
      */
     public function envelope(): Envelope {
         return new Envelope(
-            subject: 'Your Resume Share Code',
+            subject: 'A New Comment has been made',
         );
     }
 
@@ -47,7 +47,7 @@ class CommentReceivedMail extends Mailable {
      */
     public function content(): Content {
         return new Content(
-            view: 'mail.mail',
+            markdown: 'mail.new-comment',
             with: [
                 'comment' => $this->comment,
             ],

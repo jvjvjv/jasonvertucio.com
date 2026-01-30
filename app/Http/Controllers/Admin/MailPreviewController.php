@@ -25,11 +25,22 @@ class MailPreviewController {
 
         try {
             $instance = $this->instantiateMailable($class['class']);
+            $isMarkdown = $this->isMarkdownMailable($instance);
+
+            // For markdown emails, get the raw view content
+            // For HTML emails, use the full render
+            if ($isMarkdown) {
+                $content = $instance->content();
+                $preview = view($content->markdown, $content->with ?? [])->render();
+            } else {
+                $preview = $instance->render();
+            }
 
             return view('admin.mail-preview.show', [
                 'mailable' => $class,
-                'preview' => $instance->render(),
+                'preview' => $preview,
                 'subject' => $instance->envelope()->subject ?? 'No Subject',
+                'isMarkdown' => $isMarkdown,
             ]);
         } catch (\Exception $e) {
             return view('admin.mail-preview.show', [
@@ -82,5 +93,10 @@ class MailPreviewController {
         }
 
         throw new \Exception("Mailable '{$class}' requires constructor parameters. Add a static preview() method to provide sample data.");
+    }
+
+    private function isMarkdownMailable($instance): bool {
+        $content = $instance->content();
+        return property_exists($content, 'markdown') && $content->markdown !== null;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
@@ -23,4 +24,15 @@ class Comment extends Model
         'created_at',
         'updated_at',
     ];
+
+    /**
+     * Get the post that this comment belongs to.
+     */
+    public function post(): BelongsTo {
+        return $this->belongsTo(\Canvas\Models\Post::class);
+    }
+
+    public function user(): BelongsTo {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use BSPDX\AuthKit\Traits\HasAuthKit;
@@ -10,7 +11,7 @@ use BSPDX\AuthKit\Contracts\HasPasskeys;
 
 class User extends Authenticatable implements HasPasskeys
 {
-    use HasUuids, Notifiable, HasAuthKit;
+    use HasFactory, HasUuids, Notifiable, HasAuthKit;
 
     /**
      * The attributes that are mass assignable.
