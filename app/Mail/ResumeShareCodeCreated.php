@@ -21,6 +21,14 @@ class ResumeShareCodeCreated extends Mailable
     }
 
     /**
+     * Create a preview instance for mail testing.
+     */
+    public static function preview(): self {
+        $code = ResumeShareCode::factory()->make();
+        return new static($code);
+    }
+
+    /**
      * Get the message envelope.
      */
     public function envelope(): Envelope

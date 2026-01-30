@@ -22,6 +22,7 @@
         "twilio/sdk": "^6.44.4"
     },
     "require-dev": {
+        "fakerphp/faker": "^1.24",
         "filp/whoops": "^2.18.4",
         "mockery/mockery": "^1.6.12",
         "phpunit/phpunit": "^10.5.60"

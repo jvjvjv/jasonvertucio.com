@@ -2,6 +2,14 @@
 
 $nav_blocks = [
     [
+        'can' => null,
+        'route' => 'admin.mail-preview.index',
+        'icon' => 'inbox',
+        'label' => 'Mail preview',
+        'description' => 'See how emails might be rendered, right here in the browser!',
+
+    ],
+    [
         'can' => 'edit-resume',
         'route' => 'admin.resume.editor',
         'icon' => 'file-pen',

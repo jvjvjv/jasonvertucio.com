@@ -12,6 +12,7 @@ use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\ResumeEditorController;
+use App\Http\Controllers\Admin\MailPreviewController;
 use App\Http\Middleware\ResumeShareCodeMiddleware;
 
 /*
@@ -77,6 +78,10 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
         Route::get('/resume', [ResumeShareCodeController::class, 'index'])->name('resume.index');
         Route::post('/resume/codes', [ResumeShareCodeController::class, 'store'])->name('resume.codes.store');
         Route::delete('/resume/codes/{code}', [ResumeShareCodeController::class, 'destroy'])->name('resume.codes.destroy');
+
+        // Mail preview routes
+        Route::get('/mail-preview', [MailPreviewController::class, 'index'])->name('mail-preview.index');
+        Route::get('/mail-preview/{mailable}', [MailPreviewController::class, 'show'])->name('mail-preview.show');
     });
 
 // Resume editor routes - requires auth + edit-resume permission

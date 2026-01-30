@@ -12,12 +12,23 @@ use Illuminate\Queue\SerializesModels;
 class CommentReceivedMail extends Mailable {
     use Queueable, SerializesModels;
 
+    public Comment $comment;
+
     /**
      * Create a new message instance.
      *
      * @return void
      */
     public function __construct(Comment $comment) {
+        $this->comment = $comment;
+    }
+
+    /**
+     * Create a preview instance for mail testing.
+     */
+    public static function preview(): self {
+        $comment = Comment::factory()->make();
+        return new static($comment);
     }
 
     /**
@@ -37,6 +48,9 @@ class CommentReceivedMail extends Mailable {
     public function content(): Content {
         return new Content(
             view: 'mail.mail',
+            with: [
+                'comment' => $this->comment,
+            ],
         );
     }
 }

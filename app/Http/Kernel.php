@@ -15,10 +15,9 @@ class Kernel extends HttpKernel
      */
     protected $middleware = [
         \App\Http\Middleware\TrustProxies::class,
-        // CheckForMaintenanceMode removed in Laravel 11+ (now handled by framework)
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
-        \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\TrimStrings::class,
         \App\Http\Middleware\IpMiddleware::class,
     ];
 

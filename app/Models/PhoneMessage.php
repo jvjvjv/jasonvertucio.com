@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PhoneMessage extends Model
 {
-    use Softdeletes;
+    use HasFactory, SoftDeletes;
     protected $fillable = [
         'message', 'sid', 'from_phone_id', 'to_phone_id'
     ];
