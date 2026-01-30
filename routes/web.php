@@ -82,6 +82,7 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
         // Mail preview routes
         Route::get('/mail-preview', [MailPreviewController::class, 'index'])->name('mail-preview.index');
         Route::get('/mail-preview/{mailable}', [MailPreviewController::class, 'show'])->name('mail-preview.show');
+        Route::get('/mail-preview/{mailable}/preview', [MailPreviewController::class, 'preview'])->name('mail-preview.preview');
     });
 
 // Resume editor routes - requires auth + edit-resume permission
