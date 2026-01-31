@@ -103,7 +103,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs max-w-14 font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
@@ -121,14 +121,14 @@
                                 <button type="button"
                                         onclick="navigator.clipboard.writeText('{{ url('/resume?code=' . $code->id) }}')"
                                         class="ml-2 text-xs text-primary hover:underline">
-                                    Copy URL
+                                    <i class="fa-regular fa-copy" aria-label="Copy URL" title="Copy URL"></i>
                                 </button>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             {{ $code->name ?: '-' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-6 py-4 whitespace-nowrap max-w-32 text-sm text-gray-500">
                             @if($code->email)
                                 <span class="flex items-center gap-1">
                                     @if($code->email_sent)
@@ -157,10 +157,10 @@
                                 <button type="button"
                                         @click="expanded = expanded === '{{ $code->id }}' ? null : '{{ $code->id }}'"
                                         class="text-primary hover:underline">
-                                    {{ $code->views_count }} view{{ $code->views_count === 1 ? '' : 's' }}
+                                    {{ $code->views_count }}
                                 </button>
                             @else
-                                0 views
+                                -
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -168,10 +168,10 @@
                                 <button type="button"
                                         @click="expanded = expanded === '{{ $code->id }}-downloads' ? null : '{{ $code->id }}-downloads'"
                                         class="text-primary hover:underline">
-                                    {{ $code->downloads_count }} download{{ $code->downloads_count === 1 ? '' : 's' }}
+                                    {{ $code->downloads_count }}
                                 </button>
                             @else
-                                0 downloads
+                                -
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
