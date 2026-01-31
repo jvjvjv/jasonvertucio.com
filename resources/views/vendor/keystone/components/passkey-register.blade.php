@@ -1,20 +1,20 @@
-<div class="authkit-form-container">
-    <div class="authkit-form">
-        <div class="authkit-form-group">
-            <label for="passkey-name" class="authkit-label">Passkey Name</label>
+<div class="keystone-form-container">
+    <div class="keystone-form">
+        <div class="keystone-form-group">
+            <label for="passkey-name" class="keystone-label">Passkey Name</label>
             <input
                 id="passkey-name"
                 type="text"
-                class="authkit-input"
+                class="keystone-input"
                 placeholder="e.g., My iPhone, Work Laptop"
                 value="My Passkey"
             >
-            <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
+            <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
                 Give this passkey a recognizable name.
             </p>
         </div>
 
-        <button type="button" class="authkit-button" onclick="registerPasskey()">
+        <button type="button" class="keystone-button" onclick="registerPasskey()">
             Register Passkey
         </button>
 
@@ -29,7 +29,7 @@
         const name = nameInput.value.trim() || 'My Passkey';
 
         try {
-            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Preparing passkey registration...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Preparing passkey registration...</p>';
 
             // Get registration options from server
             const optionsResponse = await fetch('{{ $registerOptionsUrl }}', {
@@ -50,7 +50,7 @@
             options.challenge = Uint8Array.from(atob(options.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
             options.user.id = Uint8Array.from(atob(options.user.id.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
 
-            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Follow your browser prompt...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Follow your browser prompt...</p>';
 
             // Create credential
             const credential = await navigator.credentials.create({ publicKey: options });
@@ -59,7 +59,7 @@
                 throw new Error('Passkey registration was cancelled');
             }
 
-            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Saving passkey...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Saving passkey...</p>';
 
             // Send credential to server
             const response = await fetch('{{ $registerUrl }}', {
@@ -94,7 +94,7 @@
 
         } catch (error) {
             console.error('Passkey registration error:', error);
-            statusDiv.innerHTML = `<p style="color: var(--authkit-danger);">Error: ${error.message}</p>`;
+            statusDiv.innerHTML = `<p style="color: var(--keystone-danger);">Error: ${error.message}</p>`;
         }
     }
 </script>

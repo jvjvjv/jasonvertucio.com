@@ -1,17 +1,17 @@
-<div class="authkit-form-container">
-    <div class="authkit-form">
-        <h2 style="margin-bottom: 1.5rem; text-align: center; color: var(--authkit-text);">
+<div class="keystone-form-container">
+    <div class="keystone-form">
+        <h2 style="margin-bottom: 1.5rem; text-align: center; color: var(--keystone-text);">
             Sign in with Passkey
         </h2>
 
-        <button type="button" class="authkit-button" onclick="loginWithPasskey()">
+        <button type="button" class="keystone-button" onclick="loginWithPasskey()">
             Sign in with Passkey
         </button>
 
         <div id="passkey-status" style="margin-top: 1rem; font-size: 0.875rem; text-align: center;"></div>
 
-        <div class="authkit-links" style="justify-content: center;">
-            <a href="{{ route('login') }}" class="authkit-link">Use password instead</a>
+        <div class="keystone-links" style="justify-content: center;">
+            <a href="{{ route('login') }}" class="keystone-link">Use password instead</a>
         </div>
     </div>
 </div>
@@ -21,7 +21,7 @@
         const statusDiv = document.getElementById('passkey-status');
 
         try {
-            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Preparing passkey authentication...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Preparing passkey authentication...</p>';
 
             // Get authentication options from server
             const optionsResponse = await fetch('{{ $loginOptionsUrl }}', {
@@ -48,7 +48,7 @@
                 }));
             }
 
-            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Follow your browser prompt...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Follow your browser prompt...</p>';
 
             // Get credential
             const credential = await navigator.credentials.get({ publicKey: options });
@@ -57,7 +57,7 @@
                 throw new Error('Passkey authentication was cancelled');
             }
 
-            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Verifying...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Verifying...</p>';
 
             // Send credential to server
             const response = await fetch('{{ $authenticateUrl }}', {
@@ -90,11 +90,11 @@
             statusDiv.innerHTML = '<p style="color: #10b981;">✓ Authentication successful! Redirecting...</p>';
 
             // Redirect to dashboard
-            window.location.href = result.redirect || '{{ config('authkit.redirects.login', '/dashboard') }}';
+            window.location.href = result.redirect || '{{ config('keystone.redirects.login', '/dashboard') }}';
 
         } catch (error) {
             console.error('Passkey authentication error:', error);
-            statusDiv.innerHTML = `<p style="color: var(--authkit-danger);">Error: ${error.message}</p>`;
+            statusDiv.innerHTML = `<p style="color: var(--keystone-danger);">Error: ${error.message}</p>`;
         }
     }
 

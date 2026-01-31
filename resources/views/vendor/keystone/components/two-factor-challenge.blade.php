@@ -1,10 +1,10 @@
-<div class="authkit-form-container">
-    <form method="POST" action="{{ $action }}" class="authkit-form" id="two-factor-form">
+<div class="keystone-form-container">
+    <form method="POST" action="{{ $action }}" class="keystone-form" id="two-factor-form">
         @csrf
 
         <div id="code-input" style="display: block;">
-            <div class="authkit-form-group">
-                <label for="code" class="authkit-label">Authentication Code</label>
+            <div class="keystone-form-group">
+                <label for="code" class="keystone-label">Authentication Code</label>
                 <input
                     id="code"
                     type="text"
@@ -12,47 +12,47 @@
                     inputmode="numeric"
                     autofocus
                     autocomplete="one-time-code"
-                    class="authkit-input"
+                    class="keystone-input"
                     placeholder="123456"
                     maxlength="6"
                 >
-                <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
+                <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
                     Enter the code from your authenticator app.
                 </p>
                 @error('code')
-                    <span class="authkit-error">{{ $message }}</span>
+                    <span class="keystone-error">{{ $message }}</span>
                 @enderror
             </div>
         </div>
 
         @if ($showRecoveryCodeOption)
             <div id="recovery-input" style="display: none;">
-                <div class="authkit-form-group">
-                    <label for="recovery_code" class="authkit-label">Recovery Code</label>
+                <div class="keystone-form-group">
+                    <label for="recovery_code" class="keystone-label">Recovery Code</label>
                     <input
                         id="recovery_code"
                         type="text"
                         name="recovery_code"
-                        class="authkit-input"
+                        class="keystone-input"
                         placeholder="xxxxx-xxxxx"
                     >
-                    <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
+                    <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
                         Enter one of your recovery codes.
                     </p>
                     @error('recovery_code')
-                        <span class="authkit-error">{{ $message }}</span>
+                        <span class="keystone-error">{{ $message }}</span>
                     @enderror
                 </div>
             </div>
         @endif
 
-        <button type="submit" class="authkit-button">
+        <button type="submit" class="keystone-button">
             Verify
         </button>
 
         @if ($showRecoveryCodeOption)
             <div style="text-align: center; margin-top: 1rem;">
-                <button type="button" class="authkit-link" style="background: none; border: none; cursor: pointer; font-size: 0.875rem;" onclick="toggleRecoveryMode()">
+                <button type="button" class="keystone-link" style="background: none; border: none; cursor: pointer; font-size: 0.875rem;" onclick="toggleRecoveryMode()">
                     <span id="toggle-text">Use a recovery code</span>
                 </button>
             </div>

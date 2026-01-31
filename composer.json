@@ -14,6 +14,7 @@
         "php": "^8.2.0",
         "austintoddj/canvas": "^6.0.55",
         "bspdx/keystone": "^0.6.0",
+        "fakerphp/faker": "^1.24",
         "guzzlehttp/guzzle": "^7.10.0",
         "laravel/fortify": "^1.33",
         "laravel/framework": "^12.48.1",
@@ -22,7 +23,6 @@
         "twilio/sdk": "^6.44.4"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.24",
         "filp/whoops": "^2.18.4",
         "laravel/boost": "^2.0",
         "mockery/mockery": "^1.6.12",

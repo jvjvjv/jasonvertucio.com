@@ -1,16 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use BSPDX\AuthKit\Http\Controllers\RolePermissionController;
-use BSPDX\AuthKit\Http\Controllers\TwoFactorAuthController;
-use BSPDX\AuthKit\Http\Controllers\PasskeyAuthController;
+use BSPDX\Keystone\Http\Controllers\RolePermissionController;
+use BSPDX\Keystone\Http\Controllers\TwoFactorAuthController;
+use BSPDX\Keystone\Http\Controllers\PasskeyAuthController;
 
 /*
 |--------------------------------------------------------------------------
-| AuthKit API Routes
+| Keystone API Routes
 |--------------------------------------------------------------------------
 |
-| These are example API routes for the BSPDX AuthKit package.
+| These are example API routes for the BSPDX Keystone package.
 | Copy these routes to your routes/api.php file and customize as needed.
 |
 | These routes are protected with Sanctum authentication.

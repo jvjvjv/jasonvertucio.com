@@ -7,7 +7,7 @@ return [
     | Load Routes Automatically
     |--------------------------------------------------------------------------
     |
-    | Determines whether AuthKit should automatically load its routes.
+    | Determines whether Keystone should automatically load its routes.
     | Set to false to manually define routes in your application.
     |
     */

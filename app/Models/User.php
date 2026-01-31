@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use BSPDX\AuthKit\Traits\HasAuthKit;
-use BSPDX\AuthKit\Contracts\HasPasskeys;
+use BSPDX\Keystone\Traits\HasKeystone;
+use BSPDX\Keystone\Contracts\HasPasskeys;
 
 class User extends Authenticatable implements HasPasskeys
 {
-    use HasFactory, HasUuids, Notifiable, HasAuthKit;
+    use HasFactory, HasUuids, Notifiable, HasKeystone;
 
     /**
      * The attributes that are mass assignable.

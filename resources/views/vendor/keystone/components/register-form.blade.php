@@ -1,9 +1,9 @@
-<div class="authkit-form-container">
-    <form method="POST" action="{{ $action }}" class="authkit-form">
+<div class="keystone-form-container">
+    <form method="POST" action="{{ $action }}" class="keystone-form">
         @csrf
 
         @if ($errors->any())
-            <div class="authkit-error" style="margin-bottom: 1rem;">
+            <div class="keystone-error" style="margin-bottom: 1rem;">
                 @foreach ($errors->all() as $error)
                     <p>{{ $error }}</p>
                 @endforeach
@@ -11,8 +11,8 @@
         @endif
 
         @if (in_array('name', $requiredFields))
-            <div class="authkit-form-group">
-                <label for="name" class="authkit-label">Name</label>
+            <div class="keystone-form-group">
+                <label for="name" class="keystone-label">Name</label>
                 <input
                     id="name"
                     type="text"
@@ -20,67 +20,67 @@
                     value="{{ old('name') }}"
                     required
                     autofocus
-                    class="authkit-input"
+                    class="keystone-input"
                 >
                 @error('name')
-                    <span class="authkit-error">{{ $message }}</span>
+                    <span class="keystone-error">{{ $message }}</span>
                 @enderror
             </div>
         @endif
 
         @if (in_array('email', $requiredFields))
-            <div class="authkit-form-group">
-                <label for="email" class="authkit-label">Email</label>
+            <div class="keystone-form-group">
+                <label for="email" class="keystone-label">Email</label>
                 <input
                     id="email"
                     type="email"
                     name="email"
                     value="{{ old('email') }}"
                     required
-                    class="authkit-input"
+                    class="keystone-input"
                 >
                 @error('email')
-                    <span class="authkit-error">{{ $message }}</span>
+                    <span class="keystone-error">{{ $message }}</span>
                 @enderror
             </div>
         @endif
 
         @if (in_array('password', $requiredFields))
-            <div class="authkit-form-group">
-                <label for="password" class="authkit-label">Password</label>
+            <div class="keystone-form-group">
+                <label for="password" class="keystone-label">Password</label>
                 <input
                     id="password"
                     type="password"
                     name="password"
                     required
-                    class="authkit-input"
+                    class="keystone-input"
                 >
                 @error('password')
-                    <span class="authkit-error">{{ $message }}</span>
+                    <span class="keystone-error">{{ $message }}</span>
                 @enderror
             </div>
         @endif
 
         @if (in_array('password_confirmation', $requiredFields))
-            <div class="authkit-form-group">
-                <label for="password_confirmation" class="authkit-label">Confirm Password</label>
+            <div class="keystone-form-group">
+                <label for="password_confirmation" class="keystone-label">Confirm Password</label>
                 <input
                     id="password_confirmation"
                     type="password"
                     name="password_confirmation"
                     required
-                    class="authkit-input"
+                    class="keystone-input"
                 >
             </div>
         @endif
 
-        <button type="submit" class="authkit-button">
+        <button type="submit" class="keystone-button">
             Register
         </button>
 
         @if ($showLoginLink)
-            <div class="authkit-links">
-                <a href="{{ route('login') }}" class="authkit-link">Already have an account? Log in</a>
+            <div class="keystone-links">
+                <a href="{{ route('login') }}" class="keystone-link">Already have an account? Log in</a>
             </div>
         @endif
     </form>

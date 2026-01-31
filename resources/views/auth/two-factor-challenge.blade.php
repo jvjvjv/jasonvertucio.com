@@ -9,7 +9,7 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-lg p-8">
-            <x-authkit-two-factor-challenge />
+            <x-keystone-two-factor-challenge />
         </div>
     </div>
 </div>

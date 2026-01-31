@@ -1,17 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use BSPDX\AuthKit\Http\Controllers\TwoFactorAuthController;
-use BSPDX\AuthKit\Http\Controllers\PasskeyAuthController;
-use BSPDX\AuthKit\Http\Controllers\ProfileController;
-use BSPDX\AuthKit\Http\Controllers\LoginController;
+use BSPDX\Keystone\Http\Controllers\TwoFactorAuthController;
+use BSPDX\Keystone\Http\Controllers\PasskeyAuthController;
+use BSPDX\Keystone\Http\Controllers\ProfileController;
+use BSPDX\Keystone\Http\Controllers\LoginController;
 
 /*
 |--------------------------------------------------------------------------
-| AuthKit Web Routes
+| Keystone Web Routes
 |--------------------------------------------------------------------------
 |
-| These are example routes for the BSPDX AuthKit package.
+| These are example routes for the BSPDX Keystone package.
 | Copy these routes to your routes/web.php file and customize as needed.
 |
 | Make sure to add the 'web' middleware group and authentication as needed.
@@ -20,21 +20,21 @@ use BSPDX\AuthKit\Http\Controllers\LoginController;
 
 
 // Profile Routes
-Route::middleware(config('authkit.profile.middleware', ['web', 'auth']))->group(function () {
-    Route::get(config('authkit.profile.path', '/profile'), [ProfileController::class, 'show'])
-        ->name('authkit.profile.show');
+Route::middleware(config('keystone.profile.middleware', ['web', 'auth']))->group(function () {
+    Route::get(config('keystone.profile.path', '/profile'), [ProfileController::class, 'show'])
+        ->name('keystone.profile.show');
 
-    Route::put(config('authkit.profile.path', '/profile') . '/auth-preferences', [ProfileController::class, 'updateAuthPreferences'])
-        ->name('authkit.profile.auth-preferences.update');
+    Route::put(config('keystone.profile.path', '/profile') . '/auth-preferences', [ProfileController::class, 'updateAuthPreferences'])
+        ->name('keystone.profile.auth-preferences.update');
 });
 
 // Passwordless Login Routes
 Route::middleware(['web', 'guest'])->group(function () {
     Route::post('/login/methods', [LoginController::class, 'getAuthMethods'])
-        ->name('authkit.login.methods');
+        ->name('keystone.login.methods');
 
     Route::post('/login/totp', [LoginController::class, 'authenticateWithTotp'])
-        ->name('authkit.login.totp');
+        ->name('keystone.login.totp');
 });
 
 // Two-Factor Authentication Routes

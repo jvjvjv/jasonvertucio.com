@@ -26,7 +26,7 @@ use App\Http\Middleware\ResumeShareCodeMiddleware;
 |
 */
 
-// AuthKit/Fortify authentication routes
+// Keystone/Fortify authentication routes
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login')->middleware('guest');
