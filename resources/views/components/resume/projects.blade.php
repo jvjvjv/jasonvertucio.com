@@ -1,7 +1,7 @@
 @props(['projects'])
 
 <section class="resume-projects resume-section mb-8">
-    <h2 class="text-2xl font-heading text-secondary mb-4">Selected Projects</h2>
+    <h2 class="text-2xl font-bold font-heading text-secondary mb-4">Selected Projects</h2>
 
     @foreach($projects as $project)
     <div class="project-entry mb-6">

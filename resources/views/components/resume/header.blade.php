@@ -6,6 +6,6 @@
     </h1>
     <p class="resume-title text-xl text-primary font-subheading uppercase mb-4">{{ $title }}</p>
 
-    <h2 class="text-2xl font-heading text-secondary mb-2">Summary</h2>
+    <h2 class="text-2xl font-bold font-heading text-secondary mb-2">Summary</h2>
     <p class="text-lg text-dark leading-relaxed resume-summary">{!! $summary !!}</p>
 </section>
