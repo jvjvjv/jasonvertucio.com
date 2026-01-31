@@ -188,7 +188,7 @@ class ResumeVersionService
         try {
             // Build LibreOffice command
             $command = sprintf(
-                'libreoffice --headless --convert-to pdf --outdir %s %s 2>&1',
+                'libreoffice --headless -env:UserInstallation=file:///tmp/libreoffice-user --convert-to pdf --outdir %s %s 2>&1',
                 escapeshellarg($outputDir),
                 escapeshellarg($docxPath)
             );

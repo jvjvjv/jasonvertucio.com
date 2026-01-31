@@ -1,5 +1,14 @@
 [
     {
+        "projectName": "Jason Vertucio",
+        "description": "Personal blog and online CV builder, built on a Laravel 12 framework with Blade components and bspdx\/keystone auth package.",
+        "bullets": [
+            "Integrated bspdx\/keystone to secure passkey-only authentication.",
+            "Migrated offline, Word-based resume to online, sharable CV builder with docx\/pdf export, email notification, and download tracking.",
+            "Architected CV builder and view authorization using role-based access or online 'share' codes."
+        ]
+    },
+    {
         "projectName": "The Bootstrap Paradox, LLC",
         "description": "Personal and client projects, demonstrating ongoing technical exploration and full-stack capabilities.",
         "bullets": [
@@ -23,7 +32,8 @@
             "Building complete multitenant web application using AI-assisted development workflow: leveraging Claude Code and GitHub Copilot for baseline code generation (~70-80%), then reviewing, refining, and establishing architectural patterns for production quality.",
             "Designing scalable database architecture and system infrastructure that supports multiple client tenants with isolated data and customizable features.",
             "Documenting technical specifications, API contracts, and development patterns to ensure maintainability and team scalability."
-        ]
+        ],
+        "description": "Scheduling, notification, and document management in a single app built upon Laravel 12, Nuxt, and PrimeVue."
     },
     {
         "projectName": "Ghost Letter",
@@ -31,7 +41,8 @@
             "Architected full-stack application using AI-assisted development (Claude Code, GitHub Copilot) for rapid prototyping, applying manual review and architectural patterns to ensure production-grade code quality.",
             "Implemented comprehensive testing with PHPUnit for Laravel backend validation and Playwright for automated E2E testing, ensuring code reliability and preventing regressions across deployments.",
             "Designed reusable frontend component architecture and RESTful API contracts, establishing clear separation of concerns between Laravel backend and React frontend."
-        ]
+        ],
+        "description": "(See Law & Order S26E12)"
     },
     {
         "projectName": "BalanceCloud",
