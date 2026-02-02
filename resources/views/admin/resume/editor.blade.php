@@ -227,85 +227,6 @@
             </div>
         </div>
 
-        {{-- Technical Profile Tab --}}
-        <div x-show="activeTab === 'profile'" x-cloak>
-            <div class="space-y-6">
-                {{-- Main Profile --}}
-                <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Main Profile</h2>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-                        <input type="text" x-model="data.technicalProfile.main.category"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Skills</label>
-                        <div class="space-y-2">
-                            <template x-for="(skill, idx) in data.technicalProfile.main.skills" :key="idx">
-                                <div class="flex items-center gap-2">
-                                    <input type="text" x-model="skill.skill" placeholder="Skill name"
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                    <button type="button" @click="data.technicalProfile.main.skills.splice(idx, 1)"
-                                            class="text-red-600 hover:text-red-800 px-2">
-                                        <i class="fa-solid fa-times"></i>
-                                    </button>
-                                </div>
-                            </template>
-                            <button type="button" @click="data.technicalProfile.main.skills.push({ skill: '' })"
-                                    class="text-sm text-primary hover:underline">
-                                <i class="fa-solid fa-plus mr-1"></i> Add Skill
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Secondary Profile --}}
-                <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-900">Secondary Profile</h2>
-                        <button type="button" @click="addSecondaryCategory()"
-                                class="text-sm text-primary hover:underline">
-                            <i class="fa-solid fa-plus mr-1"></i> Add Category
-                        </button>
-                    </div>
-                    <template x-for="(cat, catIdx) in data.technicalProfile.secondary" :key="catIdx">
-                        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                            <div class="flex items-center gap-4 mb-3">
-                                <input type="text" x-model="cat.category" placeholder="Category Name"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                <button type="button" @click="data.technicalProfile.secondary.splice(catIdx, 1)"
-                                        class="text-red-600 hover:text-red-800">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                            <div class="space-y-3">
-                                <template x-for="(skill, skillIdx) in cat.skills" :key="skillIdx">
-                                    <div class="flex items-start gap-2 p-3 bg-white rounded border">
-                                        <div class="flex-1 grid gap-2 md:grid-cols-3">
-                                            <input type="text" x-model="skill.skill" placeholder="Skill"
-                                                   class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                            <input type="text" x-model="skill.years" placeholder="Years" inputmode="numeric"
-                                                   class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                            <input type="text" x-model="skill.description" placeholder="Description"
-                                                   class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                        </div>
-                                        <button type="button" @click="cat.skills.splice(skillIdx, 1)"
-                                                class="text-red-600 hover:text-red-800 px-2 mt-2">
-                                            <i class="fa-solid fa-times"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                                <button type="button" @click="cat.skills.push({ skill: '', years: null, description: '' })"
-                                        class="text-sm text-primary hover:underline">
-                                    <i class="fa-solid fa-plus mr-1"></i> Add Skill
-                                </button>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-
         {{-- Experience Tab --}}
         <div x-show="activeTab === 'experience'" x-cloak>
             <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
@@ -576,10 +497,9 @@ function resumeEditor() {
             { id: 'version', label: 'Version', icon: 'fa-solid fa-code-branch' },
             { id: 'personal', label: 'Personal', icon: 'fa-solid fa-user' },
             { id: 'skills', label: 'Skills', icon: 'fa-solid fa-star' },
-            { id: 'profile', label: 'Technical Profile', icon: 'fa-solid fa-microchip' },
             { id: 'experience', label: 'Experience', icon: 'fa-solid fa-briefcase' },
-            { id: 'education', label: 'Education', icon: 'fa-solid fa-graduation-cap' },
             { id: 'projects', label: 'Projects', icon: 'fa-solid fa-diagram-project' },
+            { id: 'education', label: 'Education', icon: 'fa-solid fa-graduation-cap' },
         ],
 
         init() {
@@ -590,17 +510,6 @@ function resumeEditor() {
                 // Only set defaults if the nested arrays are truly missing
                 if (!Array.isArray(this.data.skills.top)) this.data.skills.top = [];
                 if (!Array.isArray(this.data.skills.other)) this.data.skills.other = [];
-            }
-
-            if (!this.data.technicalProfile || typeof this.data.technicalProfile !== 'object') {
-                this.data.technicalProfile = { main: { category: '', skills: [] }, secondary: [] };
-            } else {
-                if (!this.data.technicalProfile.main || typeof this.data.technicalProfile.main !== 'object') {
-                    this.data.technicalProfile.main = { category: '', skills: [] };
-                }
-                if (!Array.isArray(this.data.technicalProfile.secondary)) {
-                    this.data.technicalProfile.secondary = [];
-                }
             }
 
             if (!Array.isArray(this.data.experience)) this.data.experience = [];
@@ -632,13 +541,6 @@ function resumeEditor() {
 
         removeSkillCategory(type, index) {
             this.data.skills[type].splice(index, 1);
-        },
-
-        addSecondaryCategory() {
-            this.data.technicalProfile.secondary.push({
-                category: '',
-                skills: [{ skill: '', years: null, description: '' }]
-            });
         },
 
         addExperience() {

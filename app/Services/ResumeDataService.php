@@ -14,7 +14,6 @@ class ResumeDataService
     protected array $files = [
         'personal-information.json' => 'validatePersonalInfo',
         'technical-skills.json' => 'validateTechnicalSkills',
-        'technical-profile.json' => 'validateTechnicalProfile',
         'experience.json' => 'validateExperience',
         'education.json' => 'validateEducation',
         'selected-projects.json' => 'validateProjects',
@@ -33,7 +32,6 @@ class ResumeDataService
         return [
             'personal' => $this->loadJson('personal-information.json'),
             'skills' => $this->loadJson('technical-skills.json'),
-            'technicalProfile' => $this->loadJson('technical-profile.json'),
             'experience' => $this->loadJson('experience.json'),
             'education' => $this->loadJson('education.json'),
             'projects' => $this->loadJson('selected-projects.json'),
@@ -50,7 +48,6 @@ class ResumeDataService
         // Validate all data first
         $this->validatePersonalInfo($data['personal'] ?? []);
         $this->validateTechnicalSkills($data['skills'] ?? []);
-        $this->validateTechnicalProfile($data['technicalProfile'] ?? []);
         $this->validateExperience($data['experience'] ?? []);
         $this->validateEducation($data['education'] ?? []);
         $this->validateProjects($data['projects'] ?? []);
@@ -58,7 +55,7 @@ class ResumeDataService
         // All valid, now save
         $this->saveJson('personal-information.json', $data['personal']);
         $this->saveJson('technical-skills.json', $data['skills']);
-        $this->saveJson('technical-profile.json', $data['technicalProfile']);
+
         $this->saveJson('experience.json', $data['experience']);
         $this->saveJson('education.json', $data['education']);
         $this->saveJson('selected-projects.json', $data['projects']);
@@ -99,19 +96,6 @@ class ResumeDataService
             ]);
         }
     }
-
-    /**
-     * Validate technical profile
-     */
-    protected function validateTechnicalProfile(array $data): void
-    {
-        if (!isset($data['main']) || !is_array($data['main'])) {
-            throw ValidationException::withMessages([
-                'technicalProfile.main' => 'Main profile section is required.',
-            ]);
-        }
-    }
-
     /**
      * Validate experience
      */
@@ -196,7 +180,7 @@ class ResumeDataService
     }
 
     /**
-     * Get data for HTML/JSON/text display (excludes education and technical-profile)
+     * Get data for HTML/JSON/text display (excludes education)
      */
     public function getDisplayData(): array
     {
@@ -209,13 +193,12 @@ class ResumeDataService
     }
 
     /**
-     * Get all data for DOCX generation (includes education and technical-profile)
+     * Get all data for DOCX generation (includes education)
      */
     public function getDocxData(): array
     {
         $data = $this->getDisplayData();
         $data['education'] = $this->loadJson('education.json');
-        $data['technicalProfile'] = $this->loadJson('technical-profile.json');
 
         return $this->flattenForDocxtemplater($data);
     }
@@ -266,9 +249,6 @@ class ResumeDataService
 
         $flat['projects'] = $data['projects'];
 
-        // Process technical profile - join skills with middot
-        $flat['technicalProfile'] = $this->processTechnicalProfile($data['technicalProfile']);
-
         return $flat;
     }
 
@@ -289,34 +269,6 @@ class ResumeDataService
                 $result[$key] = $categories;
             }
         }
-        return $result;
-    }
-
-    /**
-     * Process technical profile to add listJoined field with middot delimiter
-     */
-    protected function processTechnicalProfile(array $profile): array
-    {
-        $middot = ' · ';
-        $result = [];
-
-        // Process main - single object with category and skills
-        if (isset($profile['main'])) {
-            $main = $profile['main'];
-            if (isset($main['skills']) && is_array($main['skills'])) {
-                $skillNames = array_map(function ($s) {
-                    return is_array($s) && isset($s['skill']) ? $s['skill'] : $s;
-                }, $main['skills']);
-                $main['listJoined'] = implode($middot, $skillNames);
-            }
-            $result['main'] = $main;
-        }
-
-        // Process secondary - array of category objects, pass through as-is
-        if (isset($profile['secondary'])) {
-            $result['secondary'] = $profile['secondary'];
-        }
-
         return $result;
     }
 }

@@ -53,7 +53,7 @@ This will load /resources/resume/\*.json and display each in a very structured m
 1. **\<h2>Selected Projects\</h2>** - and then selected-projects.json
 
 
-_(Note that education and technical profile are not displayed on this page.)_
+_(Note that education is not displayed on this page.)_
 
 Affixed to the bottom-right side of the page will be a FAB-style button with a download icon sourced from fontawesome, but this button only is shown when the user has the "save-resume" permission. Clicking it will send a POST to /resume/docx.
 
@@ -154,16 +154,6 @@ type SelectedProjects = {
   description?: string;
   bullets: string[];
 }[];
-
-type TechnicalProfileCategory = {
-  category: string;
-  skills: { skill: string }[];
-};
-
-type TechnicalProfiles = {
-  main: TechnicalProfileCategory[];
-  secondary: TechnicalProfileCategory[];
-};
 
 type TechnicalSkillCategory = {
     title: string

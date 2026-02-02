@@ -235,19 +235,6 @@ class ResumeUpdateEmailTest extends TestCase
                 ],
                 'other' => [],
             ],
-            'technicalProfile' => [
-                'main' => [
-                    'category' => 'Backend',
-                    'skills' => [
-                        [
-                            'skill' => 'PHP',
-                            'years' => 5,
-                            'description' => 'Expert'
-                        ]
-                    ]
-                ],
-                'secondary' => [],
-            ],
             'experience' => [
                 [
                     'jobTitle' => 'Software Engineer',

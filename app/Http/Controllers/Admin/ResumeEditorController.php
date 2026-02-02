@@ -70,7 +70,6 @@ class ResumeEditorController extends Controller
             'data' => ['required', 'array'],
             'data.personal' => ['required', 'array'],
             'data.skills' => ['required', 'array'],
-            'data.technicalProfile' => ['required', 'array'],
             'data.experience' => ['required', 'array'],
             'data.education' => ['required', 'array'],
             'data.projects' => ['required', 'array'],
