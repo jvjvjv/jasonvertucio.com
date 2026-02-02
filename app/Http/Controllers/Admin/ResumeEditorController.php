@@ -77,15 +77,51 @@ class ResumeEditorController extends Controller
         ]);
 
         try {
+            // Get current data to detect changes
+            $currentData = $this->dataService->getAllEditableData();
+            $currentVersion = $this->versionService->getCurrentVersion();
+
+            // Detect if data has changed
+            $dataChanged = json_encode($currentData) !== json_encode($validated['data']);
+            $versionChanged = $currentVersion !== $validated['version'];
+
             // Save version
             $this->versionService->setVersion($validated['version']);
 
             // Save all data
             $this->dataService->saveAllEditableData($validated['data']);
 
+            // Auto-regenerate documents if changes were detected
+            $documentsRegenerated = false;
+            $regenerationWarning = null;
+
+            if ($dataChanged || $versionChanged) {
+                // Generate DOCX
+                $docxResult = $this->versionService->generateDocx();
+
+                if ($docxResult['success']) {
+                    // Generate PDF from DOCX
+                    $pdfResult = $this->versionService->generatePdf();
+                    $documentsRegenerated = true;
+
+                    if (!$pdfResult['success']) {
+                        $regenerationWarning = 'PDF generation failed: ' . ($pdfResult['error'] ?? 'Unknown error');
+                    }
+                } else {
+                    $regenerationWarning = 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error');
+                }
+            }
+
             // Send update notifications if requested and mail is configured
             $notifyRecipients = $validated['notify_recipients'] ?? false;
             $successMessage = 'Resume data saved successfully.';
+
+            if ($documentsRegenerated) {
+                $successMessage .= ' Documents automatically regenerated.';
+                if ($regenerationWarning) {
+                    $successMessage .= ' Warning: ' . $regenerationWarning;
+                }
+            }
 
             if ($this->isMailConfigured() && $notifyRecipients) {
                 $recipientCodes = ResumeShareCode::shouldNotifyOnUpdate()->get();
@@ -103,7 +139,7 @@ class ResumeEditorController extends Controller
                         }
                     }
 
-                    $successMessage = "Resume data saved successfully. Update notifications queued for {$recipientCodes->count()} recipient(s).";
+                    $successMessage .= " Update notifications queued for {$recipientCodes->count()} recipient(s).";
                 }
             }
 
@@ -111,6 +147,7 @@ class ResumeEditorController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => $successMessage,
+                    'documents_regenerated' => $documentsRegenerated,
                 ]);
             }
 

@@ -82,6 +82,11 @@
         <x-resume.projects :projects="$data['projects']" />
     </div>
 </div>
+
+{{-- FAB Download Button (shown only if DOCX exists) --}}
+@if($docxExists)
+<x-resume.download-fab />
+@endif
 @endsection
 
 @push('styles')
