@@ -1,6 +1,6 @@
 [
     {
-        "jobTitle": "Frontend Engineer - React and Vue",
+        "jobTitle": "Senior Frontend Engineer (Contract)",
         "company": "Subaru of America",
         "dates": [
             "2025",
@@ -12,14 +12,14 @@
             "Developed low-code content management system with custom markdown DSL, enabling marketing teams to deploy content changes without developer intervention or app redeployment, eliminating deployment bottlenecks for routine updates.",
             "Built component library from Figma designs and established design system standards, cutting new feature UI dev time by approximately 40% and improving cross-team consistency across Subarunet development team.",
             "Modernized legacy UI applications to React\/Next.js with Redux and Context API for state management, improving maintainability and reducing open UI defects by 35% within two quarters.",
-            "Built front-end for Tier 3 Marketing platform centralizing dealership information management, replacing vendor dependency and reducing annual operational costs. Achieved strong early adoption with majority of users completing setup in first week.",
+            "Built front-end for Tier 3 Marketing platform centralizing dealership information management, replacing vendor dependency and reducing annual operational costs. Achieved strong early adoption with majority of users (75%) completing setup in first week.",
             "Drove accessibility remediation across legacy and modern apps, resolving keyboard navigation, ARIA labeling, and color contrast issues to pass internal audits.",
             "Achieved 100%-unit test coverage across micro-frontend applications, reducing post-release regressions.",
             "Optimized E2E test suites and CI runtime by 50% to accelerate deployment cycles and increase developer feedback speed."
         ]
     },
     {
-        "jobTitle": "Front-End Web Application Engineer",
+        "jobTitle": "Senior Frontend Developer",
         "company": "ERM, Inc.",
         "dates": [
             "2023",
@@ -34,7 +34,7 @@
         ]
     },
     {
-        "jobTitle": "Senior Front-End Web Application Engineer",
+        "jobTitle": "Frontend Engineer",
         "company": "AMCS Group \/ Dossier Systems",
         "dates": [
             "2019",
@@ -52,7 +52,7 @@
         ]
     },
     {
-        "jobTitle": "Full-Stack Developer (Contract)",
+        "jobTitle": "Senior Full-Stack Developer (Contract)",
         "company": "Liberty Fox Technologies",
         "dates": [
             "2017",
