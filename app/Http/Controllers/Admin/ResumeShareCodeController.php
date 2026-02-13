@@ -41,7 +41,7 @@ class ResumeShareCodeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.resume.index', compact('codes'))
+        return view('admin.resume.codes', compact('codes'))
             ->with('mailConfigured', $this->isMailConfigured());
     }
 
@@ -82,7 +82,7 @@ class ResumeShareCodeController extends Controller
                 $code->update(['email_sent' => true]);
 
                 return redirect()
-                    ->route('admin.resume.index')
+                    ->route('admin.resume.codes.index')
                     ->with('success', "Share code '{$code->id}' created successfully. Email notification sent to {$email}.");
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to queue share code email', [
@@ -92,13 +92,13 @@ class ResumeShareCodeController extends Controller
                 ]);
 
                 return redirect()
-                    ->route('admin.resume.index')
+                    ->route('admin.resume.codes.index')
                     ->with('warning', "Share code '{$code->id}' created, but email notification failed. Please try again or contact support.");
             }
         }
 
         return redirect()
-            ->route('admin.resume.index')
+            ->route('admin.resume.codes.index')
             ->with('success', "Share code '{$code->id}' created successfully.");
     }
 
@@ -111,7 +111,7 @@ class ResumeShareCodeController extends Controller
         $shareCode->delete();
 
         return redirect()
-            ->route('admin.resume.index')
+            ->route('admin.resume.codes.index')
             ->with('success', "Share code '{$code}' has been invalidated.");
     }
 }

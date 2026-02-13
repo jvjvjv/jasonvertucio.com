@@ -7,23 +7,14 @@ $nav_blocks = [
         'icon' => 'inbox',
         'label' => 'Mail preview',
         'description' => 'See how emails might be rendered, right here in the browser!',
-
-    ],
-    [
-        'can' => 'edit-resume',
-        'route' => 'admin.resume.editor',
-        'icon' => 'file-pen',
-        'label' => 'Resume Editor',
-        'description' => 'Edit resume content and generate DOCX files',
     ],
     [
         'can' => null,
         'route' => 'admin.resume.index',
-        'icon' => 'file-code',
-        'label' => 'Share Resume Codes',
-        'description' => 'Share and manage codes for unauthenticated resume access',
-    ]
-
+        'icon' => 'file-lines',
+        'label' => 'Resume Management',
+        'description' => 'Edit resume content, manage share codes, and generate documents',
+    ],
 ];
 
 @endphp

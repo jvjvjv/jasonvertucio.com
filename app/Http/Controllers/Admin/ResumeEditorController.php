@@ -77,39 +77,27 @@ class ResumeEditorController extends Controller
         ]);
 
         try {
-            // Get current data to detect changes
-            $currentData = $this->dataService->getAllEditableData();
-            $currentVersion = $this->versionService->getCurrentVersion();
-
-            // Detect if data has changed
-            $dataChanged = json_encode($currentData) !== json_encode($validated['data']);
-            $versionChanged = $currentVersion !== $validated['version'];
-
             // Save version
             $this->versionService->setVersion($validated['version']);
 
             // Save all data
             $this->dataService->saveAllEditableData($validated['data']);
 
-            // Auto-regenerate documents if changes were detected
+            // Always regenerate documents on save
             $documentsRegenerated = false;
             $regenerationWarning = null;
 
-            if ($dataChanged || $versionChanged) {
-                // Generate DOCX
-                $docxResult = $this->versionService->generateDocx();
+            $docxResult = $this->versionService->generateDocx();
 
-                if ($docxResult['success']) {
-                    // Generate PDF from DOCX
-                    $pdfResult = $this->versionService->generatePdf();
-                    $documentsRegenerated = true;
+            if ($docxResult['success']) {
+                $pdfResult = $this->versionService->generatePdf();
+                $documentsRegenerated = true;
 
-                    if (!$pdfResult['success']) {
-                        $regenerationWarning = 'PDF generation failed: ' . ($pdfResult['error'] ?? 'Unknown error');
-                    }
-                } else {
-                    $regenerationWarning = 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error');
+                if (!$pdfResult['success']) {
+                    $regenerationWarning = 'PDF generation failed: ' . ($pdfResult['error'] ?? 'Unknown error');
                 }
+            } else {
+                $regenerationWarning = 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error');
             }
 
             // Send update notifications if requested and mail is configured
@@ -171,7 +159,7 @@ class ResumeEditorController extends Controller
 
     /**
      * GET /admin/resume/preview
-     * Show preview of the resume with current data
+     * Show read-only preview of the resume with current data
      */
     public function preview(): View
     {
@@ -179,69 +167,10 @@ class ResumeEditorController extends Controller
         $version = $this->versionService->getCurrentVersion();
         $docxExists = $this->versionService->docxExistsForCurrentVersion();
 
-        // Get count of recipients who will be notified on update
-        $notificationRecipientCount = ResumeShareCode::shouldNotifyOnUpdate()->count();
-
         return view('admin.resume.preview', [
             'data' => $data,
             'version' => $version,
             'docxExists' => $docxExists,
-            'mailConfigured' => $this->isMailConfigured(),
-            'notificationRecipientCount' => $notificationRecipientCount,
         ]);
-    }
-
-    /**
-     * POST /admin/resume/generate
-     * Generate DOCX and PDF for the current version
-     */
-    public function generate(Request $request): JsonResponse|RedirectResponse
-    {
-        $docxResult = $this->versionService->generateDocx();
-
-        if (!$docxResult['success']) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => $docxResult['error'] ?? 'Failed to generate DOCX.',
-                ], 500);
-            }
-
-            return redirect()
-                ->route('admin.resume.preview')
-                ->with('error', $docxResult['error'] ?? 'Failed to generate DOCX.');
-        }
-
-        // Generate PDF from DOCX
-        $pdfResult = $this->versionService->generatePdf();
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'status' => 'success',
-                'message' => $pdfResult['success']
-                    ? 'DOCX and PDF generated successfully.'
-                    : 'DOCX generated successfully, but PDF generation failed.',
-                'docx' => [
-                    'path' => $docxResult['path'],
-                    'size' => $docxResult['size'] ?? null,
-                ],
-                'pdf' => $pdfResult['success'] ? [
-                    'path' => $pdfResult['path'],
-                    'size' => $pdfResult['size'] ?? null,
-                ] : [
-                    'error' => $pdfResult['error'] ?? 'Unknown error',
-                ],
-            ]);
-        }
-
-        if ($pdfResult['success']) {
-            return redirect()
-                ->route('admin.resume.preview')
-                ->with('success', 'DOCX and PDF generated successfully.');
-        }
-
-        return redirect()
-            ->route('admin.resume.preview')
-            ->with('warning', 'DOCX generated successfully, but PDF generation failed: ' . ($pdfResult['error'] ?? 'Unknown error'));
     }
 }

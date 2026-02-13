@@ -75,7 +75,12 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
-        Route::get('/resume', [ResumeShareCodeController::class, 'index'])->name('resume.index');
+
+        // Resume management hub
+        Route::get('/resume', [AdminController::class, 'resumeHub'])->name('resume.index');
+
+        // Share codes management
+        Route::get('/resume/codes', [ResumeShareCodeController::class, 'index'])->name('resume.codes.index');
         Route::post('/resume/codes', [ResumeShareCodeController::class, 'store'])->name('resume.codes.store');
         Route::delete('/resume/codes/{code}', [ResumeShareCodeController::class, 'destroy'])->name('resume.codes.destroy');
 
@@ -93,7 +98,6 @@ Route::middleware(['auth', 'can:edit-resume'])
         Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
         Route::post('/editor', [ResumeEditorController::class, 'update'])->name('editor.save');
         Route::get('/preview', [ResumeEditorController::class, 'preview'])->name('preview');
-        Route::post('/generate', [ResumeEditorController::class, 'generate'])->name('generate');
     });
 
 // Manual code entry page for unauthenticated users

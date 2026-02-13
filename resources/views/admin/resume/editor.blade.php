@@ -8,14 +8,8 @@
      class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-8">
         <div>
-            <a href="{{ route('admin.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Admin</a>
+            <a href="{{ route('admin.resume.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Resume Management</a>
             <h1 class="text-3xl font-heading font-bold text-primary mt-2">Resume Editor</h1>
-        </div>
-        <div class="flex items-center gap-4">
-            <a href="{{ route('admin.resume.preview') }}"
-               class="px-4 py-2 text-primary border border-primary rounded-md hover:bg-primary/5 transition-colors">
-                <i class="fa-solid fa-eye mr-2"></i>Preview
-            </a>
         </div>
     </div>
 

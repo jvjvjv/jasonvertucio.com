@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-8">
         <div>
-            <a href="{{ route('admin.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Admin</a>
+            <a href="{{ route('admin.resume.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Resume Management</a>
             <h1 class="text-3xl font-heading font-bold text-primary mt-2">Resume Share Codes</h1>
         </div>
     </div>

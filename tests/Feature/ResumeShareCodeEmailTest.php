@@ -37,7 +37,7 @@ class ResumeShareCodeEmailTest extends TestCase
                 'send_email' => false,
             ]);
 
-        $response->assertRedirect(route('admin.resume.index'));
+        $response->assertRedirect(route('admin.resume.codes.index'));
         $response->assertSessionHas('success');
 
         // Verify code was created
@@ -63,7 +63,7 @@ class ResumeShareCodeEmailTest extends TestCase
                 'send_email' => false,
             ]);
 
-        $response->assertRedirect(route('admin.resume.index'));
+        $response->assertRedirect(route('admin.resume.codes.index'));
         $response->assertSessionHas('success');
 
         // Verify code was created without email notification
@@ -89,7 +89,7 @@ class ResumeShareCodeEmailTest extends TestCase
                 'send_email' => true,
             ]);
 
-        $response->assertRedirect(route('admin.resume.index'));
+        $response->assertRedirect(route('admin.resume.codes.index'));
         $response->assertSessionHas('success');
         $this->assertStringContainsString('Email notification sent', $response->getSession()->get('success'));
 

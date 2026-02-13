@@ -14,4 +14,12 @@ class AdminController extends Controller
     {
         return view('admin.index');
     }
+
+    /**
+     * Display the resume administration hub.
+     */
+    public function resumeHub(): View
+    {
+        return view('admin.resume.hub');
+    }
 }

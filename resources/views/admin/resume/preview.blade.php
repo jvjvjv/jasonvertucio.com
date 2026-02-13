@@ -11,7 +11,7 @@
     {{-- Admin Header --}}
     <div class="flex items-center justify-between mb-6 print:hidden">
         <div>
-            <a href="{{ route('admin.resume.editor') }}" class="text-sm text-primary hover:underline">&larr; Back to Editor</a>
+            <a href="{{ route('admin.resume.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Resume Management</a>
             <h1 class="text-2xl font-heading font-bold text-primary mt-2">Resume Preview</h1>
         </div>
         <div class="flex items-center gap-4">
@@ -35,31 +35,20 @@
 
     {{-- DOCX Status --}}
     <div class="mb-6 p-4 rounded-lg border print:hidden {{ $docxExists ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200' }}">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                @if($docxExists)
-                    <i class="fa-solid fa-check-circle text-green-600 text-xl"></i>
-                    <div>
-                        <p class="font-medium text-green-800">DOCX Ready</p>
-                        <p class="text-sm text-green-600">Version {{ $version }} is available for download.</p>
-                    </div>
-                @else
-                    <i class="fa-solid fa-exclamation-triangle text-yellow-600 text-xl"></i>
-                    <div>
-                        <p class="font-medium text-yellow-800">DOCX Not Generated</p>
-                        <p class="text-sm text-yellow-600">Generate a DOCX to make version {{ $version }} downloadable.</p>
-                    </div>
-                @endif
-            </div>
-            <form action="{{ route('admin.resume.generate') }}" method="POST" x-data="{ generating: false }" @submit="generating = true">
-                @csrf
-                <button type="submit"
-                        :disabled="generating"
-                        class="px-4 py-2 bg-primary text-white font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2">
-                    <i class="fa-solid" :class="generating ? 'fa-spinner fa-spin' : 'fa-file-word'"></i>
-                    <span x-text="generating ? 'Generating...' : '{{ $docxExists ? 'Regenerate Documents' : 'Generate Documents' }}'"></span>
-                </button>
-            </form>
+        <div class="flex items-center gap-3">
+            @if($docxExists)
+                <i class="fa-solid fa-check-circle text-green-600 text-xl"></i>
+                <div>
+                    <p class="font-medium text-green-800">DOCX Ready</p>
+                    <p class="text-sm text-green-600">Version {{ $version }} is available for download.</p>
+                </div>
+            @else
+                <i class="fa-solid fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                <div>
+                    <p class="font-medium text-yellow-800">DOCX Not Generated</p>
+                    <p class="text-sm text-yellow-600">Save changes in the editor to generate documents.</p>
+                </div>
+            @endif
         </div>
     </div>
 
