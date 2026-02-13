@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('comments', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->nullable()->after('id');
+            $table->char('user_id', 36)->nullable()->after('id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-            $table->unsignedBigInteger('fb_user_id')->nullable()->after('user_id');
+            $table->char('fb_user_id', 36)->nullable()->after('user_id');
             $table->foreign('fb_user_id')->references('id')->on('users')->onDelete('set null');
         });
     }

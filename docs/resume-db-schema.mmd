@@ -1,0 +1,164 @@
+erDiagram
+    resume_versions {
+        bigint id PK
+        string version "YYYY.MAJOR.MINOR, unique"
+        boolean is_current "default false"
+        string docx_path "nullable"
+        string pdf_path "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_personal_info {
+        bigint id PK
+        bigint version_id FK
+        string name
+        string title
+        string email
+        string phone "nullable"
+        string linkedin "nullable"
+        text summary "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_skill_categories {
+        bigint id PK
+        bigint version_id FK
+        string group "enum: top, other"
+        string title
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_skills {
+        bigint id PK
+        bigint category_id FK
+        string name
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_experiences {
+        bigint id PK
+        bigint version_id FK
+        string job_title
+        string company
+        string location "nullable"
+        string date_start "nullable"
+        string date_end "nullable"
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_experience_bullets {
+        bigint id PK
+        bigint experience_id FK
+        text content
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_educations {
+        bigint id PK
+        bigint version_id FK
+        string institution
+        string degree "nullable"
+        string date_start "nullable"
+        string date_end "nullable"
+        text description "nullable"
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_projects {
+        bigint id PK
+        bigint version_id FK
+        string project_name
+        text description "nullable"
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_project_bullets {
+        bigint id PK
+        bigint project_id FK
+        text content
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_technical_profile_categories {
+        bigint id PK
+        bigint version_id FK
+        string category
+        boolean is_main "default false"
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_technical_profile_skills {
+        bigint id PK
+        bigint profile_category_id FK
+        string skill
+        decimal years "nullable, 4 comma 1"
+        text description "nullable"
+        int sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_share_codes {
+        string id PK "6-char alphanumeric"
+        string name
+        string email "nullable"
+        date expires_at "nullable"
+        boolean email_sent
+        boolean notify_on_update
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    resume_views {
+        bigint id PK
+        string share_code_id FK
+        string ip_address
+        string user_agent "nullable"
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    resume_downloads {
+        bigint id PK
+        bigint version_id FK "nullable"
+        string ip_address
+        string user_agent "nullable"
+        string share_code_id FK "nullable"
+        uuid user_id FK "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    resume_versions ||--|| resume_personal_info : "has one"
+    resume_versions ||--o{ resume_skill_categories : "has many"
+    resume_versions ||--o{ resume_experiences : "has many"
+    resume_versions ||--o{ resume_educations : "has many"
+    resume_versions ||--o{ resume_projects : "has many"
+    resume_versions ||--o{ resume_technical_profile_categories : "has many"
+    resume_versions ||--o{ resume_downloads : "has many"
+    resume_skill_categories ||--o{ resume_skills : "has many"
+    resume_experiences ||--o{ resume_experience_bullets : "has many"
+    resume_projects ||--o{ resume_project_bullets : "has many"
+    resume_technical_profile_categories ||--o{ resume_technical_profile_skills : "has many"
+    resume_share_codes ||--o{ resume_views : "has many"
+    resume_share_codes ||--o{ resume_downloads : "has many"

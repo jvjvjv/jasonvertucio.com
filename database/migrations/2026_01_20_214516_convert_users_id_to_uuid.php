@@ -13,6 +13,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if users.id is already a UUID (fresh install)
+        $idColumn = DB::selectOne("SHOW COLUMNS FROM users WHERE Field = 'id'");
+        if ($idColumn && str_contains($idColumn->Type, 'char')) {
+            return;
+        }
+
         // Store mapping of old IDs to new UUIDs
         $users = DB::table('users')->select('id')->get();
         $idMapping = [];

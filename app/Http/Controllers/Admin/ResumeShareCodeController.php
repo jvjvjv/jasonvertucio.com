@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\ResumeVersionServiceContract;
 use App\Http\Controllers\Controller;
 use App\Mail\ResumeShareCodeCreated;
 use App\Models\ResumeShareCode;
@@ -12,6 +13,11 @@ use Illuminate\View\View;
 
 class ResumeShareCodeController extends Controller
 {
+    public function __construct(
+        protected ResumeVersionServiceContract $versionService,
+    ) {
+    }
+
     /**
      * Check if mail is properly configured.
      */
@@ -77,7 +83,7 @@ class ResumeShareCodeController extends Controller
         // Send email if configured and requested
         if ($mailConfigured && $sendEmail && $email) {
             try {
-                $version = json_decode(require_once(resource_path('/resume/version.json')));
+                $version = $this->versionService->getCurrentVersion();
                 Mail::to($email)->queue(new ResumeShareCodeCreated($code, $version));
                 $code->update(['email_sent' => true]);
 

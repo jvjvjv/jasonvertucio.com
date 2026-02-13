@@ -2,9 +2,10 @@
 
 namespace App\Services;
 
+use App\Contracts\ResumeDataServiceContract;
 use Illuminate\Validation\ValidationException;
 
-class ResumeDataService
+class JsonResumeDataService implements ResumeDataServiceContract
 {
     protected string $basePath;
 

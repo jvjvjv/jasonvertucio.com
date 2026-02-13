@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ResumeDownload extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-        'version',
+        'version_id',
         'ip_address',
         'user_agent',
         'share_code_id',
@@ -18,7 +19,15 @@ class ResumeDownload extends Model
     ];
 
     /**
-     * Get the user who downloaded (if authenticated)
+     * Get the version associated with this download.
+     */
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(ResumeVersion::class, 'version_id');
+    }
+
+    /**
+     * Get the user who downloaded (if authenticated).
      */
     public function user(): BelongsTo
     {
@@ -26,7 +35,7 @@ class ResumeDownload extends Model
     }
 
     /**
-     * Get the share code used (if any)
+     * Get the share code used (if any).
      */
     public function shareCode(): BelongsTo
     {
@@ -34,7 +43,7 @@ class ResumeDownload extends Model
     }
 
     /**
-     * Record a download
+     * Record a download.
      */
     public static function record(
         string $version,
@@ -43,8 +52,11 @@ class ResumeDownload extends Model
         ?string $shareCodeId = null,
         ?string $userId = null
     ): self {
+        // Look up the version_id from the version string
+        $versionModel = ResumeVersion::where('version', $version)->first();
+
         return self::create([
-            'version' => $version,
+            'version_id' => $versionModel?->id,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent ? substr($userAgent, 0, 512) : null,
             'share_code_id' => $shareCodeId,
@@ -53,22 +65,25 @@ class ResumeDownload extends Model
     }
 
     /**
-     * Scope to filter by version
+     * Scope to filter by version.
      */
     public function scopeForVersion($query, string $version)
     {
-        return $query->where('version', $version);
+        return $query->whereHas('version', function ($q) use ($version) {
+            $q->where('version', $version);
+        });
     }
 
     /**
-     * Get download count by version
+     * Get download count by version.
      */
     public static function countByVersion(): array
     {
-        return self::selectRaw('version, COUNT(*) as count')
-            ->groupBy('version')
-            ->orderByDesc('version')
-            ->pluck('count', 'version')
+        return self::join('resume_versions', 'resume_downloads.version_id', '=', 'resume_versions.id')
+            ->selectRaw('resume_versions.version, COUNT(*) as count')
+            ->groupBy('resume_versions.version')
+            ->orderByDesc('resume_versions.version')
+            ->pluck('count', 'resume_versions.version')
             ->toArray();
     }
 }

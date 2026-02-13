@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\ResumeDataServiceContract;
+use App\Contracts\ResumeVersionServiceContract;
 use App\Http\Controllers\Controller;
 use App\Mail\ResumeUpdated;
 use App\Models\ResumeShareCode;
-use App\Services\ResumeDataService;
-use App\Services\ResumeVersionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -15,13 +15,10 @@ use Illuminate\Support\Facades\Mail;
 
 class ResumeEditorController extends Controller
 {
-    protected ResumeDataService $dataService;
-    protected ResumeVersionService $versionService;
-
-    public function __construct(ResumeDataService $dataService, ResumeVersionService $versionService)
-    {
-        $this->dataService = $dataService;
-        $this->versionService = $versionService;
+    public function __construct(
+        protected ResumeDataServiceContract $dataService,
+        protected ResumeVersionServiceContract $versionService,
+    ) {
     }
 
     /**

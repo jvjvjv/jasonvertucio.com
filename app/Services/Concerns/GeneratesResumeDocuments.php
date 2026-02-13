@@ -1,58 +1,33 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Concerns;
 
+use App\Contracts\ResumeDataServiceContract;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 
-class ResumeVersionService
+trait GeneratesResumeDocuments
 {
-    protected string $versionPath;
     protected string $savedDocumentsPath;
     protected string $templatePath;
     protected string $scriptPath;
-    protected ResumeDataService $dataService;
 
-    public function __construct(ResumeDataService $dataService)
+    /**
+     * Initialize document generation paths from config.
+     */
+    protected function initDocumentPaths(): void
     {
-        $this->versionPath = config('resume.version_file');
         $this->savedDocumentsPath = config('resume.saved_documents');
         $this->templatePath = config('resume.template');
         $this->scriptPath = base_path('scripts/generate-resume.js');
-        $this->dataService = $dataService;
     }
 
     /**
-     * Get the current version from version.json
+     * Get the data service instance.
      */
-    public function getCurrentVersion(): string
-    {
-        if (!file_exists($this->versionPath)) {
-            return '0.0.0';
-        }
-
-        $content = file_get_contents($this->versionPath);
-        $version = json_decode($content, true);
-
-        // Handle both string and direct value formats
-        return is_string($version) ? $version : ($content ? trim($content) : '0.0.0');
-    }
+    abstract protected function getDataService(): ResumeDataServiceContract;
 
     /**
-     * Set the version in version.json
-     */
-    public function setVersion(string $version): void
-    {
-        // Validate version format (YYYY.X.X)
-        if (!preg_match('/^\d{4}\.\d+\.\d+$/', $version)) {
-            throw new RuntimeException("Invalid version format. Expected YYYY.X.X (e.g., 2026.1.0)");
-        }
-
-        file_put_contents($this->versionPath, json_encode($version));
-    }
-
-    /**
-     * Get the path to the latest DOCX file by current version
+     * Get the path to the latest DOCX file by current version.
      */
     public function getLatestDocxPath(): ?string
     {
@@ -64,7 +39,7 @@ class ResumeVersionService
     }
 
     /**
-     * Get the path to the latest PDF file by current version
+     * Get the path to the latest PDF file by current version.
      */
     public function getLatestPdfPath(): ?string
     {
@@ -76,7 +51,7 @@ class ResumeVersionService
     }
 
     /**
-     * Get the DOCX filename for a given version
+     * Get the DOCX filename for a given version.
      */
     public function getDocxFilename(string $version): string
     {
@@ -84,7 +59,7 @@ class ResumeVersionService
     }
 
     /**
-     * Check if a DOCX exists for the current version
+     * Check if a DOCX exists for the current version.
      */
     public function docxExistsForCurrentVersion(): bool
     {
@@ -92,7 +67,7 @@ class ResumeVersionService
     }
 
     /**
-     * Generate a DOCX file for the current version
+     * Generate a DOCX file for the current version.
      *
      * @return array{success: bool, path?: string, error?: string}
      */
@@ -115,7 +90,7 @@ class ResumeVersionService
 
         try {
             // Get flattened data for docxtemplater
-            $data = $this->dataService->getDocxData();
+            $data = $this->getDataService()->getDocxData();
             file_put_contents($tempDataPath, json_encode($data, JSON_PRETTY_PRINT));
 
             // Build command
@@ -166,11 +141,12 @@ class ResumeVersionService
     }
 
     /**
-     * Generate a PDF from the DOCX file for the current version
+     * Generate a PDF from the DOCX file for the current version.
      *
      * @return array{success: bool, path?: string, error?: string}
      */
-    public function generatePdf(): array {
+    public function generatePdf(): array
+    {
         $docxPath = $this->getLatestDocxPath();
 
         if (!$docxPath) {
@@ -238,39 +214,5 @@ class ResumeVersionService
                 'error' => $e->getMessage(),
             ];
         }
-    }
-
-    /**
-     * Get all available DOCX versions
-     *
-     * @return array<array{version: string, path: string, created: int}>
-     */
-    public function getAvailableVersions(): array
-    {
-        if (!file_exists($this->savedDocumentsPath)) {
-            return [];
-        }
-
-        $files = glob($this->savedDocumentsPath . '/*.docx');
-        $versions = [];
-
-        foreach ($files as $file) {
-            $filename = basename($file);
-            // Match pattern: "YYYY.X.X Jason Vertucio.docx"
-            if (preg_match('/^(\d{4}\.\d+\.\d+) Jason Vertucio\.docx$/', $filename, $matches)) {
-                $versions[] = [
-                    'version' => $matches[1],
-                    'path' => $file,
-                    'created' => filemtime($file),
-                ];
-            }
-        }
-
-        // Sort by version descending
-        usort($versions, function ($a, $b) {
-            return version_compare($b['version'], $a['version']);
-        });
-
-        return $versions;
     }
 }

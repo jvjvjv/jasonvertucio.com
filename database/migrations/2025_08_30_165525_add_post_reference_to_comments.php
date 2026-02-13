@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('comments', function (Blueprint $table) {
-            if (!Schema::hasColumn('comments', 'post_id')) {
-                $table->unsignedBigInteger('post_id')->nullable()->after('id');
-            }
-            // Reference Canvas posts table - only add foreign key if it doesn't exist
-            if (!Schema::hasColumn('comments', 'post_id')) {
+        if (!Schema::hasColumn('comments', 'post_id')) {
+            Schema::table('comments', function (Blueprint $table) {
+                $table->char('post_id', 36)->nullable()->after('id');
                 $table->foreign('post_id')->references('id')->on('canvas_posts')->onDelete('set null');
-            }
-        });
+            });
+        }
     }
 
     /**

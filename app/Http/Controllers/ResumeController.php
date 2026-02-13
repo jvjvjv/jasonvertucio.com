@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\ResumeDataServiceContract;
+use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeDownload;
 use App\Models\ResumeShareCode;
-use App\Services\ResumeDataService;
-use App\Services\ResumeVersionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -15,13 +15,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResumeController extends Controller
 {
-    protected ResumeDataService $resumeData;
-    protected ResumeVersionService $versionService;
-
-    public function __construct(ResumeDataService $resumeData, ResumeVersionService $versionService)
-    {
-        $this->resumeData = $resumeData;
-        $this->versionService = $versionService;
+    public function __construct(
+        protected ResumeDataServiceContract $resumeData,
+        protected ResumeVersionServiceContract $versionService,
+    ) {
     }
 
     /**

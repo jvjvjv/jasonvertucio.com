@@ -52,6 +52,12 @@ class AuthKitSeeder extends Seeder
             // Settings
             'view-settings',
             'edit-settings',
+
+            // Resume management
+            'read-resume',
+            'save-resume',
+            'edit-resume',
+            'manage-unauthenticated-viewers',
         ];
 
         foreach ($permissions as $permission) {
@@ -80,6 +86,10 @@ class AuthKitSeeder extends Seeder
             'publish-posts',
             'view-settings',
             'edit-settings',
+            'read-resume',
+            'save-resume',
+            'edit-resume',
+            'manage-unauthenticated-viewers',
         ]);
 
         // Editor - content management only
