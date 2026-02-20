@@ -153,21 +153,4 @@ class ResumeEditorController extends Controller
                 ->with('error', $e->getMessage());
         }
     }
-
-    /**
-     * GET /admin/resume/preview
-     * Show read-only preview of the resume with current data
-     */
-    public function preview(): View
-    {
-        $data = $this->dataService->getDisplayData();
-        $version = $this->versionService->getCurrentVersion();
-        $docxExists = $this->versionService->docxExistsForCurrentVersion();
-
-        return view('admin.resume.preview', [
-            'data' => $data,
-            'version' => $version,
-            'docxExists' => $docxExists,
-        ]);
-    }
 }

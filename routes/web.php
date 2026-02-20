@@ -12,6 +12,7 @@ use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\ResumeEditorController;
+use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\MailPreviewController;
 use App\Http\Middleware\ResumeShareCodeMiddleware;
 
@@ -84,6 +85,17 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
         Route::post('/resume/codes', [ResumeShareCodeController::class, 'store'])->name('resume.codes.store');
         Route::delete('/resume/codes/{code}', [ResumeShareCodeController::class, 'destroy'])->name('resume.codes.destroy');
 
+        // Cover letter management
+        Route::get('/cover-letters', [CoverLetterController::class, 'index'])->name('cover-letters.index');
+        Route::get('/cover-letters/new', [CoverLetterController::class, 'create'])->name('cover-letters.create');
+        Route::post('/cover-letters', [CoverLetterController::class, 'store'])->name('cover-letters.store');
+        Route::get('/cover-letters/{coverLetter}', [CoverLetterController::class, 'edit'])->name('cover-letters.edit');
+        Route::put('/cover-letters/{coverLetter}', [CoverLetterController::class, 'update'])->name('cover-letters.update');
+        Route::delete('/cover-letters/{coverLetter}', [CoverLetterController::class, 'destroy'])->name('cover-letters.destroy');
+        Route::get('/cover-letters/{coverLetter}/preview', [CoverLetterController::class, 'preview'])->name('cover-letters.preview');
+        Route::get('/cover-letters/{coverLetter}/download/docx', [CoverLetterController::class, 'downloadDocx'])->name('cover-letters.download.docx');
+        Route::get('/cover-letters/{coverLetter}/download/pdf', [CoverLetterController::class, 'downloadPdf'])->name('cover-letters.download.pdf');
+
         // Mail preview routes
         Route::get('/mail-preview', [MailPreviewController::class, 'index'])->name('mail-preview.index');
         Route::get('/mail-preview/{mailable}', [MailPreviewController::class, 'show'])->name('mail-preview.show');
@@ -97,7 +109,6 @@ Route::middleware(['auth', 'can:edit-resume'])
     ->group(function () {
         Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
         Route::post('/editor', [ResumeEditorController::class, 'update'])->name('editor.save');
-        Route::get('/preview', [ResumeEditorController::class, 'preview'])->name('preview');
     });
 
 // Manual code entry page for unauthenticated users

@@ -62,7 +62,7 @@
 
 /* FAB download button */
 .fab-download {
-    @apply fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg;
+    @apply w-14 h-14 bg-primary text-white rounded-full;
     @apply hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/50;
     @apply transition-all flex items-center justify-center;
     @apply transform hover:scale-110;

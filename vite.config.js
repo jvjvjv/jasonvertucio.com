@@ -14,6 +14,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/blog.css',
                 'resources/css/resume.css',
+                'resources/css/cover-letter.css',
             ],
             refresh: true,
         }),

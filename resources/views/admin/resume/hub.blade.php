@@ -9,8 +9,8 @@ $nav_blocks = [
         'description' => 'Edit resume content. Documents auto-generate on save.',
     ],
     [
-        'can' => 'edit-resume',
-        'route' => 'admin.resume.preview',
+        'can' => null,
+        'route' => 'resume.index',
         'icon' => 'eye',
         'label' => 'Resume Preview',
         'description' => 'View the resume as it appears to visitors',

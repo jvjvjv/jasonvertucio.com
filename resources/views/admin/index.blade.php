@@ -15,6 +15,13 @@ $nav_blocks = [
         'label' => 'Resume Management',
         'description' => 'Edit resume content, manage share codes, and generate documents',
     ],
+    [
+        'can' => null,
+        'route' => 'admin.cover-letters.index',
+        'icon' => 'envelope',
+        'label' => 'Cover Letter Management',
+        'description' => 'Create and manage cover letters with automatic DOCX and PDF generation',
+    ],
 ];
 
 @endphp
