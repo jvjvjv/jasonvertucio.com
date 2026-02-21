@@ -46,7 +46,7 @@
     <main id="main-content" class="p-0 md:ml-52 lg:ml-64">
 
 
-        <x-about :about-me="$config['about_me']" :summary="$resumeData['personal']['summary']" />
+        <x-about :about-me="$config['about_me']" :summary="$resumeData['personal']['summary'] ?? ''" />
 
         <x-latest-blog :post="$blog" />
 

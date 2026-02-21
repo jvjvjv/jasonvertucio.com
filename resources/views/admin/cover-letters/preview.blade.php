@@ -17,10 +17,13 @@
         {{-- Cover Letter Preview --}}
         <div class="bg-primary text-white rounded-top-lg px-6 py-4">
             <h1 class="text-3xl font-heading">
-                {{ $personal?->name ?? 'Jason Vertucio' }}
+                {{ $personal->name }}
             </h1>
+            <p>
+                {{ $personal->title }} | {{ $personal->email }} | {{ $personal->phone }}
+            </p>
         </div>
-        <div class="bg-white border border-gray-200 p-10 rounded-lgcover-letter-body">
+        <div class="bg-white border border-gray-200 p-10 rounded-bottom-lg cover-letter-body">
             {{-- Date --}}
             <p>{{ $coverLetter->date->format('F j, Y') }}</p>
 
@@ -33,7 +36,7 @@
             <p>{{ $coverLetter->greeting }}</p>
 
             {{-- Message Body --}}
-            {!! $messageBodyHtml !!}
+            <div>{!! $messageBodyHtml !!}</div>
 
             {{-- Closing --}}
             @if($coverLetter->closing)

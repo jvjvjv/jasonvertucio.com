@@ -23,6 +23,12 @@ class ResumeShareCodeController extends Controller
      */
     protected function isMailConfigured(): bool
     {
+        $driver = config('mail.driver');
+
+        if (in_array($driver, ['array', 'log'], true)) {
+            return true;
+        }
+
         $host = config('mail.host');
         $username = config('mail.username');
 
