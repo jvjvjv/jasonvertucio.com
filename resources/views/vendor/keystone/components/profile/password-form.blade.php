@@ -13,37 +13,37 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: var(--keystone-text, #1f2937);
+            color: var(--authkit-text, #1f2937);
             font-size: 0.875rem;
         }
 
         .keystone-input {
             width: 100%;
             padding: 0.5rem 0.75rem;
-            border: 1px solid var(--keystone-border, #d1d5db);
-            border-radius: var(--keystone-radius, 0.5rem);
+            border: 1px solid var(--authkit-border, #d1d5db);
+            border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
         }
 
         .keystone-input:focus {
             outline: none;
-            border-color: var(--keystone-primary, #4f46e5);
+            border-color: var(--authkit-primary, #4f46e5);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
         .keystone-input-error {
-            border-color: var(--keystone-danger, #dc2626);
+            border-color: var(--authkit-danger, #dc2626);
         }
 
         .keystone-error {
-            color: var(--keystone-danger, #dc2626);
+            color: var(--authkit-danger, #dc2626);
             font-size: 0.75rem;
             margin-top: 0.25rem;
         }
 
         .keystone-btn {
             padding: 0.5rem 1rem;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
@@ -52,12 +52,12 @@
         }
 
         .keystone-btn-primary {
-            background: var(--keystone-primary, #4f46e5);
+            background: var(--authkit-primary, #4f46e5);
             color: white;
         }
 
         .keystone-btn-primary:hover {
-            background: var(--keystone-primary-hover, #4338ca);
+            background: var(--authkit-primary-hover, #4338ca);
         }
     </style>
 

@@ -4,7 +4,7 @@
 
 @section('main')
 <div class="keystone-profile">
-    @include('keystone::components.keystone-styles')
+
     <style>
         .keystone-profile {
             max-width: 800px;
@@ -15,14 +15,14 @@
         .keystone-profile-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--keystone-text, #1f2937);
+            color: var(authkit-text, #1f2937);
             margin-bottom: 2rem;
         }
 
         .keystone-profile-section {
-            background: var(--keystone-bg, #ffffff);
-            border-radius: var(--keystone-radius, 0.5rem);
-            box-shadow: var(--keystone-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1));
+            background: var(authkit-bg, #ffffff);
+            border-radius: var(authkit-radius, 0.5rem);
+            box-shadow: var(authkit-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1));
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
@@ -30,15 +30,15 @@
         .keystone-profile-section h2 {
             font-size: 1.125rem;
             font-weight: 600;
-            color: var(--keystone-text, #1f2937);
+            color: var(authkit-text, #1f2937);
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--keystone-border, #e5e7eb);
+            border-bottom: 1px solid var(authkit-border, #e5e7eb);
         }
 
         .keystone-alert {
             padding: 1rem;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(authkit-radius, 0.5rem);
             margin-bottom: 1.5rem;
         }
 

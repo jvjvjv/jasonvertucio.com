@@ -9,7 +9,7 @@
             background: #fef3c7;
             color: #92400e;
             padding: 1rem;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(--authkit-radius, 0.5rem);
             margin-bottom: 1rem;
             font-size: 0.875rem;
         }
@@ -23,9 +23,9 @@
 
         .keystone-recovery-code {
             font-family: monospace;
-            background: var(--keystone-bg-secondary, #f9fafb);
+            background: var(--authkit-bg-secondary, #f9fafb);
             padding: 0.5rem 0.75rem;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
             text-align: center;
         }
@@ -38,7 +38,7 @@
 
         .keystone-btn {
             padding: 0.5rem 1rem;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
@@ -47,8 +47,8 @@
         }
 
         .keystone-btn-secondary {
-            background: var(--keystone-bg-secondary, #f3f4f6);
-            color: var(--keystone-text, #1f2937);
+            background: var(--authkit-bg-secondary, #f3f4f6);
+            color: var(--authkit-text, #1f2937);
         }
 
         .keystone-btn-secondary:hover {
@@ -56,7 +56,7 @@
         }
 
         .keystone-btn-danger {
-            background: var(--keystone-danger, #dc2626);
+            background: var(--authkit-danger, #dc2626);
             color: white;
         }
 
@@ -79,7 +79,7 @@
         }
 
         .keystone-text-error {
-            color: var(--keystone-danger, #dc2626);
+            color: var(--authkit-danger, #dc2626);
         }
     </style>
 

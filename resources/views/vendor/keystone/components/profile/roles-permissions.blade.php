@@ -18,7 +18,7 @@
         .keystone-subsection h3 {
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--keystone-text-muted, #6b7280);
+            color: var(--authkit-text-muted, #6b7280);
             margin-bottom: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.025em;
@@ -49,7 +49,7 @@
         }
 
         .keystone-text-muted {
-            color: var(--keystone-text-muted, #6b7280);
+            color: var(--authkit-text-muted, #6b7280);
             font-size: 0.875rem;
             font-style: italic;
         }

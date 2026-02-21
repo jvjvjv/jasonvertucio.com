@@ -4,7 +4,7 @@ $nav_blocks = [
     [
         'can' => 'edit-resume',
         'route' => 'admin.resume.editor',
-        'icon' => 'file-pen',
+        'icon' => 'pen-to-square',
         'label' => 'Resume Editor',
         'description' => 'Edit resume content. Documents auto-generate on save.',
     ],

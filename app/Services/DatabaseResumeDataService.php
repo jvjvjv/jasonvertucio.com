@@ -4,14 +4,7 @@ namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
 use App\Enums\ResumeSkillGroup;
-use App\Models\ResumeEducation;
-use App\Models\ResumeExperience;
-use App\Models\ResumeExperienceBullet;
 use App\Models\ResumePersonalInfo;
-use App\Models\ResumeProject;
-use App\Models\ResumeProjectBullet;
-use App\Models\ResumeSkill;
-use App\Models\ResumeSkillCategory;
 use App\Models\ResumeVersion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;

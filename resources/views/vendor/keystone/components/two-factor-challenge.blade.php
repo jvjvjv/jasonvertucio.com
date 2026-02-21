@@ -16,7 +16,7 @@
                     placeholder="123456"
                     maxlength="6"
                 >
-                <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
+                <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
                     Enter the code from your authenticator app.
                 </p>
                 @error('code')
@@ -36,7 +36,7 @@
                         class="keystone-input"
                         placeholder="xxxxx-xxxxx"
                     >
-                    <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
+                    <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
                         Enter one of your recovery codes.
                     </p>
                     @error('recovery_code')

@@ -3,31 +3,31 @@
 $nav_blocks = [
     [
         'can' => null,
-        'route' => 'admin.mail-preview.index',
-        'icon' => 'inbox',
-        'label' => 'Mail preview',
-        'description' => 'See how emails might be rendered, right here in the browser!',
-    ],
-    [
-        'can' => null,
         'route' => 'admin.resume.index',
-        'icon' => 'file-lines',
+        'icon' => 'file-pen',
         'label' => 'Resume Management',
         'description' => 'Edit resume content, manage share codes, and generate documents',
     ],
     [
         'can' => null,
         'route' => 'admin.cover-letters.index',
-        'icon' => 'envelope',
+        'icon' => 'file-signature',
         'label' => 'Cover Letter Management',
         'description' => 'Create and manage cover letters with automatic DOCX and PDF generation',
     ],
     [
         'can' => null,
         'route' => 'admin.site-settings.edit',
-        'icon' => 'bars',
-        'label' => 'Site Settings',
+        'icon' => 'map-pin',
+        'label' => 'Site Navigation',
         'description' => 'Manage sidebar navigation links and their order',
+    ],
+    [
+        'can' => null,
+        'route' => 'admin.mail-preview.index',
+        'icon' => 'inbox',
+        'label' => 'Mail preview',
+        'description' => 'See how emails might be rendered, right here in the browser!',
     ],
 ];
 
@@ -43,10 +43,10 @@ $nav_blocks = [
 
         <div class="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
             @foreach($nav_blocks as $nav)
-                @can($nav['can'])
+                @if(is_null($nav['can']) || auth()->user()?->can($nav['can']))
                     <x-admin.nav-block route="{{  $nav['route'] }}" icon="{{ $nav['icon']}}" label="{{ $nav['label']}}"
                         description="{{ $nav['description'] }}" />
-                @endcan
+                @endif
             @endforeach
         </div>
     </div>
