@@ -3,15 +3,6 @@
     "aria_title": "Jason Vertucio: Web Applications Engineer",
     "links": [
         {
-            "divider": true
-        },
-        {
-            "divider": true
-        },
-        {
-            "divider": true
-        },
-        {
             "href": "/admin",
             "label": "Admin",
             "hover": "Administration dashboard",
@@ -22,6 +13,9 @@
             "label": "Canvas",
             "hover": "Manage the Canvas Blog",
             "can": "manage-blog"
+        },
+        {
+            "divider": true
         },
         {
             "href": "/#about",
@@ -48,6 +42,9 @@
             "hover": "Stuff I like to do that isn't work related."
         },
         {
+            "divider": true
+        },
+        {
             "href": "/blog",
             "label": "Blog",
             "ariaLabel": "Blog",
@@ -65,6 +62,9 @@
             "ariaLabel": "Balance Cloud: A digital, privacy-first ledger app.",
             "hover": "A web application so I can manually manage my budget (requires sign up).",
             "target": "_blank"
+        },
+        {
+            "divider": true
         },
         {
             "href": "/profile",

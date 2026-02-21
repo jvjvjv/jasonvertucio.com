@@ -238,26 +238,30 @@ function navEditor(initialLinks) {
             this.errorMessage = '';
 
             const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-            const body = new FormData();
 
-            this.links.forEach((link, i) => {
+            const links = this.links.map(link => {
                 if (link.divider) {
-                    body.append(`links[${i}][divider]`, '1');
-                } else {
-                    body.append(`links[${i}][href]`,      link.href      ?? '');
-                    body.append(`links[${i}][label]`,     link.label     ?? '');
-                    body.append(`links[${i}][ariaLabel]`, link.ariaLabel ?? '');
-                    body.append(`links[${i}][hover]`,     link.hover     ?? '');
-                    body.append(`links[${i}][target]`,    link.target    ?? '');
-                    body.append(`links[${i}][can]`,       link.can       ?? '');
+                    return { divider: '1' };
                 }
+                return {
+                    href:      link.href      ?? '',
+                    label:     link.label     ?? '',
+                    ariaLabel: link.ariaLabel ?? '',
+                    hover:     link.hover     ?? '',
+                    target:    link.target    ?? '',
+                    can:       link.can       ?? '',
+                };
             });
 
             try {
                 const res = await fetch('{{ route('admin.site-settings.update') }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
-                    body,
+                    headers: {
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ links }),
                 });
                 const json = await res.json();
 

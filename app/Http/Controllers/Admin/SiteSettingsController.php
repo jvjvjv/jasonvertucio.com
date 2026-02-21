@@ -64,15 +64,19 @@ class SiteSettingsController extends Controller
         try {
             $config = $this->readConfig();
 
-            $config['links'] = collect($validated['links'])->map(function (array $link): array {
+            // Use the raw request input (order-preserving) rather than $validated['links'],
+            // because Laravel's validator rebuilds numeric-keyed arrays sorted by key.
+            $rawLinks = $request->input('links');
+
+            $config['links'] = array_values(array_map(function (array $link): array {
                 // Divider items are stored as { "divider": true }
                 if (!empty($link['divider'])) {
                     return ['divider' => true];
                 }
 
                 $clean = [
-                    'href'  => $link['href'],
-                    'label' => $link['label'],
+                    'href'  => $link['href'] ?? '',
+                    'label' => $link['label'] ?? '',
                 ];
 
                 if (!empty($link['ariaLabel'])) {
@@ -89,7 +93,7 @@ class SiteSettingsController extends Controller
                 }
 
                 return $clean;
-            })->values()->all();
+            }, $rawLinks));
 
             $this->writeConfig($config);
 

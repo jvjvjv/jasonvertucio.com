@@ -91,14 +91,17 @@
                 </div>
                 <div class="flex items-center">
                     <div class="relative" x-data="{ open: false }">
-                        <button class="bg-primarypx-4 rounded-md py-2 text-white hover:bg-primary/80 focus:outline-none"
+                        <button class="rounded-md py-2 text-white hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
                                 type="button"
+                                aria-haspopup="menu"
+                                :aria-expanded="open"
                                 @click="open = !open">
                             Places
                             <svg class="ml-2 inline-block h-4 w-4"
                                  fill="none"
                                  stroke="currentColor"
-                                 viewBox="0 0 24 24">
+                                 viewBox="0 0 24 24"
+                                 aria-hidden="true">
                                 <path stroke-linecap="round"
                                       stroke-linejoin="round"
                                       stroke-width="2"
@@ -106,56 +109,53 @@
                             </svg>
                         </button>
                         <div x-show="open"
+                             role="menu"
+                             aria-label="Places"
                              class="absolute right-0 z-50 mt-2 w-48 rounded-md bg-white py-1 shadow-lg"
                              style="display: none;"
                              @click.away="open = false">
                             <a class="block px-4 py-2 text-dark hover:bg-gray-100"
-                               href="{{ route("home") }}"
-                               title="Go back home">
+                               role="menuitem"
+                               href="{{ route("home") }}">
                                 Home
                             </a>
                             @foreach ($navLinks as $link)
                                 @if (!empty($link["divider"]))
-                                    <div class="border-t border-gray-200"></div>
+                                    <hr aria-hidden="true" class="border-gray-200 my-1">
                                 @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
                                     <a class="block px-4 py-2 text-dark hover:bg-gray-100"
+                                       role="menuitem"
                                        href="{{ $link["href"] }}"
-                                       title="{{ $link["label"] }}"
-                                       @if (!empty($link["target"])) target="{{ $link["target"] }}" @endif>
+                                       @if (!empty($link["target"])) target="{{ $link["target"] }}" rel="noopener noreferrer" @endif>
                                         {{ $link["label"] }}
                                     </a>
                                 @endif
                             @endforeach
                         </div>
                     </div>
-                    <button class="ml-4 text-white md:hidden"
-                            onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
-                        <svg class="h-6 w-6"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M4 6h16M4 12h16M4 18h16"></path>
+                    <button class="ml-4 text-white md:hidden focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                            aria-label="Toggle navigation menu"
+                            aria-controls="mobileMenu"
+                            onclick="this.setAttribute('aria-expanded', document.getElementById('mobileMenu').classList.toggle('hidden') ? 'false' : 'true')">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
                 </div>
             </div>
-            <div id="mobileMenu" class="hidden pb-4 md:hidden">
-                <ul class="space-y-2">
-                    @foreach ($links as $link)
-                        <li>
-                            @if (isset($link["href"]))
-                                <a href="{{ $link["href"] }}"
-                                   class="rounded-md px-3 py-2 text-white/75 hover:text-white">{{ $link["label"] }}</a>
-                            @else
-                                <div class="border-t border-gray-200"></div>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+            <nav id="mobileMenu" aria-label="Mobile navigation" class="hidden md:hidden" style="margin: auto -16px;">
+                @foreach ($navLinks as $link)
+                    @if (!empty($link["divider"]))
+                        <hr aria-hidden="true" class="border-white/20 my-1">
+                    @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
+                        <a href="{{ $link["href"] }}"
+                           class="block px-4 py-2 text-white hover:text-white/75 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                           @if (!empty($link["target"])) target="{{ $link["target"] }}" rel="noopener noreferrer" @endif>
+                            {{ $link["label"] }}
+                        </a>
+                    @endif
+                @endforeach
+            </nav>
         </div>
     </nav>
 
