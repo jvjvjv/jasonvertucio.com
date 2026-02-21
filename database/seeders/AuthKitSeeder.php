@@ -5,10 +5,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
-class AuthKitSeeder extends Seeder
+class KeystoneSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -108,6 +106,6 @@ class AuthKitSeeder extends Seeder
             'view-posts',
         ]);
 
-        $this->command->info('AuthKit roles, permissions, and demo users created successfully!');
+        $this->command->info('Keystone roles, permissions, and demo users created successfully!');
     }
 }

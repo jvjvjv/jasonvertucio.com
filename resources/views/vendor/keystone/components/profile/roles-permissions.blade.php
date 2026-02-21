@@ -1,36 +1,36 @@
 @props(['roles', 'permissions'])
 
-<div class="authkit-roles-permissions">
-    @include('authkit::components.authkit-styles')
+<div class="keystone-roles-permissions">
+    @include('keystone::components.keystone-styles')
     <style>
-        .authkit-roles-permissions {
+        .keystone-roles-permissions {
             /* Base styles */
         }
 
-        .authkit-subsection {
+        .keystone-subsection {
             margin-bottom: 1.5rem;
         }
 
-        .authkit-subsection:last-child {
+        .keystone-subsection:last-child {
             margin-bottom: 0;
         }
 
-        .authkit-subsection h3 {
+        .keystone-subsection h3 {
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--authkit-text-muted, #6b7280);
+            color: var(--keystone-text-muted, #6b7280);
             margin-bottom: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.025em;
         }
 
-        .authkit-badge-list {
+        .keystone-badge-list {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
 
-        .authkit-badge {
+        .keystone-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
@@ -38,41 +38,41 @@
             font-weight: 500;
         }
 
-        .authkit-badge-role {
+        .keystone-badge-role {
             background: #dbeafe;
             color: #1e40af;
         }
 
-        .authkit-badge-permission {
+        .keystone-badge-permission {
             background: #dcfce7;
             color: #166534;
         }
 
-        .authkit-text-muted {
-            color: var(--authkit-text-muted, #6b7280);
+        .keystone-text-muted {
+            color: var(--keystone-text-muted, #6b7280);
             font-size: 0.875rem;
             font-style: italic;
         }
     </style>
 
-    <div class="authkit-subsection">
+    <div class="keystone-subsection">
         <h3>Roles</h3>
-        <div class="authkit-badge-list">
+        <div class="keystone-badge-list">
             @forelse($roles as $role)
-                <span class="authkit-badge authkit-badge-role">{{ ucfirst($role) }}</span>
+                <span class="keystone-badge keystone-badge-role">{{ ucfirst($role) }}</span>
             @empty
-                <span class="authkit-text-muted">No roles assigned</span>
+                <span class="keystone-text-muted">No roles assigned</span>
             @endforelse
         </div>
     </div>
 
-    <div class="authkit-subsection">
+    <div class="keystone-subsection">
         <h3>Permissions</h3>
-        <div class="authkit-badge-list">
+        <div class="keystone-badge-list">
             @forelse($permissions as $permission)
-                <span class="authkit-badge authkit-badge-permission">{{ $permission }}</span>
+                <span class="keystone-badge keystone-badge-permission">{{ $permission }}</span>
             @empty
-                <span class="authkit-text-muted">No permissions assigned</span>
+                <span class="keystone-text-muted">No permissions assigned</span>
             @endforelse
         </div>
     </div>

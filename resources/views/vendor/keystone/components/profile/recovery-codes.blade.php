@@ -1,44 +1,44 @@
-<div class="authkit-recovery-codes" id="recovery-codes-container">
-    @include('authkit::components.authkit-styles')
+<div class="keystone-recovery-codes" id="recovery-codes-container">
+    @include('keystone::components.keystone-styles')
     <style>
-        .authkit-recovery-codes {
+        .keystone-recovery-codes {
             margin-top: 1rem;
         }
 
-        .authkit-recovery-codes-alert {
+        .keystone-recovery-codes-alert {
             background: #fef3c7;
             color: #92400e;
             padding: 1rem;
-            border-radius: var(--authkit-radius, 0.5rem);
+            border-radius: var(--keystone-radius, 0.5rem);
             margin-bottom: 1rem;
             font-size: 0.875rem;
         }
 
-        .authkit-recovery-codes-grid {
+        .keystone-recovery-codes-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
 
-        .authkit-recovery-code {
+        .keystone-recovery-code {
             font-family: monospace;
-            background: var(--authkit-bg-secondary, #f9fafb);
+            background: var(--keystone-bg-secondary, #f9fafb);
             padding: 0.5rem 0.75rem;
-            border-radius: var(--authkit-radius, 0.5rem);
+            border-radius: var(--keystone-radius, 0.5rem);
             font-size: 0.875rem;
             text-align: center;
         }
 
-        .authkit-recovery-actions {
+        .keystone-recovery-actions {
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
         }
 
-        .authkit-btn {
+        .keystone-btn {
             padding: 0.5rem 1rem;
-            border-radius: var(--authkit-radius, 0.5rem);
+            border-radius: var(--keystone-radius, 0.5rem);
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
@@ -46,63 +46,63 @@
             transition: background-color 0.2s;
         }
 
-        .authkit-btn-secondary {
-            background: var(--authkit-bg-secondary, #f3f4f6);
-            color: var(--authkit-text, #1f2937);
+        .keystone-btn-secondary {
+            background: var(--keystone-bg-secondary, #f3f4f6);
+            color: var(--keystone-text, #1f2937);
         }
 
-        .authkit-btn-secondary:hover {
+        .keystone-btn-secondary:hover {
             background: #e5e7eb;
         }
 
-        .authkit-btn-danger {
-            background: var(--authkit-danger, #dc2626);
+        .keystone-btn-danger {
+            background: var(--keystone-danger, #dc2626);
             color: white;
         }
 
-        .authkit-btn-danger:hover {
+        .keystone-btn-danger:hover {
             background: #b91c1c;
         }
 
-        .authkit-btn:disabled {
+        .keystone-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .authkit-recovery-status {
+        .keystone-recovery-status {
             margin-top: 0.75rem;
             font-size: 0.875rem;
         }
 
-        .authkit-text-success {
+        .keystone-text-success {
             color: #059669;
         }
 
-        .authkit-text-error {
-            color: var(--authkit-danger, #dc2626);
+        .keystone-text-error {
+            color: var(--keystone-danger, #dc2626);
         }
     </style>
 
-    <div class="authkit-recovery-codes-alert">
+    <div class="keystone-recovery-codes-alert">
         <strong>Important!</strong> Store these recovery codes in a secure location.
         They can be used to recover access to your account if you lose your authenticator device.
         Each code can only be used once.
     </div>
 
-    <div class="authkit-recovery-codes-grid" id="recovery-codes-list">
-        <span class="authkit-recovery-code">Loading...</span>
+    <div class="keystone-recovery-codes-grid" id="recovery-codes-list">
+        <span class="keystone-recovery-code">Loading...</span>
     </div>
 
-    <div class="authkit-recovery-actions">
-        <button type="button" class="authkit-btn authkit-btn-secondary" onclick="downloadRecoveryCodes()">
+    <div class="keystone-recovery-actions">
+        <button type="button" class="keystone-btn keystone-btn-secondary" onclick="downloadRecoveryCodes()">
             Download Codes
         </button>
-        <button type="button" class="authkit-btn authkit-btn-danger" onclick="regenerateRecoveryCodes()" id="regenerate-btn">
+        <button type="button" class="keystone-btn keystone-btn-danger" onclick="regenerateRecoveryCodes()" id="regenerate-btn">
             Regenerate Codes
         </button>
     </div>
 
-    <div id="recovery-status" class="authkit-recovery-status"></div>
+    <div id="recovery-status" class="keystone-recovery-status"></div>
 </div>
 
 <script>
@@ -136,19 +136,19 @@
             renderCodes(listEl);
         } catch (error) {
             console.error('Error loading recovery codes:', error);
-            listEl.innerHTML = '<span class="authkit-recovery-code">Failed to load codes</span>';
-            statusEl.innerHTML = '<span class="authkit-text-error">Error loading recovery codes. Please try refreshing the page.</span>';
+            listEl.innerHTML = '<span class="keystone-recovery-code">Failed to load codes</span>';
+            statusEl.innerHTML = '<span class="keystone-text-error">Error loading recovery codes. Please try refreshing the page.</span>';
         }
     }
 
     function renderCodes(listEl) {
         if (recoveryCodes.length === 0) {
-            listEl.innerHTML = '<span class="authkit-recovery-code">No recovery codes available</span>';
+            listEl.innerHTML = '<span class="keystone-recovery-code">No recovery codes available</span>';
             return;
         }
 
         listEl.innerHTML = recoveryCodes.map(code =>
-            `<code class="authkit-recovery-code">${code}</code>`
+            `<code class="keystone-recovery-code">${code}</code>`
         ).join('');
     }
 
@@ -202,10 +202,10 @@
             recoveryCodes = data.codes || [];
 
             renderCodes(listEl);
-            statusEl.innerHTML = '<span class="authkit-text-success">Recovery codes regenerated successfully!</span>';
+            statusEl.innerHTML = '<span class="keystone-text-success">Recovery codes regenerated successfully!</span>';
         } catch (error) {
             console.error('Error regenerating recovery codes:', error);
-            statusEl.innerHTML = '<span class="authkit-text-error">Failed to regenerate codes. Please try again.</span>';
+            statusEl.innerHTML = '<span class="keystone-text-error">Failed to regenerate codes. Please try again.</span>';
         } finally {
             btn.disabled = false;
         }
