@@ -154,7 +154,7 @@
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                             <div class="flex items-center gap-4 mb-3">
                                 <input type="text" x-model="category.title" placeholder="Category Title"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 font-bold">
                                 <button type="button" @click="removeSkillCategory('top', catIdx)"
                                         class="text-red-600 hover:text-red-800">
                                     <i class="fa-solid fa-trash"></i>
@@ -193,7 +193,7 @@
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                             <div class="flex items-center gap-4 mb-3">
                                 <input type="text" x-model="category.title" placeholder="Category Title"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 font-bold">
                                 <button type="button" @click="removeSkillCategory('other', catIdx)"
                                         class="text-red-600 hover:text-red-800">
                                     <i class="fa-solid fa-trash"></i>
