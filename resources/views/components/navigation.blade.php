@@ -23,8 +23,8 @@
                   d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
     </button>
-    <div id="navbarSupportedContent" class="hidden md:flex md:flex-col md:items-center">
-        <ul class="flex flex-col gap-y-2">
+    <div id="navbarSupportedContent" class="mt-8 hidden md:flex md:flex-col md:items-center">
+        <ul class="flex flex-col items-center gap-y-2">
             @foreach ($links as $link)
                 @if (!empty($link["can"]))
                     @can($link["can"])
