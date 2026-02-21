@@ -17,7 +17,7 @@
         {{-- Cover Letter Preview --}}
         <div class="bg-primary text-white rounded-top-lg px-6 py-4">
             <h1 class="text-3xl font-heading">
-                Jason Vertucio
+                {{ $personal?->name ?? 'Jason Vertucio' }}
             </h1>
         </div>
         <div class="bg-white border border-gray-200 p-10 rounded-lgcover-letter-body">

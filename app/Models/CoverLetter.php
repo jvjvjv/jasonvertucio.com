@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CoverLetter extends Model
 {
@@ -13,6 +14,7 @@ class CoverLetter extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
+        'resume_version_id',
         'company_name',
         'position',
         'date',
@@ -33,6 +35,11 @@ class CoverLetter extends Model
         return [
             'date' => 'date',
         ];
+    }
+
+    public function resumeVersion(): BelongsTo
+    {
+        return $this->belongsTo(ResumeVersion::class, 'resume_version_id');
     }
 
     /**

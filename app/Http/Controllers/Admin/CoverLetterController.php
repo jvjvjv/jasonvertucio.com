@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoverLetterRequest;
 use App\Models\CoverLetter;
+use App\Models\ResumeVersion;
 use App\Services\CoverLetterDocumentService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,11 @@ class CoverLetterController extends Controller
      */
     public function index(): View
     {
-        $coverLetters = CoverLetter::query()->orderByDesc('date')->orderByDesc('created_at')->get();
+        $coverLetters = CoverLetter::query()
+            ->with('resumeVersion')
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->get();
 
         return view('admin.cover-letters.index', [
             'coverLetters' => $coverLetters,
@@ -35,7 +40,14 @@ class CoverLetterController extends Controller
      */
     public function create(): View
     {
-        return view('admin.cover-letters.create');
+        $resumeVersions = ResumeVersion::query()
+            ->orderByDesc('is_current')
+            ->orderByDesc('id')
+            ->get();
+
+        return view('admin.cover-letters.create', [
+            'resumeVersions' => $resumeVersions,
+        ]);
     }
 
     /**
@@ -57,8 +69,14 @@ class CoverLetterController extends Controller
      */
     public function edit(CoverLetter $coverLetter): View
     {
+        $resumeVersions = ResumeVersion::query()
+            ->orderByDesc('is_current')
+            ->orderByDesc('id')
+            ->get();
+
         return view('admin.cover-letters.edit', [
             'coverLetter' => $coverLetter,
+            'resumeVersions' => $resumeVersions,
         ]);
     }
 
@@ -67,12 +85,16 @@ class CoverLetterController extends Controller
      */
     public function preview(CoverLetter $coverLetter): View
     {
+        $coverLetter->load('resumeVersion.personalInfo');
+
         $converter = new CommonMarkConverter();
         $messageBodyHtml = $coverLetter->message_body
             ? $converter->convert($coverLetter->message_body)->getContent()
             : '';
+        $personalInformation = $coverLetter->resumeVersion?->personalInfo;
 
         return view('admin.cover-letters.preview', [
+            'personal' => $personalInformation,
             'coverLetter' => $coverLetter,
             'messageBodyHtml' => $messageBodyHtml,
         ]);

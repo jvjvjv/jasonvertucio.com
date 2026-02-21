@@ -36,6 +36,7 @@
                         <tr class="bg-gray-50 border-b border-gray-200">
                             <th class="text-left px-4 py-3 font-semibold text-gray-700">Company</th>
                             <th class="text-left px-4 py-3 font-semibold text-gray-700">Position</th>
+                            <th class="text-left px-4 py-3 font-semibold text-gray-700">Resume Version</th>
                             <th class="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
                             <th class="text-right px-4 py-3 font-semibold text-gray-700">Actions</th>
                         </tr>
@@ -55,6 +56,7 @@
                                         {{ $coverLetter->position }}
                                     </a>
                                 </td>
+                                <td class="px-4 py-3 text-gray-600">{{ $coverLetter->resumeVersion?->version ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $coverLetter->date->format('M j, Y') }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center justify-end gap-2">

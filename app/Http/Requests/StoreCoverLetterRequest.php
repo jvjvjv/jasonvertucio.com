@@ -22,6 +22,7 @@ class StoreCoverLetterRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'resume_version_id' => ['required', 'integer', 'exists:resume_versions,id'],
             'company_name'    => ['required', 'string', 'max:255'],
             'position'        => ['required', 'string', 'max:255'],
             'date'            => ['required', 'date'],

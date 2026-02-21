@@ -68,4 +68,9 @@ class ResumeVersion extends Model
     {
         return $this->hasMany(ResumeDownload::class, 'version_id');
     }
+
+    public function coverLetters(): HasMany
+    {
+        return $this->hasMany(CoverLetter::class, 'resume_version_id');
+    }
 }
