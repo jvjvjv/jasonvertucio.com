@@ -6,6 +6,10 @@
  * OOXML for the messageBody field (converted from Markdown via markdownToOoxml).
  *
  * Template tag conventions:
+ *   {name}            - plain text (from selected resume version personal info)
+ *   {title}           - plain text (from selected resume version personal info)
+ *   {email}           - plain text (from selected resume version personal info)
+ *   {phone}           - plain text (from selected resume version personal info)
  *   {date}            - plain text
  *   {companyAddress}  - plain text with linebreaks
  *   {greeting}        - plain text

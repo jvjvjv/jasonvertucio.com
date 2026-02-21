@@ -168,13 +168,19 @@ class CoverLetterDocumentService
      */
     protected function buildDocxData(CoverLetter $coverLetter): array
     {
+        $personalInfo = $coverLetter->resumeVersion?->personalInfo;
+
         return [
+            'name' => $personalInfo?->name ?? '',
+            'title' => $personalInfo?->title ?? '',
+            'email' => $personalInfo?->email ?? '',
+            'phone' => $personalInfo?->phone ?? '',
             'date' => $coverLetter->date->format('F j, Y'),
-            'companyAddress' => $coverLetter->company_address,
-            'greeting' => $coverLetter->greeting,
-            'messageBody' => $coverLetter->message_body,
-            'closing' => $coverLetter->closing,
-            'signature' => $coverLetter->signature,
+            'companyAddress' => $coverLetter->company_address ?? '',
+            'greeting' => $coverLetter->greeting ?? '',
+            'messageBody' => $coverLetter->message_body ?? '',
+            'closing' => $coverLetter->closing ?? '',
+            'signature' => $coverLetter->signature ?? '',
         ];
     }
 }
