@@ -1,4 +1,4 @@
-@props(['aboutMe'])
+@props(['aboutMe', 'summary' => null])
 
 <section class="site-section" id="about">
     <div class="w-full">
@@ -23,11 +23,15 @@
             </a>
             @endif
         </div>
-        @foreach ($aboutMe['sections'] as $section)
-            <p class="text-lg font-light mb-5">
-                {!! $section !!}
-            </p>
-        @endforeach
+        @if($summary)
+            <p class="text-lg font-light mb-5">{!! $summary !!}</p>
+        @else
+            @foreach ($aboutMe['sections'] as $section)
+                <p class="text-lg font-light mb-5">
+                    {!! $section !!}
+                </p>
+            @endforeach
+        @endif
 
         <div class="flex gap-4">
             @foreach ($aboutMe['social'] as $item)

@@ -46,15 +46,15 @@
     <main id="main-content" class="p-0 md:ml-52 lg:ml-64">
 
 
-        <x-about :about-me="$config['about_me']" />
+        <x-about :about-me="$config['about_me']" :summary="$resumeData['personal']['summary']" />
 
         <x-latest-blog :post="$blog" />
 
         <hr class="m-0 border-0 border-t border-dark/50">
 
-        <x-projects :projects="$config['projects']" />
+        <x-projects :projects="$resumeData['projects']" />
 
-        <x-skills :icons="$config['icons']" :workflow="$config['workflow']" />
+        <x-skills :skills="$resumeData['skills']" />
 
         {{-- <x-experience :experience="$config['experience']" /> --}}
 

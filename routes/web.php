@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\MailPreviewController;
+use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Middleware\ResumeShareCodeMiddleware;
 
 /*
@@ -100,6 +101,10 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
         Route::get('/mail-preview', [MailPreviewController::class, 'index'])->name('mail-preview.index');
         Route::get('/mail-preview/{mailable}', [MailPreviewController::class, 'show'])->name('mail-preview.show');
         Route::get('/mail-preview/{mailable}/preview', [MailPreviewController::class, 'preview'])->name('mail-preview.preview');
+
+        // Site settings (navigation links)
+        Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
+        Route::post('/site-settings', [SiteSettingsController::class, 'update'])->name('site-settings.update');
     });
 
 // Resume editor routes - requires auth + edit-resume permission

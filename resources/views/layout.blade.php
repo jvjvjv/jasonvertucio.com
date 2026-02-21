@@ -4,17 +4,7 @@
     }
 
     $config = json_decode(file_get_contents(resource_path() . "/config/config.json"), true);
-    $places = collect([]);
-    collect($config["links"])->each(function ($p) use ($places) {
-        if (count($places) > 0 && $p["href"] == "/blog") {
-            $places->push('<div class="border-t border-gray-200"></div>');
-            return;
-        }
-        if ($p["href"] != "/blog") {
-            $places->push($p);
-            return;
-        }
-    });
+    $navLinks = $config["links"] ?? [];
 
     $meta = [
         "viewport" => "width=device-width, initial-scale=1, shrink-to-fit=no",
@@ -98,15 +88,6 @@
             <div class="flex h-16 items-center justify-between">
                 <div class="flex items-center">
                     <a class="font-heading text-xl text-white" href="{{ route("home") }}">Jason Vertucio</a>
-                    <ul class="ml-10 hidden space-x-4 md:flex">
-                        @foreach ($links as $link)
-                            <li>
-                                <a href="{{ $link["href"] }}"
-                                   class="rounded-md px-3 py-2 text-white/75 hover:text-white">{{ $link["label"] }}</a>
-                            </li>
-                        @endforeach
-
-                    </ul>
                 </div>
                 <div class="flex items-center">
                     <div class="relative" x-data="{ open: false }">
@@ -133,40 +114,18 @@
                                title="Go back home">
                                 Home
                             </a>
-                            @foreach ($places as $link)
-                                @if (is_string($link))
-                                    {!! $link !!}
-                                @else
+                            @foreach ($navLinks as $link)
+                                @if (!empty($link["divider"]))
+                                    <div class="border-t border-gray-200"></div>
+                                @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
                                     <a class="block px-4 py-2 text-dark hover:bg-gray-100"
                                        href="{{ $link["href"] }}"
                                        title="{{ $link["label"] }}"
-                                       {{ isset($link["target"]) ? ' target="' . $link["target"] . '"' : "" }}>
+                                       @if (!empty($link["target"])) target="{{ $link["target"] }}" @endif>
                                         {{ $link["label"] }}
                                     </a>
                                 @endif
                             @endforeach
-                            @ifcanvasauthenticated
-                            <div class="border-t border-gray-200"></div>
-                            <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="/{{ config("canvas.path") }}">
-                                Canvas Blog
-                            </a>
-                            @endifcanvasauthenticated
-                            @can("manage-unauthenticated-viewers")
-                                <div class="border-t border-gray-200"></div>
-                                <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="{{ route("admin.index") }}">
-                                    Admin
-                                </a>
-                            @endcan
-                            @ifauthenticated
-                            <div class="border-t border-gray-200"></div>
-                            <a class="block px-4 py-2 text-dark hover:bg-gray-100"
-                               href="{{ route("keystone.profile.show") }}">
-                                My Profile
-                            </a>
-                            <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="/logout">
-                                Log out
-                            </a>
-                            @endifauthenticated
                         </div>
                     </div>
                     <button class="ml-4 text-white md:hidden"
@@ -187,8 +146,12 @@
                 <ul class="space-y-2">
                     @foreach ($links as $link)
                         <li>
-                            <a href="{{ $link["href"] }}"
-                               class="block px-3 py-2 text-white/75 hover:text-white">{{ $link["label"] }}</a>
+                            @if (isset($link["href"]))
+                                <a href="{{ $link["href"] }}"
+                                   class="rounded-md px-3 py-2 text-white/75 hover:text-white">{{ $link["label"] }}</a>
+                            @else
+                                <div class="border-t border-gray-200"></div>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

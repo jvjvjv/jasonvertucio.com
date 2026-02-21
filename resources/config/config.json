@@ -3,6 +3,27 @@
     "aria_title": "Jason Vertucio: Web Applications Engineer",
     "links": [
         {
+            "divider": true
+        },
+        {
+            "divider": true
+        },
+        {
+            "divider": true
+        },
+        {
+            "href": "/admin",
+            "label": "Admin",
+            "hover": "Administration dashboard",
+            "can": "create-users"
+        },
+        {
+            "href": "/canvas",
+            "label": "Canvas",
+            "hover": "Manage the Canvas Blog",
+            "can": "manage-blog"
+        },
+        {
             "href": "/#about",
             "label": "#About",
             "ariaLabel": "About Me",
@@ -29,8 +50,8 @@
         {
             "href": "/blog",
             "label": "Blog",
-            "hover": "My blog, which is mostly empty as I don't write much.",
-            "ariaLabel": "Blog"
+            "ariaLabel": "Blog",
+            "hover": "My blog, which is mostly empty as I don't write much."
         },
         {
             "href": "https://ghostletter.jasonvertucio.com",
@@ -46,17 +67,15 @@
             "target": "_blank"
         },
         {
-            "href": "/todo",
-            "label": "To Do App",
-            "hover": "A simple to-do list application.",
-            "target": "_blank"
+            "href": "/profile",
+            "label": "My Profile",
+            "hover": "View and manage your profile",
+            "can": "authenticated"
         },
         {
-            "href": "/btoatob",
-            "label": "Btoa(toB)",
-            "ariaLabel": "B to A to B: A web application for encoding and decoding base-64 JSON strings.",
-            "hover": "A web application for encoding and decoding Base64 JSON strings.",
-            "target": "_blank"
+            "href": "/logout",
+            "label": "Log out",
+            "can": "authenticated"
         }
     ],
     "about_me": {
