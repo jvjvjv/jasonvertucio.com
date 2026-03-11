@@ -23,9 +23,6 @@ class UpdateAiSystemRequest extends FormRequest
     {
         return [
             'name'        => ['required', 'string', 'max:255'],
-            'provider'    => ['required', 'string', 'in:anthropic,openai'],
-            'api_key'     => ['nullable', 'string'],
-            'model'       => ['required', 'string', 'max:255'],
             'base_url'    => ['nullable', 'string', 'url', 'max:255'],
             'api_version' => ['nullable', 'string', 'max:50'],
             'max_tokens'  => ['required', 'integer', 'min:1', 'max:200000'],

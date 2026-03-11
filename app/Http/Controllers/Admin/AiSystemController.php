@@ -8,7 +8,10 @@ use App\Http\Requests\UpdateAiSystemRequest;
 use App\Models\AiInteractionLog;
 use App\Models\AiSystem;
 use App\Models\AiSystemFeatureDefault;
+use App\Services\ClaudeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AiSystemController extends Controller
@@ -79,11 +82,6 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
-        // Only update api_key if provided
-        if (empty($data['api_key'])) {
-            unset($data['api_key']);
-        }
-
         if (isset($data['config'])) {
             $data['config'] = json_decode($data['config'], true);
         }
@@ -119,6 +117,50 @@ class AiSystemController extends Controller
             ->paginate(50);
 
         return view('admin.ai.systems.logs', compact('aiSystem', 'logs'));
+    }
+
+    /**
+     * Fetch available models from a provider's API.
+     */
+    public function fetchModels(Request $request): JsonResponse
+    {
+        $request->validate([
+            'provider' => ['required', 'string', 'in:anthropic,openai'],
+            'api_key' => ['required', 'string'],
+        ]);
+
+        try {
+            if ($request->input('provider') === 'anthropic') {
+                $client = new ClaudeService(
+                    apiKey: $request->input('api_key'),
+                );
+                $models = $client->listModels();
+
+                $formatted = collect($models)->map(fn (array $m) => [
+                    'id' => $m['id'],
+                    'name' => $m['display_name'] ?? $m['id'],
+                ])->sortBy('name')->values()->toArray();
+
+                return response()->json(['models' => $formatted]);
+            }
+
+            return response()->json(['models' => [], 'message' => 'Provider not yet supported.'], 422);
+        } catch (\Exception $e) {
+            return response()->json(['models' => [], 'error' => 'Failed to fetch models: ' . $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Duplicate an existing AI system.
+     */
+    public function duplicate(AiSystem $aiSystem): RedirectResponse
+    {
+        $clone = $aiSystem->replicate(['id']);
+        $clone->name = $aiSystem->name . ' (copy)';
+        $clone->save();
+
+        return redirect()->route('admin.ai.systems.edit', $clone)
+            ->with('success', "AI system duplicated. Update the name and settings as needed.");
     }
 
     /**

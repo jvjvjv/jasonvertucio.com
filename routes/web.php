@@ -121,8 +121,10 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
         Route::get('/systems', [AiSystemController::class, 'index'])->name('systems.index');
         Route::get('/systems/new', [AiSystemController::class, 'create'])->name('systems.create');
         Route::post('/systems', [AiSystemController::class, 'store'])->name('systems.store');
+        Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels'])->name('systems.fetch-models');
         Route::get('/systems/{aiSystem}', [AiSystemController::class, 'edit'])->name('systems.edit');
         Route::put('/systems/{aiSystem}', [AiSystemController::class, 'update'])->name('systems.update');
+        Route::post('/systems/{aiSystem}/duplicate', [AiSystemController::class, 'duplicate'])->name('systems.duplicate');
         Route::delete('/systems/{aiSystem}', [AiSystemController::class, 'destroy'])->name('systems.destroy');
         Route::get('/systems/{aiSystem}/logs', [AiSystemController::class, 'logs'])->name('systems.logs');
     });

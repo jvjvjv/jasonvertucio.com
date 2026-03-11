@@ -212,6 +212,22 @@ class ClaudeService
     }
 
     /**
+     * List available models from the Anthropic API.
+     *
+     * @return array<int, array{id: string, display_name: string, created_at: string}>
+     */
+    public function listModels(): array
+    {
+        $response = Http::withHeaders($this->headers())
+            ->timeout(15)
+            ->get($this->baseUrl . '/models', ['limit' => 100]);
+
+        $response->throw();
+
+        return $response->json('data', []);
+    }
+
+    /**
      * Reset per-request overrides back to defaults.
      */
     private function reset(): void

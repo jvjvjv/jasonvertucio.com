@@ -24,13 +24,25 @@
 
             @include('admin.ai.systems._form', ['system' => $aiSystem])
 
-            <div class="mt-8 flex items-center justify-end gap-4">
-                <a href="{{ route('admin.ai.systems.index') }}" class="text-sm text-gray-600 hover:underline">Cancel</a>
-                <button type="submit"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
-                    <i class="fa-classic fa-floppy-disk"></i>
-                    Update System
-                </button>
+            <div class="mt-8 flex items-center justify-between">
+                <form method="POST" action="{{ route('admin.ai.systems.duplicate', $aiSystem) }}"
+                    onsubmit="return confirm('Duplicate this system?')">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fa-classic fa-copy"></i>
+                        Duplicate
+                    </button>
+                </form>
+
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('admin.ai.systems.index') }}" class="text-sm text-gray-600 hover:underline">Cancel</a>
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa-classic fa-floppy-disk"></i>
+                        Update System
+                    </button>
+                </div>
             </div>
         </form>
     </div>

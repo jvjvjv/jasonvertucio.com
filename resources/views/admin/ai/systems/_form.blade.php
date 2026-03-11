@@ -1,10 +1,11 @@
 @php
     $system = $system ?? null;
+    $isEdit = (bool) $system;
     $allFeatures = ['targeted-resume', 'cover-letter'];
     $currentDefaults = $system ? $system->featureDefaults->pluck('feature')->toArray() : [];
 @endphp
 
-<div class="space-y-6">
+<div x-data="aiSystemForm({ isEdit: {{ $isEdit ? 'true' : 'false' }} })" class="space-y-6">
     {{-- Name --}}
     <div>
         <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -13,37 +14,92 @@
             placeholder="e.g., Claude Sonnet for Resumes" required>
     </div>
 
-    {{-- Provider --}}
-    <div>
-        <label for="provider" class="block text-sm font-medium text-gray-700 mb-1">Provider</label>
-        <select name="provider" id="provider"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary" required>
-            <option value="">Select provider...</option>
-            <option value="anthropic" @selected(old('provider', $system?->provider) === 'anthropic')>Anthropic</option>
-            <option value="openai" @selected(old('provider', $system?->provider) === 'openai')>OpenAI</option>
-        </select>
-    </div>
+    @if($isEdit)
+        {{-- Provider (read-only on edit) --}}
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+            <p class="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                {{ ucfirst($system->provider) }}
+            </p>
+        </div>
 
-    {{-- API Key --}}
-    <div>
-        <label for="api_key" class="block text-sm font-medium text-gray-700 mb-1">
-            API Key
-            @if($system)
-                <span class="text-gray-400 font-normal">(leave blank to keep current)</span>
-            @endif
-        </label>
-        <input type="password" name="api_key" id="api_key" value="{{ old('api_key') }}"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary"
-            placeholder="{{ $system ? '••••••••' : 'sk-...' }}" {{ $system ? '' : 'required' }}>
-    </div>
+        {{-- API Key (read-only on edit) --}}
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+            <p class="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-500 font-mono">
+                ••••••••
+            </p>
+        </div>
 
-    {{-- Model --}}
-    <div>
-        <label for="model" class="block text-sm font-medium text-gray-700 mb-1">Model</label>
-        <input type="text" name="model" id="model" value="{{ old('model', $system?->model) }}"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary"
-            placeholder="e.g., claude-sonnet-4-6" required>
-    </div>
+        {{-- Model (read-only on edit) --}}
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+            <p class="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-mono">
+                {{ $system->model }}
+            </p>
+        </div>
+
+        <p class="text-xs text-gray-400">Provider, API key, and model cannot be changed after creation. Use <strong>Duplicate</strong> to create a new system with different settings.</p>
+    @else
+        {{-- Provider (editable on create) --}}
+        <div>
+            <label for="provider" class="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+            <select name="provider" id="provider" x-model="provider" @change="onProviderChange()"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary" required>
+                <option value="">Select provider...</option>
+                <option value="anthropic" @selected(old('provider') === 'anthropic')>Anthropic</option>
+                <option value="openai" @selected(old('provider') === 'openai')>OpenAI</option>
+            </select>
+        </div>
+
+        {{-- API Key (editable on create) --}}
+        <div>
+            <label for="api_key" class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+            <input type="password" name="api_key" id="api_key" x-model="apiKey" @blur="fetchModels()"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="sk-..." required>
+        </div>
+
+        {{-- Model (dropdown with fetch on create) --}}
+        <div>
+            <label for="model" class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+
+            <div x-show="isFetchingModels" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-500">
+                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Fetching models...
+            </div>
+
+            <template x-if="availableModels.length > 0 && !isFetchingModels">
+                <select name="model" id="model"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary" required>
+                    <option value="">Select model...</option>
+                    <template x-for="m in availableModels" :key="m.id">
+                        <option :value="m.id" x-text="m.name + ' (' + m.id + ')'" :selected="m.id === '{{ old('model') }}'"></option>
+                    </template>
+                </select>
+            </template>
+
+            <template x-if="availableModels.length === 0 && !isFetchingModels">
+                <div>
+                    <input type="text" name="model" id="model" value="{{ old('model') }}"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary"
+                        placeholder="e.g., claude-sonnet-4-6" required>
+                    <p class="mt-1 text-xs text-gray-400" x-show="provider && apiKey">
+                        <button type="button" @click="fetchModels()" class="text-primary hover:underline">Fetch models from API</button>
+                        or type the model ID manually.
+                    </p>
+                    <p class="mt-1 text-xs text-gray-400" x-show="!provider || !apiKey">
+                        Select a provider and enter an API key to fetch available models.
+                    </p>
+                </div>
+            </template>
+
+            <p x-show="fetchError" class="mt-1 text-xs text-red-600" x-text="fetchError"></p>
+        </div>
+    @endif
 
     <div class="grid grid-cols-2 gap-6">
         {{-- Base URL --}}
@@ -128,3 +184,62 @@
             placeholder='{"key": "value"}'>{{ old('config', $system?->config ? json_encode($system->config, JSON_PRETTY_PRINT) : '') }}</textarea>
     </div>
 </div>
+
+@unless($isEdit)
+<script>
+function aiSystemForm(config) {
+    return {
+        provider: '{{ old('provider') }}',
+        apiKey: '',
+        availableModels: [],
+        isFetchingModels: false,
+        fetchError: null,
+
+        onProviderChange() {
+            this.availableModels = [];
+            this.fetchError = null;
+            if (this.apiKey) {
+                this.fetchModels();
+            }
+        },
+
+        async fetchModels() {
+            if (!this.provider || !this.apiKey) return;
+
+            this.isFetchingModels = true;
+            this.fetchError = null;
+
+            try {
+                const response = await fetch('{{ route("admin.ai.systems.fetch-models") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: this.provider,
+                        api_key: this.apiKey,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    this.fetchError = data.error || data.message || 'Failed to fetch models.';
+                    this.availableModels = [];
+                    return;
+                }
+
+                this.availableModels = data.models || [];
+            } catch (err) {
+                this.fetchError = 'Network error fetching models.';
+                this.availableModels = [];
+            } finally {
+                this.isFetchingModels = false;
+            }
+        },
+    };
+}
+</script>
+@endunless
