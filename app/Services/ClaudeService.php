@@ -29,13 +29,18 @@ class ClaudeService
     /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> Per-request tools */
     private array $tools = [];
 
-    public function __construct()
-    {
-        $this->apiKey = config('claude.api_key', '');
-        $this->defaultModel = config('claude.model', 'claude-sonnet-4-6');
-        $this->defaultMaxTokens = (int) config('claude.max_tokens', 1024);
-        $this->apiVersion = config('claude.api_version', '2023-06-01');
-        $this->baseUrl = config('claude.base_url', 'https://api.anthropic.com/v1');
+    public function __construct(
+        ?string $apiKey = null,
+        ?string $model = null,
+        ?int $maxTokens = null,
+        ?string $apiVersion = null,
+        ?string $baseUrl = null,
+    ) {
+        $this->apiKey = $apiKey ?? config('claude.api_key', '');
+        $this->defaultModel = $model ?? config('claude.model', 'claude-sonnet-4-6');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('claude.max_tokens', 1024);
+        $this->apiVersion = $apiVersion ?? config('claude.api_version', '2023-06-01');
+        $this->baseUrl = $baseUrl ?? config('claude.base_url', 'https://api.anthropic.com/v1');
     }
 
     /**

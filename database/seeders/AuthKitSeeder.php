@@ -56,6 +56,9 @@ class KeystoneSeeder extends Seeder
             'save-resume',
             'edit-resume',
             'manage-unauthenticated-viewers',
+
+            // AI tools
+            'manage-ai-tools',
         ];
 
         foreach ($permissions as $permission) {
@@ -88,6 +91,7 @@ class KeystoneSeeder extends Seeder
             'save-resume',
             'edit-resume',
             'manage-unauthenticated-viewers',
+            'manage-ai-tools',
         ]);
 
         // Editor - content management only

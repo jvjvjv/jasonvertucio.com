@@ -1,6 +1,6 @@
 @extends('layout')
 
-@section('title', 'Resume Editor')
+@section('title', 'Resume Builder')
 
 @section('main')
 <div x-data="resumeEditor()"
@@ -9,7 +9,7 @@
     <div class="flex items-center justify-between mb-8">
         <div>
             <a href="{{ route('admin.resume.index') }}" class="text-sm text-primary hover:underline">&larr; Back to Resume Management</a>
-            <h1 class="text-3xl font-heading font-bold text-primary mt-2">Resume Editor</h1>
+            <h1 class="text-3xl font-heading font-bold text-primary mt-2">Resume Builder</h1>
         </div>
     </div>
 

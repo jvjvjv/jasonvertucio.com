@@ -16,6 +16,13 @@ $nav_blocks = [
         'description' => 'Create and manage cover letters with automatic DOCX and PDF generation',
     ],
     [
+        'can' => 'manage-ai-tools',
+        'route' => 'admin.ai.index',
+        'icon' => 'robot',
+        'label' => 'AI Tools',
+        'description' => 'Manage AI systems, targeted resume builder, and AI cover letter generation',
+    ],
+    [
         'can' => null,
         'route' => 'admin.site-settings.edit',
         'icon' => 'map-pin',

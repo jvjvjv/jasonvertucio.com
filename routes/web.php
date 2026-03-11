@@ -12,6 +12,8 @@ use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\ResumeEditorController;
+use App\Http\Controllers\Admin\AiToolsController;
+use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\MailPreviewController;
 use App\Http\Controllers\Admin\SiteSettingsController;
@@ -105,6 +107,23 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
         // Site settings (navigation links)
         Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
         Route::post('/site-settings', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+    });
+
+// AI Tools routes - requires auth + manage-ai-tools permission
+Route::middleware(['auth', 'can:manage-ai-tools'])
+    ->prefix('admin/ai')
+    ->name('admin.ai.')
+    ->group(function () {
+        Route::get('/', [AiToolsController::class, 'index'])->name('index');
+
+        // AI Systems CRUD
+        Route::get('/systems', [AiSystemController::class, 'index'])->name('systems.index');
+        Route::get('/systems/new', [AiSystemController::class, 'create'])->name('systems.create');
+        Route::post('/systems', [AiSystemController::class, 'store'])->name('systems.store');
+        Route::get('/systems/{aiSystem}', [AiSystemController::class, 'edit'])->name('systems.edit');
+        Route::put('/systems/{aiSystem}', [AiSystemController::class, 'update'])->name('systems.update');
+        Route::delete('/systems/{aiSystem}', [AiSystemController::class, 'destroy'])->name('systems.destroy');
+        Route::get('/systems/{aiSystem}/logs', [AiSystemController::class, 'logs'])->name('systems.logs');
     });
 
 // Resume editor routes - requires auth + edit-resume permission

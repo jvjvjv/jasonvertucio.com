@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\AiClientFactory;
 use App\Services\ClaudeService;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,5 +20,7 @@ class ClaudeServiceProvider extends ServiceProvider
         $this->app->singleton(ClaudeService::class, function ($app) {
             return new ClaudeService();
         });
+
+        $this->app->singleton(AiClientFactory::class);
     }
 }
