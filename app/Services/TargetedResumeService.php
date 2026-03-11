@@ -175,7 +175,7 @@ class TargetedResumeService
     /**
      * Save a finalized targeted resume from conversation context.
      */
-    public function saveTailoredResume(AiConversation $conversation, array $tailoredData): TargetedResume
+    public function saveTailoredResume(AiConversation $conversation, string $tailoredHtml, ?int $fitScore = null): TargetedResume
     {
         $context = $conversation->context ?? [];
 
@@ -185,8 +185,8 @@ class TargetedResumeService
             'company_name' => $context['company_name'] ?? 'Unknown Company',
             'position' => $context['job_title'] ?? 'Unknown Position',
             'job_description' => $context['job_description'] ?? '',
-            'tailored_data' => $tailoredData,
-            'fit_score' => $context['fit_score'] ?? null,
+            'tailored_data' => ['html' => $tailoredHtml],
+            'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
             'fit_summary' => $context['fit_summary'] ?? null,
             'status' => 'finalized',
         ]);
@@ -234,16 +234,39 @@ Ask if there is any additional experience, skills, or accomplishments NOT in the
 Provide a fit score (1-100) and a brief summary of fit for the role. Ask if the candidate wants to proceed with tailoring their resume.
 
 ### Step 5: Resume Tailoring (only if candidate agrees to proceed)
-Generate a tailored version of the resume optimized for this job posting. The tailored resume must be returned as a JSON object with this exact structure:
+Generate a tailored version of the resume optimized for this job posting. The tailored resume must be returned as HTML wrapped in a code block with the language tag `tailored-resume`.
 
-```json
-{
-    "personal": { "name": "...", "title": "...", "email": "...", "phone": "...", "linkedin": "...", "summary": "..." },
-    "skills": { "top": [{ "title": "...", "list": ["..."] }], "other": [{ "title": "...", "list": ["..."] }] },
-    "experience": [{ "jobTitle": "...", "company": "...", "location": "...", "dates": ["...", "..."], "bullets": ["..."] }],
-    "education": [{ "institution": "...", "degree": "...", "dates": ["...", "..."], "description": "..." }],
-    "projects": [{ "projectName": "...", "description": "...", "bullets": ["..."] }]
-}
+Use this structure:
+
+```html
+<h1>Summary</h1>
+<p>Professional summary tailored to the role...</p>
+
+<h1>Skills</h1>
+<h2>Category Name</h2>
+<ul>
+  <li>Skill 1</li>
+  <li>Skill 2</li>
+</ul>
+
+<h1>Experience</h1>
+<h2>Job Title</h2>
+<h3>Company Name — Location — Start Date – End Date</h3>
+<ul>
+  <li>Achievement or responsibility</li>
+</ul>
+
+<h1>Education</h1>
+<h2>Degree</h2>
+<h3>Institution — Start Date – End Date</h3>
+<p>Description if applicable</p>
+
+<h1>Projects</h1>
+<h2>Project Name</h2>
+<p>Description</p>
+<ul>
+  <li>Detail or highlight</li>
+</ul>
 ```
 
 When tailoring:
@@ -251,6 +274,7 @@ When tailoring:
 - Reorder and emphasize skills that match the job requirements
 - Refine experience bullet points to use keywords from the job description
 - Keep all factual information accurate — only change presentation and emphasis
+- Use semantic HTML only (h1, h2, h3, p, ul, li) — no classes, styles, or divs
 
 ### Step 6: Application Assistance
 After providing the tailored resume, offer to help with any application questions the candidate may encounter during the application process.
@@ -258,7 +282,7 @@ After providing the tailored resume, offer to help with any application question
 ## Important Guidelines
 - Be concise and actionable in your responses
 - Always wait for the candidate's input before moving to the next step
-- When providing the tailored resume JSON, wrap it in a code block with the language tag `json-resume`
+- When providing the tailored resume, wrap it in a code block with the language tag `tailored-resume`
 - Do NOT fabricate experience or qualifications
 PROMPT;
     }

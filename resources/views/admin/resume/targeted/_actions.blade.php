@@ -28,29 +28,20 @@ function resumeActions(config) {
             this.isFinalizing = true;
             this.finalizeError = null;
 
-            // Find the last assistant message that contains json-resume data
+            // Find the last assistant message that contains tailored-resume data
             const messages = this.$root.closest('[x-data]').__x.$data?.messages || [];
-            let tailoredData = null;
-            let companyName = null;
-            let position = null;
+            let tailoredHtml = null;
             let fitScore = null;
-            let fitSummary = null;
 
-            // Search messages in reverse for the JSON resume block
+            // Search messages in reverse for the tailored resume block
             for (let i = messages.length - 1; i >= 0; i--) {
                 const msg = messages[i];
                 if (msg.role !== 'assistant') continue;
 
-                // Look for json-resume code block
-                const jsonMatch = msg.content.match(/```json-resume\s*\n([\s\S]*?)```/);
-                if (jsonMatch) {
-                    try {
-                        tailoredData = JSON.parse(jsonMatch[1]);
-                    } catch (e) {
-                        this.finalizeError = 'Could not parse the tailored resume JSON. Please ask the AI to regenerate it.';
-                        this.isFinalizing = false;
-                        return;
-                    }
+                // Look for tailored-resume code block
+                const htmlMatch = msg.content.match(/```tailored-resume\s*\n([\s\S]*?)```/);
+                if (htmlMatch) {
+                    tailoredHtml = htmlMatch[1].trim();
                 }
 
                 // Look for fit score
@@ -60,10 +51,10 @@ function resumeActions(config) {
                     if (fitScore > 100) fitScore = null;
                 }
 
-                if (tailoredData) break;
+                if (tailoredHtml) break;
             }
 
-            if (!tailoredData) {
+            if (!tailoredHtml) {
                 this.finalizeError = 'No tailored resume found in the conversation. Please complete the tailoring process first.';
                 this.isFinalizing = false;
                 return;
@@ -78,11 +69,8 @@ function resumeActions(config) {
                         'Accept': 'application/json',
                     },
                     body: JSON.stringify({
-                        tailored_data: tailoredData,
-                        company_name: companyName,
-                        position: position,
+                        tailored_html: tailoredHtml,
                         fit_score: fitScore,
-                        fit_summary: fitSummary,
                     }),
                 });
 

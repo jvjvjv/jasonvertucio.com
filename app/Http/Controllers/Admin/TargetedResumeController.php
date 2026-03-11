@@ -123,32 +123,14 @@ class TargetedResumeController extends Controller
     public function finalize(Request $request, AiConversation $conversation): JsonResponse
     {
         $request->validate([
-            'tailored_data' => ['required', 'array'],
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'position' => ['nullable', 'string', 'max:255'],
+            'tailored_html' => ['required', 'string'],
             'fit_score' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'fit_summary' => ['nullable', 'string'],
         ]);
-
-        // Merge any overrides into the conversation context
-        $context = $conversation->context ?? [];
-        if ($request->filled('company_name')) {
-            $context['company_name'] = $request->input('company_name');
-        }
-        if ($request->filled('position')) {
-            $context['job_title'] = $request->input('position');
-        }
-        if ($request->filled('fit_score')) {
-            $context['fit_score'] = $request->input('fit_score');
-        }
-        if ($request->filled('fit_summary')) {
-            $context['fit_summary'] = $request->input('fit_summary');
-        }
-        $conversation->update(['context' => $context]);
 
         $targetedResume = $this->targetedResumeService->saveTailoredResume(
             $conversation,
-            $request->input('tailored_data'),
+            $request->input('tailored_html'),
+            $request->input('fit_score'),
         );
 
         return response()->json([
