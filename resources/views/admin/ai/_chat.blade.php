@@ -55,9 +55,14 @@
     </div>
 
     {{-- Action buttons (contextual) --}}
-    @if(!empty($actions))
+    @php
+        $actionMarkup = $actions instanceof \Illuminate\Contracts\Support\Renderable
+            ? $actions->render()
+            : (string) $actions;
+    @endphp
+    @if($actionMarkup !== '')
     <div x-show="!isThinking && !isStreaming && messages.length > 0" class="px-4 py-2 border-t border-gray-100 flex gap-2 flex-wrap">
-        {{ $actions }}
+        {!! $actionMarkup !!}
     </div>
     @endif
 
