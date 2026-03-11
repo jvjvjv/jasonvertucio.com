@@ -48,7 +48,6 @@
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary" required>
                 <option value="">Select provider...</option>
                 <option value="anthropic" @selected(old('provider') === 'anthropic')>Anthropic</option>
-                <option value="openai" @selected(old('provider') === 'openai')>OpenAI</option>
             </select>
         </div>
 
@@ -172,6 +171,16 @@
                 </label>
             @endforeach
         </div>
+    </div>
+
+    {{-- System Prompt --}}
+    <div>
+        <label for="system_prompt" class="block text-sm font-medium text-gray-700 mb-1">
+            System Prompt <span class="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <textarea name="system_prompt" id="system_prompt" rows="6"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+            placeholder="Base system prompt for this AI system. Features may prepend or override this.">{{ old('system_prompt', $system?->system_prompt) }}</textarea>
     </div>
 
     {{-- Extra Config --}}

@@ -28,6 +28,7 @@ class UpdateAiSystemRequest extends FormRequest
             'max_tokens'  => ['required', 'integer', 'min:1', 'max:200000'],
             'temperature' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'is_active'   => ['boolean'],
+            'system_prompt' => ['nullable', 'string'],
             'config'      => ['nullable', 'json'],
             'feature_defaults'   => ['nullable', 'array'],
             'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],

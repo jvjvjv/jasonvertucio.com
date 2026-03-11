@@ -125,7 +125,7 @@ class AiSystemController extends Controller
     public function fetchModels(Request $request): JsonResponse
     {
         $request->validate([
-            'provider' => ['required', 'string', 'in:anthropic,openai'],
+            'provider' => ['required', 'string', 'in:anthropic'],
             'api_key' => ['required', 'string'],
         ]);
 

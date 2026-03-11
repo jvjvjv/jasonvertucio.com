@@ -21,6 +21,7 @@ class AiSystem extends Model
         'temperature',
         'is_active',
         'config',
+        'system_prompt',
     ];
 
     /**
