@@ -44,4 +44,9 @@ class AiInteractionLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(AiConversation::class, 'ai_conversation_id');
+    }
 }
