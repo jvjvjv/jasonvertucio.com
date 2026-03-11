@@ -73,4 +73,9 @@ class ResumeVersion extends Model
     {
         return $this->hasMany(CoverLetter::class, 'resume_version_id');
     }
+
+    public function targetedResumes(): HasMany
+    {
+        return $this->hasMany(TargetedResume::class);
+    }
 }

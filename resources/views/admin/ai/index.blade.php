@@ -8,6 +8,13 @@ $nav_blocks = [
         'label' => 'AI Systems',
         'description' => 'Manage AI providers, API keys, and feature defaults',
     ],
+    [
+        'can' => 'edit-resume',
+        'route' => 'admin.resume.targeted.index',
+        'icon' => 'bullseye',
+        'label' => 'Targeted Resume Builder',
+        'description' => 'Use AI to tailor your resume for specific job postings',
+    ],
 ];
 
 @endphp

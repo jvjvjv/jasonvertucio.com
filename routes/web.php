@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\AiToolsController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\CoverLetterController;
+use App\Http\Controllers\Admin\TargetedResumeController;
 use App\Http\Controllers\Admin\MailPreviewController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Middleware\ResumeShareCodeMiddleware;
@@ -133,6 +134,15 @@ Route::middleware(['auth', 'can:edit-resume'])
     ->group(function () {
         Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
         Route::post('/editor', [ResumeEditorController::class, 'update'])->name('editor.save');
+
+        // Targeted Resume Builder
+        Route::get('/targeted-builder', [TargetedResumeController::class, 'index'])->name('targeted.index');
+        Route::get('/targeted-builder/new', [TargetedResumeController::class, 'create'])->name('targeted.create');
+        Route::post('/targeted-builder/start', [TargetedResumeController::class, 'start'])->name('targeted.start');
+        Route::get('/targeted-builder/{conversation}', [TargetedResumeController::class, 'show'])->name('targeted.show');
+        Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat'])->name('targeted.chat');
+        Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize'])->name('targeted.finalize');
+        Route::get('/targeted-resume/{targetedResume}/download/{format}', [TargetedResumeController::class, 'download'])->name('targeted.download');
     });
 
 // Manual code entry page for unauthenticated users

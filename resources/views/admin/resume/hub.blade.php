@@ -9,6 +9,13 @@ $nav_blocks = [
         'description' => 'Build and edit resume content. Documents auto-generate on save.',
     ],
     [
+        'can' => 'edit-resume',
+        'route' => 'admin.resume.targeted.index',
+        'icon' => 'bullseye',
+        'label' => 'Targeted Resume Builder',
+        'description' => 'Use AI to tailor your resume for specific job postings',
+    ],
+    [
         'can' => null,
         'route' => 'resume.index',
         'icon' => 'eye',
