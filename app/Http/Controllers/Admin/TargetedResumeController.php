@@ -26,11 +26,13 @@ class TargetedResumeController extends Controller
      */
     public function index(): View
     {
-        $targetedResumes = TargetedResume::with(['resumeVersion', 'conversation'])
-            ->orderByDesc('created_at')
+        $conversations = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion'])
+            ->withCount(['messages' => fn($query) => $query->where('role', '!=', 'system')])
+            ->where('feature', 'targeted-resume')
+            ->orderByDesc('updated_at')
             ->get();
 
-        return view('admin.resume.targeted.index', compact('targetedResumes'));
+        return view('admin.resume.targeted.index', compact('conversations'));
     }
 
     /**
