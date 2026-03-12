@@ -98,6 +98,7 @@ function aiChat(config) {
 
         init() {
             this.$el.__chatState = this;
+            this.broadcastMessages();
             this.$nextTick(() => this.scrollToBottom());
         },
 
@@ -110,6 +111,7 @@ function aiChat(config) {
 
             // Add user message to display
             this.messages.push({ role: 'user', content: message });
+            this.broadcastMessages();
             this.$nextTick(() => this.scrollToBottom());
 
             this.isThinking = true;
@@ -181,6 +183,7 @@ function aiChat(config) {
                 // Move streamed content to messages
                 if (this.streamingContent) {
                     this.messages.push({ role: 'assistant', content: this.streamingContent });
+                    this.broadcastMessages();
                 }
             } catch (err) {
                 this.error = err.message || 'Failed to send message. Please try again.';
@@ -200,6 +203,15 @@ function aiChat(config) {
             if (container) {
                 container.scrollTop = container.scrollHeight;
             }
+        },
+
+        broadcastMessages() {
+            window.dispatchEvent(new CustomEvent('targeted-resume-chat-messages-updated', {
+                detail: {
+                    conversationId: this.conversationId,
+                    messages: this.messages,
+                },
+            }));
         },
 
         renderMarkdown(text) {

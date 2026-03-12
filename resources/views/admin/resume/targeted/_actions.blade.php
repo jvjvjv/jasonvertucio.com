@@ -1,8 +1,9 @@
-<div x-data="resumeActions({ conversationId: {{ $conversation->id }}, csrfToken: '{{ csrf_token() }}' })">
+<div x-data="resumeActions({ conversationId: {{ $conversation->id }}, csrfToken: '{{ csrf_token() }}' })"
+    @targeted-resume-chat-messages-updated.window="syncMessages($event.detail)">
     <button @click="finalizeResume"
-        :disabled="isFinalizing"
+        :disabled="isFinalizing || !canFinalize"
         class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Extract and save the tailored resume from the conversation">
+        :title="canFinalize ? 'Extract and save the tailored resume from the conversation' : 'Finalize is available after the assistant returns a tailored resume block'">
         <template x-if="isFinalizing">
             <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -21,16 +22,42 @@
 <script>
 function resumeActions(config) {
     return {
+        conversationId: config.conversationId,
         isFinalizing: false,
         finalizeError: null,
+        messages: [],
+
+        init() {
+            const chatState = this.$root.closest('[data-chat-root]')?.__chatState;
+            this.messages = Array.isArray(chatState?.messages) ? [...chatState.messages] : [];
+        },
+
+        get canFinalize() {
+            return this.messages.some((msg) => {
+                return msg.role === 'assistant' && /```tailored(?:-|\s+)resume/i.test(msg.content || '');
+            });
+        },
+
+        syncMessages(detail) {
+            if (detail?.conversationId !== this.conversationId) {
+                return;
+            }
+
+            this.messages = Array.isArray(detail.messages) ? [...detail.messages] : [];
+        },
 
         async finalizeResume() {
             this.isFinalizing = true;
             this.finalizeError = null;
 
+            if (!this.canFinalize) {
+                this.finalizeError = 'No tailored resume found in the conversation. Please complete the tailoring process first.';
+                this.isFinalizing = false;
+                return;
+            }
+
             // Find the last assistant message that contains tailored-resume data
-            const chatState = this.$root.closest('[data-chat-root]')?.__chatState;
-            const messages = Array.isArray(chatState?.messages) ? chatState.messages : [];
+            const messages = this.messages;
             let tailoredHtml = null;
             let fitScore = null;
 
@@ -39,8 +66,8 @@ function resumeActions(config) {
                 const msg = messages[i];
                 if (msg.role !== 'assistant') continue;
 
-                // Look for tailored-resume code block
-                const htmlMatch = msg.content.match(/```tailored-resume\s*\n([\s\S]*?)```/);
+                // Look for tailored resume code block
+                const htmlMatch = msg.content.match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
                 if (htmlMatch) {
                     tailoredHtml = htmlMatch[1].trim();
                 }
