@@ -42,6 +42,22 @@
                     </div>
                 </div>
             </div>
+
+            @php
+                $tailoredHtml = data_get($targetedResume->tailored_data, 'html');
+            @endphp
+
+            @if($tailoredHtml)
+                <section class="mb-8 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                        <h2 class="text-lg font-heading font-semibold text-primary">Finalized Resume Preview</h2>
+                        <p class="text-xs text-gray-500 mt-1">Saved HTML preview of the targeted resume.</p>
+                    </div>
+                    <div class="px-6 py-5 prose prose-sm max-w-none">
+                        {!! $tailoredHtml !!}
+                    </div>
+                </section>
+            @endif
         @endif
 
         {{-- Chat interface --}}

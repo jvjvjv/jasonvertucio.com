@@ -97,6 +97,13 @@
                                                 <i class="fa-classic fa-file-word"></i>
                                             </a>
                                         @endif
+                                        @if($resume && $resume->pdfExists())
+                                            <a href="{{ route('admin.resume.targeted.download', [$resume, 'pdf']) }}"
+                                                class="p-2 text-gray-500 hover:text-primary transition-colors"
+                                                title="Download PDF">
+                                                <i class="fa-classic fa-file-pdf"></i>
+                                            </a>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

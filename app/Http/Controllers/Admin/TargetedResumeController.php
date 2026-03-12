@@ -129,11 +129,18 @@ class TargetedResumeController extends Controller
             'fit_score' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $targetedResume = $this->targetedResumeService->saveTailoredResume(
-            $conversation,
-            $request->input('tailored_html'),
-            $request->input('fit_score'),
-        );
+        try {
+            $targetedResume = $this->targetedResumeService->saveTailoredResume(
+                $conversation,
+                $request->input('tailored_html'),
+                $request->input('fit_score'),
+            );
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,

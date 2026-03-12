@@ -16,6 +16,7 @@ class TargetedResumeService
     public function __construct(
         private AiClientFactory $clientFactory,
         private ResumeDataServiceContract $resumeDataService,
+        private \App\Services\TargetedResumeDocumentService $documentService,
     ) {
     }
 
@@ -179,21 +180,35 @@ class TargetedResumeService
     {
         $context = $conversation->context ?? [];
 
-        $targetedResume = TargetedResume::create([
-            'resume_version_id' => $context['resume_version_id'],
-            'ai_conversation_id' => $conversation->id,
-            'company_name' => $context['company_name'] ?? 'Unknown Company',
-            'position' => $context['job_title'] ?? 'Unknown Position',
-            'job_description' => $context['job_description'] ?? '',
-            'tailored_data' => ['html' => $tailoredHtml],
-            'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
-            'fit_summary' => $context['fit_summary'] ?? null,
-            'status' => 'finalized',
-        ]);
+        $targetedResume = TargetedResume::updateOrCreate(
+            ['ai_conversation_id' => $conversation->id],
+            [
+                'resume_version_id' => $context['resume_version_id'],
+                'company_name' => $context['company_name'] ?? 'Unknown Company',
+                'position' => $context['job_title'] ?? 'Unknown Position',
+                'job_description' => $context['job_description'] ?? '',
+                'tailored_data' => ['html' => $tailoredHtml],
+                'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
+                'fit_summary' => $context['fit_summary'] ?? null,
+                'status' => 'finalized',
+            ]
+        );
+
+        $docxResult = $this->documentService->generateDocx($targetedResume);
+
+        if (!$docxResult['success']) {
+            throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
+        }
+
+        $pdfResult = $this->documentService->generatePdf($targetedResume);
+
+        if (!$pdfResult['success']) {
+            throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
+        }
 
         $conversation->update(['status' => 'completed']);
 
-        return $targetedResume;
+        return $targetedResume->fresh();
     }
 
     /**

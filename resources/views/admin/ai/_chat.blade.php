@@ -1,6 +1,6 @@
 @props(['chatUrl', 'conversationId', 'messages' => [], 'actions' => []])
 
-<div x-data="aiChat({
+<div data-chat-root x-data="aiChat({
     chatUrl: '{{ $chatUrl }}',
     conversationId: {{ $conversationId }},
     initialMessages: {{ \Illuminate\Support\Js::from($messages) }},
@@ -97,6 +97,7 @@ function aiChat(config) {
         error: null,
 
         init() {
+            this.$el.__chatState = this;
             this.$nextTick(() => this.scrollToBottom());
         },
 

@@ -29,7 +29,8 @@ function resumeActions(config) {
             this.finalizeError = null;
 
             // Find the last assistant message that contains tailored-resume data
-            const messages = this.$root.closest('[x-data]').__x.$data?.messages || [];
+            const chatState = this.$root.closest('[data-chat-root]')?.__chatState;
+            const messages = Array.isArray(chatState?.messages) ? chatState.messages : [];
             let tailoredHtml = null;
             let fitScore = null;
 
