@@ -41,6 +41,7 @@ class TargetedResumeService
                 'job_description' => $jobDescription,
                 'resume_version_id' => $resumeVersion->id,
                 'step' => 'analysis',
+                'auto_start_pending' => true,
             ],
         ]);
 
@@ -52,12 +53,17 @@ class TargetedResumeService
             'content' => $systemPrompt,
         ]);
 
-        // Store the initial user message (job description)
-        $userContent = $this->buildInitialUserMessage($jobDescription, $jobTitle);
+        // Store the initial user messages that should be sent immediately on first load.
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'user',
-            'content' => $userContent,
+            'content' => 'Please begin the analysis on the following job description',
+        ]);
+
+        AiConversationMessage::create([
+            'ai_conversation_id' => $conversation->id,
+            'role' => 'user',
+            'content' => $this->buildInitialJobDescriptionMessage($jobDescription, $jobTitle),
         ]);
 
         return $conversation;
@@ -71,6 +77,14 @@ class TargetedResumeService
     public function continueConversation(AiConversation $conversation, ?string $userMessage = null): Generator
     {
         $conversation->load('aiSystem');
+
+        if ($userMessage === null) {
+            $context = $conversation->context ?? [];
+            if (($context['auto_start_pending'] ?? false) === true) {
+                $context['auto_start_pending'] = false;
+                $conversation->update(['context' => $context]);
+            }
+        }
 
         if ($userMessage !== null) {
             AiConversationMessage::create([
@@ -420,7 +434,7 @@ PROMPT;
     }
 
     private function extractFitScore(string $response): ?int {
-        if (preg_match('/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[/%]|\s*out of\s*100)?/i', $response, $matches) !== 1) {
+        if (preg_match('/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i', $response, $matches) !== 1) {
             return null;
         }
 
@@ -461,7 +475,7 @@ PROMPT;
     /**
      * Build the initial user message from job description.
      */
-    private function buildInitialUserMessage(string $jobDescription, ?string $jobTitle): string
+    private function buildInitialJobDescriptionMessage(string $jobDescription, ?string $jobTitle): string
     {
         $message = '';
         if ($jobTitle) {

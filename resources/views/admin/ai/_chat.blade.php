@@ -1,10 +1,11 @@
-@props(['chatUrl', 'conversationId', 'messages' => [], 'actions' => []])
+@props(['chatUrl', 'conversationId', 'messages' => [], 'actions' => [], 'autoStart' => false])
 
 <div data-chat-root x-data="aiChat({
     chatUrl: '{{ $chatUrl }}',
     conversationId: {{ $conversationId }},
     initialMessages: {{ \Illuminate\Support\Js::from($messages) }},
-    csrfToken: '{{ csrf_token() }}'
+    csrfToken: '{{ csrf_token() }}',
+    autoStart: {{ $autoStart ? 'true' : 'false' }}
 })" class="flex flex-col h-[600px] border border-gray-200 rounded-lg overflow-hidden bg-white">
 
     {{-- Messages area --}}
@@ -95,6 +96,8 @@ function aiChat(config) {
         conversationId: config.conversationId,
         csrfToken: config.csrfToken,
         messages: config.initialMessages || [],
+        autoStart: config.autoStart || false,
+        hasAutoStarted: false,
         userInput: '',
         isThinking: false,
         isStreaming: false,
@@ -104,7 +107,30 @@ function aiChat(config) {
         init() {
             this.$el.__chatState = this;
             this.broadcastMessages();
-            this.$nextTick(() => this.scrollToBottom());
+            this.$nextTick(() => {
+                this.scrollToBottom();
+                if (this.autoStart && !this.hasAutoStarted) {
+                    this.hasAutoStarted = true;
+                    this.sendInitialConversation();
+                }
+            });
+        },
+
+        async sendInitialConversation() {
+            this.error = null;
+            this.isThinking = true;
+            this.streamingContent = '';
+
+            try {
+                await this.streamResponse(null);
+            } catch (err) {
+                this.error = err.message || 'Failed to start analysis. Please try again.';
+            } finally {
+                this.isThinking = false;
+                this.isStreaming = false;
+                this.streamingContent = '';
+                this.$nextTick(() => this.scrollToBottom());
+            }
         },
 
         async sendMessage() {
@@ -123,6 +149,23 @@ function aiChat(config) {
             this.streamingContent = '';
 
             try {
+                await this.streamResponse(message);
+            } catch (err) {
+                this.error = err.message || 'Failed to send message. Please try again.';
+            } finally {
+                this.isThinking = false;
+                this.isStreaming = false;
+                this.streamingContent = '';
+                this.$nextTick(() => {
+                    this.scrollToBottom();
+                    this.$refs.chatInput?.focus();
+                });
+            }
+        },
+
+            async streamResponse(message) {
+                const payload = message === null ? {} : { message: message };
+
                 const response = await fetch(this.chatUrl, {
                     method: 'POST',
                     headers: {
@@ -130,7 +173,7 @@ function aiChat(config) {
                         'X-CSRF-TOKEN': this.csrfToken,
                         'Accept': 'text/event-stream',
                     },
-                    body: JSON.stringify({ message: message }),
+                    body: JSON.stringify(payload),
                 });
 
                 if (!response.ok) {
@@ -150,58 +193,43 @@ function aiChat(config) {
                     if (done) break;
 
                     buffer += decoder.decode(value, { stream: true });
-
-                    // Parse SSE events from the buffer
                     const lines = buffer.split('\n');
-                    buffer = lines.pop(); // Keep incomplete line in buffer
+                    buffer = lines.pop();
 
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.substring(6);
+                        if (!line.startsWith('data: ')) {
+                            continue;
+                        }
 
-                            if (data === '[DONE]') {
-                                continue;
+                        const data = line.substring(6);
+
+                        if (data === '[DONE]') {
+                            continue;
+                        }
+
+                        try {
+                            const parsed = JSON.parse(data);
+
+                            if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                                this.streamingContent += parsed.delta.text;
+                                this.$nextTick(() => this.scrollToBottom());
+                            } else if (parsed.type === 'error') {
+                                this.error = parsed.message || 'An error occurred';
+                            } else if (parsed.type === 'content' && parsed.text) {
+                                this.streamingContent += parsed.text;
+                                this.$nextTick(() => this.scrollToBottom());
                             }
-
-                            try {
-                                const parsed = JSON.parse(data);
-
-                                if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-                                    this.streamingContent += parsed.delta.text;
-                                    this.$nextTick(() => this.scrollToBottom());
-                                } else if (parsed.type === 'error') {
-                                    this.error = parsed.message || 'An error occurred';
-                                } else if (parsed.type === 'message_stop') {
-                                    // Stream complete
-                                } else if (parsed.type === 'content' && parsed.text) {
-                                    // Simple content event from our controller
-                                    this.streamingContent += parsed.text;
-                                    this.$nextTick(() => this.scrollToBottom());
-                                }
-                            } catch (e) {
-                                // Non-JSON data line, ignore
-                            }
+                        } catch (e) {
+                            // Ignore malformed SSE payloads.
                         }
                     }
                 }
 
-                // Move streamed content to messages
                 if (this.streamingContent) {
                     this.messages.push({ role: 'assistant', content: this.streamingContent });
                     this.broadcastMessages();
                 }
-            } catch (err) {
-                this.error = err.message || 'Failed to send message. Please try again.';
-            } finally {
-                this.isThinking = false;
-                this.isStreaming = false;
-                this.streamingContent = '';
-                this.$nextTick(() => {
-                    this.scrollToBottom();
-                    this.$refs.chatInput?.focus();
-                });
-            }
-        },
+            },
 
         scrollToBottom() {
             const container = this.$refs.messagesContainer;

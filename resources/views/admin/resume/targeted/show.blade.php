@@ -112,6 +112,7 @@
             'chatUrl' => route('admin.resume.targeted.chat', $conversation),
             'conversationId' => $conversation->id,
             'messages' => $messages,
+            'autoStart' => $shouldAutoStart,
             'actions' => $conversation->status === 'active' ? view('admin.resume.targeted._actions', ['conversation' => $conversation]) : '',
         ])
     </div>

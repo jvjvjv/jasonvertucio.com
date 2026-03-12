@@ -88,6 +88,8 @@ class TargetedResumeController extends Controller
 
         $targetedResume = $conversation->targetedResume;
         $tailoredPreviewHtml = null;
+        $shouldAutoStart = ($conversation->messages->where('role', 'assistant')->count() === 0)
+            && ((bool) data_get($conversation->context, 'auto_start_pending', false));
 
         if ($targetedResume) {
             $tailoredData = $targetedResume->tailored_data ?? [];
@@ -108,7 +110,7 @@ class TargetedResumeController extends Controller
             }
         }
 
-        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'tailoredPreviewHtml'));
+        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'tailoredPreviewHtml', 'shouldAutoStart'));
     }
 
     /**
@@ -117,7 +119,7 @@ class TargetedResumeController extends Controller
     public function chat(Request $request, AiConversation $conversation): StreamedResponse
     {
         $request->validate([
-            'message' => ['required', 'string'],
+            'message' => ['nullable', 'string'],
         ]);
 
         return response()->stream(function () use ($request, $conversation) {
