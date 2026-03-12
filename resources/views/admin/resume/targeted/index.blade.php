@@ -50,12 +50,14 @@
                                 $resume = $conversation->targetedResume;
                                 $jobTitle = $resume?->position ?? data_get($conversation->context, 'job_title');
                                 $baseVersion = $resume?->resumeVersion?->version ?? data_get($conversation->context, 'resume_version_id');
+                                $companyName = $resume?->company_name ?? data_get($conversation->context, 'company_name');
+                                $fitScore = $resume?->fit_score ?? data_get($conversation->context, 'fit_score');
                             @endphp
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-4 py-3">
                                     <a href="{{ route('admin.resume.targeted.show', $conversation) }}"
                                         class="font-medium text-primary hover:underline">
-                                        {{ $resume?->company_name ?? ($conversation->title ?: 'Untitled conversation') }}
+                                        {{ $companyName ?: ($conversation->title ?: 'Untitled conversation') }}
                                     </a>
                                     <div class="mt-1 text-xs text-gray-500">
                                         {{ $conversation->messages_count }} messages
@@ -66,10 +68,10 @@
                                 </td>
                                 <td class="px-4 py-3 text-gray-600">{{ $jobTitle ?: '—' }}</td>
                                 <td class="px-4 py-3">
-                                    @if($resume?->fit_score)
+                                    @if($fitScore)
                                         <span class="inline-flex items-center gap-1 text-xs font-medium
-                                            {{ $resume->fit_score >= 70 ? 'text-green-700' : ($resume->fit_score >= 40 ? 'text-yellow-700' : 'text-red-700') }}">
-                                            {{ $resume->fit_score }}%
+                                            {{ $fitScore >= 70 ? 'text-green-700' : ($fitScore >= 40 ? 'text-yellow-700' : 'text-red-700') }}">
+                                            {{ $fitScore }}%
                                         </span>
                                     @else
                                         <span class="text-gray-400">&mdash;</span>

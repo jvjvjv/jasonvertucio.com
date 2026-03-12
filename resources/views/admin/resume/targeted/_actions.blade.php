@@ -58,7 +58,7 @@ function resumeActions(config) {
 
             // Find the last assistant message that contains tailored-resume data
             const messages = this.messages;
-            let tailoredHtml = null;
+            let tailoredContent = null;
             let fitScore = null;
 
             // Search messages in reverse for the tailored resume block
@@ -67,9 +67,9 @@ function resumeActions(config) {
                 if (msg.role !== 'assistant') continue;
 
                 // Look for tailored resume code block
-                const htmlMatch = msg.content.match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
-                if (htmlMatch) {
-                    tailoredHtml = htmlMatch[1].trim();
+                const contentMatch = msg.content.match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
+                if (contentMatch) {
+                    tailoredContent = contentMatch[1].trim();
                 }
 
                 // Look for fit score
@@ -79,10 +79,10 @@ function resumeActions(config) {
                     if (fitScore > 100) fitScore = null;
                 }
 
-                if (tailoredHtml) break;
+                if (tailoredContent) break;
             }
 
-            if (!tailoredHtml) {
+            if (!tailoredContent) {
                 this.finalizeError = 'No tailored resume found in the conversation. Please complete the tailoring process first.';
                 this.isFinalizing = false;
                 return;
@@ -97,7 +97,7 @@ function resumeActions(config) {
                         'Accept': 'application/json',
                     },
                     body: JSON.stringify({
-                        tailored_html: tailoredHtml,
+                        tailored_content: tailoredContent,
                         fit_score: fitScore,
                     }),
                 });

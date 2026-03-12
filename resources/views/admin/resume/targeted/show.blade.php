@@ -16,6 +16,57 @@
             </div>
         </div>
 
+        @if(session('success'))
+            <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <section class="mb-6 border border-gray-200 rounded-lg bg-white overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-lg font-heading font-semibold text-primary">Conversation Details</h2>
+                <p class="text-xs text-gray-500 mt-1">Edit the chat title and any inferred company or role details.</p>
+            </div>
+            <form method="POST" action="{{ route('admin.resume.targeted.update-metadata', $conversation) }}" class="p-4 space-y-4">
+                @csrf
+                @method('PUT')
+                <div class="grid gap-4 md:grid-cols-3">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Chat Title</label>
+                        <input id="title" name="title" type="text" value="{{ old('title', $conversation->title) }}"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                            placeholder="Targeted Resume">
+                    </div>
+                    <div>
+                        <label for="company_name" class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                        <input id="company_name" name="company_name" type="text" value="{{ old('company_name', data_get($conversation->context, 'company_name')) }}"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                            placeholder="Inferred or manual company name">
+                    </div>
+                    <div>
+                        <label for="job_title" class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                        <input id="job_title" name="job_title" type="text" value="{{ old('job_title', data_get($conversation->context, 'job_title')) }}"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                            placeholder="Inferred or manual job title">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                    <div class="text-xs text-gray-500">
+                        @if(data_get($conversation->context, 'fit_score'))
+                            Current fit score: {{ data_get($conversation->context, 'fit_score') }}%
+                        @else
+                            Fit score will appear here once the assistant provides it.
+                        @endif
+                    </div>
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                        <i class="fa-classic fa-floppy-disk"></i>
+                        Save Details
+                    </button>
+                </div>
+            </form>
+        </section>
+
         {{-- Finalized resume info --}}
         @if($targetedResume)
             <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
@@ -43,18 +94,14 @@
                 </div>
             </div>
 
-            @php
-                $tailoredHtml = data_get($targetedResume->tailored_data, 'html');
-            @endphp
-
-            @if($tailoredHtml)
+            @if($tailoredPreviewHtml)
                 <section class="mb-8 border border-gray-200 rounded-lg overflow-hidden bg-white">
                     <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
                         <h2 class="text-lg font-heading font-semibold text-primary">Finalized Resume Preview</h2>
-                        <p class="text-xs text-gray-500 mt-1">Saved HTML preview of the targeted resume.</p>
+                        <p class="text-xs text-gray-500 mt-1">Saved preview of the targeted resume.</p>
                     </div>
                     <div class="px-6 py-5 prose prose-sm max-w-none">
-                        {!! $tailoredHtml !!}
+                        {!! $tailoredPreviewHtml !!}
                     </div>
                 </section>
             @endif

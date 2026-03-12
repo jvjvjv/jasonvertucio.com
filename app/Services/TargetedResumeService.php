@@ -10,6 +10,7 @@ use App\Models\AiSystem;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use Generator;
+use Illuminate\Support\Arr;
 
 class TargetedResumeService
 {
@@ -140,6 +141,8 @@ class TargetedResumeService
                         'model' => $conversation->aiSystem->model,
                     ],
                 ]);
+
+                $this->syncConversationMetadataFromAssistantResponse($conversation, $fullResponse);
             }
 
             // Log the interaction
@@ -176,9 +179,10 @@ class TargetedResumeService
     /**
      * Save a finalized targeted resume from conversation context.
      */
-    public function saveTailoredResume(AiConversation $conversation, string $tailoredHtml, ?int $fitScore = null): TargetedResume
+    public function saveTailoredResume(AiConversation $conversation, string $tailoredContent, ?int $fitScore = null): TargetedResume
     {
         $context = $conversation->context ?? [];
+        $format = $this->detectTailoredResumeFormat($tailoredContent);
 
         $targetedResume = TargetedResume::updateOrCreate(
             ['ai_conversation_id' => $conversation->id],
@@ -187,7 +191,12 @@ class TargetedResumeService
                 'company_name' => $context['company_name'] ?? 'Unknown Company',
                 'position' => $context['job_title'] ?? 'Unknown Position',
                 'job_description' => $context['job_description'] ?? '',
-                'tailored_data' => ['html' => $tailoredHtml],
+                'tailored_data' => [
+                    'content' => $tailoredContent,
+                    'format' => $format,
+                    'markdown' => $format === 'markdown' ? $tailoredContent : null,
+                    'html' => $format === 'html' ? $tailoredContent : null,
+                ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
                 'status' => 'finalized',
@@ -233,8 +242,15 @@ You are an expert career advisor and resume tailoring specialist. You help candi
 
 You will be given a job posting. Follow this multi-step process:
 
+### Step 0: Initial Analysis
+Find the company name and position from the job description. If not explicitly stated, make your best guess based on the content. Indicate these in your response as "Company Name: XYZ" and "Position: ABC". This will help with tailoring the resume later.
+
 ### Step 1: Company Analysis
-Describe the company briefly — high-level and important notes only. Identify the key requirements and qualifications from the job description.
+Begin your first response with these lines when you can infer them from the job description:
+Company: <company name>
+Job Title: <job title>
+
+After that, describe the company briefly — high-level and important notes only. Identify the key requirements and qualifications from the job description.
 
 ### Step 2: Eligibility Assessment
 Using the candidate's resume data above, assess their eligibility for this role. Identify:
@@ -246,42 +262,36 @@ Using the candidate's resume data above, assess their eligibility for this role.
 Ask if there is any additional experience, skills, or accomplishments NOT in the resume that could strengthen the application. Wait for the candidate's response.
 
 ### Step 4: Fit Assessment
-Provide a fit score (1-100) and a brief summary of fit for the role. Ask if the candidate wants to proceed with tailoring their resume.
+Provide a fit score (1-100) and a brief summary of fit for the role. Format the score line as `Fit Score: <number>`. Ask if the candidate wants to proceed with tailoring their resume.
 
 ### Step 5: Resume Tailoring (only if candidate agrees to proceed)
-Generate a tailored version of the resume optimized for this job posting. The tailored resume must be returned as HTML wrapped in a code block with the language tag `tailored-resume`.
+Generate a tailored version of the resume optimized for this job posting. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`.
 
 Use this structure:
 
-```html
-<h1>Summary</h1>
-<p>Professional summary tailored to the role...</p>
+```md
+# Summary
+Professional summary tailored to the role...
 
-<h1>Skills</h1>
-<h2>Category Name</h2>
-<ul>
-  <li>Skill 1</li>
-  <li>Skill 2</li>
-</ul>
+# Skills
+## Category Name
+- Skill 1
+- Skill 2
 
-<h1>Experience</h1>
-<h2>Job Title</h2>
-<h3>Company Name — Location — Start Date – End Date</h3>
-<ul>
-  <li>Achievement or responsibility</li>
-</ul>
+# Experience
+## Job Title
+### Company Name - Location - Start Date - End Date
+- Achievement or responsibility
 
-<h1>Education</h1>
-<h2>Degree</h2>
-<h3>Institution — Start Date – End Date</h3>
-<p>Description if applicable</p>
+# Education
+## Degree
+### Institution - Start Date - End Date
+Description if applicable
 
-<h1>Projects</h1>
-<h2>Project Name</h2>
-<p>Description</p>
-<ul>
-  <li>Detail or highlight</li>
-</ul>
+# Projects
+## Project Name
+Description
+- Detail or highlight
 ```
 
 When tailoring:
@@ -289,7 +299,7 @@ When tailoring:
 - Reorder and emphasize skills that match the job requirements
 - Refine experience bullet points to use keywords from the job description
 - Keep all factual information accurate — only change presentation and emphasis
-- Use semantic HTML only (h1, h2, h3, p, ul, li) — no classes, styles, or divs
+- Use Markdown only for new tailored resumes
 
 ### Step 6: Application Assistance
 After providing the tailored resume, offer to help with any application questions the candidate may encounter during the application process.
@@ -302,6 +312,152 @@ After providing the tailored resume, offer to help with any application question
 PROMPT;
     }
 
+    private function detectTailoredResumeFormat(string $tailoredContent): string {
+        return preg_match('/<\/?(?:h1|h2|h3|p|ul|ol|li|br)\b/i', $tailoredContent) === 1
+            ? 'html'
+            : 'markdown';
+    }
+
+
+    public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation {
+        $context = $conversation->context ?? [];
+
+        $title = trim((string) ($data['title'] ?? ''));
+        $companyName = trim((string) ($data['company_name'] ?? ''));
+        $jobTitle = trim((string) ($data['job_title'] ?? ''));
+
+        $conversation->title = $title !== '' ? $title : null;
+
+        if ($companyName !== '') {
+            $context['company_name'] = $companyName;
+            $context['company_name_manual'] = true;
+        } else {
+            unset($context['company_name'], $context['company_name_manual']);
+        }
+
+        if ($jobTitle !== '') {
+            $context['job_title'] = $jobTitle;
+            $context['job_title_manual'] = true;
+        } else {
+            unset($context['job_title'], $context['job_title_manual']);
+        }
+
+        $context['title_manual'] = $title !== '';
+
+        $conversation->context = $context;
+        $conversation->save();
+
+        if ($conversation->targetedResume) {
+            $conversation->targetedResume->update([
+                'company_name' => $context['company_name'] ?? $conversation->targetedResume->company_name,
+                'position' => $context['job_title'] ?? $conversation->targetedResume->position,
+                'fit_score' => $context['fit_score'] ?? $conversation->targetedResume->fit_score,
+                'fit_summary' => $context['fit_summary'] ?? $conversation->targetedResume->fit_summary,
+            ]);
+        }
+
+        return $conversation->fresh(['targetedResume']);
+    }
+
+    private function syncConversationMetadataFromAssistantResponse(AiConversation $conversation, string $response): void {
+        $context = $conversation->context ?? [];
+        $updates = [];
+
+        if (!Arr::get($context, 'company_name_manual')) {
+            $companyName = $this->extractCompanyName($response);
+            if ($companyName !== null) {
+                $updates['company_name'] = $companyName;
+            }
+        }
+
+        if (!Arr::get($context, 'job_title_manual')) {
+            $jobTitle = $this->extractJobTitle($response);
+            if ($jobTitle !== null) {
+                $updates['job_title'] = $jobTitle;
+            }
+        }
+
+        $fitScore = $this->extractFitScore($response);
+        if ($fitScore !== null) {
+            $updates['fit_score'] = $fitScore;
+        }
+
+        $fitSummary = $this->extractFitSummary($response);
+        if ($fitSummary !== null) {
+            $updates['fit_summary'] = $fitSummary;
+        }
+
+        if ($updates === []) {
+            return;
+        }
+
+        $conversation->context = array_merge($context, $updates);
+
+        if (!Arr::get($context, 'title_manual')) {
+            $conversation->title = $this->buildConversationTitle(
+                $updates['company_name'] ?? ($context['company_name'] ?? null),
+                $updates['job_title'] ?? ($context['job_title'] ?? null),
+            );
+        }
+
+        $conversation->save();
+    }
+
+    private function extractCompanyName(string $response): ?string {
+        if (preg_match('/^Company:\s*(.+)$/im', $response, $matches) === 1) {
+            return $this->cleanExtractedMetadata($matches[1]);
+        }
+
+        return null;
+    }
+
+    private function extractJobTitle(string $response): ?string {
+        if (preg_match('/^(?:Job Title|Position|Role):\s*(.+)$/im', $response, $matches) === 1) {
+            return $this->cleanExtractedMetadata($matches[1]);
+        }
+
+        return null;
+    }
+
+    private function extractFitScore(string $response): ?int {
+        if (preg_match('/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[/%]|\s*out of\s*100)?/i', $response, $matches) !== 1) {
+            return null;
+        }
+
+        $fitScore = (int) $matches[1];
+
+        return $fitScore >= 1 && $fitScore <= 100 ? $fitScore : null;
+    }
+
+    private function extractFitSummary(string $response): ?string {
+        if (preg_match('/^Fit Summary:\s*(.+)$/im', $response, $matches) === 1) {
+            return $this->cleanExtractedMetadata($matches[1]);
+        }
+
+        return null;
+    }
+
+    private function cleanExtractedMetadata(string $value): ?string {
+        $cleaned = trim(preg_replace('/^[\-*#>\s`]+|[\s`]+$/', '', $value) ?? $value);
+
+        return $cleaned !== '' ? $cleaned : null;
+    }
+
+    private function buildConversationTitle(?string $companyName, ?string $jobTitle): string {
+        if ($companyName && $jobTitle) {
+            return "{$companyName} - {$jobTitle}";
+        }
+
+        if ($jobTitle) {
+            return "Targeted Resume: {$jobTitle}";
+        }
+
+        if ($companyName) {
+            return "Targeted Resume: {$companyName}";
+        }
+
+        return 'Targeted Resume';
+    }
     /**
      * Build the initial user message from job description.
      */

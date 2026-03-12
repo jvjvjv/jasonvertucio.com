@@ -169,33 +169,37 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * @return array{name: string, title: string, email: string, phone: string, resume: string}
+     * @return array{name: string, title: string, email: string, phone: string, resume: string, resume_format: string}
      */
     protected function buildTemplateData(TargetedResume $targetedResume): array
     {
         $targetedResume->loadMissing('resumeVersion.personalInfo');
 
         $personalInfo = $targetedResume->resumeVersion?->personalInfo;
-        $resumeHtml = (string) data_get($targetedResume->tailored_data, 'html', '');
+        $resumeFormat = (string) data_get($targetedResume->tailored_data, 'format', '');
+        $resumeContent = (string) data_get($targetedResume->tailored_data, 'content', '');
+
+        if ($resumeContent === '') {
+            $resumeContent = (string) data_get($targetedResume->tailored_data, 'markdown', '');
+            if ($resumeContent !== '') {
+                $resumeFormat = 'markdown';
+            }
+        }
+
+        if ($resumeContent === '') {
+            $resumeContent = (string) data_get($targetedResume->tailored_data, 'html', '');
+            if ($resumeContent !== '') {
+                $resumeFormat = 'html';
+            }
+        }
 
         return [
             'name' => $personalInfo?->name ?? '',
             'title' => $personalInfo?->title ?? '',
             'email' => $personalInfo?->email ?? '',
             'phone' => $personalInfo?->phone ?? '',
-            'resume' => $this->htmlToResumeText($resumeHtml),
+            'resume' => $resumeContent,
+            'resume_format' => $resumeFormat ?: 'markdown',
         ];
-    }
-
-    protected function htmlToResumeText(string $html): string
-    {
-        $formatted = preg_replace('/<li[^>]*>/i', "\n• ", $html) ?? $html;
-        $formatted = preg_replace('/<\/(p|h1|h2|h3|ul|ol|li)>/i', "\n", $formatted) ?? $formatted;
-        $formatted = preg_replace('/<br\s*\/?\s*>/i', "\n", $formatted) ?? $formatted;
-        $formatted = strip_tags($formatted);
-        $formatted = html_entity_decode($formatted, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $formatted = preg_replace("/\n{3,}/", "\n\n", $formatted) ?? $formatted;
-
-        return trim($formatted);
     }
 }

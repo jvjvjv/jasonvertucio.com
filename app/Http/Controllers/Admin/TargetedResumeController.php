@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
+use App\Http\Requests\UpdateTargetedResumeConversationRequest;
 use App\Models\AiConversation;
 use App\Models\AiSystem;
 use App\Models\ResumeVersion;
@@ -12,6 +13,7 @@ use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use League\CommonMark\CommonMarkConverter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TargetedResumeController extends Controller
@@ -85,8 +87,28 @@ class TargetedResumeController extends Controller
             ->toArray();
 
         $targetedResume = $conversation->targetedResume;
+        $tailoredPreviewHtml = null;
 
-        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume'));
+        if ($targetedResume) {
+            $tailoredData = $targetedResume->tailored_data ?? [];
+            $tailoredFormat = data_get($tailoredData, 'format');
+            $tailoredContent = data_get($tailoredData, 'content');
+
+            if (!is_string($tailoredContent) || $tailoredContent === '') {
+                $tailoredContent = data_get($tailoredData, 'markdown') ?: data_get($tailoredData, 'html');
+                $tailoredFormat = data_get($tailoredData, 'markdown') ? 'markdown' : (data_get($tailoredData, 'html') ? 'html' : $tailoredFormat);
+            }
+
+            if (is_string($tailoredContent) && $tailoredContent !== '') {
+                if ($tailoredFormat === 'markdown') {
+                    $tailoredPreviewHtml = (new CommonMarkConverter())->convert($tailoredContent)->getContent();
+                } else {
+                    $tailoredPreviewHtml = $tailoredContent;
+                }
+            }
+        }
+
+        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'tailoredPreviewHtml'));
     }
 
     /**
@@ -125,14 +147,17 @@ class TargetedResumeController extends Controller
     public function finalize(Request $request, AiConversation $conversation): JsonResponse
     {
         $request->validate([
-            'tailored_html' => ['required', 'string'],
+            'tailored_content' => ['required_without:tailored_html', 'string'],
+            'tailored_html' => ['nullable', 'string'],
             'fit_score' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
+
+        $tailoredContent = $request->input('tailored_content') ?? $request->input('tailored_html');
 
         try {
             $targetedResume = $this->targetedResumeService->saveTailoredResume(
                 $conversation,
-                $request->input('tailored_html'),
+                $tailoredContent,
                 $request->input('fit_score'),
             );
         } catch (\Throwable $exception) {
@@ -147,6 +172,14 @@ class TargetedResumeController extends Controller
             'targeted_resume_id' => $targetedResume->id,
             'message' => 'Targeted resume saved successfully.',
         ]);
+    }
+
+    public function updateMetadata(\App\Http\Requests\UpdateTargetedResumeConversationRequest $request, AiConversation $conversation): \Illuminate\Http\RedirectResponse {
+        $this->targetedResumeService->updateConversationMetadata($conversation, $request->validated());
+
+        return redirect()
+            ->route('admin.resume.targeted.show', $conversation)
+            ->with('success', 'Targeted resume chat details updated.');
     }
 
     /**

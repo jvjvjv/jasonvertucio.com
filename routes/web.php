@@ -142,6 +142,7 @@ Route::middleware(['auth', 'can:edit-resume'])
         Route::get('/targeted-builder/new', [TargetedResumeController::class, 'create'])->name('targeted.create');
         Route::post('/targeted-builder/start', [TargetedResumeController::class, 'start'])->name('targeted.start');
         Route::get('/targeted-builder/{conversation}', [TargetedResumeController::class, 'show'])->name('targeted.show');
+        Route::put('/targeted-builder/{conversation}/metadata', [TargetedResumeController::class, 'updateMetadata'])->name('targeted.update-metadata');
         Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat'])->name('targeted.chat');
         Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize'])->name('targeted.finalize');
         Route::get('/targeted-resume/{targetedResume}/download/{format}', [TargetedResumeController::class, 'download'])->name('targeted.download');

@@ -68,11 +68,16 @@
 
     {{-- Input area --}}
     <div class="border-t border-gray-200 p-4">
-        <form @submit.prevent="sendMessage" class="flex gap-3">
-            <input type="text" x-model="userInput" x-ref="chatInput"
+        <form @submit.prevent="sendMessage" class="flex gap-3 items-end">
+            <div class="flex-1">
+                <textarea x-model="userInput" x-ref="chatInput"
+                    @keydown="handleComposerKeydown($event)"
                 :disabled="isThinking || isStreaming"
-                placeholder="Type your message..."
-                class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-400">
+                    placeholder="Type your message..."
+                    rows="3"
+                    class="w-full resize-y rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-400"></textarea>
+                <p class="mt-2 text-xs text-gray-500">Enter inserts a new line. Ctrl+Enter or Cmd+Enter sends.</p>
+            </div>
             <button type="submit"
                 :disabled="isThinking || isStreaming || !userInput.trim()"
                 class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -212,6 +217,17 @@ function aiChat(config) {
                     messages: this.messages,
                 },
             }));
+        },
+
+        handleComposerKeydown(event) {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            if (event.metaKey || event.ctrlKey) {
+                event.preventDefault();
+                this.sendMessage();
+            }
         },
 
         renderMarkdown(text) {
