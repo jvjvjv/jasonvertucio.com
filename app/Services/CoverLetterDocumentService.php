@@ -72,12 +72,6 @@ class CoverLetterDocumentService
             $coverLetter->docx_path = $outputPath;
             $coverLetter->save();
 
-            Log::info('Cover letter DOCX generated successfully', [
-                'id' => $coverLetter->id,
-                'path' => $outputPath,
-                'size' => $result['size'] ?? null,
-            ]);
-
             return $result;
 
         } finally {
@@ -135,12 +129,6 @@ class CoverLetterDocumentService
 
             $coverLetter->pdf_path = $pdfPath;
             $coverLetter->save();
-
-            Log::info('Cover letter PDF generated successfully', [
-                'id' => $coverLetter->id,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ]);
 
             return [
                 'success' => true,

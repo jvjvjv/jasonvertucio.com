@@ -71,12 +71,6 @@ class TargetedResumeDocumentService
 
             $size = filesize($outputPath);
 
-            Log::info('Targeted resume DOCX generated successfully', [
-                'id' => $targetedResume->id,
-                'path' => $outputPath,
-                'size' => $size,
-            ]);
-
             return [
                 'success' => true,
                 'path' => $outputPath,
@@ -231,12 +225,6 @@ class TargetedResumeDocumentService
 
             $targetedResume->pdf_path = $pdfPath;
             $targetedResume->save();
-
-            Log::info('Targeted resume PDF generated successfully', [
-                'id' => $targetedResume->id,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ]);
 
             return [
                 'success' => true,

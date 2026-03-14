@@ -124,12 +124,6 @@ trait GeneratesResumeDocuments
                 return $result;
             }
 
-            Log::info('Resume DOCX generated successfully', [
-                'version' => $version,
-                'path' => $outputPath,
-                'size' => $result['size'] ?? null,
-            ]);
-
             return $result;
 
         } finally {
@@ -190,12 +184,6 @@ trait GeneratesResumeDocuments
                     'error' => 'PDF file was not created.',
                 ];
             }
-
-            Log::info('Resume PDF generated successfully', [
-                'version' => $version,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ]);
 
             return [
                 'success' => true,
