@@ -15,6 +15,7 @@ class CoverLetter extends Model
      */
     protected $fillable = [
         'resume_version_id',
+        'targeted_resume_id',
         'company_name',
         'position',
         'date',
@@ -42,12 +43,29 @@ class CoverLetter extends Model
         return $this->belongsTo(ResumeVersion::class, 'resume_version_id');
     }
 
+    public function targetedResume(): BelongsTo
+    {
+        return $this->belongsTo(TargetedResume::class);
+    }
+
     /**
      * Generate the base filename for this cover letter's documents.
      */
     public function generateFilename(): string
     {
-        return "{$this->company_name} {$this->position} {$this->date->format('Y-m-d')}";
+        $companyName = $this->sanitizeFilenamePart($this->company_name);
+        $position = $this->sanitizeFilenamePart($this->position);
+
+        return trim("{$companyName} {$position} {$this->date->format('Y-m-d')}");
+    }
+
+    private function sanitizeFilenamePart(?string $value): string
+    {
+        $sanitized = preg_replace('~[\\/:*?"<>|]+~', '-', (string) $value) ?? '';
+        $sanitized = preg_replace('/\s+/', ' ', $sanitized) ?? $sanitized;
+        $sanitized = trim($sanitized, " .-\t\n\r\0\x0B");
+
+        return $sanitized !== '' ? $sanitized : 'Unknown';
     }
 
     /**

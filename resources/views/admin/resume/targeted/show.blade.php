@@ -96,13 +96,43 @@
 
         @endif
 
+        {{-- Finalized cover letter info --}}
+        @if($coverLetter)
+            <div class="mb-6 px-4 py-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-medium">Cover letter finalized for {{ $coverLetter->company_name }} &mdash; {{ $coverLetter->position }}</p>
+                        <p class="text-xs mt-1">{{ $coverLetter->date->format('M j, Y') }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        @if($coverLetter->docxExists())
+                            <a href="{{ route('admin.cover-letters.download.docx', $coverLetter) }}"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-blue-300 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fa-classic fa-file-word"></i> DOCX
+                            </a>
+                        @endif
+                        @if($coverLetter->pdfExists())
+                            <a href="{{ route('admin.cover-letters.download.pdf', $coverLetter) }}"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-blue-300 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-50 transition-colors">
+                                <i class="fa-classic fa-file-pdf"></i> PDF
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- Chat interface --}}
         @include('admin.ai._chat', [
             'chatUrl' => route('admin.resume.targeted.chat', $conversation),
             'conversationId' => $conversation->id,
             'messages' => $messages,
             'autoStart' => $shouldAutoStart,
-            'actions' => $conversation->status === 'active' ? view('admin.resume.targeted._actions', ['conversation' => $conversation]) : '',
+            'actions' => view('admin.resume.targeted._actions', [
+                'conversation' => $conversation,
+                'resumeFinalized' => $targetedResume !== null,
+                'coverLetterFinalized' => $coverLetter !== null,
+            ]),
         ])
     </div>
 @endsection

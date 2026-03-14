@@ -88,10 +88,11 @@ class TargetedResumeController extends Controller
             ->toArray();
 
         $targetedResume = $conversation->targetedResume;
+        $coverLetter = $targetedResume?->coverLetters()->latest()->first();
         $shouldAutoStart = ($conversation->messages->where('role', 'assistant')->count() === 0)
             && ((bool) data_get($conversation->context, 'auto_start_pending', false));
 
-        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'shouldAutoStart'));
+        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'coverLetter', 'shouldAutoStart'));
     }
 
     /**
@@ -151,6 +152,34 @@ class TargetedResumeController extends Controller
             'success' => true,
             'targeted_resume_id' => $targetedResume->id,
             'message' => 'Targeted resume saved successfully.',
+        ]);
+    }
+
+    /**
+     * Finalize a cover letter from the conversation.
+     */
+    public function finalizeCoverLetter(Request $request, AiConversation $conversation): JsonResponse
+    {
+        $request->validate([
+            'cover_letter_content' => ['required', 'string'],
+        ]);
+
+        try {
+            $coverLetter = $this->targetedResumeService->saveCoverLetter(
+                $conversation,
+                $request->input('cover_letter_content'),
+            );
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'cover_letter_id' => $coverLetter->id,
+            'message' => 'Cover letter saved successfully.',
         ]);
     }
 

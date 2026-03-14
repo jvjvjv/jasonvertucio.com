@@ -7,6 +7,7 @@ use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
 use App\Models\AiSystem;
+use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use Generator;
@@ -18,6 +19,7 @@ class TargetedResumeService
         private AiClientFactory $clientFactory,
         private ResumeDataServiceContract $resumeDataService,
         private \App\Services\TargetedResumeDocumentService $documentService,
+        private CoverLetterDocumentService $coverLetterDocumentService,
     ) {
     }
 
@@ -233,6 +235,87 @@ class TargetedResumeService
     }
 
     /**
+     * Save a cover letter generated from the conversation.
+     */
+    public function saveCoverLetter(AiConversation $conversation, string $coverLetterContent): CoverLetter
+    {
+        $targetedResume = $conversation->targetedResume;
+
+        if (!$targetedResume) {
+            throw new \RuntimeException('Please finalize the targeted resume before creating a cover letter.');
+        }
+
+        $context = $conversation->context ?? [];
+        $resumeVersion = ResumeVersion::find($context['resume_version_id'] ?? null);
+        $personalInfo = $resumeVersion?->personalInfo;
+
+        $parsed = $this->parseCoverLetterContent($coverLetterContent);
+
+        $coverLetter = CoverLetter::updateOrCreate(
+            ['targeted_resume_id' => $targetedResume->id],
+            [
+                'resume_version_id' => $targetedResume->resume_version_id,
+                'company_name' => $context['company_name'] ?? $targetedResume->company_name ?? 'Unknown Company',
+                'position' => $context['job_title'] ?? $targetedResume->position ?? 'Unknown Position',
+                'date' => now(),
+                'greeting' => $parsed['greeting'],
+                'message_body' => $parsed['message_body'],
+                'closing' => $parsed['closing'],
+                'signature' => $personalInfo?->name,
+            ]
+        );
+
+        $docxResult = $this->coverLetterDocumentService->generateDocx($coverLetter);
+        if (!$docxResult['success']) {
+            throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the cover letter DOCX.');
+        }
+
+        $pdfResult = $this->coverLetterDocumentService->generatePdf($coverLetter);
+        if (!$pdfResult['success']) {
+            throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the cover letter PDF.');
+        }
+
+        return $coverLetter->fresh();
+    }
+
+    /**
+     * Parse cover letter content into greeting, body, and closing.
+     *
+     * @return array{greeting: string, message_body: string, closing: string}
+     */
+    private function parseCoverLetterContent(string $content): array
+    {
+        $lines = preg_split('/\r?\n/', trim($content));
+
+        $greeting = 'Dear Hiring Manager,';
+        $closing = 'Sincerely,';
+
+        // Check first line for a greeting
+        if (!empty($lines) && preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $lines[0])) {
+            $greeting = trim(array_shift($lines));
+        }
+
+        // Check last non-empty line for a closing
+        $lastIndex = count($lines) - 1;
+        while ($lastIndex >= 0 && trim($lines[$lastIndex]) === '') {
+            $lastIndex--;
+        }
+
+        if ($lastIndex >= 0 && preg_match('/^(Sincerely|Best regards|Kind regards|Regards|Warm regards|Respectfully|Thank you|With appreciation)/i', trim($lines[$lastIndex]))) {
+            $closing = trim($lines[$lastIndex]);
+            array_splice($lines, $lastIndex);
+        }
+
+        $messageBody = trim(implode("\n", $lines));
+
+        return [
+            'greeting' => $greeting,
+            'message_body' => $messageBody,
+            'closing' => $closing,
+        ];
+    }
+
+    /**
      * Build the system prompt with full resume data.
      */
     public function buildSystemPrompt(ResumeVersion $resumeVersion): string
@@ -313,8 +396,19 @@ When tailoring:
 - Keep all factual information accurate — only change presentation and emphasis
 - Use Markdown only for new tailored resumes
 
-### Step 6: Application Assistance
-After providing the tailored resume, offer to help with any application questions the candidate may encounter during the application process.
+### Step 6: Cover Letter & Application Assistance
+After providing the tailored resume, offer to write a cover letter for the position. If the candidate agrees, generate a cover letter wrapped in a code block with the language tag `cover-letter`.
+
+The cover letter content should follow this structure:
+- Start with a greeting line (e.g., "Dear Hiring Manager,")
+- Body paragraphs explaining fit for the role
+- A closing line (e.g., "Sincerely,")
+
+Do NOT include the candidate's name, address, date, or signature in the cover letter — those are added automatically from their profile data.
+
+When providing the cover letter, wrap it in a code block with the language tag `cover-letter`.
+
+Also offer to help with any other application questions the candidate may encounter.
 
 ## Important Guidelines
 - Be concise and actionable in your responses
