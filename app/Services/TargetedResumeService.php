@@ -379,7 +379,7 @@ Generate a tailored version of the resume optimized for this job posting. The ta
 
 Use this structure:
 
-```md
+```tailored-resume
 # Summary
 Professional summary tailored to the role...
 
@@ -413,6 +413,11 @@ When tailoring:
 
 ### Step 6: Cover Letter & Application Assistance
 After providing the tailored resume, offer to write a cover letter for the position. If the candidate agrees, generate a cover letter wrapped in a code block with the language tag `cover-letter`.
+
+```cover-letter
+
+(Cover letter content here)
+```
 
 The cover letter content should follow this structure:
 - Start with a greeting line (e.g., "Dear Hiring Manager,")
