@@ -94,7 +94,7 @@
                                 <td class="px-4 py-3">
                                     <div class="flex items-center justify-end gap-2">
                                         <a href="{{ route('admin.resume.targeted.show', $conversation) }}"
-                                            class="p-2 text-gray-500 hover:text-primary transition-colors"
+                                            class="p-2 text-gray-500 hover:text-secondary transition-colors"
                                             title="View conversation">
                                             <i class="fa-classic fa-comments"></i>
                                         </a>
@@ -102,7 +102,7 @@
                                             <form action="{{ route('admin.resume.targeted.regenerate', $resume) }}" method="POST" class="inline">
                                                 @csrf
                                                 <button type="submit"
-                                                    class="p-2 text-gray-500 hover:text-primary transition-colors"
+                                                    class="p-2 text-gray-500 hover:text-secondary transition-colors cursor-pointer"
                                                     title="Regenerate DOCX/PDF">
                                                     <i class="fa-classic fa-arrows-rotate"></i>
                                                 </button>
@@ -110,14 +110,14 @@
                                         @endif
                                         @if($resume && $resume->docxExists())
                                             <a href="{{ route('admin.resume.targeted.download', [$resume, 'docx']) }}"
-                                                class="p-2 text-gray-500 hover:text-primary transition-colors"
+                                                class="p-2 text-gray-500 hover:text-secondary transition-colors"
                                                 title="Download DOCX">
                                                 <i class="fa-classic fa-file-word"></i>
                                             </a>
                                         @endif
                                         @if($resume && $resume->pdfExists())
                                             <a href="{{ route('admin.resume.targeted.download', [$resume, 'pdf']) }}"
-                                                class="p-2 text-gray-500 hover:text-primary transition-colors"
+                                                class="p-2 text-gray-500 hover:text-secondary transition-colors"
                                                 title="Download PDF">
                                                 <i class="fa-classic fa-file-pdf"></i>
                                             </a>

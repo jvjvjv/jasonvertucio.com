@@ -15,7 +15,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use League\CommonMark\CommonMarkConverter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TargetedResumeController extends Controller
@@ -89,24 +88,10 @@ class TargetedResumeController extends Controller
             ->toArray();
 
         $targetedResume = $conversation->targetedResume;
-        $tailoredPreviewHtml = null;
         $shouldAutoStart = ($conversation->messages->where('role', 'assistant')->count() === 0)
             && ((bool) data_get($conversation->context, 'auto_start_pending', false));
 
-        if ($targetedResume) {
-            $tailoredData = $targetedResume->tailored_data ?? [];
-            $tailoredContent = data_get($tailoredData, 'content');
-
-            if (!is_string($tailoredContent) || $tailoredContent === '') {
-                $tailoredContent = data_get($tailoredData, 'markdown');
-            }
-
-            if (is_string($tailoredContent) && $tailoredContent !== '') {
-                $tailoredPreviewHtml = (new CommonMarkConverter())->convert($tailoredContent)->getContent();
-            }
-        }
-
-        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'tailoredPreviewHtml', 'shouldAutoStart'));
+        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'shouldAutoStart'));
     }
 
     /**

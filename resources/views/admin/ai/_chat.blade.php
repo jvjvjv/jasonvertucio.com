@@ -8,7 +8,7 @@
          csrfToken: '{{ csrf_token() }}',
          autoStart: {{ $autoStart ? "true" : "false" }}
      })"
-     class="flex h-[600px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+     class="flex h-150 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
 
     {{-- Messages area --}}
     <div x-ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4">
@@ -20,7 +20,7 @@
                          'max-w-[80%] bg-gray-100 text-gray-800 rounded-lg px-4 py-3'">
                     <div class="mb-1 text-xs font-medium opacity-70" x-text="msg.role === 'user' ? 'You' : 'Assistant'">
                     </div>
-                    <div class="prose prose-sm max-w-none whitespace-pre-wrap text-sm"
+                    <div class="prose max-w-none text-sm"
                          :class="msg.role === 'user' ? 'prose-invert' : ''"
                          x-html="renderMarkdown(msg.content)"></div>
                 </div>
@@ -31,7 +31,7 @@
         <div x-show="isStreaming" class="flex justify-start">
             <div class="rounded-lg bg-gray-100 px-4 py-3 text-gray-800">
                 <div class="mb-1 text-xs font-medium opacity-70">Assistant</div>
-                <div class="prose prose-sm max-w-none whitespace-pre-wrap text-sm"
+                <div class="prose max-w-none text-sm"
                      x-html="renderMarkdown(streamingContent)"></div>
                 <span class="ml-0.5 inline-block h-4 w-2 animate-pulse bg-gray-400"></span>
             </div>
@@ -289,12 +289,28 @@
 
             renderMarkdown(text) {
                 if (!text) return '';
-                // Basic markdown rendering: bold, italic, code, links, lists
+
                 return text
-                    // Code blocks
+                    // Tailored-resume and cover-letter code blocks — boxed with dark border
+                    .replace(/```(?:tailored[-\s]resume|cover[-\s]letter)\s*\n([\s\S]*?)```/gi, (match, content) => {
+                        // Render inner markdown for the resume/cover-letter content
+                        const inner = content
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                            .replace(/^### (.+)$/gm, '<h3 class="font-bold text-base mt-3 mb-1">$1</h3>')
+                            .replace(/^## (.+)$/gm, '<h2 class="font-bold text-lg mt-3 mb-1">$1</h2>')
+                            .replace(/^# (.+)$/gm, '<h1 class="font-bold text-xl mt-3 mb-1">$1</h1>')
+                            .replace(/^---$/gm, '<hr class="my-3 border-gray-300">')
+                            .replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+                            .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
+                            .replace(/\n\n/g, '</p><p class="mt-2">')
+                            .replace(/\n/g, '<br>');
+                        return '<div class="my-3 rounded-lg border-2 border-dark p-4 bg-white text-sm"><p>' + inner + '</p></div>';
+                    })
+                    // Generic code blocks
                     .replace(/```(\w*)\n([\s\S]*?)```/g,
                         '<pre class="bg-gray-800 text-gray-100 p-3 rounded text-xs overflow-x-auto my-2"><code>$2</code></pre>'
-                        )
+                    )
                     // Inline code
                     .replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded text-xs">$1</code>')
                     // Bold
@@ -305,12 +321,18 @@
                     .replace(/^### (.+)$/gm, '<h3 class="font-bold text-base mt-3 mb-1">$1</h3>')
                     .replace(/^## (.+)$/gm, '<h2 class="font-bold text-lg mt-3 mb-1">$1</h2>')
                     .replace(/^# (.+)$/gm, '<h1 class="font-bold text-xl mt-3 mb-1">$1</h1>')
+                    // Horizontal rules (--- on its own line)
+                    .replace(/^---$/gm, '<hr class="my-3 border-gray-300">')
                     // Unordered lists
                     .replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
                     // Ordered lists
                     .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
-                    // Line breaks
-                    .replace(/\n/g, '<br>');
+                    // Double line breaks become paragraph breaks
+                    .replace(/\n\n/g, '</p><p class="mt-2">')
+                    // Single line breaks
+                    .replace(/\n/g, '<br>')
+                    // Wrap in paragraph
+                    .replace(/^(.*)$/, '<p>$1</p>');
             }
         };
     }
