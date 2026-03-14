@@ -203,4 +203,15 @@ class TargetedResumeController extends Controller
 
         return response()->download($path, $filename);
     }
+
+    /**
+     * Soft-delete a conversation.
+     */
+    public function destroy(AiConversation $conversation): RedirectResponse
+    {
+        $conversation->delete();
+
+        return redirect()->route('admin.resume.targeted.index')
+            ->with('success', 'Conversation deleted.');
+    }
 }

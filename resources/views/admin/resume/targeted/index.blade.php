@@ -122,6 +122,16 @@
                                                 <i class="fa-classic fa-file-pdf"></i>
                                             </a>
                                         @endif
+                                        <form action="{{ route('admin.resume.targeted.destroy', $conversation) }}" method="POST" class="inline"
+                                            onsubmit="return confirm('Delete this conversation?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="p-2 text-gray-500 hover:text-red-600 transition-colors"
+                                                title="Delete conversation">
+                                                <i class="fa-classic fa-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
