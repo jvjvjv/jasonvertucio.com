@@ -56,7 +56,19 @@ class TargetedResume extends Model
      */
     public function generateFilename(): string
     {
-        return "{$this->company_name} {$this->position} Targeted Resume";
+        $companyName = $this->sanitizeFilenamePart($this->company_name);
+        $position = $this->sanitizeFilenamePart($this->position);
+
+        return trim("{$companyName} {$position} Targeted Resume");
+    }
+
+    private function sanitizeFilenamePart(?string $value): string
+    {
+        $sanitized = preg_replace('~[\\/:*?"<>|]+~', '-', (string) $value) ?? '';
+        $sanitized = preg_replace('/\s+/', ' ', $sanitized) ?? $sanitized;
+        $sanitized = trim($sanitized, " .-\t\n\r\0\x0B");
+
+        return $sanitized !== '' ? $sanitized : 'Unknown';
     }
 
     /**

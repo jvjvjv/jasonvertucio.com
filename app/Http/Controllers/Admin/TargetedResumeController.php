@@ -9,8 +9,10 @@ use App\Models\AiConversation;
 use App\Models\AiSystem;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
+use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use League\CommonMark\CommonMarkConverter;
@@ -93,20 +95,14 @@ class TargetedResumeController extends Controller
 
         if ($targetedResume) {
             $tailoredData = $targetedResume->tailored_data ?? [];
-            $tailoredFormat = data_get($tailoredData, 'format');
             $tailoredContent = data_get($tailoredData, 'content');
 
             if (!is_string($tailoredContent) || $tailoredContent === '') {
-                $tailoredContent = data_get($tailoredData, 'markdown') ?: data_get($tailoredData, 'html');
-                $tailoredFormat = data_get($tailoredData, 'markdown') ? 'markdown' : (data_get($tailoredData, 'html') ? 'html' : $tailoredFormat);
+                $tailoredContent = data_get($tailoredData, 'markdown');
             }
 
             if (is_string($tailoredContent) && $tailoredContent !== '') {
-                if ($tailoredFormat === 'markdown') {
-                    $tailoredPreviewHtml = (new CommonMarkConverter())->convert($tailoredContent)->getContent();
-                } else {
-                    $tailoredPreviewHtml = $tailoredContent;
-                }
+                $tailoredPreviewHtml = (new CommonMarkConverter())->convert($tailoredContent)->getContent();
             }
         }
 
@@ -149,17 +145,14 @@ class TargetedResumeController extends Controller
     public function finalize(Request $request, AiConversation $conversation): JsonResponse
     {
         $request->validate([
-            'tailored_content' => ['required_without:tailored_html', 'string'],
-            'tailored_html' => ['nullable', 'string'],
+            'tailored_content' => ['required', 'string'],
             'fit_score' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
-
-        $tailoredContent = $request->input('tailored_content') ?? $request->input('tailored_html');
 
         try {
             $targetedResume = $this->targetedResumeService->saveTailoredResume(
                 $conversation,
-                $tailoredContent,
+                $request->input('tailored_content'),
                 $request->input('fit_score'),
             );
         } catch (\Throwable $exception) {
@@ -182,6 +175,28 @@ class TargetedResumeController extends Controller
         return redirect()
             ->route('admin.resume.targeted.show', $conversation)
             ->with('success', 'Targeted resume chat details updated.');
+    }
+
+    /**
+     * Regenerate DOCX and PDF for a targeted resume.
+     */
+    public function regenerate(TargetedResume $targetedResume, TargetedResumeDocumentService $documentService): RedirectResponse
+    {
+        $docxResult = $documentService->generateDocx($targetedResume);
+
+        if (!$docxResult['success']) {
+            return redirect()->route('admin.resume.targeted.index')
+                ->with('error', 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error'));
+        }
+
+        $pdfResult = $documentService->generatePdf($targetedResume);
+
+        $message = 'DOCX regenerated successfully.';
+        if ($pdfResult['success']) {
+            $message = 'DOCX and PDF regenerated successfully.';
+        }
+
+        return redirect()->route('admin.resume.targeted.index')->with('success', $message);
     }
 
     /**

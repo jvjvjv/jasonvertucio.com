@@ -21,6 +21,12 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm">
+                {{ session('error') }}
+            </div>
+        @endif
+
         @if($conversations->isEmpty())
             <div class="text-center py-16 text-gray-500">
                 <i class="fa-classic fa-bullseye text-4xl mb-4 block text-gray-300"></i>
@@ -92,6 +98,16 @@
                                             title="View conversation">
                                             <i class="fa-classic fa-comments"></i>
                                         </a>
+                                        @if($resume)
+                                            <form action="{{ route('admin.resume.targeted.regenerate', $resume) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="p-2 text-gray-500 hover:text-primary transition-colors"
+                                                    title="Regenerate DOCX/PDF">
+                                                    <i class="fa-classic fa-arrows-rotate"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                         @if($resume && $resume->docxExists())
                                             <a href="{{ route('admin.resume.targeted.download', [$resume, 'docx']) }}"
                                                 class="p-2 text-gray-500 hover:text-primary transition-colors"

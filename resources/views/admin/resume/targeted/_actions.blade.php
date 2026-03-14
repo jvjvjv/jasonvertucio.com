@@ -73,7 +73,7 @@ function resumeActions(config) {
                 }
 
                 // Look for fit score
-                const scoreMatch = msg.content.match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[/%]|\s*out of\s*100)?/i);
+                const scoreMatch = msg.content.match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i);
                 if (scoreMatch && !fitScore) {
                     fitScore = parseInt(scoreMatch[1]);
                     if (fitScore > 100) fitScore = null;

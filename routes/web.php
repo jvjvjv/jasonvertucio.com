@@ -146,6 +146,7 @@ Route::middleware(['auth', 'can:edit-resume'])
         Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat'])->name('targeted.chat');
         Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize'])->name('targeted.finalize');
         Route::get('/targeted-resume/{targetedResume}/download/{format}', [TargetedResumeController::class, 'download'])->name('targeted.download');
+        Route::post('/targeted-resume/{targetedResume}/regenerate', [TargetedResumeController::class, 'regenerate'])->name('targeted.regenerate');
     });
 
 // Manual code entry page for unauthenticated users

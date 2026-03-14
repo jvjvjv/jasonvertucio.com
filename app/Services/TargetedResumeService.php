@@ -196,7 +196,6 @@ class TargetedResumeService
     public function saveTailoredResume(AiConversation $conversation, string $tailoredContent, ?int $fitScore = null): TargetedResume
     {
         $context = $conversation->context ?? [];
-        $format = $this->detectTailoredResumeFormat($tailoredContent);
 
         $targetedResume = TargetedResume::updateOrCreate(
             ['ai_conversation_id' => $conversation->id],
@@ -207,9 +206,8 @@ class TargetedResumeService
                 'job_description' => $context['job_description'] ?? '',
                 'tailored_data' => [
                     'content' => $tailoredContent,
-                    'format' => $format,
-                    'markdown' => $format === 'markdown' ? $tailoredContent : null,
-                    'html' => $format === 'html' ? $tailoredContent : null,
+                    'format' => 'markdown',
+                    'markdown' => $tailoredContent,
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
@@ -324,12 +322,6 @@ After providing the tailored resume, offer to help with any application question
 - When providing the tailored resume, wrap it in a code block with the language tag `tailored-resume`
 - Do NOT fabricate experience or qualifications
 PROMPT;
-    }
-
-    private function detectTailoredResumeFormat(string $tailoredContent): string {
-        return preg_match('/<\/?(?:h1|h2|h3|p|ul|ol|li|br)\b/i', $tailoredContent) === 1
-            ? 'html'
-            : 'markdown';
     }
 
 

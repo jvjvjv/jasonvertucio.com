@@ -3,20 +3,23 @@
 namespace App\Services;
 
 use App\Models\TargetedResume;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use DOMDocument;
+use DOMXPath;
 use Illuminate\Support\Facades\Log;
+use ZipArchive;
 
 class TargetedResumeDocumentService
 {
-    protected string $templatePath;
+    protected const NAMESPACE_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 
-    protected string $scriptPath;
+    protected string $templatePath;
 
     protected string $outputDir;
 
-    public function __construct()
+    public function __construct(protected MarkdownToOpenXmlConverter $converter)
     {
         $this->templatePath = base_path('resources/resume/2026 targeted resume template.docx');
-        $this->scriptPath = base_path('scripts/generate-targeted-resume.js');
         $this->outputDir = storage_path('app/targeted-resumes');
     }
 
@@ -34,63 +37,149 @@ class TargetedResumeDocumentService
             mkdir($this->outputDir, 0755, true);
         }
 
-        $tempDataPath = storage_path('app/temp/targeted-resume-data-' . uniqid() . '.json');
-        $tempDir = dirname($tempDataPath);
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
-
         try {
             $data = $this->buildTemplateData($targetedResume);
-            file_put_contents($tempDataPath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-            $command = sprintf(
-                'node %s %s %s %s 2>&1',
-                escapeshellarg($this->scriptPath),
-                escapeshellarg($this->templatePath),
-                escapeshellarg($tempDataPath),
-                escapeshellarg($outputPath)
-            );
+            copy($this->templatePath, $outputPath);
 
-            $output = shell_exec($command);
-            $result = json_decode($output, true);
-
-            if (!$result) {
-                Log::error('Targeted resume DOCX generation failed: Invalid JSON output', [
-                    'output' => $output,
-                    'command' => $command,
-                    'targeted_resume_id' => $targetedResume->id,
-                ]);
-
+            $zip = new ZipArchive();
+            if ($zip->open($outputPath) !== true) {
                 return [
                     'success' => false,
-                    'error' => 'Invalid output from targeted resume generator script: ' . $output,
+                    'error' => 'Failed to open DOCX template as ZIP archive.',
                 ];
             }
 
-            if (!$result['success']) {
-                Log::error('Targeted resume DOCX generation failed', $result + [
-                    'targeted_resume_id' => $targetedResume->id,
-                ]);
+            $xml = $zip->getFromName('word/document.xml');
+            if ($xml === false) {
+                $zip->close();
 
-                return $result;
+                return [
+                    'success' => false,
+                    'error' => 'Failed to read word/document.xml from template.',
+                ];
             }
+
+            $xml = $this->replaceSimplePlaceholders($xml, $data);
+            $xml = $this->replaceResumeContent($xml, $data['resume']);
+
+            $zip->addFromString('word/document.xml', $xml);
+            $zip->close();
 
             $targetedResume->docx_path = $outputPath;
             $targetedResume->save();
 
+            $size = filesize($outputPath);
+
             Log::info('Targeted resume DOCX generated successfully', [
                 'id' => $targetedResume->id,
                 'path' => $outputPath,
-                'size' => $result['size'] ?? null,
+                'size' => $size,
             ]);
 
-            return $result;
-        } finally {
-            if (file_exists($tempDataPath)) {
-                unlink($tempDataPath);
+            return [
+                'success' => true,
+                'path' => $outputPath,
+                'size' => $size,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Targeted resume DOCX generation failed', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            if (file_exists($outputPath)) {
+                unlink($outputPath);
+            }
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Replace {name}, {title}, {email}, {phone} placeholders in the raw XML.
+     *
+     * @param array{name: string, title: string, email: string, phone: string, resume: string} $data
+     */
+    protected function replaceSimplePlaceholders(string $xml, array $data): string
+    {
+        $placeholders = [
+            '{name}' => $data['name'],
+            '{title}' => $data['title'],
+            '{email}' => $data['email'],
+            '{phone}' => $data['phone'],
+        ];
+
+        foreach ($placeholders as $placeholder => $value) {
+            $xml = str_replace($placeholder, htmlspecialchars($value, ENT_XML1, 'UTF-8'), $xml);
+        }
+
+        return $xml;
+    }
+
+    /**
+     * Find the {resume} placeholder, remove its <w:r>, and insert styled paragraphs.
+     */
+    protected function replaceResumeContent(string $xml, string $resumeMarkdown): string
+    {
+        $dom = new DOMDocument();
+        $dom->preserveWhiteSpace = true;
+        $dom->formatOutput = false;
+        $dom->loadXML($xml);
+
+        $xpath = new DOMXPath($dom);
+        $xpath->registerNamespace('w', self::NAMESPACE_W);
+
+        $textNodes = $xpath->query('//w:t[contains(., "{resume}")]');
+
+        if ($textNodes === false || $textNodes->length === 0) {
+            return $dom->saveXML();
+        }
+
+        $resumeTextNode = $textNodes->item(0);
+        $resumeRun = $resumeTextNode->parentNode;
+        $resumeParagraph = $resumeRun->parentNode;
+        $body = $xpath->query('//w:body')->item(0);
+
+        $resumeRun->parentNode->removeChild($resumeRun);
+
+        $openXmlFragment = $this->converter->convert($resumeMarkdown);
+
+        if ($openXmlFragment === '') {
+            return $dom->saveXML();
+        }
+
+        $sectPr = $xpath->query('//w:body/w:sectPr')->item(0);
+        $insertBefore = $sectPr ?? null;
+
+        $wrapperXml = '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<w:body xmlns:w="' . self::NAMESPACE_W . '">'
+            . $openXmlFragment
+            . '</w:body>';
+
+        $fragmentDom = new DOMDocument();
+        $fragmentDom->loadXML($wrapperXml);
+
+        $paragraphs = $fragmentDom->getElementsByTagNameNS(self::NAMESPACE_W, 'p');
+        $nodesToImport = [];
+        foreach ($paragraphs as $p) {
+            $nodesToImport[] = $p;
+        }
+
+        foreach ($nodesToImport as $p) {
+            $imported = $dom->importNode($p, true);
+            if ($insertBefore) {
+                $body->insertBefore($imported, $insertBefore);
+            } else {
+                $body->appendChild($imported);
             }
         }
+
+        return $dom->saveXML();
     }
 
     /**
@@ -169,28 +258,17 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * @return array{name: string, title: string, email: string, phone: string, resume: string, resume_format: string}
+     * @return array{name: string, title: string, email: string, phone: string, resume: string}
      */
     protected function buildTemplateData(TargetedResume $targetedResume): array
     {
         $targetedResume->loadMissing('resumeVersion.personalInfo');
 
         $personalInfo = $targetedResume->resumeVersion?->personalInfo;
-        $resumeFormat = (string) data_get($targetedResume->tailored_data, 'format', '');
         $resumeContent = (string) data_get($targetedResume->tailored_data, 'content', '');
 
         if ($resumeContent === '') {
             $resumeContent = (string) data_get($targetedResume->tailored_data, 'markdown', '');
-            if ($resumeContent !== '') {
-                $resumeFormat = 'markdown';
-            }
-        }
-
-        if ($resumeContent === '') {
-            $resumeContent = (string) data_get($targetedResume->tailored_data, 'html', '');
-            if ($resumeContent !== '') {
-                $resumeFormat = 'html';
-            }
         }
 
         return [
@@ -199,7 +277,6 @@ class TargetedResumeDocumentService
             'email' => $personalInfo?->email ?? '',
             'phone' => $personalInfo?->phone ?? '',
             'resume' => $resumeContent,
-            'resume_format' => $resumeFormat ?: 'markdown',
         ];
     }
 }
