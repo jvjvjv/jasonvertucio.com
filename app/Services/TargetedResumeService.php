@@ -348,7 +348,7 @@ Job Title: <job title>
 After that, describe the company briefly — high-level and important notes only. Identify the key requirements and qualifications from the job description.
 
 ### Step 2: Eligibility Assessment
-Using the candidate's resume data above, assess their eligibility for this role. Identify:
+When the position is remote, assess the candidate's eligibility based on their location and any remote work requirements mentioned in the job description. If the position is not remote, assess eligibility based on the location of the job and the candidate's location. Candidate is in Philadelphia, PA. Then, using the candidate's resume data above, assess their eligibility for this role. Identify:
 - Strong matches between the candidate's experience and the job requirements
 - Gaps or areas where the candidate may fall short
 - Transferable skills that could bridge any gaps
