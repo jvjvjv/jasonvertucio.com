@@ -39,7 +39,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
         return [
             'personal' => $this->transformPersonalInfo($version->personalInfo),
             'skills' => $this->transformSkills($version->skillCategories),
-            'experience' => $this->transformExperiences($version->experiences),
+            'experience' => $this->transformExperiences($version->experiences, includeSalary: true),
             'education' => $this->transformEducations($version->educations),
             'projects' => $this->transformProjects($version->projects),
         ];
@@ -113,6 +113,11 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                     'location' => $exp['location'] ?? null,
                     'date_start' => $dates[0] ?? null,
                     'date_end' => !empty($dates) ? end($dates) : null,
+                    'salary_start_amount' => !empty($exp['salaryStart']['amount']) ? $exp['salaryStart']['amount'] : null,
+                    'salary_start_period' => !empty($exp['salaryStart']['period']) ? $exp['salaryStart']['period'] : null,
+                    'salary_end_amount' => !empty($exp['salaryEnd']['amount']) ? $exp['salaryEnd']['amount'] : null,
+                    'salary_end_period' => !empty($exp['salaryEnd']['period']) ? $exp['salaryEnd']['period'] : null,
+                    'is_freelance' => (bool) ($exp['isFreelance'] ?? false),
                     'sort_order' => $expIndex,
                 ]);
 
@@ -257,18 +262,32 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     /**
      * Transform experiences collection to the expected array format.
      */
-    protected function transformExperiences($experiences): array
+    protected function transformExperiences($experiences, bool $includeSalary = false): array
     {
-        return $experiences->map(function ($exp) {
+        return $experiences->map(function ($exp) use ($includeSalary) {
             $dates = array_filter([$exp->date_start, $exp->date_end]);
 
-            return [
+            $result = [
                 'jobTitle' => $exp->job_title,
                 'company' => $exp->company,
                 'location' => $exp->location,
                 'dates' => array_values($dates),
                 'bullets' => $exp->bullets->pluck('content')->toArray(),
             ];
+
+            if ($includeSalary) {
+                $result['salaryStart'] = $exp->salary_start_amount ? [
+                    'amount' => (float) $exp->salary_start_amount,
+                    'period' => $exp->salary_start_period?->value,
+                ] : null;
+                $result['salaryEnd'] = $exp->salary_end_amount ? [
+                    'amount' => (float) $exp->salary_end_amount,
+                    'period' => $exp->salary_end_period?->value,
+                ] : null;
+                $result['isFreelance'] = $exp->is_freelance;
+            }
+
+            return $result;
         })->toArray();
     }
 

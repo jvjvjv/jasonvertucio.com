@@ -279,6 +279,51 @@
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
                                 </div>
                             </div>
+                            <div class="md:col-span-2">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" x-model="job.isFreelance"
+                                           class="w-4 h-4 rounded">
+                                    <span class="text-sm font-medium text-gray-700">Freelance / Contract</span>
+                                </label>
+                            </div>
+                            <div class="md:col-span-2 border-t border-gray-200 pt-3">
+                                <p class="text-xs text-gray-500 mb-3">
+                                    <i class="fa-solid fa-lock mr-1"></i>
+                                    Salary data is private and will not appear on the public resume.
+                                </p>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Starting Salary</label>
+                                        <div class="flex gap-2">
+                                            <input type="number" step="0.01" min="0" x-model="job.salaryStart.amount"
+                                                   placeholder="Amount"
+                                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                                            <select x-model="job.salaryStart.period"
+                                                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                                                <option value="">Period</option>
+                                                <option value="per_hour">per hour</option>
+                                                <option value="per_month">per month</option>
+                                                <option value="per_year">per year</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Ending Salary</label>
+                                        <div class="flex gap-2">
+                                            <input type="number" step="0.01" min="0" x-model="job.salaryEnd.amount"
+                                                   placeholder="Amount"
+                                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                                            <select x-model="job.salaryEnd.period"
+                                                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                                                <option value="">Period</option>
+                                                <option value="per_hour">per hour</option>
+                                                <option value="per_month">per month</option>
+                                                <option value="per_year">per year</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Bullet Points</label>
@@ -515,6 +560,9 @@ function resumeEditor() {
                 this.data.experience.forEach(job => {
                     if (!job.dates) job.dates = ['', ''];
                     if (!job.bullets) job.bullets = [];
+                    if (!job.salaryStart) job.salaryStart = { amount: null, period: '' };
+                    if (!job.salaryEnd) job.salaryEnd = { amount: null, period: '' };
+                    if (job.isFreelance === undefined) job.isFreelance = false;
                 });
             }
             if (Array.isArray(this.data.education)) {
@@ -543,7 +591,10 @@ function resumeEditor() {
                 company: '',
                 location: '',
                 dates: ['', ''],
-                bullets: ['']
+                bullets: [''],
+                salaryStart: { amount: null, period: '' },
+                salaryEnd: { amount: null, period: '' },
+                isFreelance: false
             });
         },
 

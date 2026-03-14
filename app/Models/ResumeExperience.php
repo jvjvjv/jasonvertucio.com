@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SalaryPeriod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,8 +20,24 @@ class ResumeExperience extends Model
         'location',
         'date_start',
         'date_end',
+        'salary_start_amount',
+        'salary_start_period',
+        'salary_end_amount',
+        'salary_end_period',
+        'is_freelance',
         'sort_order',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'salary_start_amount' => 'decimal:2',
+            'salary_start_period' => SalaryPeriod::class,
+            'salary_end_amount' => 'decimal:2',
+            'salary_end_period' => SalaryPeriod::class,
+            'is_freelance' => 'boolean',
+        ];
+    }
 
     public function version(): BelongsTo
     {
