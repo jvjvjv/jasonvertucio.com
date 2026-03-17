@@ -8,16 +8,16 @@
          csrfToken: '{{ csrf_token() }}',
          autoStart: {{ $autoStart ? "true" : "false" }}
      })"
-     class="flex h-150 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+     class="flex h-full min-h-[calc(100vh-18rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white">
 
     {{-- Messages area --}}
-    <div x-ref="messagesContainer" class="flex-1 space-y-4 overflow-y-auto p-4">
+    <div x-ref="messagesContainer" class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
         <template x-for="(msg, index) in messages" :key="index">
             <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
                 <div
                      :class="msg.role === 'user' ?
-                         'max-w-[80%] bg-primary text-white rounded-lg px-4 py-3' :
-                         'max-w-[80%] bg-gray-100 text-gray-800 rounded-lg px-4 py-3'">
+                         'max-w-[85%] rounded-2xl bg-primary px-4 py-3 text-white lg:max-w-[78%]' :
+                         'max-w-[85%] rounded-2xl bg-gray-100 px-4 py-3 text-gray-800 lg:max-w-[78%]'">
                     <div class="mb-1 text-xs font-medium opacity-70" x-text="msg.role === 'user' ? 'You' : 'Assistant'">
                     </div>
                     <div class="prose max-w-none text-sm"
@@ -77,13 +77,15 @@
     @endphp
     @if ($actionMarkup !== "")
         <div x-show="!isThinking && !isStreaming && messages.length > 0"
-             class="flex flex-wrap gap-2 border-t border-gray-100 px-4 py-2">
+             class="shrink-0 border-t border-gray-100 px-4 py-3 sm:px-6">
+            <div class="flex flex-wrap gap-2">
             {!! $actionMarkup !!}
+            </div>
         </div>
     @endif
 
     {{-- Input area --}}
-    <div class="border-t border-gray-200 p-4">
+    <div class="shrink-0 border-t border-gray-200 bg-white px-4 py-4 sm:px-6">
         <form @submit.prevent="sendMessage" class="flex items-end gap-3">
             <div class="flex-1">
                 <textarea x-model="userInput"
@@ -91,12 +93,12 @@
                           @keydown="handleComposerKeydown($event)"
                           :disabled="isThinking || isStreaming"
                           placeholder="Type your message..."
-                          rows="3"
-                          class="w-full resize-y rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-400"></textarea>
+                          rows="2"
+                          class="min-h-14 w-full max-h-40 resize-y rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-400"></textarea>
             </div>
             <button type="submit"
                     :disabled="isThinking || isStreaming || !userInput.trim()"
-                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
+                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
                 <i class="fa-classic fa-paper-plane"></i>
                 Send
             </button>
@@ -125,6 +127,7 @@
                 this.broadcastMessages();
                 this.$nextTick(() => {
                     this.scrollToBottom();
+                    this.scrollPageToBottom();
                     if (this.autoStart && !this.hasAutoStarted) {
                         this.hasAutoStarted = true;
                         this.sendInitialConversation();
@@ -145,7 +148,10 @@
                     this.isThinking = false;
                     this.isStreaming = false;
                     this.streamingContent = '';
-                    this.$nextTick(() => this.scrollToBottom());
+                    this.$nextTick(() => {
+                        this.scrollToBottom();
+                        this.scrollPageToBottom();
+                    });
                 }
             },
 
@@ -177,6 +183,7 @@
                     this.streamingContent = '';
                     this.$nextTick(() => {
                         this.scrollToBottom();
+                        this.scrollPageToBottom();
                         this.$refs.chatInput?.focus();
                     });
                 }
@@ -265,6 +272,20 @@
                 if (container) {
                     container.scrollTop = container.scrollHeight;
                 }
+            },
+
+            scrollPageToBottom() {
+                requestAnimationFrame(() => {
+                    const chatBounds = this.$el.getBoundingClientRect();
+                    const targetTop = window.scrollY + chatBounds.bottom - window.innerHeight + 24;
+
+                    if (targetTop > 0) {
+                        window.scrollTo({
+                            top: targetTop,
+                            behavior: 'auto',
+                        });
+                    }
+                });
             },
 
             broadcastMessages() {
