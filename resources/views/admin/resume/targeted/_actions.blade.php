@@ -1,9 +1,9 @@
-<div x-data="resumeActions({ conversationId: {{ $conversation->id }}, csrfToken: '{{ csrf_token() }}', resumeFinalized: {{ $resumeFinalized ? 'true' : 'false' }}, coverLetterFinalized: {{ $coverLetterFinalized ? 'true' : 'false' }} })"
+<div x-data="resumeActions({ conversationId: {{ $conversation->id }}, csrfToken: '{{ csrf_token() }}', resumeFinalized: {{ $resumeFinalized ? 'true' : 'false' }}, coverLetterFinalized: {{ $coverLetterFinalized ? 'true' : 'false' }}, existingResumeContent: @js($existingResumeContent ?? null) })"
     @targeted-resume-chat-messages-updated.window="syncMessages($event.detail)">
     <button @click="finalizeResume"
-        :disabled="isFinalizing || !canFinalize || resumeFinalized"
+        :disabled="isFinalizing || !canFinalize"
         class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        :title="resumeFinalized ? 'Resume already finalized' : (canFinalize ? 'Extract and save the tailored resume from the conversation' : 'Finalize is available after the assistant returns a tailored resume block')">
+        :title="finalizeResumeTitle">
         <template x-if="isFinalizing">
             <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -13,7 +13,7 @@
         <template x-if="!isFinalizing">
             <i class="fa-classic fa-check"></i>
         </template>
-        <span x-text="isFinalizing ? 'Saving...' : (resumeFinalized ? 'Resume Finalized' : 'Finalize Resume')"></span>
+        <span x-text="isFinalizing ? 'Saving...' : finalizeResumeLabel"></span>
     </button>
 
     <button @click="finalizeCoverLetter"
@@ -47,16 +47,88 @@ function resumeActions(config) {
         finalizeError: null,
         finalizeCoverLetterError: null,
         messages: [],
+        existingResumeContent: config.existingResumeContent,
 
         init() {
             const chatState = this.$root.closest('[data-chat-root]')?.__chatState;
             this.messages = Array.isArray(chatState?.messages) ? [...chatState.messages] : [];
         },
 
+        get latestTailoredResumeData() {
+            for (let i = this.messages.length - 1; i >= 0; i--) {
+                const msg = this.messages[i];
+                if (msg.role !== 'assistant') {
+                    continue;
+                }
+
+                const contentMatch = (msg.content || '').match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
+                if (!contentMatch) {
+                    continue;
+                }
+
+                let fitScore = null;
+                const scoreMatch = (msg.content || '').match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i);
+                if (scoreMatch) {
+                    fitScore = parseInt(scoreMatch[1]);
+                    if (fitScore > 100) {
+                        fitScore = null;
+                    }
+                }
+
+                return {
+                    content: contentMatch[1].trim(),
+                    fitScore,
+                };
+            }
+
+            return null;
+        },
+
+        get hasNewerTailoredResume() {
+            if (!this.resumeFinalized) {
+                return false;
+            }
+
+            const latestResume = this.latestTailoredResumeData;
+            if (!latestResume) {
+                return false;
+            }
+
+            return this.normalizeResumeContent(latestResume.content) !== this.normalizeResumeContent(this.existingResumeContent);
+        },
+
         get canFinalize() {
-            return this.messages.some((msg) => {
-                return msg.role === 'assistant' && /```tailored(?:-|\s+)resume/i.test(msg.content || '');
-            });
+            const latestResume = this.latestTailoredResumeData;
+
+            if (!latestResume) {
+                return false;
+            }
+
+            return !this.resumeFinalized || this.hasNewerTailoredResume;
+        },
+
+        get finalizeResumeLabel() {
+            if (!this.resumeFinalized) {
+                return 'Finalize Resume';
+            }
+
+            return this.hasNewerTailoredResume ? 'Update Finalized Resume' : 'Resume Finalized';
+        },
+
+        get finalizeResumeTitle() {
+            if (!this.latestTailoredResumeData) {
+                return 'Finalize is available after the assistant returns a tailored resume block';
+            }
+
+            if (!this.resumeFinalized) {
+                return 'Extract and save the tailored resume from the conversation';
+            }
+
+            if (this.hasNewerTailoredResume) {
+                return 'Extract and save the latest tailored resume from the conversation';
+            }
+
+            return 'Resume already finalized with the latest tailored resume';
         },
 
         get canFinalizeCoverLetter() {
@@ -83,31 +155,9 @@ function resumeActions(config) {
                 return;
             }
 
-            // Find the last assistant message that contains tailored-resume data
-            const messages = this.messages;
-            let tailoredContent = null;
-            let fitScore = null;
-
-            // Search messages in reverse for the tailored resume block
-            for (let i = messages.length - 1; i >= 0; i--) {
-                const msg = messages[i];
-                if (msg.role !== 'assistant') continue;
-
-                // Look for tailored resume code block
-                const contentMatch = msg.content.match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
-                if (contentMatch) {
-                    tailoredContent = contentMatch[1].trim();
-                }
-
-                // Look for fit score
-                const scoreMatch = msg.content.match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i);
-                if (scoreMatch && !fitScore) {
-                    fitScore = parseInt(scoreMatch[1]);
-                    if (fitScore > 100) fitScore = null;
-                }
-
-                if (tailoredContent) break;
-            }
+            const latestResume = this.latestTailoredResumeData;
+            const tailoredContent = latestResume?.content ?? null;
+            const fitScore = latestResume?.fitScore ?? null;
 
             if (!tailoredContent) {
                 this.finalizeError = 'No tailored resume found in the conversation. Please complete the tailoring process first.';
@@ -135,6 +185,9 @@ function resumeActions(config) {
                     this.finalizeError = data.message || 'Failed to save targeted resume.';
                     return;
                 }
+
+                this.resumeFinalized = true;
+                this.existingResumeContent = tailoredContent;
 
                 // Reload the page to show the finalized state
                 window.location.reload();
@@ -201,6 +254,10 @@ function resumeActions(config) {
             } finally {
                 this.isFinalizingCoverLetter = false;
             }
+        },
+
+        normalizeResumeContent(content) {
+            return (content || '').trim().replace(/\r\n/g, '\n');
         }
     };
 }

@@ -154,6 +154,8 @@
                 'conversation' => $conversation,
                 'resumeFinalized' => $targetedResume !== null,
                 'coverLetterFinalized' => $coverLetter !== null,
+                'existingResumeContent' => data_get($targetedResume?->tailored_data, 'markdown')
+                    ?? data_get($targetedResume?->tailored_data, 'content'),
             ]),
         ])
     </div>
