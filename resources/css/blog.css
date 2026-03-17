@@ -4,6 +4,7 @@
 @import "@fortawesome/fontawesome-free/css/solid.css";
 @import "@fortawesome/fontawesome-free/css/brands.css";
 @import "./font-loading.css";
+@import "./scrollbars.css";
 
 @theme {
   --color-primary: #1b587c;

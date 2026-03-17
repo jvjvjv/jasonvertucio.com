@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fortawesome/fontawesome-free/css/fontawesome.css";
 @import "@fortawesome/fontawesome-free/css/solid.css";
+@import "./scrollbars.css";
 
 @theme {
     --color-primary: #1b587c;
