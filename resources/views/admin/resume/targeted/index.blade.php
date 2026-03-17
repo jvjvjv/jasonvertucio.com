@@ -15,6 +15,53 @@
             </a>
         </div>
 
+        {{-- Filters --}}
+        <form method="GET" action="{{ route('admin.resume.targeted.index') }}" class="mb-6 border border-gray-200 rounded-lg p-4">
+            <div class="flex flex-wrap items-end gap-4">
+                {{-- Status multi-select --}}
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Status</label>
+                    <div class="flex items-center gap-3">
+                        @foreach(\App\Enums\AiConversationStatus::cases() as $statusOption)
+                            <label class="inline-flex items-center gap-1 text-sm text-gray-700 cursor-pointer">
+                                <input type="checkbox" name="status[]" value="{{ $statusOption->value }}"
+                                    {{ in_array($statusOption->value, $statuses) ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-primary focus:ring-primary">
+                                {{ ucfirst($statusOption->value) }}
+                            </label>
+                        @endforeach
+                        @foreach(\App\Enums\TargetedResumeStatus::cases() as $statusOption)
+                            <label class="inline-flex items-center gap-1 text-sm text-gray-700 cursor-pointer">
+                                <input type="checkbox" name="status[]" value="{{ $statusOption->value }}"
+                                    {{ in_array($statusOption->value, $statuses) ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-primary focus:ring-primary">
+                                {{ ucfirst($statusOption->value) }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Text search --}}
+                <div class="flex-1 min-w-50">
+                    <label for="filter-search" class="block text-xs font-semibold text-gray-600 mb-1">Search</label>
+                    <input type="text" id="filter-search" name="search" value="{{ $search ?? '' }}"
+                        placeholder="Company, job title, or message content..."
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                </div>
+
+                {{-- Actions --}}
+                <div class="flex items-center gap-2">
+                    <button type="submit"
+                        class="px-4 py-1.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors cursor-pointer">
+                        Filter
+                    </button>
+                    @if($search !== '' || $statuses !== ['active', 'finalized'])
+                        <a href="{{ route('admin.resume.targeted.index') }}" class="text-sm text-gray-500 hover:text-primary">Clear</a>
+                    @endif
+                </div>
+            </div>
+        </form>
+
         @if(session('success'))
             <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
                 {{ session('success') }}

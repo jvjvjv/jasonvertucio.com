@@ -122,7 +122,7 @@
                     }
 
                     // Redirect to the conversation page
-                    window.location.href = data.redirect;
+                    window.location.replace(data.redirect);
                 } catch (err) {
                     this.error = 'Network error. Please try again.';
                 } finally {

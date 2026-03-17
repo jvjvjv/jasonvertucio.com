@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AiConversationStatus;
+use App\Enums\TargetedResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
 use App\Http\Requests\UpdateTargetedResumeConversationRequest;
@@ -26,17 +27,55 @@ class TargetedResumeController extends Controller
     }
 
     /**
-     * List all targeted resumes.
+     * List all targeted resumes with optional filters.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $conversations = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion'])
-            ->withCount(['messages' => fn($query) => $query->where('role', '!=', 'system')])
-            ->where('feature', 'targeted-resume')
-            ->orderByDesc('updated_at')
-            ->get();
+        $defaultStatuses = [AiConversationStatus::Active->value, TargetedResumeStatus::Finalized->value];
+        $statuses = $request->input('status', $request->has('search') ? [] : $defaultStatuses);
+        $search = $request->input('search', '');
 
-        return view('admin.resume.targeted.index', compact('conversations'));
+        $query = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion'])
+            ->withCount(['messages' => fn($q) => $q->where('role', '!=', 'system')])
+            ->where('feature', 'targeted-resume');
+
+        if (! empty($statuses)) {
+            $conversationStatuses = array_intersect($statuses, array_column(AiConversationStatus::cases(), 'value'));
+            $resumeStatuses = array_intersect($statuses, array_column(TargetedResumeStatus::cases(), 'value'));
+
+            $query->where(function ($q) use ($conversationStatuses, $resumeStatuses) {
+                if (! empty($conversationStatuses)) {
+                    $q->whereIn('status', $conversationStatuses);
+                }
+                if (! empty($resumeStatuses)) {
+                    $q->orWhereHas('targetedResume', fn($sub) => $sub->whereIn('status', $resumeStatuses));
+                }
+            });
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                // Search in targeted resume company_name and position
+                $q->whereHas('targetedResume', function ($sub) use ($search) {
+                    $sub->where('company_name', 'LIKE', '%' . $search . '%')
+                        ->orWhere('position', 'LIKE', '%' . $search . '%');
+                });
+
+                // Search in conversation context JSON fallback fields
+                $q->orWhere('context->company_name', 'LIKE', '%' . $search . '%')
+                  ->orWhere('context->job_title', 'LIKE', '%' . $search . '%');
+
+                // Search in non-system conversation messages
+                $q->orWhereHas('messages', function ($sub) use ($search) {
+                    $sub->where('role', '!=', 'system')
+                        ->where('content', 'LIKE', '%' . $search . '%');
+                });
+            });
+        }
+
+        $conversations = $query->orderByDesc('updated_at')->get();
+
+        return view('admin.resume.targeted.index', compact('conversations', 'statuses', 'search'));
     }
 
     /**
@@ -104,6 +143,11 @@ class TargetedResumeController extends Controller
         $request->validate([
             'message' => ['nullable', 'string'],
         ]);
+
+        // Re-activate conversations that were marked as passed
+        if ($conversation->status === AiConversationStatus::Pass) {
+            $conversation->update(['status' => AiConversationStatus::Active]);
+        }
 
         return response()->stream(function () use ($request, $conversation) {
             $generator = $this->targetedResumeService->continueConversation(
