@@ -95,7 +95,7 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * Replace {name}, {title}, {email}, {phone} placeholders in the raw XML.
+    * Replace {name}, {title}, {email}, {phone} placeholders in the raw XML.
      *
      * @param array{name: string, title: string, email: string, phone: string, resume: string} $data
      */
@@ -261,7 +261,7 @@ class TargetedResumeDocumentService
 
         return [
             'name' => $personalInfo?->name ?? '',
-            'title' => $personalInfo?->title ?? '',
+            'title' => $targetedResume->title ?? $personalInfo?->title ?? '',
             'email' => $personalInfo?->email ?? '',
             'phone' => $personalInfo?->phone ?? '',
             'resume' => $resumeContent,

@@ -1,4 +1,4 @@
-<div x-data="resumeActions({ conversationId: {{ $conversation->id }}, csrfToken: '{{ csrf_token() }}', resumeFinalized: {{ $resumeFinalized ? 'true' : 'false' }}, coverLetterFinalized: {{ $coverLetterFinalized ? 'true' : 'false' }}, existingResumeContent: @js($existingResumeContent ?? null) })"
+<div x-data="resumeActions({ conversationId: {{ $conversation->id }}, csrfToken: '{{ csrf_token() }}', resumeFinalized: {{ $resumeFinalized ? 'true' : 'false' }}, coverLetterFinalized: {{ $coverLetterFinalized ? 'true' : 'false' }}, existingResumeTitle: @js($existingResumeTitle ?? null), existingResumeContent: @js($existingResumeContent ?? null) })"
     @targeted-resume-chat-messages-updated.window="syncMessages($event.detail)">
     <button @click="finalizeResume"
         :disabled="isFinalizing || !canFinalize"
@@ -47,6 +47,7 @@ function resumeActions(config) {
         finalizeError: null,
         finalizeCoverLetterError: null,
         messages: [],
+        existingResumeTitle: config.existingResumeTitle,
         existingResumeContent: config.existingResumeContent,
 
         init() {
@@ -66,6 +67,7 @@ function resumeActions(config) {
                     continue;
                 }
 
+                const parsedResume = this.parseTailoredResumeBlock(contentMatch[1]);
                 let fitScore = null;
                 const scoreMatch = (msg.content || '').match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i);
                 if (scoreMatch) {
@@ -76,7 +78,9 @@ function resumeActions(config) {
                 }
 
                 return {
-                    content: contentMatch[1].trim(),
+                    rawContent: contentMatch[1].trim(),
+                    content: parsedResume.content,
+                    title: parsedResume.title,
                     fitScore,
                 };
             }
@@ -94,7 +98,8 @@ function resumeActions(config) {
                 return false;
             }
 
-            return this.normalizeResumeContent(latestResume.content) !== this.normalizeResumeContent(this.existingResumeContent);
+            return this.normalizeResumeTitle(latestResume.title) !== this.normalizeResumeTitle(this.existingResumeTitle)
+                || this.normalizeResumeContent(latestResume.content) !== this.normalizeResumeContent(this.existingResumeContent);
         },
 
         get canFinalize() {
@@ -156,7 +161,7 @@ function resumeActions(config) {
             }
 
             const latestResume = this.latestTailoredResumeData;
-            const tailoredContent = latestResume?.content ?? null;
+            const tailoredContent = latestResume?.rawContent ?? null;
             const fitScore = latestResume?.fitScore ?? null;
 
             if (!tailoredContent) {
@@ -187,7 +192,8 @@ function resumeActions(config) {
                 }
 
                 this.resumeFinalized = true;
-                this.existingResumeContent = tailoredContent;
+                this.existingResumeTitle = latestResume?.title ?? null;
+                this.existingResumeContent = latestResume?.content ?? null;
 
                 // Reload the page to show the finalized state
                 window.location.reload();
@@ -258,6 +264,27 @@ function resumeActions(config) {
 
         normalizeResumeContent(content) {
             return (content || '').trim().replace(/\r\n/g, '\n');
+        },
+
+        normalizeResumeTitle(title) {
+            return (title || '').trim();
+        },
+
+        parseTailoredResumeBlock(content) {
+            const normalizedContent = this.normalizeResumeContent(content);
+            const titleMatch = normalizedContent.match(/^Title:\s*(.+)\n+/i);
+
+            if (!titleMatch) {
+                return {
+                    title: null,
+                    content: normalizedContent,
+                };
+            }
+
+            return {
+                title: this.normalizeResumeTitle(titleMatch[1]),
+                content: normalizedContent.replace(/^Title:\s*.+\n+/i, '').trim(),
+            };
         }
     };
 }

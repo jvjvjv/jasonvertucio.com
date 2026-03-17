@@ -201,6 +201,7 @@ class TargetedResumeService
     public function saveTailoredResume(AiConversation $conversation, string $tailoredContent, ?int $fitScore = null): TargetedResume
     {
         $context = $conversation->context ?? [];
+        $parsedResume = $this->parseTailoredResumeContent($tailoredContent);
 
         $targetedResume = TargetedResume::updateOrCreate(
             ['ai_conversation_id' => $conversation->id],
@@ -208,11 +209,13 @@ class TargetedResumeService
                 'resume_version_id' => $context['resume_version_id'],
                 'company_name' => $context['company_name'] ?? 'Unknown Company',
                 'position' => $context['job_title'] ?? 'Unknown Position',
+                'title' => $parsedResume['title'] ?? ($context['job_title'] ?? null),
                 'job_description' => $context['job_description'] ?? '',
                 'tailored_data' => [
-                    'content' => $tailoredContent,
+                    'title' => $parsedResume['title'],
+                    'content' => $parsedResume['markdown'],
                     'format' => 'markdown',
-                    'markdown' => $tailoredContent,
+                    'markdown' => $parsedResume['markdown'],
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
@@ -235,6 +238,79 @@ class TargetedResumeService
         $conversation->update(['status' => AiConversationStatus::Completed]);
 
         return $targetedResume->fresh();
+    }
+
+    /**
+     * @return array{title: ?string, markdown: string}
+     */
+    protected function parseTailoredResumeContent(string $tailoredContent): array {
+        $normalizedContent = str_replace("\r\n", "\n", trim($tailoredContent));
+        $title = null;
+
+        if (preg_match('/\ATitle:\s*(.+)\n+/i', $normalizedContent, $matches) === 1) {
+            $title = $this->normalizeTailoredResumeTitle($matches[1]);
+            $normalizedContent = preg_replace('/\ATitle:\s*.+\n+/i', '', $normalizedContent, 1) ?? $normalizedContent;
+            $normalizedContent = ltrim($normalizedContent);
+        }
+
+        if ($title === null) {
+            $title = $this->extractTitleFromSummary($normalizedContent);
+        }
+
+        return [
+            'title' => $title,
+            'markdown' => trim($normalizedContent),
+        ];
+    }
+
+    protected function extractTitleFromSummary(string $tailoredContent): ?string {
+        $parts = preg_split('/^#\s+Summary\s*$/mi', $tailoredContent, 2);
+
+        if (!is_array($parts) || count($parts) < 2) {
+            return null;
+        }
+
+        $summarySection = ltrim($parts[1]);
+        $nextSection = preg_split('/^#\s+/m', $summarySection, 2);
+        $summaryLines = preg_split('/\n+/', trim($nextSection[0] ?? '')) ?: [];
+
+        foreach ($summaryLines as $summaryLine) {
+            $summary = trim(preg_replace('/\s+/', ' ', strip_tags(str_replace(['**', '*', '_', '`'], '', $summaryLine))) ?? '');
+
+            if ($summary === '' || str_starts_with($summary, '#') || str_starts_with($summary, '-')) {
+                continue;
+            }
+
+            $delimiters = [
+                ' with ',
+                ' specializing in ',
+                ' specialised in ',
+                ' focused on ',
+                ' experienced in ',
+                ' bringing ',
+                ' known for ',
+                ',',
+                '.',
+            ];
+
+            foreach ($delimiters as $delimiter) {
+                $position = stripos($summary, $delimiter);
+
+                if ($position !== false) {
+                    return $this->normalizeTailoredResumeTitle(substr($summary, 0, $position));
+                }
+            }
+
+            return $this->normalizeTailoredResumeTitle($summary);
+        }
+
+        return null;
+    }
+
+    protected function normalizeTailoredResumeTitle(?string $title): ?string {
+        $normalizedTitle = trim((string) $title, " \t\n\r\0\x0B-:,");
+
+        return $normalizedTitle !== '' ? $normalizedTitle : null;
     }
 
     /**
@@ -383,6 +459,8 @@ Generate a tailored version of the resume optimized for this job posting, highli
 Use this structure:
 
 ```tailored-resume
+Title: Concise role title for the resume header
+
 # Summary
 Professional summary tailored to the role...
 
@@ -407,6 +485,7 @@ Description
 ```
 
 When tailoring:
+- Provide a `Title:` line before the summary. This should be a concise header title such as `Senior Frontend Engineer`, not a sentence.
 - Adjust the professional summary to highlight relevance to this specific role
 - Reorder and emphasize skills that match the job requirements
 - Refine experience bullet points to use keywords from the job description

@@ -17,6 +17,7 @@ class TargetedResume extends Model
         'ai_conversation_id',
         'company_name',
         'position',
+        'title',
         'job_description',
         'tailored_data',
         'fit_score',

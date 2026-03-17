@@ -2,19 +2,25 @@
 
 namespace Tests\Feature\Services;
 
+use App\Models\ResumePersonalInfo;
+use App\Models\ResumeVersion;
+use App\Models\TargetedResume;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
 use App\Services\TargetedResumeDocumentService;
 use DOMDocument;
 use DOMXPath;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 use ZipArchive;
 
 /**
  * Tests the DOCX generation logic by directly exercising the protected methods
- * via reflection, avoiding the need for database records.
+ * via reflection, with minimal database setup when template data needs model-backed relations.
  */
 class TargetedResumeDocumentServiceTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected TargetedResumeDocumentService $service;
 
     protected string $templatePath;
@@ -186,6 +192,26 @@ class TargetedResumeDocumentServiceTest extends TestCase
 
         $sectPr = $xpath->query('//w:body/w:sectPr');
         $this->assertSame(1, $sectPr->length, 'Document should still have exactly one sectPr');
+    }
+
+    public function testBuildTemplateDataPrefersTailoredResumeTitleOverBaseResumeTitle(): void {
+        $resumeVersion = ResumeVersion::factory()->create();
+        ResumePersonalInfo::factory()->create([
+            'version_id' => $resumeVersion->id,
+            'title' => 'Full Stack Engineer',
+        ]);
+        $targetedResume = TargetedResume::factory()->create([
+            'resume_version_id' => $resumeVersion->id,
+            'title' => 'Senior Frontend Engineer',
+            'tailored_data' => [
+                'content' => '# Summary\nTailored summary',
+            ],
+        ]);
+
+        $buildTemplateData = new \ReflectionMethod($this->service, 'buildTemplateData');
+        $data = $buildTemplateData->invoke($this->service, $targetedResume);
+
+        $this->assertSame('Senior Frontend Engineer', $data['title']);
     }
 
     /**

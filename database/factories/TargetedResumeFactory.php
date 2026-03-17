@@ -24,6 +24,7 @@ class TargetedResumeFactory extends Factory
             'ai_conversation_id' => AiConversation::factory(),
             'company_name' => fake()->company(),
             'position' => fake()->jobTitle(),
+            'title' => fake()->jobTitle(),
             'job_description' => fake()->paragraphs(3, true),
             'tailored_data' => [],
             'fit_score' => fake()->optional()->numberBetween(1, 100),
