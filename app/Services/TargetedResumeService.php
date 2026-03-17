@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Enums\AiConversationStatus;
+use App\Enums\AiInteractionStatus;
+use App\Enums\TargetedResumeStatus;
 use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
@@ -37,7 +40,7 @@ class TargetedResumeService
             'ai_system_id' => $system->id,
             'feature' => 'targeted-resume',
             'title' => $jobTitle ? "Targeted Resume: {$jobTitle}" : 'Targeted Resume',
-            'status' => 'active',
+            'status' => AiConversationStatus::Active,
             'context' => [
                 'job_title' => $jobTitle,
                 'job_description' => $jobDescription,
@@ -172,7 +175,7 @@ class TargetedResumeService
                 'output_tokens' => $outputTokens,
                 'model' => $conversation->aiSystem->model,
                 'duration_ms' => $durationMs,
-                'status' => 'success',
+                'status' => AiInteractionStatus::Success,
             ]);
         } catch (\Exception $e) {
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
@@ -184,7 +187,7 @@ class TargetedResumeService
                 'feature' => 'targeted-resume',
                 'model' => $conversation->aiSystem->model,
                 'duration_ms' => $durationMs,
-                'status' => 'error',
+                'status' => AiInteractionStatus::Error,
                 'error_message' => $e->getMessage(),
             ]);
 
@@ -213,7 +216,7 @@ class TargetedResumeService
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
-                'status' => 'finalized',
+                'status' => TargetedResumeStatus::Finalized,
             ]
         );
 
@@ -229,7 +232,7 @@ class TargetedResumeService
             throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
         }
 
-        $conversation->update(['status' => 'completed']);
+        $conversation->update(['status' => AiConversationStatus::Completed]);
 
         return $targetedResume->fresh();
     }

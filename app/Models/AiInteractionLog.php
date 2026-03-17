@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AiInteractionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -32,6 +33,7 @@ class AiInteractionLog extends Model
             'input_tokens' => 'integer',
             'output_tokens' => 'integer',
             'duration_ms' => 'integer',
+            'status' => AiInteractionStatus::class,
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TargetedResumeStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,7 @@ class TargetedResume extends Model
         return [
             'tailored_data' => 'array',
             'fit_score' => 'integer',
+            'status' => TargetedResumeStatus::class,
         ];
     }
 
@@ -59,7 +61,7 @@ class TargetedResume extends Model
         $companyName = $this->sanitizeFilenamePart($this->company_name);
         $position = $this->sanitizeFilenamePart($this->position);
 
-        return trim("{$companyName} {$position} Targeted Resume");
+        return trim("{$companyName} {$position} Resume");
     }
 
     private function sanitizeFilenamePart(?string $value): string

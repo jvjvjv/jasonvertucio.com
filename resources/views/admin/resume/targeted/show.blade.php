@@ -11,9 +11,31 @@
                 <h1 class="text-3xl font-heading font-bold text-primary">{{ $conversation->title ?? 'Targeted Resume' }}</h1>
                 <p class="text-sm text-gray-500 mt-1">
                     Using {{ $conversation->aiSystem->name }} &middot;
-                    {{ $conversation->status === 'active' ? 'In progress' : ucfirst($conversation->status) }}
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium
+                        @if($conversation->status === \App\Enums\AiConversationStatus::Completed)
+                            bg-green-50 text-green-700
+                        @elseif($conversation->status === \App\Enums\AiConversationStatus::Pass)
+                            bg-red-50 text-red-700
+                        @elseif($conversation->status === \App\Enums\AiConversationStatus::Active)
+                            bg-yellow-50 text-yellow-700
+                        @else
+                            bg-gray-100 text-gray-600
+                        @endif">
+                        {{ $conversation->status === \App\Enums\AiConversationStatus::Active ? 'In progress' : ucfirst($conversation->status->value) }}
+                    </span>
                 </p>
             </div>
+            @if($conversation->status !== \App\Enums\AiConversationStatus::Pass)
+                <form action="{{ route('admin.resume.targeted.pass', $conversation) }}" method="POST"
+                    onsubmit="return confirm('Mark this opportunity as passed?')">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 text-sm font-medium rounded-lg border border-red-200 hover:bg-red-100 transition-colors cursor-pointer">
+                        <i class="fa-classic fa-hand"></i>
+                        Pass
+                    </button>
+                </form>
+            @endif
         </div>
 
         @if(session('success'))

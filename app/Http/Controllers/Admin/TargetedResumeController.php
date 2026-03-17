@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AiConversationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
 use App\Http\Requests\UpdateTargetedResumeConversationRequest;
@@ -231,6 +232,17 @@ class TargetedResumeController extends Controller
         $filename = $targetedResume->generateFilename() . '.' . $format;
 
         return response()->download($path, $filename);
+    }
+
+    /**
+     * Mark a conversation as passed (declined the opportunity).
+     */
+    public function pass(AiConversation $conversation): RedirectResponse
+    {
+        $conversation->update(['status' => AiConversationStatus::Pass]);
+
+        return redirect()->route('admin.resume.targeted.index')
+            ->with('success', 'Conversation marked as passed.');
     }
 
     /**

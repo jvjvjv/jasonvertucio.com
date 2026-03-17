@@ -85,8 +85,16 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="inline-block px-2 py-0.5 rounded text-xs font-medium
-                                        {{ $resume?->status === 'finalized' || $conversation->status === 'completed' ? 'bg-green-50 text-green-700' : ($conversation->status === 'active' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
-                                        {{ ucfirst($resume?->status ?? $conversation->status) }}
+                                        @if($resume?->status === \App\Enums\TargetedResumeStatus::Finalized || $conversation->status === \App\Enums\AiConversationStatus::Completed)
+                                            bg-green-50 text-green-700
+                                        @elseif($conversation->status === \App\Enums\AiConversationStatus::Pass)
+                                            bg-red-50 text-red-700
+                                        @elseif($conversation->status === \App\Enums\AiConversationStatus::Active)
+                                            bg-yellow-50 text-yellow-700
+                                        @else
+                                            bg-gray-100 text-gray-600
+                                        @endif">
+                                        {{ ucfirst($resume?->status?->value ?? $conversation->status->value) }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ $baseVersion ?: '—' }}</td>
@@ -121,6 +129,17 @@
                                                 title="Download PDF">
                                                 <i class="fa-classic fa-file-pdf"></i>
                                             </a>
+                                        @endif
+                                        @if($conversation->status !== \App\Enums\AiConversationStatus::Pass)
+                                            <form action="{{ route('admin.resume.targeted.pass', $conversation) }}" method="POST" class="inline"
+                                                onsubmit="return confirm('Mark this opportunity as passed?')">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="p-2 text-gray-500 hover:text-red-600 transition-colors cursor-pointer"
+                                                    title="Pass on this opportunity">
+                                                    <i class="fa-classic fa-hand"></i>
+                                                </button>
+                                            </form>
                                         @endif
                                         <form action="{{ route('admin.resume.targeted.destroy', $conversation) }}" method="POST" class="inline"
                                             onsubmit="return confirm('Delete this conversation?')">
