@@ -488,6 +488,7 @@ When tailoring:
 - Provide a `Title:` line before the summary. This should be a concise header title such as `Senior Frontend Engineer`, not a sentence.
 - Adjust the professional summary to highlight relevance to this specific role
 - Reorder and emphasize skills that match the job requirements
+- When skills are wholly irrelevant to job requirements, consider omitting them to save space
 - Refine experience bullet points to use keywords from the job description
 - Keep all factual information accurate — only change presentation and emphasis
 - Use Markdown only for new tailored resumes
