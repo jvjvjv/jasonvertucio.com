@@ -160,21 +160,25 @@
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
-                            <div class="space-y-2">
+                            <div class="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-primary/50">
                                 <template x-for="(skill, skillIdx) in category.list" :key="skillIdx">
-                                    <div class="flex items-center gap-2">
-                                        <input type="text" x-model="category.list[skillIdx]" placeholder="Skill"
-                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                        <button type="button" @click="category.list.splice(skillIdx, 1)"
-                                                class="text-red-600 hover:text-red-800 px-2">
-                                            <i class="fa-solid fa-times"></i>
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20">
+                                        <span x-text="skill"></span>
+                                        <button type="button"
+                                                @click="category.list.splice(skillIdx, 1)"
+                                                class="text-primary/60 hover:text-red-600 focus:outline-none"
+                                                aria-label="Remove skill">
+                                            <i class="fa-solid fa-times text-xs"></i>
                                         </button>
-                                    </div>
+                                    </span>
                                 </template>
-                                <button type="button" @click="category.list.push('')"
-                                        class="text-sm text-primary hover:underline">
-                                    <i class="fa-solid fa-plus mr-1"></i> Add Skill
-                                </button>
+                                <input type="text"
+                                       placeholder="Type skill, press comma or Enter..."
+                                       @keydown.enter.prevent="addSkillFromInput($event, category)"
+                                       @keydown.comma.prevent="addSkillFromInput($event, category)"
+                                       @keydown.backspace="handleSkillBackspace($event, category)"
+                                       @paste="handleSkillPaste($event, category)"
+                                       class="flex-1 min-w-37.5 px-1 py-1 text-sm border-none outline-none focus:ring-0 bg-transparent">
                             </div>
                         </div>
                     </template>
@@ -199,21 +203,25 @@
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
-                            <div class="space-y-2">
+                            <div class="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-primary/50">
                                 <template x-for="(skill, skillIdx) in category.list" :key="skillIdx">
-                                    <div class="flex items-center gap-2">
-                                        <input type="text" x-model="category.list[skillIdx]" placeholder="Skill"
-                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                        <button type="button" @click="category.list.splice(skillIdx, 1)"
-                                                class="text-red-600 hover:text-red-800 px-2">
-                                            <i class="fa-solid fa-times"></i>
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20">
+                                        <span x-text="skill"></span>
+                                        <button type="button"
+                                                @click="category.list.splice(skillIdx, 1)"
+                                                class="text-primary/60 hover:text-red-600 focus:outline-none"
+                                                aria-label="Remove skill">
+                                            <i class="fa-solid fa-times text-xs"></i>
                                         </button>
-                                    </div>
+                                    </span>
                                 </template>
-                                <button type="button" @click="category.list.push('')"
-                                        class="text-sm text-primary hover:underline">
-                                    <i class="fa-solid fa-plus mr-1"></i> Add Skill
-                                </button>
+                                <input type="text"
+                                       placeholder="Type skill, press comma or Enter..."
+                                       @keydown.enter.prevent="addSkillFromInput($event, category)"
+                                       @keydown.comma.prevent="addSkillFromInput($event, category)"
+                                       @keydown.backspace="handleSkillBackspace($event, category)"
+                                       @paste="handleSkillPaste($event, category)"
+                                       class="flex-1 min-w-37.5 px-1 py-1 text-sm border-none outline-none focus:ring-0 bg-transparent">
                             </div>
                         </div>
                     </template>
@@ -583,6 +591,47 @@ function resumeEditor() {
 
         removeSkillCategory(type, index) {
             this.data.skills[type].splice(index, 1);
+        },
+
+        addSkillFromInput(event, category) {
+            const input = event.target;
+            const value = input.value.replace(/,/g, '').trim();
+
+            if (value === '') {
+                input.value = '';
+                return;
+            }
+
+            const isDuplicate = category.list.some(
+                existing => existing.toLowerCase() === value.toLowerCase()
+            );
+
+            if (!isDuplicate) {
+                category.list.push(value);
+            }
+
+            input.value = '';
+        },
+
+        handleSkillBackspace(event, category) {
+            if (event.target.value === '' && category.list.length > 0) {
+                category.list.pop();
+            }
+        },
+
+        handleSkillPaste(event, category) {
+            event.preventDefault();
+            const pasted = (event.clipboardData || window.clipboardData).getData('text');
+            const skills = pasted.split(',').map(s => s.trim()).filter(s => s !== '');
+
+            skills.forEach(skill => {
+                const isDuplicate = category.list.some(
+                    existing => existing.toLowerCase() === skill.toLowerCase()
+                );
+                if (!isDuplicate) {
+                    category.list.push(skill);
+                }
+            });
         },
 
         addExperience() {
