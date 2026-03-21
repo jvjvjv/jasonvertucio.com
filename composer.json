@@ -20,6 +20,7 @@
         "laravel/framework": "^12.54.1",
         "laravel/tinker": "^2.11.1",
         "laravel/ui": "^4.6.2",
+        "symfony/dom-crawler": "^8.0",
         "twilio/sdk": "^6.44.4"
     },
     "require-dev": {
