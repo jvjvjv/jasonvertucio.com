@@ -9,6 +9,13 @@ $nav_blocks = [
         'description' => 'Manage AI providers, API keys, and feature defaults',
     ],
     [
+        'can' => null,
+        'route' => 'admin.ai.memories.index',
+        'icon' => 'brain',
+        'label' => 'AI Memory',
+        'description' => 'View and manage learned insights from AI conversations',
+    ],
+    [
         'can' => 'edit-resume',
         'route' => 'admin.resume.targeted.index',
         'icon' => 'bullseye',

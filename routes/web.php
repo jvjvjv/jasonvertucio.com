@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\AiToolsController;
 use App\Http\Controllers\Admin\AiSystemController;
+use App\Http\Controllers\Admin\AiMemoryController;
 use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\TargetedResumeController;
 use App\Http\Controllers\Admin\MailPreviewController;
@@ -127,6 +128,15 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
         Route::post('/systems/{aiSystem}/duplicate', [AiSystemController::class, 'duplicate'])->name('systems.duplicate');
         Route::delete('/systems/{aiSystem}', [AiSystemController::class, 'destroy'])->name('systems.destroy');
         Route::get('/systems/{aiSystem}/logs', [AiSystemController::class, 'logs'])->name('systems.logs');
+
+        // AI Memories CRUD
+        Route::get('/memories', [AiMemoryController::class, 'index'])->name('memories.index');
+        Route::get('/memories/new', [AiMemoryController::class, 'create'])->name('memories.create');
+        Route::post('/memories', [AiMemoryController::class, 'store'])->name('memories.store');
+        Route::get('/memories/{memory}', [AiMemoryController::class, 'edit'])->name('memories.edit');
+        Route::put('/memories/{memory}', [AiMemoryController::class, 'update'])->name('memories.update');
+        Route::delete('/memories/{memory}', [AiMemoryController::class, 'destroy'])->name('memories.destroy');
+        Route::post('/memories/rebuild/{feature}', [AiMemoryController::class, 'rebuild'])->name('memories.rebuild');
     });
 
 // Resume editor routes - requires auth + edit-resume permission

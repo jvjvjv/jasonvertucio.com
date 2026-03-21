@@ -23,6 +23,7 @@ class TargetedResumeService
         private ResumeDataServiceContract $resumeDataService,
         private \App\Services\TargetedResumeDocumentService $documentService,
         private CoverLetterDocumentService $coverLetterDocumentService,
+        private AiMemoryService $memoryService,
     ) {
     }
 
@@ -422,6 +423,8 @@ The resume data above may include salary history for some positions. Use this to
 - Salary periods vary (per_hour, per_month, per_year) — normalize to annual when comparing
 - NEVER include salary information in the tailored resume or cover letter output
 
+{$this->getMemorySection()}
+
 ## Your Role
 
 You will be given a job posting. Follow this multi-step process:
@@ -520,6 +523,25 @@ Also offer to help with any other application questions the candidate may encoun
 PROMPT;
     }
 
+    /**
+     * Get the memory section for the system prompt, if any memories exist.
+     */
+    private function getMemorySection(): string
+    {
+        $memoryBlock = $this->memoryService->getMemoriesForPrompt('targeted-resume');
+
+        if ($memoryBlock === '') {
+            return '';
+        }
+
+        return <<<MEMORY
+## Learned Preferences & Insights
+
+The following insights were learned from previous conversations with this user. Use them to guide your approach:
+
+{$memoryBlock}
+MEMORY;
+    }
 
     public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation {
         $context = $conversation->context ?? [];
