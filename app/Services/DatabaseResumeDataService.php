@@ -329,21 +329,37 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     {
         $flat = $data['personal'];
 
-        $flat['experience'] = array_map(function ($job) {
-            if (isset($job['dates']) && is_array($job['dates'])) {
-                $job['dateStart'] = $job['dates'][0] ?? '';
-                $job['dateEnd'] = $job['dates'][1] ?? '';
-                $job['dateRange'] = implode(' - ', $job['dates']);
+        $buildDateDisplay = function (array $dates, string $separator = ' • '): string {
+            $start = $dates[0] ?? '';
+            $end = $dates[1] ?? '';
+
+            if ($start === '' && $end === '') {
+                return '';
             }
+
+            $range = $start;
+            if ($end !== '') {
+                $range .= " \u{2013} " . $end;
+            }
+
+            return $separator . $range;
+        };
+
+        $flat['experience'] = array_map(function ($job) use ($buildDateDisplay) {
+            $dates = $job['dates'] ?? [];
+            $job['dateStart'] = $dates[0] ?? '';
+            $job['dateEnd'] = $dates[1] ?? '';
+            $job['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
+            $job['dateDisplay'] = $buildDateDisplay($dates) . (count($dates) > 0 ? ' • ' : '');
             return $job;
         }, $data['experience']);
 
-        $flat['education'] = array_map(function ($edu) {
-            if (isset($edu['dates']) && is_array($edu['dates'])) {
-                $edu['dateStart'] = $edu['dates'][0] ?? '';
-                $edu['dateEnd'] = $edu['dates'][1] ?? '';
-                $edu['dateRange'] = implode(' - ', $edu['dates']);
-            }
+        $flat['education'] = array_map(function ($edu) use ($buildDateDisplay) {
+            $dates = $edu['dates'] ?? [];
+            $edu['dateStart'] = $dates[0] ?? '';
+            $edu['dateEnd'] = $dates[1] ?? '';
+            $edu['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
+            $edu['dateDisplay'] = $buildDateDisplay($dates);
             return $edu;
         }, $data['education']);
 

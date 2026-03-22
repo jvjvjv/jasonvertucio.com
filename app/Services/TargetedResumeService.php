@@ -473,12 +473,12 @@ Skill 1, Skill 2
 
 # Experience
 ## Job Title
-### Company Name - Location - Start Date - End Date
+### Company Name - Location - Start Year - End Year
 - Achievement or responsibility
 
 # Education
 ## Degree
-### Institution - Start Date - End Date
+### Institution - Start Year - End Year
 Description if applicable
 
 # Projects
@@ -494,6 +494,7 @@ When tailoring:
 - When skills are wholly irrelevant to job requirements, consider omitting them to save space
 - Refine experience bullet points to use keywords from the job description
 - Keep all factual information accurate — only change presentation and emphasis
+- When a year is not defined (e.g., current job or ongoing education), omit the year range entirely rather than showing "undefined", "Present", or "Current". For example, use `### Company Name - Location` instead of `### Company Name - Location - 2020 - Present`
 - Use Markdown only for new tailored resumes
 
 ### Step 6: Cover Letter & Application Assistance
