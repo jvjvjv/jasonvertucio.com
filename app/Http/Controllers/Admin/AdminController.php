@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -66,8 +65,46 @@ class AdminController extends Controller
     /**
      * Display the resume administration hub.
      */
-    public function resumeHub(): View
+    public function resumeHub(Request $request): InertiaResponse
     {
-        return view('admin.resume.hub');
+        $navBlocks = [
+            [
+                'can' => 'edit-resume',
+                'href' => route('admin.resume.editor'),
+                'icon' => 'EditNote',
+                'label' => 'Resume Builder',
+                'description' => 'Build and edit resume content. Documents auto-generate on save.',
+            ],
+            [
+                'can' => 'edit-resume',
+                'href' => route('admin.resume.targeted.index'),
+                'icon' => 'TrackChanges',
+                'label' => 'Targeted Resume Builder',
+                'description' => 'Use AI to tailor your resume for specific job postings',
+            ],
+            [
+                'can' => null,
+                'href' => route('resume.index'),
+                'icon' => 'Visibility',
+                'label' => 'Resume Preview',
+                'description' => 'View the resume as it appears to visitors',
+            ],
+            [
+                'can' => null,
+                'href' => route('admin.resume.codes.index'),
+                'icon' => 'Code',
+                'label' => 'Share Codes',
+                'description' => 'Share and manage codes for unauthenticated resume access',
+            ],
+        ];
+
+        $user = $request->user();
+        $filteredBlocks = array_values(array_filter($navBlocks, function ($block) use ($user) {
+            return is_null($block['can']) || $user?->can($block['can']);
+        }));
+
+        return Inertia::render('resume/Hub', [
+            'navBlocks' => $filteredBlocks,
+        ]);
     }
 }

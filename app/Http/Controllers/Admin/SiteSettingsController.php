@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class SiteSettingsController extends Controller
 {
@@ -33,12 +34,14 @@ class SiteSettingsController extends Controller
     /**
      * GET /admin/site-settings
      */
-    public function edit(): View
+    public function edit(): InertiaResponse
     {
         $config = $this->readConfig();
+        $permissions = \Spatie\Permission\Models\Permission::orderBy('name')->pluck('name')->all();
 
-        return view('admin.site-settings.editor', [
+        return Inertia::render('site-settings/Editor', [
             'links' => $config['links'] ?? [],
+            'permissions' => $permissions,
         ]);
     }
 

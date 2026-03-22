@@ -18,6 +18,7 @@
     <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
 
     @inertiaHead
+    @viteReactRefresh
     @vite(['resources/js/admin/app.tsx'])
 </head>
 
