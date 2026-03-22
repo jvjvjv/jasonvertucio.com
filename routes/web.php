@@ -113,7 +113,7 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', \App\Http\Middl
     });
 
 // AI Tools routes - requires auth + manage-ai-tools permission
-Route::middleware(['auth', 'can:manage-ai-tools'])
+Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleInertiaRequests::class])
     ->prefix('admin/ai')
     ->name('admin.ai.')
     ->group(function () {
@@ -141,7 +141,7 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
     });
 
 // Resume editor routes - requires auth + edit-resume permission
-Route::middleware(['auth', 'can:edit-resume'])
+Route::middleware(['auth', 'can:edit-resume', \App\Http\Middleware\HandleInertiaRequests::class])
     ->prefix('admin/resume')
     ->name('admin.resume.')
     ->group(function () {

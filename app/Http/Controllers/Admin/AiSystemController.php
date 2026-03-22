@@ -12,31 +12,40 @@ use App\Services\ClaudeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class AiSystemController extends Controller
 {
     /**
      * Display a list of all AI systems.
      */
-    public function index(): View
+    public function index(): InertiaResponse
     {
         $systems = AiSystem::withCount('interactionLogs')
             ->with('featureDefaults')
             ->orderBy('name')
             ->get();
 
-        return view('admin.ai.systems.index', compact('systems'));
+        $systems->each(function ($system) {
+            $system->feature_defaults_list = $system->featureDefaults->pluck('feature')->toArray();
+        });
+
+        return Inertia::render('ai/systems/Index', [
+            'systems' => $systems,
+        ]);
     }
 
     /**
      * Show the form for creating a new AI system.
      */
-    public function create(): View
+    public function create(): InertiaResponse
     {
         $existingDefaults = AiSystemFeatureDefault::pluck('feature')->toArray();
 
-        return view('admin.ai.systems.create', compact('existingDefaults'));
+        return Inertia::render('ai/systems/Create', [
+            'existingDefaults' => $existingDefaults,
+        ]);
     }
 
     /**
@@ -63,14 +72,19 @@ class AiSystemController extends Controller
     /**
      * Show the form for editing an AI system.
      */
-    public function edit(AiSystem $aiSystem): View
+    public function edit(AiSystem $aiSystem): InertiaResponse
     {
         $aiSystem->load('featureDefaults');
+        $aiSystem->feature_defaults_list = $aiSystem->featureDefaults->pluck('feature')->toArray();
+
         $existingDefaults = AiSystemFeatureDefault::where('ai_system_id', '!=', $aiSystem->id)
             ->pluck('feature')
             ->toArray();
 
-        return view('admin.ai.systems.edit', compact('aiSystem', 'existingDefaults'));
+        return Inertia::render('ai/systems/Edit', [
+            'aiSystem' => $aiSystem,
+            'existingDefaults' => $existingDefaults,
+        ]);
     }
 
     /**
@@ -109,14 +123,24 @@ class AiSystemController extends Controller
     /**
      * Display interaction logs for an AI system.
      */
-    public function logs(AiSystem $aiSystem): View
+    public function logs(AiSystem $aiSystem): InertiaResponse
     {
         $logs = AiInteractionLog::where('ai_system_id', $aiSystem->id)
             ->with('user')
             ->orderByDesc('created_at')
             ->paginate(50);
 
-        return view('admin.ai.systems.logs', compact('aiSystem', 'logs'));
+        $logs->getCollection()->transform(function ($log) {
+            $log->created_at_formatted = $log->created_at->format('M j, Y g:i A');
+            $log->user_name = $log->user?->name ?? 'System';
+
+            return $log;
+        });
+
+        return Inertia::render('ai/systems/Logs', [
+            'aiSystem' => $aiSystem,
+            'logs' => $logs,
+        ]);
     }
 
     /**

@@ -10,14 +10,15 @@ use App\Models\AiFeatureMemory;
 use App\Services\AiMemoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class AiMemoryController extends Controller
 {
     /**
      * Display all AI feature memories.
      */
-    public function index(Request $request): View
+    public function index(Request $request): InertiaResponse
     {
         $query = AiFeatureMemory::query()
             ->with('sourceConversation')
@@ -44,15 +45,19 @@ class AiMemoryController extends Controller
             ->distinct()
             ->pluck('feature');
 
-        return view('admin.ai.memories.index', compact('memories', 'features'));
+        return Inertia::render('ai/memories/Index', [
+            'memories' => $memories,
+            'features' => $features,
+            'filters' => $request->only(['feature', 'category', 'status']),
+        ]);
     }
 
     /**
      * Show the form for creating a new memory entry.
      */
-    public function create(): View
+    public function create(): InertiaResponse
     {
-        return view('admin.ai.memories.create');
+        return Inertia::render('ai/memories/Create');
     }
 
     /**
@@ -69,9 +74,11 @@ class AiMemoryController extends Controller
     /**
      * Show the form for editing a memory entry.
      */
-    public function edit(AiFeatureMemory $memory): View
+    public function edit(AiFeatureMemory $memory): InertiaResponse
     {
-        return view('admin.ai.memories.edit', compact('memory'));
+        return Inertia::render('ai/memories/Edit', [
+            'memory' => $memory,
+        ]);
     }
 
     /**

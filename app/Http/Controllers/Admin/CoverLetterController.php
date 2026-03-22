@@ -7,8 +7,9 @@ use App\Http\Requests\StoreCoverLetterRequest;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Services\CoverLetterDocumentService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use League\CommonMark\CommonMarkConverter;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -22,7 +23,7 @@ class CoverLetterController extends Controller
     /**
      * GET /admin/cover-letters
      */
-    public function index(): View
+    public function index(): InertiaResponse
     {
         $coverLetters = CoverLetter::query()
             ->with('resumeVersion')
@@ -30,7 +31,12 @@ class CoverLetterController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('admin.cover-letters.index', [
+        $coverLetters->each(function ($cl) {
+            $cl->date_formatted = $cl->date ? $cl->date->format('M j, Y') : null;
+            $cl->resume_version_label = $cl->resumeVersion?->version ?? 'N/A';
+        });
+
+        return Inertia::render('cover-letters/Index', [
             'coverLetters' => $coverLetters,
         ]);
     }
@@ -38,14 +44,14 @@ class CoverLetterController extends Controller
     /**
      * GET /admin/cover-letters/new
      */
-    public function create(): View
+    public function create(): InertiaResponse
     {
         $resumeVersions = ResumeVersion::query()
             ->orderByDesc('is_current')
             ->orderByDesc('id')
             ->get();
 
-        return view('admin.cover-letters.create', [
+        return Inertia::render('cover-letters/Create', [
             'resumeVersions' => $resumeVersions,
         ]);
     }
@@ -67,14 +73,14 @@ class CoverLetterController extends Controller
     /**
      * GET /admin/cover-letters/{coverLetter}
      */
-    public function edit(CoverLetter $coverLetter): View
+    public function edit(CoverLetter $coverLetter): InertiaResponse
     {
         $resumeVersions = ResumeVersion::query()
             ->orderByDesc('is_current')
             ->orderByDesc('id')
             ->get();
 
-        return view('admin.cover-letters.edit', [
+        return Inertia::render('cover-letters/Edit', [
             'coverLetter' => $coverLetter,
             'resumeVersions' => $resumeVersions,
         ]);
@@ -83,7 +89,7 @@ class CoverLetterController extends Controller
     /**
      * GET /admin/cover-letters/{coverLetter}/preview
      */
-    public function preview(CoverLetter $coverLetter): View
+    public function preview(CoverLetter $coverLetter): InertiaResponse
     {
         $coverLetter->load('resumeVersion.personalInfo');
 
@@ -93,10 +99,12 @@ class CoverLetterController extends Controller
             : '';
         $personalInformation = $coverLetter->resumeVersion?->personalInfo;
 
-        return view('admin.cover-letters.preview', [
+        return Inertia::render('cover-letters/Preview', [
             'personal' => $personalInformation,
             'coverLetter' => $coverLetter,
             'messageBodyHtml' => $messageBodyHtml,
+            'docxExists' => $coverLetter->docxExists(),
+            'pdfExists' => $coverLetter->pdfExists(),
         ]);
     }
 

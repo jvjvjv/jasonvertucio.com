@@ -9,7 +9,8 @@ use App\Models\ResumeShareCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ResumeShareCodeController extends Controller
 {
@@ -37,7 +38,7 @@ class ResumeShareCodeController extends Controller
     /**
      * Display a listing of all share codes with their usage.
      */
-    public function index(): View
+    public function index(): InertiaResponse
     {
         $codes = ResumeShareCode::withTrashed()
             ->withCount('views')
@@ -53,8 +54,25 @@ class ResumeShareCodeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.resume.codes', compact('codes'))
-            ->with('mailConfigured', $this->isMailConfigured());
+        $codes->each(function ($code) {
+            $code->is_trashed = $code->trashed();
+            $code->is_expired = !$code->trashed() && $code->isExpired();
+            $code->resume_url = url('/resume?code=' . $code->id);
+            $code->created_at_formatted = $code->created_at->format('M j, Y g:i A');
+            $code->expires_at_formatted = $code->expires_at?->format('M j, Y');
+            $code->views->each(function ($view) {
+                $view->created_at_formatted = $view->created_at->format('M j, Y g:i A');
+            });
+            $code->downloads->each(function ($download) {
+                $download->created_at_formatted = $download->created_at->format('M j, Y g:i A');
+            });
+        });
+
+        return Inertia::render('resume/Codes', [
+            'codes' => $codes,
+            'mailConfigured' => $this->isMailConfigured(),
+            'todayDate' => date('Y-m-d'),
+        ]);
     }
 
     /**
