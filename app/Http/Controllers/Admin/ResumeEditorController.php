@@ -7,11 +7,12 @@ use App\Contracts\ResumeVersionServiceContract;
 use App\Http\Controllers\Controller;
 use App\Mail\ResumeUpdated;
 use App\Models\ResumeShareCode;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ResumeEditorController extends Controller
 {
@@ -36,7 +37,7 @@ class ResumeEditorController extends Controller
      * GET /admin/resume/editor
      * Show the resume editor with all JSON data
      */
-    public function edit(): View
+    public function edit(): InertiaResponse
     {
         $data = $this->dataService->getAllEditableData();
         $version = $this->versionService->getCurrentVersion();
@@ -46,7 +47,7 @@ class ResumeEditorController extends Controller
         // Get count of recipients who will be notified on update
         $notificationRecipientCount = ResumeShareCode::shouldNotifyOnUpdate()->count();
 
-        return view('admin.resume.editor', [
+        return Inertia::render('resume/Editor', [
             'data' => $data,
             'version' => $version,
             'docxExists' => $docxExists,
