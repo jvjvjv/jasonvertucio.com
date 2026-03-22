@@ -16,7 +16,8 @@ use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TargetedResumeController extends Controller
@@ -29,7 +30,7 @@ class TargetedResumeController extends Controller
     /**
      * List all targeted resumes with optional filters.
      */
-    public function index(Request $request): View
+    public function index(Request $request): InertiaResponse
     {
         $defaultStatuses = [AiConversationStatus::Active->value, TargetedResumeStatus::Finalized->value];
         $statuses = $request->input('status', $request->has('search') ? [] : $defaultStatuses);
@@ -55,17 +56,14 @@ class TargetedResumeController extends Controller
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                // Search in targeted resume company_name and position
                 $q->whereHas('targetedResume', function ($sub) use ($search) {
                     $sub->where('company_name', 'LIKE', '%' . $search . '%')
                         ->orWhere('position', 'LIKE', '%' . $search . '%');
                 });
 
-                // Search in conversation context JSON fallback fields
                 $q->orWhere('context->company_name', 'LIKE', '%' . $search . '%')
                   ->orWhere('context->job_title', 'LIKE', '%' . $search . '%');
 
-                // Search in non-system conversation messages
                 $q->orWhereHas('messages', function ($sub) use ($search) {
                     $sub->where('role', '!=', 'system')
                         ->where('content', 'LIKE', '%' . $search . '%');
@@ -73,20 +71,52 @@ class TargetedResumeController extends Controller
             });
         }
 
-        $conversations = $query->orderByDesc('updated_at')->get();
+        $conversations = $query->orderByDesc('updated_at')->get()->map(fn ($conv) => [
+            'id' => $conv->id,
+            'status' => $conv->status->value,
+            'updated_at' => $conv->updated_at->diffForHumans(),
+            'messages_count' => $conv->messages_count,
+            'context' => $conv->context,
+            'targeted_resume' => $conv->targetedResume ? [
+                'id' => $conv->targetedResume->id,
+                'company_name' => $conv->targetedResume->company_name,
+                'position' => $conv->targetedResume->position,
+                'fit_score' => $conv->targetedResume->fit_score,
+                'status' => $conv->targetedResume->status->value ?? $conv->targetedResume->status,
+                'resume_version' => $conv->targetedResume->resumeVersion?->version,
+            ] : null,
+        ]);
 
-        return view('admin.resume.targeted.index', compact('conversations', 'statuses', 'search'));
+        $allStatuses = collect(AiConversationStatus::cases())
+            ->merge(TargetedResumeStatus::cases())
+            ->map(fn ($s) => ['value' => $s->value, 'label' => ucfirst($s->value)]);
+
+        return Inertia::render('resume/targeted/Index', [
+            'conversations' => $conversations,
+            'allStatuses' => $allStatuses,
+            'filters' => [
+                'statuses' => $statuses,
+                'search' => $search,
+            ],
+        ]);
     }
 
     /**
      * Show the form to start a new targeted resume session.
      */
-    public function create(): View
+    public function create(): InertiaResponse
     {
-        $systems = AiSystem::active()->orderBy('name')->get();
+        $systems = AiSystem::active()->orderBy('name')->get()->map(fn ($s) => [
+            'id' => $s->id,
+            'name' => $s->name,
+            'model' => $s->model,
+        ]);
         $defaultSystemId = AiSystem::defaultForFeature('targeted-resume')?->id;
 
-        return view('admin.resume.targeted.create', compact('systems', 'defaultSystemId'));
+        return Inertia::render('resume/targeted/Create', [
+            'systems' => $systems,
+            'defaultSystemId' => $defaultSystemId,
+        ]);
     }
 
     /**
@@ -113,7 +143,7 @@ class TargetedResumeController extends Controller
     /**
      * Show a conversation with the chat interface.
      */
-    public function show(AiConversation $conversation): View
+    public function show(AiConversation $conversation): InertiaResponse
     {
         $conversation->load('messages', 'aiSystem');
 
@@ -132,7 +162,29 @@ class TargetedResumeController extends Controller
         $shouldAutoStart = ($conversation->messages->where('role', 'assistant')->count() === 0)
             && ((bool) data_get($conversation->context, 'auto_start_pending', false));
 
-        return view('admin.resume.targeted.show', compact('conversation', 'messages', 'targetedResume', 'coverLetter', 'shouldAutoStart'));
+        return Inertia::render('resume/targeted/Show', [
+            'conversation' => [
+                'id' => $conversation->id,
+                'status' => $conversation->status->value,
+                'title' => $conversation->title,
+                'context' => $conversation->context,
+                'ai_system_name' => $conversation->aiSystem?->name,
+            ],
+            'messages' => $messages,
+            'targetedResume' => $targetedResume ? [
+                'id' => $targetedResume->id,
+                'company_name' => $targetedResume->company_name,
+                'position' => $targetedResume->position,
+                'fit_score' => $targetedResume->fit_score,
+                'status' => $targetedResume->status->value ?? $targetedResume->status,
+                'docx_path' => $targetedResume->docx_path ? true : false,
+                'pdf_path' => $targetedResume->pdf_path ? true : false,
+            ] : null,
+            'coverLetter' => $coverLetter ? [
+                'id' => $coverLetter->id,
+            ] : null,
+            'shouldAutoStart' => $shouldAutoStart,
+        ]);
     }
 
     /**
