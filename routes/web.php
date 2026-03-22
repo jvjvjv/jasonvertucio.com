@@ -77,7 +77,7 @@ Route::group(['prefix' => 'blog'], function ($route) {
 Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
 
 // Admin routes - requires auth + manage-unauthenticated-viewers permission
-Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])
+Route::middleware(['auth', 'can:manage-unauthenticated-viewers', \App\Http\Middleware\HandleInertiaRequests::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

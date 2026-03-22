@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
@@ -11,6 +12,7 @@ export default defineConfig({
                 'resources/js/currently-watching.js',
                 'resources/js/font-loader.js',
                 'resources/js/home.js',
+                'resources/js/admin/app.tsx',
                 'resources/css/app.css',
                 'resources/css/blog.css',
                 'resources/css/resume.css',
@@ -18,6 +20,7 @@ export default defineConfig({
             ],
             refresh: true,
         }),
+        react(),
         viteStaticCopy({
             targets: [
                 { src: 'resources/config/config.json', dest: '' },

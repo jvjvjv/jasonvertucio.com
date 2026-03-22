@@ -10,12 +10,23 @@
         "pull": "git pull && composer install && npm ci && npm run build && sudo php artisan optimize:clear"
     },
     "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
         "@fortawesome/fontawesome-free": "^7.1.0",
+        "@inertiajs/react": "^2.3.18",
+        "@mui/icons-material": "^7.3.9",
+        "@mui/material": "^7.3.9",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.2.0",
         "angular-expressions": "^1.5.1",
         "docxtemplater": "^3.67.6",
         "file-saver": "^2.0.5",
         "marked": "^17.0.3",
-        "pizzip": "^3.2.0"
+        "pizzip": "^3.2.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "typescript": "^5.9.3"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.18",
