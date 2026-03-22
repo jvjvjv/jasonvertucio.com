@@ -11,7 +11,7 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const addSkill = (value: string) => {
-        const trimmed = value.replace(/,/g, '').trim();
+        const trimmed = value.trim();
         if (trimmed === '') return;
         const isDuplicate = skills.some(
             (s) => s.toLowerCase() === trimmed.toLowerCase(),
@@ -27,11 +27,15 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const input = e.currentTarget;
-        if (e.key === 'Enter' || e.key === ',') {
+        if (e.key === "Enter") {
             e.preventDefault();
             addSkill(input.value);
-            input.value = '';
-        } else if (e.key === 'Backspace' && input.value === '' && skills.length > 0) {
+            input.value = "";
+        } else if (
+            e.key === "Backspace" &&
+            input.value === "" &&
+            skills.length > 0
+        ) {
             onChange(skills.slice(0, -1));
         }
     };
@@ -40,9 +44,10 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
         e.preventDefault();
         const pasted = e.clipboardData.getData('text');
         const newSkills = pasted
-            .split(',')
+            .replace(/\r/g, "")
+            .split("\n")
             .map((s) => s.trim())
-            .filter((s) => s !== '');
+            .filter((s) => s !== "");
         const updated = [...skills];
         newSkills.forEach((skill) => {
             const isDuplicate = updated.some(
@@ -60,20 +65,20 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
         <Box
             onClick={() => inputRef.current?.focus()}
             sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
                 gap: 0.5,
                 p: 1,
                 border: 1,
-                borderColor: 'divider',
+                borderColor: "divider",
                 borderRadius: 1,
                 minHeight: 42,
-                cursor: 'text',
-                '&:focus-within': {
-                    borderColor: 'primary.main',
+                cursor: "text",
+                "&:focus-within": {
+                    borderColor: "primary.main",
                     borderWidth: 2,
-                    p: '7px',
+                    p: "7px",
                 },
             }}
         >
@@ -90,18 +95,20 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
             <Box
                 component="input"
                 ref={inputRef}
-                placeholder={skills.length === 0 ? 'Type skill, press comma or Enter...' : ''}
+                placeholder={
+                    skills.length === 0 ? "Type skill, press Enter..." : ""
+                }
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 sx={{
                     flex: 1,
                     minWidth: 150,
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '0.875rem',
+                    border: "none",
+                    outline: "none",
+                    fontSize: "0.875rem",
                     py: 0.5,
                     px: 0.5,
-                    bgcolor: 'transparent',
+                    bgcolor: "transparent",
                 }}
             />
         </Box>
