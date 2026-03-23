@@ -10,6 +10,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { marked } from 'marked';
 import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
 
@@ -47,6 +48,22 @@ interface ShowProps {
     coverLetter: CoverLetter | null;
     shouldAutoStart: boolean;
 }
+
+const markdownSx = {
+    fontSize: '0.875rem',
+    '& p': { mb: '0.75em', '&:last-child': { mb: 0 } },
+    '& ul, & ol': { mb: '0.75em', pl: '1.5em' },
+    '& ul': { listStyleType: 'disc' },
+    '& ol': { listStyleType: 'decimal' },
+    '& li': { mb: '0.25em' },
+    '& strong, & b': { fontWeight: 700 },
+    '& em, & i': { fontStyle: 'italic' },
+    '& a': { color: '#4351a0', textDecoration: 'underline' },
+    '& blockquote': { borderLeft: '3px solid #d1d5db', pl: '1em', color: '#6b7280', mb: '0.75em' },
+    '& code': { bgcolor: 'rgba(0,0,0,0.06)', px: '0.3em', py: '0.1em', borderRadius: '3px', fontSize: '0.85em' },
+    '& pre': { bgcolor: 'rgba(0,0,0,0.06)', p: '0.75em', borderRadius: '4px', overflow: 'auto', mb: '0.75em', '& code': { bgcolor: 'transparent', p: 0 } },
+    '& hr': { border: 'none', borderTop: '1px solid #e5e7eb', my: '1em' },
+} as const;
 
 function statusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
     switch (status) {
@@ -302,14 +319,22 @@ export default function Show({
                                         borderRadius: 2,
                                         px: 2,
                                         py: 1,
+                                        ...(msg.role !== 'user' && markdownSx),
                                     }}
                                 >
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-                                    >
-                                        {msg.content}
-                                    </Typography>
+                                    {msg.role === 'user' ? (
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                                        >
+                                            {msg.content}
+                                        </Typography>
+                                    ) : (
+                                        <div
+                                            style={{ wordBreak: 'break-word' }}
+                                            dangerouslySetInnerHTML={{ __html: marked.parse(msg.content, { breaks: true }) as string }}
+                                        />
+                                    )}
                                 </Box>
                             ))}
                             {isStreaming && streamingContent && (
@@ -321,14 +346,13 @@ export default function Show({
                                         borderRadius: 2,
                                         px: 2,
                                         py: 1,
+                                        ...markdownSx,
                                     }}
                                 >
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-                                    >
-                                        {streamingContent}
-                                    </Typography>
+                                    <div
+                                        style={{ wordBreak: 'break-word' }}
+                                        dangerouslySetInnerHTML={{ __html: marked.parse(streamingContent, { breaks: true }) as string }}
+                                    />
                                 </Box>
                             )}
                             {isStreaming && !streamingContent && (
