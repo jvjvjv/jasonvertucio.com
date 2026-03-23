@@ -18,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import AdminLayout from '../../layouts/AdminLayout';
 import PageHeader from '../../components/PageHeader';
 import SkillsInput from '../../components/SkillsInput';
+import DateInput from '../../components/DateInput';
 
 // --- Type definitions ---
 
@@ -502,36 +503,31 @@ export default function Editor({
                                             updateExperience(updated);
                                         }}
                                     />
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                        <TextField
-                                            label="Start Year"
-                                            size="small"
-                                            placeholder="2020"
-                                            value={job.dates[0]}
-                                            onChange={(e) => {
+                                    <Box sx={{ display: 'flex', gap: 2, gridColumn: { md: '1 / -1' } }}>
+                                        <DateInput
+                                            label="Start Date"
+                                            value={job.dates[0] ?? ''}
+                                            onChange={(val) => {
                                                 const updated = [...data.experience];
                                                 updated[jobIdx] = {
                                                     ...updated[jobIdx],
-                                                    dates: [e.target.value, job.dates[1]],
+                                                    dates: [val, job.dates[1] ?? ''],
                                                 };
                                                 updateExperience(updated);
                                             }}
-                                            sx={{ flex: 1 }}
                                         />
-                                        <TextField
-                                            label="End Year"
-                                            size="small"
-                                            placeholder="Present"
-                                            value={job.dates[1]}
-                                            onChange={(e) => {
+                                        <DateInput
+                                            label="End Date"
+                                            value={job.dates[1] ?? ''}
+                                            allowPresent
+                                            onChange={(val) => {
                                                 const updated = [...data.experience];
                                                 updated[jobIdx] = {
                                                     ...updated[jobIdx],
-                                                    dates: [job.dates[0], e.target.value],
+                                                    dates: [job.dates[0] ?? '', val],
                                                 };
                                                 updateExperience(updated);
                                             }}
-                                            sx={{ flex: 1 }}
                                         />
                                     </Box>
                                     <FormControlLabel
@@ -849,34 +845,33 @@ export default function Editor({
                                             updateEducation(updated);
                                         }}
                                     />
-                                    <TextField
-                                        label="Start Year"
-                                        size="small"
-                                        placeholder="2016"
-                                        value={edu.dates[0]}
-                                        onChange={(e) => {
-                                            const updated = [...data.education];
-                                            updated[eduIdx] = {
-                                                ...updated[eduIdx],
-                                                dates: [e.target.value, edu.dates[1]],
-                                            };
-                                            updateEducation(updated);
-                                        }}
-                                    />
-                                    <TextField
-                                        label="End Year"
-                                        size="small"
-                                        placeholder="2020"
-                                        value={edu.dates[1]}
-                                        onChange={(e) => {
-                                            const updated = [...data.education];
-                                            updated[eduIdx] = {
-                                                ...updated[eduIdx],
-                                                dates: [edu.dates[0], e.target.value],
-                                            };
-                                            updateEducation(updated);
-                                        }}
-                                    />
+                                    <Box sx={{ display: 'flex', gap: 2, gridColumn: { md: '1 / -1' } }}>
+                                        <DateInput
+                                            label="Start Date"
+                                            value={edu.dates[0] ?? ''}
+                                            onChange={(val) => {
+                                                const updated = [...data.education];
+                                                updated[eduIdx] = {
+                                                    ...updated[eduIdx],
+                                                    dates: [val, edu.dates[1] ?? ''],
+                                                };
+                                                updateEducation(updated);
+                                            }}
+                                        />
+                                        <DateInput
+                                            label="End Date"
+                                            value={edu.dates[1] ?? ''}
+                                            allowPresent
+                                            onChange={(val) => {
+                                                const updated = [...data.education];
+                                                updated[eduIdx] = {
+                                                    ...updated[eduIdx],
+                                                    dates: [edu.dates[0] ?? '', val],
+                                                };
+                                                updateEducation(updated);
+                                            }}
+                                        />
+                                    </Box>
                                     <TextField
                                         label="Description"
                                         size="small"

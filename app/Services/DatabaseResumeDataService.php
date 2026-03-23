@@ -40,7 +40,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             'personal' => $this->transformPersonalInfo($version->personalInfo),
             'skills' => $this->transformSkills($version->skillCategories),
             'experience' => $this->transformExperiences($version->experiences, includeSalary: true),
-            'education' => $this->transformEducations($version->educations),
+            'education' => $this->transformEducations($version->educations, forEditor: true),
             'projects' => $this->transformProjects($version->projects),
         ];
     }
@@ -111,8 +111,8 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                     'job_title' => $exp['jobTitle'],
                     'company' => $exp['company'],
                     'location' => $exp['location'] ?? null,
-                    'date_start' => $dates[0] ?? null,
-                    'date_end' => !empty($dates) ? end($dates) : null,
+                    'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
+                    'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
                     'salary_start_amount' => !empty($exp['salaryStart']['amount']) ? $exp['salaryStart']['amount'] : null,
                     'salary_start_period' => !empty($exp['salaryStart']['period']) ? $exp['salaryStart']['period'] : null,
                     'salary_end_amount' => !empty($exp['salaryEnd']['amount']) ? $exp['salaryEnd']['amount'] : null,
@@ -135,8 +135,8 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 $version->educations()->create([
                     'institution' => $edu['institution'],
                     'degree' => $edu['degree'] ?? null,
-                    'date_start' => $dates[0] ?? null,
-                    'date_end' => !empty($dates) ? end($dates) : null,
+                    'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
+                    'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
                     'description' => $edu['description'] ?? null,
                     'sort_order' => $eduIndex,
                 ]);
@@ -260,12 +260,60 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     }
 
     /**
+     * Format a date value for public display (always show year only).
+     *
+     * "2024-03-15" → "2024", "2024" → "2024", "Present" → "Present"
+     */
+    private function formatDateForDisplay(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        if (strcasecmp($value, 'present') === 0) {
+            return 'Present';
+        }
+
+        // Extract just the year from YYYY or YYYY-MM-DD
+        return substr($value, 0, 4);
+    }
+
+    /**
+     * Validate a date value is either year-only, full date (YYYY-MM-DD), "Present", or empty.
+     */
+    private function sanitizeDateValue(?string $value, bool $allowPresent = false): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($allowPresent && strcasecmp($value, 'present') === 0) {
+            return 'Present';
+        }
+
+        if (preg_match('/^\d{4}$/', $value)) {
+            return $value;
+        }
+
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/', $value)) {
+            return $value;
+        }
+
+        return null;
+    }
+
+    /**
      * Transform experiences collection to the expected array format.
      */
     protected function transformExperiences($experiences, bool $includeSalary = false): array
     {
         return $experiences->map(function ($exp) use ($includeSalary) {
-            $dates = array_filter([$exp->date_start, $exp->date_end]);
+            $dates = $includeSalary
+                ? [$exp->date_start ?? '', $exp->date_end ?? '']
+                : array_values(array_filter([
+                    $this->formatDateForDisplay($exp->date_start),
+                    $this->formatDateForDisplay($exp->date_end),
+                ]));
 
             $result = [
                 'jobTitle' => $exp->job_title,
@@ -294,10 +342,15 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     /**
      * Transform educations collection to the expected array format.
      */
-    protected function transformEducations($educations): array
+    protected function transformEducations($educations, bool $forEditor = false): array
     {
-        return $educations->map(function ($edu) {
-            $dates = array_filter([$edu->date_start, $edu->date_end]);
+        return $educations->map(function ($edu) use ($forEditor) {
+            $dates = $forEditor
+                ? [$edu->date_start ?? '', $edu->date_end ?? '']
+                : array_values(array_filter([
+                    $this->formatDateForDisplay($edu->date_start),
+                    $this->formatDateForDisplay($edu->date_end),
+                ]));
 
             return array_filter([
                 'institution' => $edu->institution,
