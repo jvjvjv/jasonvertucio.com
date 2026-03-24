@@ -7,21 +7,9 @@ import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
 import AiSystemForm from './Form';
 import type { FormData } from './Form';
-
-interface AiSystem {
-    id: number;
-    name: string;
-    provider: string;
-    api_key: string;
-    model: string;
-    base_url: string | null;
-    api_version: string | null;
-    max_tokens: number;
-    temperature: number | null;
-    config: Record<string, unknown> | null;
-    is_active: boolean;
-    feature_defaults_list: string[];
-}
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import useConfirmDialog from '../../../hooks/useConfirmDialog';
+import type { AiSystem } from '../../../types';
 
 interface EditProps {
     aiSystem: AiSystem;
@@ -43,15 +31,17 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         feature_defaults: aiSystem.feature_defaults_list ?? [],
     });
 
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         form.put(`/admin/ai/systems/${aiSystem.id}`);
     };
 
     const handleDuplicate = () => {
-        if (confirm('Duplicate this AI system?')) {
+        confirm('Duplicate this AI system?', () => {
             router.post(`/admin/ai/systems/${aiSystem.id}/duplicate`);
-        }
+        }, { confirmLabel: 'Duplicate', confirmColor: 'primary' });
     };
 
     return (
@@ -87,6 +77,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
                     </Box>
                 </CardContent>
             </Card>
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }

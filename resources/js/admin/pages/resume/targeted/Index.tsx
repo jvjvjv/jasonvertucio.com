@@ -3,7 +3,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Checkbox from '@mui/material/Checkbox';
-import Chip from '@mui/material/Chip';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -15,24 +14,11 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
-
-interface TargetedResume {
-    id: number;
-    company_name: string;
-    position: string;
-    fit_score: number | null;
-    status: string;
-    resume_version: string | null;
-}
-
-interface Conversation {
-    id: number;
-    status: string;
-    updated_at: string;
-    messages_count: number;
-    context: Record<string, string> | null;
-    targeted_resume: TargetedResume | null;
-}
+import EmptyTableRow from '../../../components/EmptyTableRow';
+import StatusChip from '../../../components/StatusChip';
+import type { Conversation, TargetedResume } from '../../../types';
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import useConfirmDialog from '../../../hooks/useConfirmDialog';
 
 interface StatusOption {
     value: string;
@@ -45,20 +31,6 @@ interface IndexProps {
     filters: {
         statuses: string[];
         search: string;
-    };
-}
-
-function statusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
-    switch (status) {
-        case 'finalized':
-        case 'completed':
-            return 'success';
-        case 'active':
-            return 'warning';
-        case 'pass':
-            return 'error';
-        default:
-            return 'default';
     }
 }
 
@@ -83,16 +55,18 @@ export default function Index({ conversations, allStatuses, filters }: IndexProp
         );
     };
 
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handleDelete = (id: number) => {
-        if (confirm('Delete this conversation?')) {
+        confirm('Delete this conversation?', () => {
             router.delete(`/admin/resume/targeted-builder/${id}`);
-        }
+        });
     };
 
     const handlePass = (id: number) => {
-        if (confirm('Mark this opportunity as passed?')) {
+        confirm('Mark this opportunity as passed?', () => {
             router.post(`/admin/resume/targeted-builder/${id}/pass`);
-        }
+        }, { confirmLabel: 'Pass', confirmColor: 'warning' });
     };
 
     return (
@@ -148,16 +122,7 @@ export default function Index({ conversations, allStatuses, filters }: IndexProp
                         </TableHead>
                         <TableBody>
                             {conversations.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            No conversations found.{' '}
-                                            <Link href="/admin/resume/targeted-builder/new">
-                                                Start one
-                                            </Link>
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
+                                <EmptyTableRow colSpan={6} message="No conversations found." actionLabel="Start one" actionHref="/admin/resume/targeted-builder/new" />
                             ) : (
                                 conversations.map((conv) => {
                                     const resume = conv.targeted_resume;
@@ -188,12 +153,7 @@ export default function Index({ conversations, allStatuses, filters }: IndexProp
                                                 {resume?.fit_score != null ? `${resume.fit_score}%` : '—'}
                                             </TableCell>
                                             <TableCell>
-                                                <Chip
-                                                    label={displayStatus}
-                                                    size="small"
-                                                    color={statusColor(displayStatus)}
-                                                    variant="outlined"
-                                                />
+                                                <StatusChip status={displayStatus} />
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="caption">{conv.updated_at}</Typography>
@@ -233,6 +193,7 @@ export default function Index({ conversations, allStatuses, filters }: IndexProp
                     </Table>
                 </TableContainer>
             </Card>
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }

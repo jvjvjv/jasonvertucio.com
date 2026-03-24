@@ -22,6 +22,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AdminLayout from '../../layouts/AdminLayout';
 import PageHeader from '../../components/PageHeader';
+import EmptyTableRow from '../../components/EmptyTableRow';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import useConfirmDialog from '../../hooks/useConfirmDialog';
 
 interface ViewRecord {
     created_at_formatted: string;
@@ -75,10 +78,12 @@ export default function Codes({ codes, mailConfigured, todayDate }: CodesProps) 
         });
     };
 
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handleInvalidate = (codeId: string) => {
-        if (confirm('Are you sure you want to invalidate this code?')) {
+        confirm('Are you sure you want to invalidate this code?', () => {
             router.delete(`/admin/resume/codes/${codeId}`);
-        }
+        });
     };
 
     const toggleExpand = (key: string) => {
@@ -176,11 +181,7 @@ export default function Codes({ codes, mailConfigured, todayDate }: CodesProps) 
                         </TableHead>
                         <TableBody>
                             {codes.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">No share codes created yet.</Typography>
-                                    </TableCell>
-                                </TableRow>
+                                <EmptyTableRow colSpan={9} message="No share codes created yet." />
                             ) : (
                                 codes.map((code) => (
                                     <CodeRow
@@ -196,6 +197,7 @@ export default function Codes({ codes, mailConfigured, todayDate }: CodesProps) 
                     </Table>
                 </TableContainer>
             </Card>
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }

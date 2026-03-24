@@ -8,16 +8,16 @@ import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
 import MemoryForm from './Form';
 import type { FormData } from './Form';
+import type { Memory } from '../../../types';
 
-interface Memory extends FormData {
-    id: number;
+interface EditMemory extends Memory, FormData {
     times_reinforced: number;
     last_reinforced_at: string | null;
     source_conversation_id: number | null;
 }
 
 interface EditProps {
-    memory: Memory;
+    memory: EditMemory;
 }
 
 export default function Edit({ memory }: EditProps) {

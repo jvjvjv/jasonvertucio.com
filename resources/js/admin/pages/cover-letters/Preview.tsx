@@ -12,6 +12,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import AdminLayout from '../../layouts/AdminLayout';
+import { letterMarkdownSx } from '../../utils/markdownSx';
 
 interface PersonalInfo {
     name: string;
@@ -95,16 +96,7 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                     fontSize: '1rem',
                     lineHeight: 1.75,
                     color: 'text.primary',
-                    '& p': { mb: '1em' },
-                    '& ul, & ol': { mb: '1em', pl: '1.5em' },
-                    '& ul': { listStyleType: 'disc' },
-                    '& ol': { listStyleType: 'decimal' },
-                    '& li': { mb: '0.25em' },
-                    '& strong, & b': { fontWeight: 700 },
-                    '& em, & i': { fontStyle: 'italic' },
-                    '& a': { color: '#4351a0', textDecoration: 'underline' },
-                    '& blockquote': { borderLeft: '3px solid #d1d5db', pl: '1em', color: '#6b7280', mb: '1em' },
-                    '& hr': { border: 'none', borderTop: '1px solid #e5e7eb', my: '1.5em' },
+                    ...letterMarkdownSx,
                 }}
             >
                 <p>{formattedDate}</p>

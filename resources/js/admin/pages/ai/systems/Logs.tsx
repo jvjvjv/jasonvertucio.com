@@ -1,8 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import { Head } from '@inertiajs/react';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -12,36 +9,14 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
-
-interface LogEntry {
-    id: number;
-    created_at_formatted: string;
-    user_name: string;
-    feature: string;
-    status: string;
-}
-
-interface PaginationLink {
-    url: string | null;
-    label: string;
-    active: boolean;
-}
-
-interface PaginatedLogs {
-    data: LogEntry[];
-    links: PaginationLink[];
-    current_page: number;
-    last_page: number;
-}
-
-interface AiSystem {
-    id: number;
-    name: string;
-}
+import EmptyTableRow from '../../../components/EmptyTableRow';
+import StatusChip from '../../../components/StatusChip';
+import Pagination from '../../../components/Pagination';
+import type { AiSystem, LogEntry, PaginatedResponse } from '../../../types';
 
 interface LogsProps {
-    aiSystem: AiSystem;
-    logs: PaginatedLogs;
+    aiSystem: Pick<AiSystem, 'id' | 'name'>;
+    logs: PaginatedResponse<LogEntry>;
 }
 
 export default function Logs({ aiSystem, logs }: LogsProps) {
@@ -63,13 +38,7 @@ export default function Logs({ aiSystem, logs }: LogsProps) {
                         </TableHead>
                         <TableBody>
                             {logs.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            No interaction logs yet. Logs will appear here once this system processes requests.
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
+                                <EmptyTableRow colSpan={4} message="No interaction logs yet. Logs will appear here once this system processes requests." />
                             ) : (
                                 logs.data.map((log) => (
                                     <TableRow key={log.id}>
@@ -77,12 +46,7 @@ export default function Logs({ aiSystem, logs }: LogsProps) {
                                         <TableCell>{log.user_name}</TableCell>
                                         <TableCell>{log.feature}</TableCell>
                                         <TableCell>
-                                            <Chip
-                                                label={log.status}
-                                                size="small"
-                                                color={log.status === 'success' ? 'success' : 'error'}
-                                                variant="outlined"
-                                            />
+                                            <StatusChip status={log.status} colorMap={{ success: 'success', error: 'error', failed: 'error' }} />
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -91,22 +55,7 @@ export default function Logs({ aiSystem, logs }: LogsProps) {
                     </Table>
                 </TableContainer>
 
-                {/* Pagination */}
-                {logs.last_page > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, py: 2 }}>
-                        {logs.links.map((link, i) => (
-                            <Button
-                                key={i}
-                                component={link.url ? Link : 'button'}
-                                href={link.url ?? undefined}
-                                size="small"
-                                variant={link.active ? 'contained' : 'text'}
-                                disabled={!link.url}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </Box>
-                )}
+                <Pagination links={logs.links} lastPage={logs.last_page} />
             </Card>
         </AdminLayout>
     );

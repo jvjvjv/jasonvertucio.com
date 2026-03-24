@@ -11,15 +11,10 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
-
-interface AiSystem {
-    id: number;
-    name: string;
-    model: string;
-}
+import type { AiSystem } from '../../../types';
 
 interface CreateProps {
-    systems: AiSystem[];
+    systems: Pick<AiSystem, 'id' | 'name' | 'model'>[];
     defaultSystemId: number | null;
 }
 

@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
@@ -13,33 +12,11 @@ import Typography from '@mui/material/Typography';
 import { marked } from 'marked';
 import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
-
-interface Message {
-    role: string;
-    content: string;
-}
-
-interface TargetedResume {
-    id: number;
-    company_name: string;
-    position: string;
-    fit_score: number | null;
-    status: string;
-    docx_path: boolean;
-    pdf_path: boolean;
-}
-
-interface CoverLetter {
-    id: number;
-}
-
-interface Conversation {
-    id: number;
-    status: string;
-    title: string | null;
-    context: Record<string, string> | null;
-    ai_system_name: string | null;
-}
+import type { Conversation, CoverLetter, Message, TargetedResume } from '../../../types';
+import { markdownSx } from '../../../utils/markdownSx';
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import StatusChip from '../../../components/StatusChip';
+import useConfirmDialog from '../../../hooks/useConfirmDialog';
 
 interface ShowProps {
     conversation: Conversation;
@@ -47,36 +24,6 @@ interface ShowProps {
     targetedResume: TargetedResume | null;
     coverLetter: CoverLetter | null;
     shouldAutoStart: boolean;
-}
-
-const markdownSx = {
-    fontSize: '0.875rem',
-    '& p': { mb: '0.75em', '&:last-child': { mb: 0 } },
-    '& ul, & ol': { mb: '0.75em', pl: '1.5em' },
-    '& ul': { listStyleType: 'disc' },
-    '& ol': { listStyleType: 'decimal' },
-    '& li': { mb: '0.25em' },
-    '& strong, & b': { fontWeight: 700 },
-    '& em, & i': { fontStyle: 'italic' },
-    '& a': { color: '#4351a0', textDecoration: 'underline' },
-    '& blockquote': { borderLeft: '3px solid #d1d5db', pl: '1em', color: '#6b7280', mb: '0.75em' },
-    '& code': { bgcolor: 'rgba(0,0,0,0.06)', px: '0.3em', py: '0.1em', borderRadius: '3px', fontSize: '0.85em' },
-    '& pre': { bgcolor: 'rgba(0,0,0,0.06)', p: '0.75em', borderRadius: '4px', overflow: 'auto', mb: '0.75em', '& code': { bgcolor: 'transparent', p: 0 } },
-    '& hr': { border: 'none', borderTop: '1px solid #e5e7eb', my: '1em' },
-} as const;
-
-function statusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
-    switch (status) {
-        case 'finalized':
-        case 'completed':
-            return 'success';
-        case 'active':
-            return 'warning';
-        case 'pass':
-            return 'error';
-        default:
-            return 'default';
-    }
 }
 
 export default function Show({
@@ -207,10 +154,12 @@ export default function Show({
         }
     };
 
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handlePass = () => {
-        if (confirm('Mark this opportunity as passed?')) {
+        confirm('Mark this opportunity as passed?', () => {
             router.post(`/admin/resume/targeted-builder/${conversation.id}/pass`);
-        }
+        }, { confirmLabel: 'Pass', confirmColor: 'warning' });
     };
 
     const handleMetadataSave = (e: React.FormEvent) => {
@@ -233,12 +182,7 @@ export default function Show({
 
             {/* Status bar */}
             <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Chip
-                    label={targetedResume?.status === 'finalized' ? 'finalized' : conversation.status}
-                    color={statusColor(targetedResume?.status === 'finalized' ? 'finalized' : conversation.status)}
-                    variant="outlined"
-                    size="small"
-                />
+                <StatusChip status={targetedResume?.status === 'finalized' ? 'finalized' : conversation.status} />
                 {conversation.ai_system_name && (
                     <Typography variant="caption" color="text.secondary">
                         AI: {conversation.ai_system_name}
@@ -453,12 +397,7 @@ export default function Show({
                                     Targeted Resume
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 1 }}>
-                                    <Chip
-                                        label={targetedResume.status}
-                                        size="small"
-                                        color={statusColor(targetedResume.status)}
-                                        variant="outlined"
-                                    />
+                                    <StatusChip status={targetedResume.status} />
                                     <Typography variant="body2">
                                         {targetedResume.company_name} — {targetedResume.position}
                                     </Typography>
@@ -496,6 +435,7 @@ export default function Show({
                     </CardContent>
                 </Card>
             )}
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }

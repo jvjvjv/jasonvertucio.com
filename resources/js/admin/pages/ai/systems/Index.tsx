@@ -12,32 +12,28 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import AdminLayout from '../../../layouts/AdminLayout';
 import PageHeader from '../../../components/PageHeader';
-
-interface AiSystem {
-    id: number;
-    name: string;
-    provider: string;
-    model: string;
-    is_active: boolean;
-    interaction_logs_count: number;
-    feature_defaults_list: string[];
-}
+import EmptyTableRow from '../../../components/EmptyTableRow';
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import useConfirmDialog from '../../../hooks/useConfirmDialog';
+import type { AiSystem } from '../../../types';
 
 interface IndexProps {
     systems: AiSystem[];
 }
 
 export default function Index({ systems }: IndexProps) {
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handleDelete = (id: number, name: string) => {
-        if (confirm(`Delete AI system "${name}"? This cannot be undone.`)) {
+        confirm(`Delete AI system "${name}"? This cannot be undone.`, () => {
             router.delete(`/admin/ai/systems/${id}`);
-        }
+        });
     };
 
     const handleDuplicate = (id: number) => {
-        if (confirm('Duplicate this AI system?')) {
+        confirm('Duplicate this AI system?', () => {
             router.post(`/admin/ai/systems/${id}/duplicate`);
-        }
+        }, { confirmLabel: 'Duplicate', confirmColor: 'primary' });
     };
 
     return (
@@ -66,14 +62,7 @@ export default function Index({ systems }: IndexProps) {
                         </TableHead>
                         <TableBody>
                             {systems.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">No AI systems configured yet.</Typography>
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                            <Link href="/admin/ai/systems/new">Add your first one</Link>
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
+                                <EmptyTableRow colSpan={6} message="No AI systems configured yet." actionLabel="Add your first one" actionHref="/admin/ai/systems/new" />
                             ) : (
                                 systems.map((system) => (
                                     <TableRow key={system.id} hover sx={{ opacity: system.is_active ? 1 : 0.5 }}>
@@ -123,6 +112,7 @@ export default function Index({ systems }: IndexProps) {
                     </Table>
                 </TableContainer>
             </Card>
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }

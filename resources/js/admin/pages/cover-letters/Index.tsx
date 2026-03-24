@@ -11,6 +11,9 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import AdminLayout from '../../layouts/AdminLayout';
 import PageHeader from '../../components/PageHeader';
+import EmptyTableRow from '../../components/EmptyTableRow';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import useConfirmDialog from '../../hooks/useConfirmDialog';
 
 interface CoverLetter {
     id: number;
@@ -25,10 +28,12 @@ interface IndexProps {
 }
 
 export default function Index({ coverLetters }: IndexProps) {
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handleDelete = (id: number) => {
-        if (confirm('Delete this cover letter? This cannot be undone.')) {
+        confirm('Delete this cover letter? This cannot be undone.', () => {
             router.delete(`/admin/cover-letters/${id}`);
-        }
+        });
     };
 
     return (
@@ -60,14 +65,7 @@ export default function Index({ coverLetters }: IndexProps) {
                         </TableHead>
                         <TableBody>
                             {coverLetters.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">No cover letters yet.</Typography>
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                            <Link href="/admin/cover-letters/new">Add your first one</Link>
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
+                                <EmptyTableRow colSpan={5} message="No cover letters yet." actionLabel="Add your first one" actionHref="/admin/cover-letters/new" />
                             ) : (
                                 coverLetters.map((cl) => (
                                     <TableRow key={cl.id} hover>
@@ -108,6 +106,7 @@ export default function Index({ coverLetters }: IndexProps) {
                     </Table>
                 </TableContainer>
             </Card>
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }

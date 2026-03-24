@@ -6,6 +6,8 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import AdminLayout from '../../layouts/AdminLayout';
 import PageHeader from '../../components/PageHeader';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import useConfirmDialog from '../../hooks/useConfirmDialog';
 import CoverLetterForm from './Form';
 import type { FormData, ResumeVersion } from './Form';
 
@@ -31,15 +33,17 @@ export default function Edit({ coverLetter, resumeVersions }: EditProps) {
         signature: coverLetter.signature ?? '',
     });
 
+    const { dialogProps, confirm } = useConfirmDialog();
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         form.put(`/admin/cover-letters/${coverLetter.id}`);
     };
 
     const handleDelete = () => {
-        if (confirm('Delete this cover letter and its generated files? This cannot be undone.')) {
+        confirm('Delete this cover letter and its generated files? This cannot be undone.', () => {
             router.delete(`/admin/cover-letters/${coverLetter.id}`);
-        }
+        });
     };
 
     return (
@@ -84,6 +88,7 @@ export default function Edit({ coverLetter, resumeVersions }: EditProps) {
                     </Box>
                 </CardContent>
             </Card>
+            <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
 }
