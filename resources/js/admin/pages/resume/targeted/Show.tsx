@@ -181,8 +181,22 @@ export default function Show({
             />
 
             {/* Status bar */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                <StatusChip status={targetedResume?.status === 'finalized' ? 'finalized' : conversation.status} />
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 2,
+                    mb: 2,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                }}
+            >
+                <StatusChip
+                    status={
+                        targetedResume?.status === "finalized"
+                            ? "finalized"
+                            : conversation.status
+                    }
+                />
                 {conversation.ai_system_name && (
                     <Typography variant="caption" color="text.secondary">
                         AI: {conversation.ai_system_name}
@@ -194,13 +208,18 @@ export default function Show({
                     </Typography>
                 )}
                 <Box sx={{ flexGrow: 1 }} />
-                {conversation.status === 'active' && (
-                    <Button size="small" color="warning" variant="outlined" onClick={handlePass}>
+                {conversation.status === "active" && (
+                    <Button
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                        onClick={handlePass}
+                    >
                         Pass
                     </Button>
                 )}
                 {targetedResume && (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1 }}>
                         {targetedResume.docx_path && (
                             <Button
                                 size="small"
@@ -225,7 +244,11 @@ export default function Show({
                 )}
             </Box>
 
-            <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2 }}>
+            <Tabs
+                value={activeTab}
+                onChange={(_, v) => setActiveTab(v)}
+                sx={{ mb: 2 }}
+            >
                 <Tab label="Chat" />
                 <Tab label="Details" />
             </Tabs>
@@ -233,50 +256,74 @@ export default function Show({
             {/* Chat Tab */}
             {activeTab === 0 && (
                 <Card>
-                    <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+                    <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
                         {/* Messages */}
                         <Box
                             sx={{
-                                height: '60vh',
-                                overflowY: 'auto',
+                                height: "60vh",
+                                overflowY: "auto",
                                 p: 2,
-                                display: 'flex',
-                                flexDirection: 'column',
+                                display: "flex",
+                                flexDirection: "column",
                                 gap: 2,
+                                code: {
+                                    textWrapMode: "wrap",
+                                },
                             }}
                         >
                             {messages.length === 0 && !isStreaming && (
-                                <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
+                                <Typography
+                                    color="text.secondary"
+                                    align="center"
+                                    sx={{ py: 4 }}
+                                >
                                     {shouldAutoStart
-                                        ? 'Starting analysis...'
-                                        : 'Send a message to begin the conversation.'}
+                                        ? "Starting analysis..."
+                                        : "Send a message to begin the conversation."}
                                 </Typography>
                             )}
                             {messages.map((msg, idx) => (
                                 <Box
                                     key={idx}
                                     sx={{
-                                        alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                        maxWidth: '80%',
-                                        bgcolor: msg.role === 'user' ? 'primary.main' : 'grey.100',
-                                        color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
+                                        alignSelf:
+                                            msg.role === "user"
+                                                ? "flex-end"
+                                                : "flex-start",
+                                        maxWidth: "80%",
+                                        bgcolor:
+                                            msg.role === "user"
+                                                ? "primary.main"
+                                                : "grey.100",
+                                        color:
+                                            msg.role === "user"
+                                                ? "primary.contrastText"
+                                                : "text.primary",
                                         borderRadius: 2,
                                         px: 2,
                                         py: 1,
-                                        ...(msg.role !== 'user' && markdownSx),
+                                        ...(msg.role !== "user" && markdownSx),
                                     }}
                                 >
-                                    {msg.role === 'user' ? (
+                                    {msg.role === "user" ? (
                                         <Typography
                                             variant="body2"
-                                            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                                            sx={{
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                            }}
                                         >
                                             {msg.content}
                                         </Typography>
                                     ) : (
                                         <div
-                                            style={{ wordBreak: 'break-word' }}
-                                            dangerouslySetInnerHTML={{ __html: marked.parse(msg.content, { breaks: true }) as string }}
+                                            style={{ wordBreak: "break-word" }}
+                                            dangerouslySetInnerHTML={{
+                                                __html: marked.parse(
+                                                    msg.content,
+                                                    { breaks: true },
+                                                ) as string,
+                                            }}
                                         />
                                     )}
                                 </Box>
@@ -284,9 +331,9 @@ export default function Show({
                             {isStreaming && streamingContent && (
                                 <Box
                                     sx={{
-                                        alignSelf: 'flex-start',
-                                        maxWidth: '80%',
-                                        bgcolor: 'grey.100',
+                                        alignSelf: "flex-start",
+                                        maxWidth: "80%",
+                                        bgcolor: "grey.100",
                                         borderRadius: 2,
                                         px: 2,
                                         py: 1,
@@ -294,13 +341,21 @@ export default function Show({
                                     }}
                                 >
                                     <div
-                                        style={{ wordBreak: 'break-word' }}
-                                        dangerouslySetInnerHTML={{ __html: marked.parse(streamingContent, { breaks: true }) as string }}
+                                        style={{ wordBreak: "break-word" }}
+                                        dangerouslySetInnerHTML={{
+                                            __html: marked.parse(
+                                                streamingContent,
+                                                { breaks: true },
+                                            ) as string,
+                                        }}
                                     />
                                 </Box>
                             )}
                             {isStreaming && !streamingContent && (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                >
                                     AI is thinking...
                                 </Typography>
                             )}
@@ -312,8 +367,8 @@ export default function Show({
                             sx={{
                                 p: 2,
                                 borderTop: 1,
-                                borderColor: 'divider',
-                                display: 'flex',
+                                borderColor: "divider",
+                                display: "flex",
                                 gap: 1,
                             }}
                         >
@@ -332,7 +387,7 @@ export default function Show({
                                 variant="contained"
                                 onClick={() => sendMessage()}
                                 disabled={isStreaming || !userInput.trim()}
-                                sx={{ alignSelf: 'flex-end' }}
+                                sx={{ alignSelf: "flex-end" }}
                             >
                                 Send
                             </Button>
@@ -354,7 +409,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.title}
-                                onChange={(e) => metadataForm.setData('title', e.target.value)}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "title",
+                                        e.target.value,
+                                    )
+                                }
                                 error={!!metadataForm.errors.title}
                                 helperText={metadataForm.errors.title}
                                 sx={{ mb: 2 }}
@@ -364,7 +424,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.company_name}
-                                onChange={(e) => metadataForm.setData('company_name', e.target.value)}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "company_name",
+                                        e.target.value,
+                                    )
+                                }
                                 error={!!metadataForm.errors.company_name}
                                 helperText={metadataForm.errors.company_name}
                                 sx={{ mb: 2 }}
@@ -374,12 +439,22 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.job_title}
-                                onChange={(e) => metadataForm.setData('job_title', e.target.value)}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "job_title",
+                                        e.target.value,
+                                    )
+                                }
                                 error={!!metadataForm.errors.job_title}
                                 helperText={metadataForm.errors.job_title}
                                 sx={{ mb: 3 }}
                             />
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                }}
+                            >
                                 <Button
                                     type="submit"
                                     variant="contained"
@@ -392,17 +467,34 @@ export default function Show({
 
                         {/* Resume & Cover Letter Status */}
                         {targetedResume && (
-                            <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+                            <Box
+                                sx={{
+                                    mt: 4,
+                                    pt: 3,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
                                 <Typography variant="subtitle2" gutterBottom>
                                     Targeted Resume
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 1 }}>
-                                    <StatusChip status={targetedResume.status} />
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        gap: 2,
+                                        alignItems: "center",
+                                        mb: 1,
+                                    }}
+                                >
+                                    <StatusChip
+                                        status={targetedResume.status}
+                                    />
                                     <Typography variant="body2">
-                                        {targetedResume.company_name} — {targetedResume.position}
+                                        {targetedResume.company_name} —{" "}
+                                        {targetedResume.position}
                                     </Typography>
                                 </Box>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
                                     <Button
                                         size="small"
                                         variant="outlined"
@@ -418,7 +510,14 @@ export default function Show({
                             </Box>
                         )}
                         {coverLetter && (
-                            <Box sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+                            <Box
+                                sx={{
+                                    mt: 3,
+                                    pt: 3,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
                                 <Typography variant="subtitle2" gutterBottom>
                                     Cover Letter
                                 </Typography>

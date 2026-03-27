@@ -37,15 +37,21 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         setParseError('');
 
         try {
-            const response = await fetch('/admin/resume/targeted-builder/parse-url', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
+            const response = await fetch(
+                "/admin/resume/targeted-builder/parse-url",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                    },
+                    body: JSON.stringify({
+                        url: jobUrl,
+                        ai_system_id: aiSystemId,
+                    }),
                 },
-                body: JSON.stringify({ url: jobUrl }),
-            });
+            );
 
             const result = await response.json();
 
