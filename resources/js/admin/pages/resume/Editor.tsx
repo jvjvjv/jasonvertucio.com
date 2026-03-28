@@ -62,6 +62,7 @@ interface Personal {
     email: string;
     phone: string;
     linkedin: string;
+    url: string;
     summary: string;
 }
 
@@ -335,6 +336,14 @@ export default function Editor({
                                 fullWidth
                                 value={data.personal.linkedin ?? ''}
                                 onChange={(e) => updatePersonal('linkedin', e.target.value)}
+                                sx={{ gridColumn: { md: '1 / -1' } }}
+                            />
+                            <TextField
+                                label="Website URL"
+                                size="small"
+                                fullWidth
+                                value={data.personal.url ?? ''}
+                                onChange={(e) => updatePersonal('url', e.target.value)}
                                 sx={{ gridColumn: { md: '1 / -1' } }}
                             />
                             <TextField

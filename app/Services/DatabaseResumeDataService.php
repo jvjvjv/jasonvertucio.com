@@ -81,6 +81,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 'email' => $data['personal']['email'],
                 'phone' => $data['personal']['phone'] ?? null,
                 'linkedin' => $data['personal']['linkedin'] ?? null,
+                'url' => $data['personal']['url'] ?? null,
                 'summary' => $data['personal']['summary'] ?? null,
             ]);
 
@@ -232,6 +233,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             'email' => $info->email,
             'phone' => $info->phone,
             'linkedin' => $info->linkedin,
+            'url' => $info->url ?? 'https://jasonvertucio.com',
             'summary' => $info->summary,
         ], fn ($value) => $value !== null);
     }

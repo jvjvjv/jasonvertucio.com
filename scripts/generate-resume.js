@@ -64,6 +64,34 @@ try {
     // Render the document with data
     doc.render(data);
 
+    // Post-process: convert plain-text URL into a Word hyperlink
+    if (data.url) {
+        const fullUrl = data.url;
+        const displayUrl = fullUrl.replace(/^https?:\/\//, '');
+        const renderedZip = doc.getZip();
+
+        // Add hyperlink relationship to document rels
+        const relsFile = 'word/_rels/document.xml.rels';
+        let relsXml = renderedZip.file(relsFile).asText();
+        const hyperlinkRelId = 'rIdUrl1';
+        const newRel = `<Relationship Id="${hyperlinkRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${fullUrl}" TargetMode="External"/>`;
+        relsXml = relsXml.replace('</Relationships>', `${newRel}</Relationships>`);
+        renderedZip.file(relsFile, relsXml);
+
+        // Replace the rendered URL text run with a hyperlink element
+        // The rendered URL may be split across XML runs; escape for regex use
+        const escapedUrl = fullUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let docXml = renderedZip.file('word/document.xml').asText();
+
+        // Match a <w:r> run containing the full URL text and replace with hyperlink
+        const runPattern = new RegExp(
+            `(<w:r(?:\\s[^>]*)?>(?:<w:rPr>[\\s\\S]*?</w:rPr>)?<w:t(?:[^>]*)?>)${escapedUrl}(</w:t></w:r>)`,
+        );
+        const hyperlinkXml = `<w:hyperlink r:id="${hyperlinkRelId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">$1${displayUrl}$2</w:hyperlink>`;
+        docXml = docXml.replace(runPattern, hyperlinkXml);
+        renderedZip.file('word/document.xml', docXml);
+    }
+
     // Generate the output buffer
     const outputBuffer = doc.getZip().generate({
         type: 'nodebuffer',
