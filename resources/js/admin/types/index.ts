@@ -88,6 +88,8 @@ export interface TargetedResume {
     resume_version?: string | null;
     docx_path?: boolean;
     pdf_path?: boolean;
+    tailored_content?: string | null;
+    tailored_title?: string | null;
 }
 
 export interface Conversation {
@@ -108,4 +110,8 @@ export interface Message {
 
 export interface CoverLetter {
     id: number;
+    company_name?: string | null;
+    position?: string | null;
+    docx_path?: boolean;
+    pdf_path?: boolean;
 }

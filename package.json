@@ -2,6 +2,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "serve": "npm run dev",
         "dev": "composer dump-autoload && php artisan optimize:clear && concurrently 'vite' 'npm run https-proxy' 'php artisan serve --host=127.0.0.1 --port=8001'",
         "https-proxy": "local-ssl-proxy --source 8000 --target 8001 --cert .certs/localhost.pem --key .certs/localhost-key.pem",
         "build": "vite build",

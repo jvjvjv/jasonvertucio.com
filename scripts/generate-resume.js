@@ -64,11 +64,13 @@ try {
     // Render the document with data
     doc.render(data);
 
+    // Get zip once — all modifications and output generation use this reference
+    const renderedZip = doc.getZip();
+
     // Post-process: convert plain-text URL into a Word hyperlink
     if (data.url) {
         const fullUrl = data.url;
         const displayUrl = fullUrl.replace(/^https?:\/\//, '');
-        const renderedZip = doc.getZip();
 
         // Add hyperlink relationship to document rels
         const relsFile = 'word/_rels/document.xml.rels';
@@ -92,8 +94,8 @@ try {
         renderedZip.file('word/document.xml', docXml);
     }
 
-    // Generate the output buffer
-    const outputBuffer = doc.getZip().generate({
+    // Generate the output buffer from the (possibly modified) zip
+    const outputBuffer = renderedZip.generate({
         type: 'nodebuffer',
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     });

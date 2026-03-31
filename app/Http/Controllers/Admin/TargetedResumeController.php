@@ -179,9 +179,16 @@ class TargetedResumeController extends Controller
                 'status' => $targetedResume->status->value ?? $targetedResume->status,
                 'docx_path' => $targetedResume->docx_path ? true : false,
                 'pdf_path' => $targetedResume->pdf_path ? true : false,
+                'tailored_content' => data_get($targetedResume->tailored_data, 'markdown')
+                    ?? data_get($targetedResume->tailored_data, 'content'),
+                'tailored_title' => $targetedResume->title,
             ] : null,
             'coverLetter' => $coverLetter ? [
                 'id' => $coverLetter->id,
+                'company_name' => $coverLetter->company_name ?? null,
+                'position' => $coverLetter->position ?? null,
+                'docx_path' => $coverLetter->docxExists(),
+                'pdf_path' => $coverLetter->pdfExists(),
             ] : null,
             'shouldAutoStart' => $shouldAutoStart,
         ]);
@@ -296,7 +303,7 @@ class TargetedResumeController extends Controller
         $docxResult = $documentService->generateDocx($targetedResume);
 
         if (!$docxResult['success']) {
-            return redirect()->route('admin.resume.targeted.index')
+            return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)
                 ->with('error', 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error'));
         }
 
@@ -307,7 +314,7 @@ class TargetedResumeController extends Controller
             $message = 'DOCX and PDF regenerated successfully.';
         }
 
-        return redirect()->route('admin.resume.targeted.index')->with('success', $message);
+        return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)->with('success', $message);
     }
 
     /**

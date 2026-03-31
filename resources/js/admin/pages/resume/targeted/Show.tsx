@@ -1,22 +1,27 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { marked } from 'marked';
-import AdminLayout from '../../../layouts/AdminLayout';
-import PageHeader from '../../../components/PageHeader';
-import type { Conversation, CoverLetter, Message, TargetedResume } from '../../../types';
-import { markdownSx } from '../../../utils/markdownSx';
-import ConfirmDialog from '../../../components/ConfirmDialog';
-import StatusChip from '../../../components/StatusChip';
-import useConfirmDialog from '../../../hooks/useConfirmDialog';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { marked } from "marked";
+import AdminLayout from "../../../layouts/AdminLayout";
+import PageHeader from "../../../components/PageHeader";
+import type {
+    Conversation,
+    CoverLetter,
+    Message,
+    TargetedResume,
+} from "../../../types";
+import { markdownSx } from "../../../utils/markdownSx";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import StatusChip from "../../../components/StatusChip";
+import useConfirmDialog from "../../../hooks/useConfirmDialog";
 
 interface ShowProps {
     conversation: Conversation;
@@ -35,23 +40,32 @@ export default function Show({
 }: ShowProps) {
     const [activeTab, setActiveTab] = useState(0);
     const [messages, setMessages] = useState<Message[]>(initialMessages);
-    const [userInput, setUserInput] = useState('');
+    const [userInput, setUserInput] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
-    const [streamingContent, setStreamingContent] = useState('');
+    const [streamingContent, setStreamingContent] = useState("");
+    const [isFinalizing, setIsFinalizing] = useState(false);
+    const [finalizeError, setFinalizeError] = useState<string | null>(null);
+    const [isFinalizingCoverLetter, setIsFinalizingCoverLetter] = useState(false);
+    const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasAutoStarted = useRef(false);
 
     const metadataForm = useForm({
-        title: conversation.title || '',
-        company_name: targetedResume?.company_name || conversation.context?.company_name || '',
-        job_title: targetedResume?.position || conversation.context?.job_title || '',
+        title: conversation.title || "",
+        company_name:
+            targetedResume?.company_name ||
+            conversation.context?.company_name ||
+            "",
+        job_title:
+            targetedResume?.position || conversation.context?.job_title || "",
     });
 
     const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+            ?.content ?? "";
 
     const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
 
     useEffect(() => {
@@ -64,22 +78,25 @@ export default function Show({
             if (!text && !shouldAutoStart) return;
 
             if (text) {
-                setMessages((prev) => [...prev, { role: 'user', content: text }]);
-                setUserInput('');
+                setMessages((prev) => [
+                    ...prev,
+                    { role: "user", content: text },
+                ]);
+                setUserInput("");
             }
 
             setIsStreaming(true);
-            setStreamingContent('');
+            setStreamingContent("");
 
             try {
                 const response = await fetch(
                     `/admin/resume/targeted-builder/${conversation.id}/chat`,
                     {
-                        method: 'POST',
+                        method: "POST",
                         headers: {
-                            'Content-Type': 'application/json',
-                            Accept: 'text/event-stream',
-                            'X-CSRF-TOKEN': csrfToken,
+                            "Content-Type": "application/json",
+                            Accept: "text/event-stream",
+                            "X-CSRF-TOKEN": csrfToken,
                         },
                         body: JSON.stringify({ message: text || null }),
                     },
@@ -90,31 +107,34 @@ export default function Show({
                 }
 
                 const reader = response.body?.getReader();
-                if (!reader) throw new Error('No reader available');
+                if (!reader) throw new Error("No reader available");
 
                 const decoder = new TextDecoder();
-                let accumulated = '';
+                let accumulated = "";
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
 
                     const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
+                    const lines = chunk.split("\n");
 
                     for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
+                        if (!line.startsWith("data: ")) continue;
                         const jsonStr = line.slice(6);
                         if (!jsonStr.trim()) continue;
 
                         try {
                             const event = JSON.parse(jsonStr);
 
-                            if (event.type === 'content_block_delta' && event.delta?.text) {
+                            if (
+                                event.type === "content_block_delta" &&
+                                event.delta?.text
+                            ) {
                                 accumulated += event.delta.text;
                                 setStreamingContent(accumulated);
-                            } else if (event.type === 'error') {
-                                accumulated += `\n\n**Error:** ${event.message || 'Unknown error'}`;
+                            } else if (event.type === "error") {
+                                accumulated += `\n\n**Error:** ${event.message || "Unknown error"}`;
                                 setStreamingContent(accumulated);
                             }
                         } catch {
@@ -124,16 +144,22 @@ export default function Show({
                 }
 
                 if (accumulated) {
-                    setMessages((prev) => [...prev, { role: 'assistant', content: accumulated }]);
+                    setMessages((prev) => [
+                        ...prev,
+                        { role: "assistant", content: accumulated },
+                    ]);
                 }
             } catch (err) {
                 setMessages((prev) => [
                     ...prev,
-                    { role: 'assistant', content: `**Error:** ${(err as Error).message}` },
+                    {
+                        role: "assistant",
+                        content: `**Error:** ${(err as Error).message}`,
+                    },
                 ]);
             } finally {
                 setIsStreaming(false);
-                setStreamingContent('');
+                setStreamingContent("");
             }
         },
         [userInput, conversation.id, csrfToken, shouldAutoStart],
@@ -143,12 +169,136 @@ export default function Show({
     useEffect(() => {
         if (shouldAutoStart && !hasAutoStarted.current) {
             hasAutoStarted.current = true;
-            sendMessage('');
+            sendMessage("");
         }
     }, [shouldAutoStart, sendMessage]);
 
+    // --- Resume/Cover Letter parsing helpers ---
+
+    function parseTailoredResumeBlock(raw: string): { title: string | null; content: string } {
+        const normalized = raw.trim().replace(/\r\n/g, "\n");
+        const titleMatch = normalized.match(/^Title:\s*(.+)\n+/i);
+        if (!titleMatch) return { title: null, content: normalized };
+        return {
+            title: titleMatch[1].trim(),
+            content: normalized.replace(/^Title:\s*.+\n+/i, "").trim(),
+        };
+    }
+
+    function getLatestTailoredResumeData(msgs: Message[]) {
+        for (let i = msgs.length - 1; i >= 0; i--) {
+            const msg = msgs[i];
+            if (msg.role !== "assistant") continue;
+            const contentMatch = msg.content.match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
+            if (!contentMatch) continue;
+            const parsed = parseTailoredResumeBlock(contentMatch[1]);
+            let fitScore: number | null = null;
+            const scoreMatch = msg.content.match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i);
+            if (scoreMatch) {
+                const s = parseInt(scoreMatch[1]);
+                if (s <= 100) fitScore = s;
+            }
+            return { rawContent: contentMatch[1].trim(), ...parsed, fitScore };
+        }
+        return null;
+    }
+
+    function getLatestCoverLetterContent(msgs: Message[]): string | null {
+        for (let i = msgs.length - 1; i >= 0; i--) {
+            const msg = msgs[i];
+            if (msg.role !== "assistant") continue;
+            const m = msg.content.match(/```cover[-\s]letter\s*\n([\s\S]*?)```/i);
+            if (m) return m[1].trim();
+        }
+        return null;
+    }
+
+    const latestResumeData = getLatestTailoredResumeData(messages);
+    const latestCoverLetterContent = getLatestCoverLetterContent(messages);
+
+    const hasNewerResume = (() => {
+        if (!targetedResume || !latestResumeData) return false;
+        const normalize = (s: string | null | undefined) => (s || "").trim().replace(/\r\n/g, "\n");
+        return (
+            normalize(latestResumeData.title) !== normalize(targetedResume.tailored_title) ||
+            normalize(latestResumeData.content) !== normalize(targetedResume.tailored_content)
+        );
+    })();
+
+    const canFinalizeResume = latestResumeData !== null && (!targetedResume || hasNewerResume);
+    const canFinalizeCoverLetter = latestCoverLetterContent !== null && !coverLetter;
+
+    const finalizeResumeLabel = !targetedResume
+        ? "Finalize Resume"
+        : hasNewerResume
+          ? "Update Finalized Resume"
+          : "Resume Finalized";
+
+    const handleFinalizeResume = async () => {
+        if (!canFinalizeResume || !latestResumeData) return;
+        setIsFinalizing(true);
+        setFinalizeError(null);
+        try {
+            const response = await fetch(
+                `/admin/resume/targeted-builder/${conversation.id}/finalize`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        tailored_content: latestResumeData.rawContent,
+                        fit_score: latestResumeData.fitScore,
+                    }),
+                },
+            );
+            const data = await response.json();
+            if (!response.ok) {
+                setFinalizeError(data.message || "Failed to save targeted resume.");
+                return;
+            }
+            window.location.reload();
+        } catch {
+            setFinalizeError("Network error. Please try again.");
+        } finally {
+            setIsFinalizing(false);
+        }
+    };
+
+    const handleFinalizeCoverLetter = async () => {
+        if (!canFinalizeCoverLetter || !latestCoverLetterContent) return;
+        setIsFinalizingCoverLetter(true);
+        setFinalizeCoverLetterError(null);
+        try {
+            const response = await fetch(
+                `/admin/resume/targeted-builder/${conversation.id}/finalize-cover-letter`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({ cover_letter_content: latestCoverLetterContent }),
+                },
+            );
+            const data = await response.json();
+            if (!response.ok) {
+                setFinalizeCoverLetterError(data.message || "Failed to save cover letter.");
+                return;
+            }
+            window.location.reload();
+        } catch {
+            setFinalizeCoverLetterError("Network error. Please try again.");
+        } finally {
+            setIsFinalizingCoverLetter(false);
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
             sendMessage();
         }
@@ -157,18 +307,30 @@ export default function Show({
     const { dialogProps, confirm } = useConfirmDialog();
 
     const handlePass = () => {
-        confirm('Mark this opportunity as passed?', () => {
-            router.post(`/admin/resume/targeted-builder/${conversation.id}/pass`);
-        }, { confirmLabel: 'Pass', confirmColor: 'warning' });
+        confirm(
+            "Mark this opportunity as passed?",
+            () => {
+                router.post(
+                    `/admin/resume/targeted-builder/${conversation.id}/pass`,
+                );
+            },
+            { confirmLabel: "Pass", confirmColor: "warning" },
+        );
     };
 
     const handleMetadataSave = (e: React.FormEvent) => {
         e.preventDefault();
-        metadataForm.put(`/admin/resume/targeted-builder/${conversation.id}/metadata`);
+        metadataForm.put(
+            `/admin/resume/targeted-builder/${conversation.id}/metadata`,
+        );
     };
 
-    const companyName = targetedResume?.company_name || conversation.context?.company_name || 'Conversation';
-    const position = targetedResume?.position || conversation.context?.job_title || '';
+    const companyName =
+        targetedResume?.company_name ||
+        conversation.context?.company_name ||
+        "Conversation";
+    const position =
+        targetedResume?.position || conversation.context?.job_title || "";
     const pageTitle = position ? `${companyName} — ${position}` : companyName;
 
     return (
@@ -218,30 +380,108 @@ export default function Show({
                         Pass
                     </Button>
                 )}
-                {targetedResume && (
-                    <Box sx={{ display: "flex", gap: 1 }}>
-                        {targetedResume.docx_path && (
+
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        color="success"
+                        disabled={isFinalizing || !canFinalizeResume}
+                        onClick={handleFinalizeResume}
+                        title={
+                            !latestResumeData
+                                ? "Finalize is available after the assistant returns a tailored resume block"
+                                : !targetedResume
+                                  ? "Extract and save the tailored resume from the conversation"
+                                  : hasNewerResume
+                                    ? "Extract and save the latest tailored resume"
+                                    : "Resume already finalized with the latest content"
+                        }
+                    >
+                        {isFinalizing ? "Saving..." : finalizeResumeLabel}
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        disabled={isFinalizingCoverLetter || !canFinalizeCoverLetter}
+                        onClick={handleFinalizeCoverLetter}
+                        title={
+                            coverLetter
+                                ? "Cover letter already finalized"
+                                : !latestCoverLetterContent
+                                  ? "Finalize is available after the assistant returns a cover letter block"
+                                  : "Extract and save the cover letter from the conversation"
+                        }
+                    >
+                        {isFinalizingCoverLetter
+                            ? "Saving..."
+                            : coverLetter
+                              ? "Cover Letter Finalized"
+                              : "Finalize Cover Letter"}
+                    </Button>
+                    {targetedResume && (
+                        <>
                             <Button
                                 size="small"
                                 variant="outlined"
-                                component="a"
-                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
+                                onClick={() =>
+                                    router.post(
+                                        `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
+                                    )
+                                }
                             >
-                                DOCX
+                                {targetedResume.docx_path
+                                    ? "Regenerate Docs"
+                                    : "Generate Docs"}
                             </Button>
-                        )}
-                        {targetedResume.pdf_path && (
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                component="a"
-                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
-                            >
-                                PDF
-                            </Button>
-                        )}
-                    </Box>
-                )}
+                            {targetedResume.docx_path && (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    component="a"
+                                    href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
+                                >
+                                    DOCX
+                                </Button>
+                            )}
+                            {targetedResume.pdf_path && (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    component="a"
+                                    href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
+                                >
+                                    PDF
+                                </Button>
+                            )}
+                        </>
+                    )}
+                    {coverLetter && (
+                        <>
+                            {coverLetter.docx_path && (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    component="a"
+                                    href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
+                                >
+                                    CL DOCX
+                                </Button>
+                            )}
+                            {coverLetter.pdf_path && (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    component="a"
+                                    href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
+                                >
+                                    CL PDF
+                                </Button>
+                            )}
+                        </>
+                    )}
+                </Box>
             </Box>
 
             <Tabs
@@ -253,9 +493,51 @@ export default function Show({
                 <Tab label="Details" />
             </Tabs>
 
+            {/* Finalize errors */}
+            {(finalizeError || finalizeCoverLetterError) && (
+                <Box sx={{ mb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                    {finalizeError && <Alert severity="error">{finalizeError}</Alert>}
+                    {finalizeCoverLetterError && <Alert severity="error">{finalizeCoverLetterError}</Alert>}
+                </Box>
+            )}
+
             {/* Chat Tab */}
             {activeTab === 0 && (
-                <Card>
+                <>
+                    {/* Resume / Cover Letter status cards */}
+                    <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, mb: 2 }}>
+                        <Card variant="outlined" sx={{ borderColor: targetedResume ? "success.light" : "divider", bgcolor: targetedResume ? "success.50" : "background.paper" }}>
+                            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                                <Typography variant="overline" color={targetedResume ? "success.dark" : "text.secondary"} sx={{ display: "block", lineHeight: 1.5 }}>
+                                    Resume
+                                </Typography>
+                                <Typography variant="subtitle2">
+                                    {targetedResume ? "Finalized and ready" : "Not finalized yet"}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {targetedResume
+                                        ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
+                                        : "Finalize a tailored resume from the chat actions above."}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                        <Card variant="outlined" sx={{ borderColor: coverLetter ? "primary.light" : "divider", bgcolor: coverLetter ? "primary.50" : "background.paper" }}>
+                            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                                <Typography variant="overline" color={coverLetter ? "primary.dark" : "text.secondary"} sx={{ display: "block", lineHeight: 1.5 }}>
+                                    Cover Letter
+                                </Typography>
+                                <Typography variant="subtitle2">
+                                    {coverLetter ? "Finalized and ready" : "Not finalized yet"}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {coverLetter
+                                        ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() || "Cover letter saved"
+                                        : "Finalize a cover letter from the chat actions above."}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </Box>
+                    <Card>
                     <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
                         {/* Messages */}
                         <Box
@@ -394,6 +676,7 @@ export default function Show({
                         </Box>
                     </CardContent>
                 </Card>
+                </>
             )}
 
             {/* Details Tab */}
@@ -493,19 +776,6 @@ export default function Show({
                                         {targetedResume.company_name} —{" "}
                                         {targetedResume.position}
                                     </Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() =>
-                                            router.post(
-                                                `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
-                                            )
-                                        }
-                                    >
-                                        Regenerate Docs
-                                    </Button>
                                 </Box>
                             </Box>
                         )}
