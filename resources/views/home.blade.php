@@ -36,15 +36,20 @@
 
 <body id="page-top" class="fonts-loading font-body text-dark bg-gray-50">
 
+    <button
+        type="button"
+        class="sr-skip-to-content"
+        aria-controls="main-content"
+        onclick="document.getElementById('main-content')?.focus()"
+    >Skip to content</button>
+
     <header>
         <h1 class="sr-only">{{ $config['aria_title'] }}</h1>
-
     </header>
 
     <x-navigation :links="$config['links']" />
 
-    <main id="main-content" class="p-0 md:ml-52 lg:ml-64">
-
+    <main id="main-content" tabindex="-1" class="p-0 md:ml-52 lg:ml-64">
 
         <x-about :about-me="$config['about_me']" :summary="$resumeData['personal']['summary'] ?? ''" />
 

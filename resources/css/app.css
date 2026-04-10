@@ -57,6 +57,24 @@ h6 {
 
 /* Other classes */
 
+.sr-skip-to-content {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    padding: 4px;
+    border-radius: 2px;
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    opacity: 0;
+    color:  #ffffff;
+    transition: all 0.2s ease-in-out;
+
+    &:focus {
+
+        opacity: 1;
+    }
+}
+
 .sr-only {
     color: #0000 !important;
 }
