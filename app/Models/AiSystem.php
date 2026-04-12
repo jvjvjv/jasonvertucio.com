@@ -66,6 +66,10 @@ class AiSystem extends Model
         return $this->hasMany(AiConversation::class);
     }
 
+    public function chatBots(): HasMany {
+        return $this->hasMany(AiChatBot::class);
+    }
+
     public function interactionLogs(): HasMany
     {
         return $this->hasMany(AiInteractionLog::class);

@@ -16,6 +16,13 @@ class AiToolsController extends Controller
     {
         $navBlocks = [
             [
+                'can' => 'edit-resume',
+                'href' => route('admin.resume.targeted.index'),
+                'icon' => 'TrackChanges',
+                'label' => 'Targeted Resume Builder',
+                'description' => 'Use AI to tailor your resume for specific job postings',
+            ],
+            [
                 'can' => null,
                 'href' => route('admin.ai.systems.index'),
                 'icon' => 'Memory',
@@ -24,17 +31,24 @@ class AiToolsController extends Controller
             ],
             [
                 'can' => null,
+                'href' => route('admin.ai.bots.index'),
+                'icon' => 'SmartToy',
+                'label' => 'AI Chat Bots',
+                'description' => 'Create and manage reusable AI chat bots and their access rules',
+            ],
+            [
+                'can' => null,
+                'href' => route('admin.ai.conversations.index'),
+                'icon' => 'Forum',
+                'label' => 'AI Conversations',
+                'description' => 'Browse AI conversations, review message history, and delete old threads',
+            ],
+            [
+                'can' => null,
                 'href' => route('admin.ai.memories.index'),
                 'icon' => 'Psychology',
                 'label' => 'AI Memory',
                 'description' => 'View and manage learned insights from AI conversations',
-            ],
-            [
-                'can' => 'edit-resume',
-                'href' => route('admin.resume.targeted.index'),
-                'icon' => 'TrackChanges',
-                'label' => 'Targeted Resume Builder',
-                'description' => 'Use AI to tailor your resume for specific job postings',
             ],
         ];
 

@@ -18,8 +18,11 @@ class AiConversation extends Model
     protected $fillable = [
         'user_id',
         'ai_system_id',
+        'ai_chat_bot_id',
         'feature',
         'title',
+        'visitor_name',
+        'visitor_email',
         'status',
         'context',
     ];
@@ -43,6 +46,10 @@ class AiConversation extends Model
     public function aiSystem(): BelongsTo
     {
         return $this->belongsTo(AiSystem::class);
+    }
+
+    public function aiChatBot(): BelongsTo {
+        return $this->belongsTo(AiChatBot::class);
     }
 
     public function messages(): HasMany

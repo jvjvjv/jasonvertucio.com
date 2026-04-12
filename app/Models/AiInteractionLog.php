@@ -13,6 +13,7 @@ class AiInteractionLog extends Model
     protected $fillable = [
         'ai_system_id',
         'ai_conversation_id',
+        'ai_chat_bot_id',
         'user_id',
         'feature',
         'input_tokens',
@@ -45,6 +46,10 @@ class AiInteractionLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function aiChatBot(): BelongsTo {
+        return $this->belongsTo(AiChatBot::class);
     }
 
     public function conversation(): BelongsTo

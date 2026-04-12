@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AiFeatureMemory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -51,7 +52,11 @@ class AiMemoryControllerTest extends TestCase
         $response = $this->get(route('admin.ai.memories.index'));
 
         $response->assertOk();
-        $response->assertSeeText('test-memory-key');
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/memories/Index', false)
+            ->where('memories.data', fn ($memories) => collect($memories)->count() === 1
+                && collect($memories)->first()['key'] === 'test-memory-key')
+        );
     }
 
     public function test_index_filters_by_feature(): void
@@ -72,8 +77,12 @@ class AiMemoryControllerTest extends TestCase
         $response = $this->get(route('admin.ai.memories.index', ['feature' => 'targeted-resume']));
 
         $response->assertOk();
-        $response->assertSeeText('resume-memory');
-        $response->assertDontSeeText('other-memory');
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/memories/Index', false)
+            ->where('filters.feature', 'targeted-resume')
+            ->where('memories.data', fn ($memories) => collect($memories)->count() === 1
+                && collect($memories)->first()['key'] === 'resume-memory')
+        );
     }
 
     public function test_create_displays_form(): void
@@ -84,7 +93,9 @@ class AiMemoryControllerTest extends TestCase
         $response = $this->get(route('admin.ai.memories.create'));
 
         $response->assertOk();
-        $response->assertSeeText('Add Memory Entry');
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/memories/Create', false)
+        );
     }
 
     public function test_store_creates_memory(): void

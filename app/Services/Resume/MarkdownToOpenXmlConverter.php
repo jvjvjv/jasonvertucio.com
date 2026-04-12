@@ -2,8 +2,6 @@
 
 namespace App\Services\Resume;
 
-use Illuminate\Support\Facades\Log;
-
 class MarkdownToOpenXmlConverter {
     protected const NAMESPACE_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 
@@ -41,19 +39,19 @@ class MarkdownToOpenXmlConverter {
             return '';
         }
 
-        Log::debug('Starting markdown to OpenXML conversion', ['lineCount' => count($lines)]);
         $xml = '';
-        $inSkills = false;
 
         // Process each line
         foreach ($lines as $line) {
             $xml .= $this->processLine($line);
         }
 
+        if ($this->currentSection === 'Skills') {
+            $xml .= $this->buildColumnBreak(1);
+        }
+
         $this->currentSection = null;
 
-        Log::debug('Completed markdown to OpenXML conversion', ['xmlLength' => strlen($xml)]);
-        Log::debug($xml);
         return $xml;
     }
 
@@ -65,13 +63,8 @@ class MarkdownToOpenXmlConverter {
         $xml = '';
         // Check for section changes
         if ($line['type'] === 'h1') {
-            if ($this->currentSection === 'Summary') {
-                // Transitioning out of Summary section, insert column break
-                $xml = $this->buildColumnBreak(1);
-            }
             if ($this->currentSection === 'Skills') {
-                // Transitioning out of Skills section, insert column break
-                $xml = $this->buildColumnBreak(2);
+                $xml = $this->buildColumnBreak(1);
             }
 
             $this->currentSection = $line['text'];
@@ -79,8 +72,7 @@ class MarkdownToOpenXmlConverter {
         $xml .= $this->buildLineXml($line);
 
         if ($line['type'] === 'h1' && $line['text'] === 'Skills') {
-            // Entering Skills section, insert empty paragraph andcolumn break
-            $xml .= $this->buildColumnBreak(1);
+            $xml .= $this->buildColumnBreak(2);
         }
 
         return $xml;
@@ -97,8 +89,6 @@ class MarkdownToOpenXmlConverter {
             $styleId = 'KeyTechnologies';
             $extraPpr = null;
         }
-
-        Log::debug('Processing line', ['line' => $line, 'currentSection' => $this->currentSection]);
 
         return $this->buildParagraphXml($styleId, $line['text'], $extraPpr);
     }
@@ -201,7 +191,6 @@ class MarkdownToOpenXmlConverter {
      * Build a continuous section break paragraph that switches column count.
      */
     protected function buildColumnBreak(int $columns): string {
-        Log::debug("Building column break", ['columns' => $columns]);
         $ns = self::NAMESPACE_W;
 
         return '<w:p xmlns:w="' . $ns . '">'

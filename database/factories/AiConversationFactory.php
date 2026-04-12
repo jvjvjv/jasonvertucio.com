@@ -22,8 +22,11 @@ class AiConversationFactory extends Factory
         return [
             'user_id' => User::factory(),
             'ai_system_id' => AiSystem::factory(),
+            'ai_chat_bot_id' => null,
             'feature' => 'targeted-resume',
             'title' => fake()->sentence(3),
+            'visitor_name' => null,
+            'visitor_email' => null,
             'status' => AiConversationStatus::Active,
             'context' => [],
         ];

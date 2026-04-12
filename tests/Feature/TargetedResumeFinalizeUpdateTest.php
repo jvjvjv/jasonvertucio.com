@@ -9,6 +9,7 @@ use App\Models\AiConversation;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\AiClientFactory;
+use App\Services\AiMemoryService;
 use App\Services\CoverLetterDocumentService;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
@@ -46,6 +47,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $this->createMock(ResumeDataServiceContract::class),
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
+            $this->createMock(AiMemoryService::class),
         );
 
         $firstResume = $service->saveTailoredResume($conversation, "Title: Full Stack Engineer\n\n# Summary\nOriginal content", 72);
@@ -105,6 +107,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $this->createMock(ResumeDataServiceContract::class),
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
+            $this->createMock(AiMemoryService::class),
         );
 
         $resume = $service->saveTailoredResume(

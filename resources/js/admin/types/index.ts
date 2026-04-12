@@ -46,6 +46,21 @@ export interface AiSystem {
     feature_defaults_list: string[];
 }
 
+export interface AiChatBot {
+    id: number;
+    name: string;
+    slug: string;
+    description: string | null;
+    prompt_template?: string;
+    allowed_roles: string[];
+    is_active: boolean;
+    is_public: boolean;
+    require_visitor_identity: boolean;
+    conversations_count?: number;
+    ai_system_id?: number;
+    ai_system_name?: string | null;
+}
+
 export interface LogEntry {
     id: number;
     created_at_formatted: string;
@@ -61,6 +76,7 @@ export interface Memory {
     feature: string;
     category: string;
     key: string;
+    content?: string;
     confidence: number;
     is_active: boolean;
 }
@@ -101,14 +117,23 @@ export interface Conversation {
     title?: string | null;
     updated_at?: string;
     messages_count?: number;
-    context: Record<string, string> | null;
+    feature?: string;
+    visitor_name?: string | null;
+    visitor_email?: string | null;
+    user_name?: string | null;
+    user_email?: string | null;
+    ai_chat_bot_name?: string | null;
+    context: Record<string, unknown> | null;
     targeted_resume?: TargetedResume | null;
     ai_system_name?: string | null;
 }
 
 export interface Message {
+    id?: number;
     role: string;
     content: string;
+    metadata?: Record<string, unknown> | null;
+    created_at?: string | null;
 }
 
 export interface CoverLetter {

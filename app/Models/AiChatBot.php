@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class AiChatBot extends Model
+{
+    use HasFactory;
+    use SoftDeletes;
+
+    protected $fillable = [
+        'ai_system_id',
+        'name',
+        'slug',
+        'description',
+        'prompt_template',
+        'allowed_roles',
+        'is_active',
+        'is_public',
+        'require_visitor_identity',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     */
+    protected function casts(): array
+    {
+        return [
+            'allowed_roles' => 'array',
+            'is_active' => 'boolean',
+            'is_public' => 'boolean',
+            'require_visitor_identity' => 'boolean',
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * @param Builder<self> $query
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function aiSystem(): BelongsTo
+    {
+        return $this->belongsTo(AiSystem::class);
+    }
+
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(AiConversation::class);
+    }
+
+    public function interactionLogs(): HasMany
+    {
+        return $this->hasMany(AiInteractionLog::class);
+    }
+
+    public function allowsRole(?User $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        $allowedRoles = $this->allowed_roles ?? [];
+
+        if ($allowedRoles === []) {
+            return true;
+        }
+
+        return $user->hasAnyRole($allowedRoles);
+    }
+
+    public function featureKey(): string
+    {
+        return 'chat-bot:' . $this->slug;
+    }
+}

@@ -1,0 +1,151 @@
+import { Head, Link, router } from '@inertiajs/react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import MenuItem from '@mui/material/MenuItem';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
+import AdminLayout from '../../../layouts/AdminLayout';
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import EmptyTableRow from '../../../components/EmptyTableRow';
+import PageHeader from '../../../components/PageHeader';
+import Pagination from '../../../components/Pagination';
+import StatusChip from '../../../components/StatusChip';
+import useConfirmDialog from '../../../hooks/useConfirmDialog';
+import type { Conversation, PaginatedResponse } from '../../../types';
+
+interface Filters {
+    feature?: string;
+    status?: string;
+    ai_system_id?: string;
+    ai_chat_bot_id?: string;
+    search?: string;
+}
+
+interface IndexProps {
+    conversations: PaginatedResponse<Conversation>;
+    features: string[];
+    systems: Array<{ id: number; name: string }>;
+    bots: Array<{ id: number; name: string }>;
+    filters: Filters;
+}
+
+export default function Index({ conversations, features, systems, bots, filters }: IndexProps) {
+    const { dialogProps, confirm } = useConfirmDialog();
+
+    const updateFilters = (next: Filters) => {
+        const params: Record<string, string> = { ...filters, ...next };
+        Object.keys(params).forEach((key) => {
+            if (!params[key]) {
+                delete params[key];
+            }
+        });
+        router.get('/admin/ai/conversations', params, { preserveState: true });
+    };
+
+    const handleDelete = (conversation: Conversation) => {
+        confirm('Delete this AI conversation?', () => {
+            router.delete(`/admin/ai/conversations/${conversation.id}`);
+        });
+    };
+
+    return (
+        <AdminLayout>
+            <Head title="AI Conversations" />
+            <PageHeader title="AI Conversations" backHref="/admin/ai" backLabel="Back to AI Tools" />
+
+            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(5, minmax(0, 1fr))' }, mb: 2 }}>
+                <TextField label="Search" size="small" value={filters.search ?? ''} onChange={(event) => updateFilters({ search: event.target.value })} />
+                <TextField label="Feature" select size="small" value={filters.feature ?? ''} onChange={(event) => updateFilters({ feature: event.target.value })}>
+                    <MenuItem value="">All Features</MenuItem>
+                    {features.map((feature) => (
+                        <MenuItem key={feature} value={feature}>{feature}</MenuItem>
+                    ))}
+                </TextField>
+                <TextField label="Status" select size="small" value={filters.status ?? ''} onChange={(event) => updateFilters({ status: event.target.value })}>
+                    <MenuItem value="">All Statuses</MenuItem>
+                    <MenuItem value="active">active</MenuItem>
+                    <MenuItem value="completed">completed</MenuItem>
+                    <MenuItem value="pass">pass</MenuItem>
+                </TextField>
+                <TextField label="AI System" select size="small" value={filters.ai_system_id ?? ''} onChange={(event) => updateFilters({ ai_system_id: event.target.value })}>
+                    <MenuItem value="">All Systems</MenuItem>
+                    {systems.map((system) => (
+                        <MenuItem key={system.id} value={String(system.id)}>{system.name}</MenuItem>
+                    ))}
+                </TextField>
+                <TextField label="Bot" select size="small" value={filters.ai_chat_bot_id ?? ''} onChange={(event) => updateFilters({ ai_chat_bot_id: event.target.value })}>
+                    <MenuItem value="">All Bots</MenuItem>
+                    {bots.map((bot) => (
+                        <MenuItem key={bot.id} value={String(bot.id)}>{bot.name}</MenuItem>
+                    ))}
+                </TextField>
+            </Box>
+
+            <Card>
+                <TableContainer>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Conversation</TableCell>
+                                <TableCell>Feature</TableCell>
+                                <TableCell>Participant</TableCell>
+                                <TableCell>System / Bot</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Messages</TableCell>
+                                <TableCell>Updated</TableCell>
+                                <TableCell align="right">Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {conversations.data.length === 0 ? (
+                                <EmptyTableRow colSpan={8} message="No AI conversations found." />
+                            ) : (
+                                conversations.data.map((conversation) => (
+                                    <TableRow key={conversation.id} hover>
+                                        <TableCell>
+                                            <Link href={`/admin/ai/conversations/${conversation.id}`} style={{ color: 'inherit', fontWeight: 500 }}>
+                                                {conversation.title || `Conversation #${conversation.id}`}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>{conversation.feature}</TableCell>
+                                        <TableCell>{conversation.user_name || conversation.visitor_name || 'Unknown'}</TableCell>
+                                        <TableCell>
+                                            <Box>
+                                                <Box>{conversation.ai_system_name ?? '-'}</Box>
+                                                <Box sx={{ color: 'text.secondary', fontSize: 12 }}>{conversation.ai_chat_bot_name ?? 'No bot'}</Box>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusChip status={conversation.status} />
+                                        </TableCell>
+                                        <TableCell>{conversation.messages_count ?? 0}</TableCell>
+                                        <TableCell>{conversation.updated_at ?? '-'}</TableCell>
+                                        <TableCell align="right">
+                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                                <Button component={Link} href={`/admin/ai/conversations/${conversation.id}`} size="small">
+                                                    View
+                                                </Button>
+                                                <Button size="small" color="error" onClick={() => handleDelete(conversation)}>
+                                                    Delete
+                                                </Button>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
+                <Pagination links={conversations.links} lastPage={conversations.last_page} />
+            </Card>
+            <ConfirmDialog {...dialogProps} />
+        </AdminLayout>
+    );
+}

@@ -13,8 +13,11 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\AiToolsController;
+use App\Http\Controllers\Admin\AiChatBotController as AdminAiChatBotController;
+use App\Http\Controllers\Admin\AiConversationController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiMemoryController;
+use App\Http\Controllers\ChatBotController;
 use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\TargetedResumeController;
 use App\Http\Controllers\Admin\JobUrlParseController;
@@ -138,7 +141,24 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::put('/memories/{memory}', [AiMemoryController::class, 'update'])->name('memories.update');
         Route::delete('/memories/{memory}', [AiMemoryController::class, 'destroy'])->name('memories.destroy');
         Route::post('/memories/rebuild/{feature}', [AiMemoryController::class, 'rebuild'])->name('memories.rebuild');
+
+        // AI Conversations
+        Route::get('/conversations', [AiConversationController::class, 'index'])->name('conversations.index');
+        Route::get('/conversations/{conversation}', [AiConversationController::class, 'show'])->name('conversations.show');
+        Route::delete('/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
+
+        // AI Chat Bots CRUD
+        Route::get('/chat-bots', [AdminAiChatBotController::class, 'index'])->name('bots.index');
+        Route::get('/chat-bots/new', [AdminAiChatBotController::class, 'create'])->name('bots.create');
+        Route::post('/chat-bots', [AdminAiChatBotController::class, 'store'])->name('bots.store');
+        Route::get('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'edit'])->name('bots.edit');
+        Route::put('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'update'])->name('bots.update');
+        Route::delete('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'destroy'])->name('bots.destroy');
     });
+
+Route::get('/chat/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('chat-bots.show');
+Route::post('/chat/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('chat-bots.message');
+Route::post('/chat/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('chat-bots.reset');
 
 // Resume editor routes - requires auth + edit-resume permission
 Route::middleware(['auth', 'can:edit-resume', \App\Http\Middleware\HandleInertiaRequests::class])
