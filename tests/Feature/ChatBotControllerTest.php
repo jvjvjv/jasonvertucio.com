@@ -21,21 +21,37 @@ class ChatBotControllerTest extends TestCase
         $bot = AiChatBot::factory()->create([
             'name' => 'Guest Bot',
             'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
-        $response = $this->get(route('chat-bots.show', $bot));
+        $response = $this->get(route('chat-bots.chat.show', $bot));
 
         $response->assertOk();
         $response->assertSeeText('Guest Bot');
+    }
+
+    public function test_guest_can_view_public_root_bot(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'name' => 'Root Guest Bot',
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_ROOT,
+        ]);
+
+        $response = $this->get(route('chat-bots.root.show', $bot));
+
+        $response->assertOk();
+        $response->assertSeeText('Root Guest Bot');
     }
 
     public function test_guest_cannot_view_private_bot(): void
     {
         $bot = AiChatBot::factory()->create([
             'is_public' => false,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
-        $response = $this->get(route('chat-bots.show', $bot));
+        $response = $this->get(route('chat-bots.chat.show', $bot));
 
         $response->assertForbidden();
     }
@@ -49,11 +65,24 @@ class ChatBotControllerTest extends TestCase
         $bot = AiChatBot::factory()->create([
             'is_public' => false,
             'allowed_roles' => ['editor'],
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
-        $response = $this->actingAs($user)->get(route('chat-bots.show', $bot));
+        $response = $this->actingAs($user)->get(route('chat-bots.chat.show', $bot));
 
         $response->assertOk();
+    }
+
+    public function test_wrong_entry_point_returns_not_found(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_ROOT,
+        ]);
+
+        $response = $this->get(route('chat-bots.chat.show', $bot));
+
+        $response->assertNotFound();
     }
 
     public function test_first_guest_message_requires_identity_when_configured(): void
@@ -61,9 +90,10 @@ class ChatBotControllerTest extends TestCase
         $bot = AiChatBot::factory()->create([
             'is_public' => true,
             'require_visitor_identity' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
-        $response = $this->postJson(route('chat-bots.message', $bot), [
+        $response = $this->postJson(route('chat-bots.chat.message', $bot), [
             'message' => 'Hello there',
         ]);
 
@@ -76,6 +106,7 @@ class ChatBotControllerTest extends TestCase
         $bot = AiChatBot::factory()->create([
             'is_public' => true,
             'require_visitor_identity' => false,
+            'access_path' => AiChatBot::ACCESS_PATH_ROOT,
         ]);
 
         $conversation = AiConversation::factory()->create([
@@ -95,12 +126,83 @@ class ChatBotControllerTest extends TestCase
 
         $this->app->instance(AiChatBotConversationService::class, $service);
 
-        $response = $this->post(route('chat-bots.message', $bot), [
+        $response = $this->post(route('chat-bots.root.message', $bot), [
             'message' => 'Start talking',
         ]);
 
         $response->assertOk();
-        $this->assertEquals($conversation->id, session('ai_chat_bot_conversation.' . $bot->id));
+        $response->assertCookie('ai_chat_bot_conversations_' . $bot->id);
+        $this->assertEquals($conversation->public_id, session('ai_chat_bot_conversations_' . $bot->id . '.current'));
+        $this->assertCount(1, session('ai_chat_bot_conversations_' . $bot->id . '.history', []));
+    }
+
+    public function test_switch_endpoint_sets_current_conversation_from_session_history(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_ROOT,
+        ]);
+
+        $firstConversation = AiConversation::factory()->create([
+            'user_id' => null,
+            'ai_system_id' => $bot->ai_system_id,
+            'ai_chat_bot_id' => $bot->id,
+            'feature' => $bot->featureKey(),
+        ]);
+
+        $secondConversation = AiConversation::factory()->create([
+            'user_id' => null,
+            'ai_system_id' => $bot->ai_system_id,
+            'ai_chat_bot_id' => $bot->id,
+            'feature' => $bot->featureKey(),
+        ]);
+
+        $response = $this
+            ->withSession([
+                'ai_chat_bot_conversations_' . $bot->id => [
+                    'current' => $firstConversation->public_id,
+                    'history' => [
+                        ['handle' => 'first-chat', 'public_id' => $firstConversation->public_id],
+                        ['handle' => 'second-chat', 'public_id' => $secondConversation->public_id],
+                    ],
+                ],
+            ])
+            ->post(route('chat-bots.root.switch', $bot), [
+                'conversation' => 'second-chat',
+            ]);
+
+        $response->assertRedirect(route('chat-bots.root.show', $bot));
+        $this->assertEquals($secondConversation->public_id, session('ai_chat_bot_conversations_' . $bot->id . '.current'));
+    }
+
+    public function test_new_chat_preserves_history_but_clears_current_conversation(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_ROOT,
+        ]);
+
+        $conversation = AiConversation::factory()->create([
+            'user_id' => null,
+            'ai_system_id' => $bot->ai_system_id,
+            'ai_chat_bot_id' => $bot->id,
+            'feature' => $bot->featureKey(),
+        ]);
+
+        $response = $this
+            ->withSession([
+                'ai_chat_bot_conversations_' . $bot->id => [
+                    'current' => $conversation->public_id,
+                    'history' => [
+                        ['handle' => 'chat-one', 'public_id' => $conversation->public_id],
+                    ],
+                ],
+            ])
+            ->post(route('chat-bots.root.reset', $bot));
+
+        $response->assertRedirect(route('chat-bots.root.show', $bot));
+        $this->assertNull(session('ai_chat_bot_conversations_' . $bot->id . '.current'));
+        $this->assertCount(1, session('ai_chat_bot_conversations_' . $bot->id . '.history', []));
     }
 
     private function fakeStream(): Generator

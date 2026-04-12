@@ -21,6 +21,7 @@ class AiChatBotFactory extends Factory
             'ai_system_id' => AiSystem::factory(),
             'name' => fake()->words(3, true),
             'slug' => fake()->unique()->slug(),
+            'access_path' => 'chat',
             'description' => fake()->sentence(),
             'prompt_template' => 'You are {{bot_name}}. Respond helpfully to the visitor.',
             'allowed_roles' => [],

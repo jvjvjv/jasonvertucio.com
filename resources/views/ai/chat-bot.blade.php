@@ -13,10 +13,10 @@
                     <p class="max-w-3xl text-base text-slate-700">{{ $bot->description }}</p>
                 @endif
             </div>
-            <form method="POST" action="{{ route('chat-bots.reset', $bot) }}">
+            <form method="POST" action="{{ $resetUrl }}">
                 @csrf
                 <button type="submit" class="border border-slate-400 px-4 py-2 text-sm uppercase tracking-[0.12em] text-slate-700 transition hover:border-slate-900 hover:text-slate-900">
-                    Start Over
+                    New Chat
                 </button>
             </form>
         </div>
@@ -77,10 +77,40 @@
 
         <aside class="flex flex-col gap-4">
             <section class="border border-slate-300 bg-white p-5">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                    <h2 class="font-heading text-2xl text-slate-900">Your Chats</h2>
+                    <span class="text-xs uppercase tracking-[0.16em] text-slate-500">Private to this browser</span>
+                </div>
+
+                @if (count($history) > 0)
+                    <div class="flex flex-col gap-2">
+                        @foreach ($history as $historyItem)
+                            <form method="POST" action="{{ $switchUrl }}">
+                                @csrf
+                                <input type="hidden" name="conversation" value="{{ $historyItem['handle'] }}">
+                                <button type="submit" class="flex w-full items-center justify-between gap-3 border px-3 py-3 text-left transition {{ $historyItem['is_current'] ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-slate-50 text-slate-900 hover:border-slate-900' }}">
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate text-sm font-medium">{{ $historyItem['label'] }}</span>
+                                        <span class="block text-xs uppercase tracking-[0.14em] {{ $historyItem['is_current'] ? 'text-slate-200' : 'text-slate-500' }}">{{ $historyItem['updated_at'] }}</span>
+                                    </span>
+                                    @if ($historyItem['is_current'])
+                                        <span class="text-[11px] uppercase tracking-[0.14em] text-slate-200">Current</span>
+                                    @endif
+                                </button>
+                            </form>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm leading-6 text-slate-700">No saved chats in this browser yet. Start a message to create a private thread.</p>
+                @endif
+            </section>
+
+            <section class="border border-slate-300 bg-white p-5">
                 <h2 class="mb-3 font-heading text-2xl text-slate-900">Access</h2>
                 <div class="flex flex-col gap-2 text-sm text-slate-700">
                     <p>{{ $bot->is_public ? 'Public bot' : 'Restricted bot' }}</p>
                     <p>{{ $bot->require_visitor_identity ? 'Name and email are required before the first guest message.' : 'No guest identity is required by this bot.' }}</p>
+                    <p>Only chats created in this browser are listed here.</p>
                 </div>
             </section>
 
@@ -149,7 +179,7 @@
             };
 
             try {
-                const response = await fetch(@json(route('chat-bots.message', $bot)), {
+                const response = await fetch(@json($messageUrl), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -28,6 +28,8 @@ class AiChatBotController extends Controller
                 'id' => $bot->id,
                 'name' => $bot->name,
                 'slug' => $bot->slug,
+                'access_path' => $bot->access_path,
+                'public_url' => $bot->publicPath(),
                 'description' => $bot->description,
                 'allowed_roles' => $bot->allowed_roles ?? [],
                 'is_active' => $bot->is_active,

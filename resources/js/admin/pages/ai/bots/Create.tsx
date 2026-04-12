@@ -16,6 +16,7 @@ export default function Create({ systems, roles }: CreateProps) {
     const form = useForm<FormData>({
         name: '',
         slug: '',
+        access_path: 'chat',
         description: '',
         ai_system_id: '',
         prompt_template: 'You are {{bot_name}}. {{bot_description}}',

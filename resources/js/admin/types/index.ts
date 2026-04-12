@@ -50,6 +50,8 @@ export interface AiChatBot {
     id: number;
     name: string;
     slug: string;
+    access_path: 'chat' | 'root';
+    public_url?: string;
     description: string | null;
     prompt_template?: string;
     allowed_roles: string[];

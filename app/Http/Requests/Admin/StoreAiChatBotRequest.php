@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\AiChatBot;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +26,20 @@ class StoreAiChatBotRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('ai_chat_bots', 'slug')],
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'alpha_dash',
+                Rule::unique('ai_chat_bots', 'slug'),
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($this->input('access_path') === AiChatBot::ACCESS_PATH_ROOT
+                        && in_array((string) $value, AiChatBot::reservedRootSlugs(), true)) {
+                        $fail('This slug is reserved for an existing site route and cannot be used from the root path.');
+                    }
+                },
+            ],
+            'access_path' => ['required', Rule::in([AiChatBot::ACCESS_PATH_CHAT, AiChatBot::ACCESS_PATH_ROOT])],
             'description' => ['nullable', 'string'],
             'ai_system_id' => ['required', 'integer', 'exists:ai_systems,id'],
             'prompt_template' => ['required', 'string'],

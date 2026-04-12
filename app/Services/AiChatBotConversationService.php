@@ -11,6 +11,7 @@ use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
 use App\Models\User;
 use Generator;
+use Illuminate\Support\Str;
 
 class AiChatBotConversationService
 {
@@ -30,7 +31,7 @@ class AiChatBotConversationService
             'ai_system_id' => $bot->ai_system_id,
             'ai_chat_bot_id' => $bot->id,
             'feature' => $bot->featureKey(),
-            'title' => $bot->name,
+            'title' => null,
             'visitor_name' => $visitorName,
             'visitor_email' => $visitorEmail,
             'status' => AiConversationStatus::Active,
@@ -63,6 +64,12 @@ class AiChatBotConversationService
             'role' => 'user',
             'content' => $userMessage,
         ]);
+
+        if (blank($conversation->title)) {
+            $conversation->forceFill([
+                'title' => $this->titleFromUserMessage($userMessage),
+            ])->save();
+        }
 
         $allMessages = $conversation->messages()->orderBy('created_at')->get();
         $systemPrompt = null;
@@ -179,5 +186,18 @@ class AiChatBotConversationService
             $prompt,
             $memoryPrompt !== '' ? "## Learned Insights\n{$memoryPrompt}" : null,
         ])->filter()->implode("\n\n");
+    }
+
+    private function titleFromUserMessage(string $userMessage): string
+    {
+        $normalized = Str::of(strip_tags($userMessage))
+            ->squish()
+            ->trim();
+
+        if ($normalized->isEmpty()) {
+            return 'New chat';
+        }
+
+        return Str::limit($normalized->toString(), 80, '...');
     }
 }

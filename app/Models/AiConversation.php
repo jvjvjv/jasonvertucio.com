@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class AiConversation extends Model
 {
@@ -16,6 +17,7 @@ class AiConversation extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'public_id',
         'user_id',
         'ai_system_id',
         'ai_chat_bot_id',
@@ -38,6 +40,15 @@ class AiConversation extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $conversation): void {
+            if (blank($conversation->public_id)) {
+                $conversation->public_id = (string) Str::ulid();
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -48,7 +59,8 @@ class AiConversation extends Model
         return $this->belongsTo(AiSystem::class);
     }
 
-    public function aiChatBot(): BelongsTo {
+    public function aiChatBot(): BelongsTo
+    {
         return $this->belongsTo(AiChatBot::class);
     }
 

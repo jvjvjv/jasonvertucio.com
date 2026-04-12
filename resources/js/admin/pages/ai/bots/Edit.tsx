@@ -20,6 +20,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
     const form = useForm<FormData>({
         name: bot.name,
         slug: bot.slug,
+        access_path: bot.access_path,
         description: bot.description ?? '',
         ai_system_id: bot.ai_system_id ?? '',
         prompt_template: bot.prompt_template ?? '',

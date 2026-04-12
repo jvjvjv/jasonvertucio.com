@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 export interface FormData {
     name: string;
     slug: string;
+    access_path: 'chat' | 'root';
     description: string;
     ai_system_id: number | '';
     prompt_template: string;
@@ -55,6 +56,22 @@ export default function Form({ data, setData, errors, systems, roles }: AiChatBo
                     helperText={errors.slug || 'Used in the public chat URL'}
                 />
             </Box>
+
+            <TextField
+                label="Access Path"
+                select
+                required
+                size="small"
+                fullWidth
+                value={data.access_path}
+                onChange={(event) => setData('access_path', event.target.value as FormData['access_path'])}
+                error={!!errors.access_path}
+                helperText={errors.access_path || `This bot will open at ${data.access_path === 'root' ? `/${data.slug || '[slug]'}` : `/chat/${data.slug || '[slug]'}`}`}
+                sx={{ mb: 2 }}
+            >
+                <MenuItem value="chat">/chat/[slug]</MenuItem>
+                <MenuItem value="root">/[slug]</MenuItem>
+            </TextField>
 
             <TextField
                 label="Description"

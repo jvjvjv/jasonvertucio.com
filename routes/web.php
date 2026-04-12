@@ -156,9 +156,12 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::delete('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'destroy'])->name('bots.destroy');
     });
 
-Route::get('/chat/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('chat-bots.show');
-Route::post('/chat/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('chat-bots.message');
-Route::post('/chat/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('chat-bots.reset');
+Route::prefix('chat')->name('chat-bots.chat.')->group(function () {
+    Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');
+    Route::post('/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('message');
+    Route::post('/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('reset');
+    Route::post('/{aiChatBot:slug}/switch', [ChatBotController::class, 'switch'])->name('switch');
+});
 
 // Resume editor routes - requires auth + edit-resume permission
 Route::middleware(['auth', 'can:edit-resume', \App\Http\Middleware\HandleInertiaRequests::class])
@@ -211,3 +214,10 @@ Route::get('/wp-admin/load-styles.php', function () {
 Route::get('/wp-login.php', [WordpressController::class, 'index']);
 Route::post('/wp-login.php', [WordpressController::class, 'ban']);
 Route::redirect('/wp-admin', '/wp-login.php');
+
+Route::name('chat-bots.root.')->group(function () {
+    Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');
+    Route::post('/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('message');
+    Route::post('/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('reset');
+    Route::post('/{aiChatBot:slug}/switch', [ChatBotController::class, 'switch'])->name('switch');
+});

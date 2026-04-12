@@ -154,13 +154,18 @@ This document provides a comprehensive overview of all routes in the jasonvertuc
 
 ---
 
-### Public AI Chat Bot Routes (`/chat/*`)
+### Public AI Chat Bot Routes (`/chat/*` and root `/*`)
 
 | Route                      | Method | Controller/Action           | Description                           |
 | -------------------------- | ------ | --------------------------- | ------------------------------------- |
-| `/chat/{slug}`             | GET    | `ChatBotController@show`    | Display the public/authenticated bot  |
-| `/chat/{slug}/messages`    | POST   | `ChatBotController@message` | Send a chat message and stream reply  |
-| `/chat/{slug}/reset`       | POST   | `ChatBotController@reset`   | Reset the current bot conversation    |
+| `/chat/{slug}`             | GET    | `ChatBotController@show`    | Display a bot configured for `/chat/[slug]` |
+| `/chat/{slug}/messages`    | POST   | `ChatBotController@message` | Send a chat message for `/chat/[slug]` bots |
+| `/chat/{slug}/reset`       | POST   | `ChatBotController@reset`   | Reset the current `/chat/[slug]` conversation |
+| `/chat/{slug}/switch`      | POST   | `ChatBotController@switch`  | Switch to another private browser-scoped chat for `/chat/[slug]` bots |
+| `/{slug}`                  | GET    | `ChatBotController@show`    | Display a bot configured for `/[slug]` |
+| `/{slug}/messages`         | POST   | `ChatBotController@message` | Send a chat message for root-path bots |
+| `/{slug}/reset`            | POST   | `ChatBotController@reset`   | Reset the current root-path conversation |
+| `/{slug}/switch`           | POST   | `ChatBotController@switch`  | Switch to another private browser-scoped chat for root-path bots |
 
 ---
 

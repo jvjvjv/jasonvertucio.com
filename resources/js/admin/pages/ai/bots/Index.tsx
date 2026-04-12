@@ -64,10 +64,11 @@ export default function Index({ bots }: IndexProps) {
                                                 {bot.name}
                                             </Link>
                                         </TableCell>
-                                        <TableCell>{bot.slug}</TableCell>
+                                        <TableCell>{bot.public_url ?? (bot.access_path === 'root' ? `/${bot.slug}` : `/chat/${bot.slug}`)}</TableCell>
                                         <TableCell>{bot.ai_system_name ?? '-'}</TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                <Chip label={bot.access_path === 'root' ? 'Root Path' : 'Chat Path'} size="small" variant="outlined" />
                                                 <Chip label={bot.is_public ? 'Public' : 'Role-based'} size="small" color={bot.is_public ? 'success' : 'default'} variant="outlined" />
                                                 {bot.require_visitor_identity ? <Chip label="Identity Required" size="small" color="warning" variant="outlined" /> : null}
                                             </Box>
@@ -75,7 +76,7 @@ export default function Index({ bots }: IndexProps) {
                                         <TableCell>{bot.conversations_count ?? 0}</TableCell>
                                         <TableCell align="right">
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                                <Button component={Link} href={`/chat/${bot.slug}`} size="small" target="_blank">
+                                                <Button component={Link} href={bot.public_url ?? (bot.access_path === 'root' ? `/${bot.slug}` : `/chat/${bot.slug}`)} size="small" target="_blank">
                                                     Open
                                                 </Button>
                                                 <Button component={Link} href={`/admin/ai/chat-bots/${bot.id}`} size="small">

@@ -14,10 +14,15 @@ class AiChatBot extends Model
     use HasFactory;
     use SoftDeletes;
 
+    public const ACCESS_PATH_CHAT = 'chat';
+
+    public const ACCESS_PATH_ROOT = 'root';
+
     protected $fillable = [
         'ai_system_id',
         'name',
         'slug',
+        'access_path',
         'description',
         'prompt_template',
         'allowed_roles',
@@ -42,6 +47,37 @@ class AiChatBot extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function reservedRootSlugs(): array
+    {
+        return [
+            '_boost',
+            'about',
+            'admin',
+            'api',
+            'blog',
+            'canvas',
+            'chat',
+            'forgot-password',
+            'login',
+            'logout',
+            'mlopnadjs22tn',
+            'paper',
+            'passkey',
+            'profile',
+            'register',
+            'reset-password',
+            'resume',
+            'sanctum',
+            'two-factor-challenge',
+            'user',
+            'wp-admin',
+            'wp-login.php',
+        ];
     }
 
     /**
@@ -85,5 +121,22 @@ class AiChatBot extends Model
     public function featureKey(): string
     {
         return 'chat-bot:' . $this->slug;
+    }
+
+    public function usesRootAccessPath(): bool
+    {
+        return $this->access_path === self::ACCESS_PATH_ROOT;
+    }
+
+    public function usesChatAccessPath(): bool
+    {
+        return $this->access_path !== self::ACCESS_PATH_ROOT;
+    }
+
+    public function publicPath(): string
+    {
+        return $this->usesRootAccessPath()
+            ? '/' . $this->slug
+            : '/chat/' . $this->slug;
     }
 }

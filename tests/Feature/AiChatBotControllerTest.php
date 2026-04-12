@@ -52,6 +52,7 @@ class AiChatBotControllerTest extends TestCase
             ->has('bots', 1)
             ->where('bots.0.name', 'Portfolio Guide')
             ->where('bots.0.slug', $bot->slug)
+            ->where('bots.0.access_path', 'chat')
         );
     }
 
@@ -63,6 +64,7 @@ class AiChatBotControllerTest extends TestCase
         $response = $this->actingAs($user)->post(route('admin.ai.bots.store'), [
             'name' => 'Lead Intake',
             'slug' => 'lead-intake',
+            'access_path' => 'root',
             'description' => 'Qualify inbound prospects.',
             'ai_system_id' => $system->id,
             'prompt_template' => 'You are {{bot_name}}.',
@@ -76,9 +78,32 @@ class AiChatBotControllerTest extends TestCase
         $this->assertDatabaseHas('ai_chat_bots', [
             'name' => 'Lead Intake',
             'slug' => 'lead-intake',
+            'access_path' => 'root',
             'ai_system_id' => $system->id,
             'is_public' => false,
             'require_visitor_identity' => true,
         ]);
+    }
+
+    public function test_store_rejects_reserved_root_slug(): void
+    {
+        $user = $this->authenticatedUser();
+        $system = AiSystem::factory()->create();
+
+        $response = $this->actingAs($user)->from(route('admin.ai.bots.create'))->post(route('admin.ai.bots.store'), [
+            'name' => 'Resume Bot',
+            'slug' => 'resume',
+            'access_path' => 'root',
+            'description' => 'Conflicts with an existing route.',
+            'ai_system_id' => $system->id,
+            'prompt_template' => 'You are {{bot_name}}.',
+            'allowed_roles' => [],
+            'is_active' => true,
+            'is_public' => true,
+            'require_visitor_identity' => false,
+        ]);
+
+        $response->assertRedirect(route('admin.ai.bots.create'));
+        $response->assertSessionHasErrors(['slug']);
     }
 }
