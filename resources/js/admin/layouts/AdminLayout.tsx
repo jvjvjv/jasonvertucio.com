@@ -4,15 +4,12 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Divider from '@mui/material/Divider';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import type { SharedProps, NavLink } from '../types';
+import { ADMIN_NAVIGATION_ITEMS } from '../constants/navigation';
+import type { SharedProps } from '../types';
 
 interface AdminLayoutProps {
     children: ReactNode;
@@ -20,30 +17,33 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
-    const { auth, navLinks, flash } = usePage<SharedProps>().props;
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const page = usePage<SharedProps>();
+    const { flash } = page.props;
+    const currentPath = page.url.split('?')[0];
     const [flashOpen, setFlashOpen] = useState(
         !!(flash.success || flash.error)
     );
 
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
-
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <AppBar position="sticky" sx={{ boxShadow: 'none' }}>
-                <Toolbar sx={{ maxWidth: '1280px', width: '100%', mx: 'auto', px: 2 }}>
+                <Toolbar
+                    sx={{
+                        maxWidth: '1280px',
+                        width: '100%',
+                        mx: 'auto',
+                        px: 2,
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        py: 1,
+                    }}
+                >
                     <Typography
                         variant="h6"
                         component={Link}
                         href="/"
                         sx={{
-                            flexGrow: 1,
+                            mr: 'auto',
                             textDecoration: 'none',
                             color: 'white',
                             fontFamily: '"Convection Condensed", sans-serif',
@@ -52,42 +52,37 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         Jason Vertucio
                     </Typography>
 
-                    <Button
-                        color="inherit"
-                        onClick={handleMenuOpen}
-                        endIcon={<KeyboardArrowDownIcon />}
+                    <Box
+                        component="nav"
+                        sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                            gap: 1,
+                            width: { xs: '100%', md: 'auto' },
+                        }}
                     >
-                        Places
-                    </Button>
-                    <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
-                        onClose={handleMenuClose}
-                    >
-                        <MenuItem
-                            component={Link}
-                            href="/"
-                            onClick={handleMenuClose}
-                        >
-                            Home
-                        </MenuItem>
-                        {navLinks.map((link: NavLink, index: number) => {
-                            if (link.divider) {
-                                return <Divider key={`divider-${index}`} />;
-                            }
+                        {ADMIN_NAVIGATION_ITEMS.map((item) => {
+                            const isActive = currentPath === item.slug || currentPath.startsWith(`${item.slug}/`);
+
                             return (
-                                <MenuItem
-                                    key={link.href}
-                                    component="a"
-                                    href={link.href}
-                                    onClick={handleMenuClose}
-                                    {...(link.target ? { target: link.target, rel: 'noopener noreferrer' } : {})}
+                                <Button
+                                    key={item.slug}
+                                    color="inherit"
+                                    component={Link}
+                                    href={item.slug}
+                                    variant={isActive ? 'outlined' : 'text'}
+                                    sx={{
+                                        borderColor: isActive ? 'rgba(255, 255, 255, 0.7)' : 'transparent',
+                                        bgcolor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                                        px: 1.5,
+                                    }}
                                 >
-                                    {link.label}
-                                </MenuItem>
+                                    {item.label}
+                                </Button>
                             );
                         })}
-                    </Menu>
+                    </Box>
                 </Toolbar>
             </AppBar>
 

@@ -1,3 +1,5 @@
+import type { PageProps } from '@inertiajs/core';
+
 export interface AuthUser {
     id: number;
     name: string;
@@ -17,7 +19,8 @@ export interface FlashMessages {
     error: string | null;
 }
 
-export interface SharedProps {
+export interface SharedProps extends PageProps {
+    [key: string]: unknown;
     auth: {
         user: AuthUser | null;
     };
