@@ -95,9 +95,9 @@ class TargetedResumeDocumentService
     }
 
     /**
-    * Replace {name}, {title}, {email}, {phone} placeholders in the raw XML.
+    * Replace simple placeholders in the raw XML.
      *
-     * @param array{name: string, title: string, email: string, phone: string, resume: string} $data
+     * @param array{name: string, title: string, email: string, phone: string, url: string, resume: string} $data
      */
     protected function replaceSimplePlaceholders(string $xml, array $data): string
     {
@@ -106,13 +106,71 @@ class TargetedResumeDocumentService
             '{title}' => $data['title'],
             '{email}' => $data['email'],
             '{phone}' => $data['phone'],
+            '{url}' => $data['url'],
         ];
 
         foreach ($placeholders as $placeholder => $value) {
             $xml = str_replace($placeholder, htmlspecialchars($value, ENT_XML1, 'UTF-8'), $xml);
+
+            // Word sometimes splits placeholders into separate text runs (e.g. "{", "url", "}").
+            $xml = $this->replaceSplitPlaceholderRuns($xml, trim($placeholder, '{}'), $value);
         }
 
         return $xml;
+    }
+
+    protected function replaceSplitPlaceholderRuns(string $xml, string $placeholder, string $value): string
+    {
+        $dom = new DOMDocument();
+        if (! $dom->loadXML($xml)) {
+            return $xml;
+        }
+
+        $xpath = new DOMXPath($dom);
+        $xpath->registerNamespace('w', self::NAMESPACE_W);
+        $textNodes = $xpath->query('//w:t');
+
+        if ($textNodes === false || $textNodes->length === 0) {
+            return $xml;
+        }
+
+        $nodes = [];
+        foreach ($textNodes as $textNode) {
+            $nodes[] = $textNode;
+        }
+
+        $nodeCount = count($nodes);
+        for ($i = 0; $i < $nodeCount; $i++) {
+            if ($nodes[$i]->textContent !== '{') {
+                continue;
+            }
+
+            $token = '';
+            $endIndex = null;
+
+            for ($j = $i + 1; $j < min($i + 12, $nodeCount); $j++) {
+                $content = $nodes[$j]->textContent;
+                if ($content === '}') {
+                    $endIndex = $j;
+                    break;
+                }
+
+                $token .= $content;
+            }
+
+            if ($endIndex === null || $token !== $placeholder) {
+                continue;
+            }
+
+            $nodes[$i]->nodeValue = $value;
+            for ($k = $i + 1; $k <= $endIndex; $k++) {
+                $nodes[$k]->nodeValue = '';
+            }
+
+            $i = $endIndex;
+        }
+
+        return $dom->saveXML() ?: $xml;
     }
 
     /**
@@ -246,7 +304,7 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * @return array{name: string, title: string, email: string, phone: string, resume: string}
+     * @return array{name: string, title: string, email: string, phone: string, url: string, resume: string}
      */
     protected function buildTemplateData(TargetedResume $targetedResume): array
     {
@@ -264,7 +322,17 @@ class TargetedResumeDocumentService
             'title' => $targetedResume->title ?? $personalInfo?->title ?? '',
             'email' => $personalInfo?->email ?? '',
             'phone' => $personalInfo?->phone ?? '',
+            'url' => $this->formatDisplayUrl($personalInfo?->url),
             'resume' => $resumeContent,
         ];
+    }
+
+    protected function formatDisplayUrl(?string $url): string
+    {
+        if ($url === null || trim($url) === '') {
+            return '';
+        }
+
+        return preg_replace('/^(?:https?:\/\/)?(?:www\.)?/i', '', trim($url)) ?? trim($url);
     }
 }

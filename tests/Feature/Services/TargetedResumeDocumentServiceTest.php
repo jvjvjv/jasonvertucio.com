@@ -60,6 +60,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Senior Software Engineer',
             'email' => 'jason@example.com',
             'phone' => '555-123-4567',
+            'url' => 'https://jasonvertucio.com',
             'resume' => '# Summary',
         ]);
 
@@ -69,10 +70,12 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertStringContainsString('Senior Software Engineer', $xml);
         $this->assertStringContainsString('jason@example.com', $xml);
         $this->assertStringContainsString('555-123-4567', $xml);
+        $this->assertStringContainsString('jasonvertucio.com', $xml);
         $this->assertStringNotContainsString('{name}', $xml);
         $this->assertStringNotContainsString('{title}', $xml);
         $this->assertStringNotContainsString('{email}', $xml);
         $this->assertStringNotContainsString('{phone}', $xml);
+        $this->assertStringNotContainsString('{url}', $xml);
     }
 
     public function testResumePlaceholderIsReplacedWithStyledParagraphs(): void
@@ -82,6 +85,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
+            'url' => 'https://jasonvertucio.com',
             'resume' => "# Experience\n## Lead Developer\n### Acme Corp - NYC - 2020-2024\n- Built microservices",
         ]);
 
@@ -105,6 +109,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
+            'url' => 'https://jasonvertucio.com',
             'resume' => '# Summary',
         ]);
 
@@ -127,6 +132,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
+            'url' => 'https://jasonvertucio.com',
             'resume' => "# Experience\n## Engineer\n### Corp - NYC - 2020",
         ]);
 
@@ -145,6 +151,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Dev <Lead>',
             'email' => 'test@test.com',
             'phone' => '555-0000',
+            'url' => 'https://jasonvertucio.com',
             'resume' => '# Summary',
         ]);
 
@@ -162,6 +169,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
+            'url' => 'https://jasonvertucio.com',
             'resume' => "# Experience\n## Engineer\n### Corp - 2020\n- Key Technologies: PHP, Laravel, React",
         ]);
 
@@ -178,6 +186,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Senior Engineer',
             'email' => 'jason@example.com',
             'phone' => '555-1234',
+            'url' => 'https://jasonvertucio.com',
             'resume' => "# Summary\nExperienced engineer.\n\n# Skills\n## Frontend\n- React\n- Vue\n\n# Experience\n## Lead Dev\n### Corp - NYC - 2020-2024\n- Built things\n- Key Technologies: PHP, JS",
         ]);
 
@@ -214,10 +223,31 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertSame('Senior Frontend Engineer', $data['title']);
     }
 
+    public function testBuildTemplateDataIncludesUrl(): void
+    {
+        $resumeVersion = ResumeVersion::factory()->create();
+        ResumePersonalInfo::factory()->create([
+            'version_id' => $resumeVersion->id,
+            'url' => 'https://jasonvertucio.com',
+        ]);
+
+        $targetedResume = TargetedResume::factory()->create([
+            'resume_version_id' => $resumeVersion->id,
+            'tailored_data' => [
+                'content' => '# Summary\nTailored summary',
+            ],
+        ]);
+
+        $buildTemplateData = new \ReflectionMethod($this->service, 'buildTemplateData');
+        $data = $buildTemplateData->invoke($this->service, $targetedResume);
+
+        $this->assertSame('jasonvertucio.com', $data['url']);
+    }
+
     /**
      * Generate a DOCX by directly manipulating the template (bypassing model/database).
      *
-     * @param array{name: string, title: string, email: string, phone: string, resume: string} $data
+    * @param array{name: string, title: string, email: string, phone: string, url: string, resume: string} $data
      */
     protected function generateDocx(array $data): string
     {

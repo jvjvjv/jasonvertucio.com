@@ -215,8 +215,9 @@ MD;
         // Bold formatting
         $this->assertStringContainsString('<w:b/>', $xml);
 
-        // Skills section has two-column section breaks
-        $this->assertSame(2, substr_count($xml, '<w:type w:val="continuous"/>'));
+        // Skills section has an explicit single-column boundary after heading,
+        // a two-column start, and a return to single-column at section end.
+        $this->assertSame(3, substr_count($xml, '<w:type w:val="continuous"/>'));
         $this->assertStringContainsString('<w:cols w:num="2"', $xml);
         $this->assertStringContainsString('<w:cols w:num="1"', $xml);
     }
@@ -225,17 +226,19 @@ MD;
     {
         $xml = $this->converter->convert("# Skills\n## Frontend\n- React\n## Backend\n- PHP");
 
-        // Should have a 2-col break after # Skills and a 1-col break at end
+        // Skills heading is isolated in 1-col, then content switches to 2-col,
+        // and converter returns to 1-col at section end.
         $this->assertStringContainsString('<w:cols w:num="2"', $xml);
         $this->assertStringContainsString('<w:cols w:num="1"', $xml);
-        $this->assertSame(2, substr_count($xml, '<w:type w:val="continuous"/>'));
+        $this->assertSame(3, substr_count($xml, '<w:type w:val="continuous"/>'));
     }
 
     public function testSkillsColumnsEndWhenNextSectionStarts(): void
     {
         $xml = $this->converter->convert("# Skills\n## Frontend\n- React\n# Experience\n## Engineer");
 
-        // 1-col break emitted before Experience heading
+        // 2-col break emitted for Skills content, and 1-col break emitted
+        // before Experience heading.
         $this->assertStringContainsString('<w:cols w:num="2"', $xml);
         $this->assertStringContainsString('<w:cols w:num="1"', $xml);
         // Experience content still gets correct styles

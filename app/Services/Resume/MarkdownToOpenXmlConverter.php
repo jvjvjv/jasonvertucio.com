@@ -28,6 +28,8 @@ class MarkdownToOpenXmlConverter {
 
     protected ?string $currentSection = null;
 
+    protected bool $pendingSkillsColumnsStart = false;
+
     /**
      * Convert a markdown string into an OpenXML fragment.
      */
@@ -51,6 +53,7 @@ class MarkdownToOpenXmlConverter {
         }
 
         $this->currentSection = null;
+        $this->pendingSkillsColumnsStart = false;
 
         return $xml;
     }
@@ -69,10 +72,19 @@ class MarkdownToOpenXmlConverter {
 
             $this->currentSection = $line['text'];
         }
+
+        if ($this->pendingSkillsColumnsStart && $this->currentSection === 'Skills' && $line['type'] !== 'h1') {
+            $xml .= $this->buildColumnBreak(2);
+            $this->pendingSkillsColumnsStart = false;
+        }
+
         $xml .= $this->buildLineXml($line);
 
         if ($line['type'] === 'h1' && $line['text'] === 'Skills') {
-            $xml .= $this->buildColumnBreak(2);
+            // Keep the Skills heading outside columns, then start two-column flow
+            // on the first content line within the section.
+            $xml .= $this->buildColumnBreak(1);
+            $this->pendingSkillsColumnsStart = true;
         }
 
         return $xml;

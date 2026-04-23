@@ -11,11 +11,15 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
-        "baseUrl": ".",
         "paths": {
-            "@admin/*": ["resources/js/admin/*"]
+            "@admin/*": [
+                "./resources/js/admin/*"
+            ]
         }
     },
-    "include": ["resources/js/admin/**/*.ts", "resources/js/admin/**/*.tsx"],
+    "include": [
+        "./resources/js/admin/**/*.ts",
+        "./resources/js/admin/**/*.tsx"
+    ],
     "exclude": ["node_modules"]
 }

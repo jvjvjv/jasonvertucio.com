@@ -67,31 +67,37 @@ try {
     // Get zip once — all modifications and output generation use this reference
     const renderedZip = doc.getZip();
 
-    // Post-process: convert plain-text URL into a Word hyperlink
+    // Post-process: convert a plain-text URL run into a Word hyperlink.
     if (data.url) {
         const fullUrl = data.url;
         const displayUrl = fullUrl.replace(/^https?:\/\//, '');
-
-        // Add hyperlink relationship to document rels
-        const relsFile = 'word/_rels/document.xml.rels';
-        let relsXml = renderedZip.file(relsFile).asText();
-        const hyperlinkRelId = 'rIdUrl1';
-        const newRel = `<Relationship Id="${hyperlinkRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${fullUrl}" TargetMode="External"/>`;
-        relsXml = relsXml.replace('</Relationships>', `${newRel}</Relationships>`);
-        renderedZip.file(relsFile, relsXml);
-
-        // Replace the rendered URL text run with a hyperlink element
-        // The rendered URL may be split across XML runs; escape for regex use
         const escapedUrl = fullUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         let docXml = renderedZip.file('word/document.xml').asText();
 
-        // Match a <w:r> run containing the full URL text and replace with hyperlink
+        // Only match when the full URL is contained inside a single run. Word can
+        // split nearby content across many runs, and a broader regex can corrupt XML.
         const runPattern = new RegExp(
-            `(<w:r(?:\\s[^>]*)?>(?:<w:rPr>[\\s\\S]*?</w:rPr>)?<w:t(?:[^>]*)?>)${escapedUrl}(</w:t></w:r>)`,
+            `(<w:r(?:\\s[^>]*)?>(?:(?!</w:r>)[\\s\\S])*?<w:t(?:[^>]*)?>)${escapedUrl}(</w:t>(?:(?!</w:r>)[\\s\\S])*?</w:r>)`,
         );
-        const hyperlinkXml = `<w:hyperlink r:id="${hyperlinkRelId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">$1${displayUrl}$2</w:hyperlink>`;
-        docXml = docXml.replace(runPattern, hyperlinkXml);
-        renderedZip.file('word/document.xml', docXml);
+
+        if (runPattern.test(docXml)) {
+            const relsFile = 'word/_rels/document.xml.rels';
+            let relsXml = renderedZip.file(relsFile).asText();
+            const relIdMatches = [...relsXml.matchAll(/Id="rId(\d+)"/g)];
+            const nextRelNumber = relIdMatches.reduce((maxRelNumber, match) => {
+                return Math.max(maxRelNumber, Number.parseInt(match[1], 10));
+            }, 0) + 1;
+            const hyperlinkRelId = `rId${nextRelNumber}`;
+            const newRel = `<Relationship Id="${hyperlinkRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${fullUrl}" TargetMode="External"/>`;
+
+            relsXml = relsXml.replace('</Relationships>', `${newRel}</Relationships>`);
+
+            const hyperlinkXml = `<w:hyperlink r:id="${hyperlinkRelId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">$1${displayUrl}$2</w:hyperlink>`;
+            docXml = docXml.replace(runPattern, hyperlinkXml);
+
+            renderedZip.file(relsFile, relsXml);
+            renderedZip.file('word/document.xml', docXml);
+        }
     }
 
     // Generate the output buffer from the (possibly modified) zip
