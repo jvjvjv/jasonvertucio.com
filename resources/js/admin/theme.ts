@@ -16,11 +16,11 @@ export const theme = createTheme({
         },
     },
     typography: {
-        fontFamily: 'Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        h1: { fontFamily: '"Convection Condensed", sans-serif' },
-        h2: { fontFamily: '"Convection Condensed", sans-serif' },
-        h3: { fontFamily: '"Convection Condensed", sans-serif' },
-        h4: { fontFamily: '"Convection Condensed", sans-serif' },
+        fontFamily: '"Montserrat", "Arial", sans-serif',
+        h1: { fontFamily: '"Josefin Sans", "Impact", "Arial", sans-serif' },
+        h2: { fontFamily: '"Josefin Sans", "Impact", "Arial", sans-serif' },
+        h3: { fontFamily: '"Josefin Sans", "Impact", "Arial", sans-serif' },
+        h4: { fontFamily: '"Josefin Sans", "Impact", "Arial", sans-serif' },
     },
     components: {
         MuiButton: {
