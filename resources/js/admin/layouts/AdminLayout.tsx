@@ -25,16 +25,22 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            <AppBar position="sticky" sx={{ boxShadow: 'none' }}>
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                minHeight: "100vh",
+            }}
+        >
+            <AppBar position="sticky" sx={{ boxShadow: "none" }}>
                 <Toolbar
                     sx={{
-                        maxWidth: '1280px',
-                        width: '100%',
-                        mx: 'auto',
+                        maxWidth: "1280px",
+                        width: "100%",
+                        mx: "auto",
                         px: 2,
                         gap: 2,
-                        flexWrap: 'wrap',
+                        flexWrap: "wrap",
                         py: 1,
                     }}
                 >
@@ -43,10 +49,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         component={Link}
                         href="/"
                         sx={{
-                            mr: 'auto',
-                            textDecoration: 'none',
-                            color: 'white',
-                            fontFamily: '"Convection Condensed", sans-serif',
+                            mr: "auto",
+                            textDecoration: "none",
+                            color: "white",
                         }}
                     >
                         Jason Vertucio
@@ -55,15 +60,20 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     <Box
                         component="nav"
                         sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: {
+                                xs: "flex-start",
+                                md: "flex-end",
+                            },
                             gap: 1,
-                            width: { xs: '100%', md: 'auto' },
+                            width: { xs: "100%", md: "auto" },
                         }}
                     >
                         {ADMIN_NAVIGATION_ITEMS.map((item) => {
-                            const isActive = currentPath === item.slug || currentPath.startsWith(`${item.slug}/`);
+                            const isActive =
+                                currentPath === item.slug ||
+                                currentPath.startsWith(`${item.slug}/`);
 
                             return (
                                 <Button
@@ -71,10 +81,14 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                                     color="inherit"
                                     component={Link}
                                     href={item.slug}
-                                    variant={isActive ? 'outlined' : 'text'}
+                                    variant={isActive ? "outlined" : "text"}
                                     sx={{
-                                        borderColor: isActive ? 'rgba(255, 255, 255, 0.7)' : 'transparent',
-                                        bgcolor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                                        borderColor: isActive
+                                            ? "rgba(255, 255, 255, 0.7)"
+                                            : "transparent",
+                                        bgcolor: isActive
+                                            ? "rgba(255, 255, 255, 0.08)"
+                                            : "transparent",
                                         px: 1.5,
                                     }}
                                 >
@@ -89,7 +103,11 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             <Box component="main" sx={{ flexGrow: 1, py: 4 }}>
                 <Container maxWidth="lg">
                     {title && (
-                        <Typography variant="h4" component="h1" sx={{ mb: 3, fontWeight: 'bold' }}>
+                        <Typography
+                            variant="h4"
+                            component="h1"
+                            sx={{ mb: 3, fontWeight: "bold" }}
+                        >
                             {title}
                         </Typography>
                     )}
@@ -100,15 +118,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             <Box
                 component="footer"
                 sx={{
-                    mt: 'auto',
+                    mt: "auto",
                     py: 1.5,
-                    bgcolor: 'secondary.main',
-                    color: 'white',
+                    bgcolor: "secondary.main",
+                    color: "white",
                 }}
             >
                 <Container maxWidth="lg">
                     <Typography variant="body2" align="right">
-                        Copyright &copy; {new Date().getFullYear()}, Jason Vertucio.
+                        Copyright &copy; {new Date().getFullYear()}, Jason
+                        Vertucio.
                     </Typography>
                 </Container>
             </Box>
@@ -117,11 +136,11 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 open={flashOpen}
                 autoHideDuration={5000}
                 onClose={() => setFlashOpen(false)}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
                 <Alert
                     onClose={() => setFlashOpen(false)}
-                    severity={flash.success ? 'success' : 'error'}
+                    severity={flash.success ? "success" : "error"}
                     variant="filled"
                 >
                     {flash.success || flash.error}
