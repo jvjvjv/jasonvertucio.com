@@ -22,12 +22,9 @@ html {
     --color-dark: #25292c;
     --color-link: #4351a0;
 
-    --font-family-heading: "Convection Condensed", "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
-    --font-family-subheading: "Saira Extra Condensed", "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
-    --font-family-body: Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-        sans-serif;
+    --font-family-heading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-subheading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-body: "Montserrat", "Arial", sans-serif;
 }
 
 /* Apply fonts globally */

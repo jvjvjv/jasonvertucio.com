@@ -11,9 +11,9 @@
     --color-dark: #495057;
     --color-link: #4351a0;
 
-    --font-family-heading: "Convection Condensed", "Bebas Neue", "Impact", "Arial Black", sans-serif;
-    --font-family-subheading: "Saira Extra Condensed", "Impact", sans-serif;
-    --font-family-body: Corbel, "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "DejaVu Sans", "Bitstream Vera Sans", "Liberation Sans", Verdana, sans-serif;
+    --font-family-heading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-subheading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-body: "Montserrat", "Arial", sans-serif;
 }
 
 /* Resume container */
