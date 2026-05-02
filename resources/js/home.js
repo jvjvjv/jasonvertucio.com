@@ -11,6 +11,20 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Back to top button visibility
+const backToTop = document.getElementById('back-to-top');
+if (backToTop) {
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 200) {
+            backToTop.classList.remove('opacity-0', 'pointer-events-none');
+            backToTop.classList.add('opacity-100');
+        } else {
+            backToTop.classList.add('opacity-0', 'pointer-events-none');
+            backToTop.classList.remove('opacity-100');
+        }
+    }, { passive: true });
+}
+
 // Close mobile menu when an anchor link is clicked
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('a[href*="#"]').forEach(function (link) {

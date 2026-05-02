@@ -80,6 +80,14 @@
         }
     </script>
 
+    <button id="back-to-top"
+        type="button"
+        aria-label="Back to top"
+        onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white opacity-0 transition-opacity duration-300 pointer-events-none">
+        <i class="fa-solid fa-chevron-up text-xs"></i>
+    </button>
+
     @include('cookies')
     @include('gtag')
 

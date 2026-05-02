@@ -1,5 +1,5 @@
 <nav id="sideNav"
-     class="fixed left-0 top-0 z-50 flex w-full flex-col bg-primary text-white md:h-screen md:w-52 md:items-center md:justify-center lg:w-64"
+     class="md:fixed left-0 top-0 z-50 flex w-full flex-col bg-primary text-white md:h-screen md:w-52 md:items-center md:justify-center lg:w-64"
      role="navigation">
     <a class="me m-2 rounded-2xl p-2 md:mb-0 md:flex md:items-center md:justify-center" href="#page-top">
         <span class="block text-xl md:hidden">Jason Vertucio</span>
