@@ -13,6 +13,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import { marked } from "marked";
 import AdminLayout from "../../../layouts/AdminLayout";
@@ -408,6 +409,7 @@ export default function Show({
                             {targetedResume.docx_path && (
                                 <Button
                                     size="small"
+                                    startIcon={<DownloadIcon />}
                                     variant="outlined"
                                     component="a"
                                     href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
@@ -418,6 +420,7 @@ export default function Show({
                             {targetedResume.pdf_path && (
                                 <Button
                                     size="small"
+                                    startIcon={<DownloadIcon />}
                                     variant="outlined"
                                     component="a"
                                     href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}

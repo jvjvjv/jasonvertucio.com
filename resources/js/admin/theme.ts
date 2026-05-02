@@ -39,6 +39,13 @@ export const theme = createTheme({
                 },
             },
         },
+        MuiLink: {
+            styleOverrides: {
+                root: ({theme}) => ({
+                    color: theme.palette.primary.main,
+                })
+            }
+        },
         MuiPaper: {
             styleOverrides: {
                 root: {
