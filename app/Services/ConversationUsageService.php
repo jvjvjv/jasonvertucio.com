@@ -31,7 +31,9 @@ class ConversationUsageService
             || $conversation->usage_total_tokens !== $updated['usage_total_tokens']
             || $currentCost !== $updated['usage_cost_usd'];
 
-        $conversation->forceFill($updated)->save();
+        AiConversation::withoutTimestamps(function () use ($conversation, $updated): void {
+            $conversation->forceFill($updated)->save();
+        });
 
         return $hasChanges;
     }
