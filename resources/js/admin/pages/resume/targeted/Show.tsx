@@ -359,6 +359,44 @@ export default function Show({
         conversation?.title ??
         (position ? `${companyName} — ${position}` : companyName);
 
+    const renderMarkdownContent = (content: string) => (
+        <div
+            style={{ wordBreak: "break-word" }}
+            dangerouslySetInnerHTML={{
+                __html: marked.parse(content, { breaks: true }) as string,
+            }}
+        />
+    );
+
+    const getMessageBubbleSx = (role: string) => ({
+        alignSelf: role === "user" ? "flex-end" : "flex-start",
+        maxWidth: "80%",
+        bgcolor: role === "user" ? "primary.main" : "grey.100",
+        color: role === "user" ? "primary.contrastText" : "text.primary",
+        borderRadius: 2,
+        px: 2,
+        py: 1,
+        ...markdownSx,
+        ...(role === "user" && {
+            "& a": {
+                color: "inherit",
+            },
+            "& code": {
+                bgcolor: "rgba(255,255,255,0.2)",
+            },
+            "& pre": {
+                bgcolor: "rgba(255,255,255,0.2)",
+            },
+            "& blockquote": {
+                borderLeftColor: "rgba(255,255,255,0.55)",
+                color: "inherit",
+            },
+            "& hr": {
+                borderTopColor: "rgba(255,255,255,0.35)",
+            },
+        }),
+    });
+
     return (
         <AdminLayout>
             <Head title={pageTitle} />
@@ -704,73 +742,16 @@ export default function Show({
                                 {messages.map((msg, idx) => (
                                     <Box
                                         key={idx}
-                                        sx={{
-                                            alignSelf:
-                                                msg.role === "user"
-                                                    ? "flex-end"
-                                                    : "flex-start",
-                                            maxWidth: "80%",
-                                            bgcolor:
-                                                msg.role === "user"
-                                                    ? "primary.main"
-                                                    : "grey.100",
-                                            color:
-                                                msg.role === "user"
-                                                    ? "primary.contrastText"
-                                                    : "text.primary",
-                                            borderRadius: 2,
-                                            px: 2,
-                                            py: 1,
-                                            ...(msg.role !== "user" &&
-                                                markdownSx),
-                                        }}
+                                        sx={getMessageBubbleSx(msg.role)}
                                     >
-                                        {msg.role === "user" ? (
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    whiteSpace: "pre-wrap",
-                                                    wordBreak: "break-word",
-                                                }}
-                                            >
-                                                {msg.content}
-                                            </Typography>
-                                        ) : (
-                                            <div
-                                                style={{
-                                                    wordBreak: "break-word",
-                                                }}
-                                                dangerouslySetInnerHTML={{
-                                                    __html: marked.parse(
-                                                        msg.content,
-                                                        { breaks: true },
-                                                    ) as string,
-                                                }}
-                                            />
-                                        )}
+                                        {renderMarkdownContent(msg.content)}
                                     </Box>
                                 ))}
                                 {isStreaming && streamingContent && (
-                                    <Box
-                                        sx={{
-                                            alignSelf: "flex-start",
-                                            maxWidth: "80%",
-                                            bgcolor: "grey.100",
-                                            borderRadius: 2,
-                                            px: 2,
-                                            py: 1,
-                                            ...markdownSx,
-                                        }}
-                                    >
-                                        <div
-                                            style={{ wordBreak: "break-word" }}
-                                            dangerouslySetInnerHTML={{
-                                                __html: marked.parse(
-                                                    streamingContent,
-                                                    { breaks: true },
-                                                ) as string,
-                                            }}
-                                        />
+                                    <Box sx={getMessageBubbleSx("assistant")}>
+                                        {renderMarkdownContent(
+                                            streamingContent,
+                                        )}
                                     </Box>
                                 )}
                                 {isStreaming && !streamingContent && (
