@@ -9,8 +9,11 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import EditIcon from "@mui/icons-material/Edit";
 import { marked } from "marked";
 import AdminLayout from "../../../layouts/AdminLayout";
 import PageHeader from "../../../components/PageHeader";
@@ -244,14 +247,7 @@ export default function Show({
 
     const canFinalizeResume =
         latestResumeData !== null && (!targetedResume || hasNewerResume);
-    const canFinalizeCoverLetter =
-        latestCoverLetterContent !== null && !coverLetter;
-
-    const finalizeResumeLabel = !targetedResume
-        ? "Finalize Resume"
-        : hasNewerResume
-          ? "Update Finalized Resume"
-          : "Resume Finalized";
+    const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {
         if (!canFinalizeResume || !latestResumeData) return;
@@ -407,24 +403,6 @@ export default function Show({
                 )}
 
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    <Button
-                        size="small"
-                        variant="contained"
-                        color="success"
-                        disabled={isFinalizing || !canFinalizeResume}
-                        onClick={handleFinalizeResume}
-                        title={
-                            !latestResumeData
-                                ? "Finalize is available after the assistant returns a tailored resume block"
-                                : !targetedResume
-                                  ? "Extract and save the tailored resume from the conversation"
-                                  : hasNewerResume
-                                    ? "Extract and save the latest tailored resume"
-                                    : "Resume already finalized with the latest content"
-                        }
-                    >
-                        {isFinalizing ? "Saving..." : finalizeResumeLabel}
-                    </Button>
                     {targetedResume && (
                         <>
                             {targetedResume.docx_path && (
@@ -561,33 +539,40 @@ export default function Show({
                                                 : "Not finalized yet"}
                                         </Typography>
                                     </Box>
-                                    <Button
+                                    <IconButton
                                         size="small"
-                                        variant="outlined"
+                                        color="primary"
                                         disabled={
                                             isFinalizing || !canFinalizeResume
                                         }
-                                        onClick={() =>
-                                            router.post(
-                                                `/admin/resume/targeted-resume/${targetedResume?.id}/regenerate`,
-                                            )
+                                        onClick={handleFinalizeResume}
+                                        title={
+                                            !latestResumeData
+                                                ? "Finalize is available after the assistant returns a tailored resume block"
+                                                : !targetedResume
+                                                  ? "Save the tailored resume and generate documents"
+                                                  : hasNewerResume
+                                                    ? "Update resume and regenerate documents"
+                                                    : "Resume already finalized with the latest content"
                                         }
                                     >
-                                        {targetedResume?.docx_path ? (
+                                        {isFinalizing ? (
+                                            <CircularProgress size={16} />
+                                        ) : hasNewerResume ? (
                                             <AutoFixHighIcon />
                                         ) : (
                                             <AutoAwesomeIcon />
                                         )}
-                                    </Button>
+                                    </IconButton>
                                 </Box>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    {targetedResume &&
-                                        `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`}
-                                </Typography>
-                                {<Box sx={{ mt: 1 }}></Box>}
+                                {targetedResume && (
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        {`${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`}
+                                    </Typography>
+                                )}
                             </CardContent>
                         </Card>
                         <Card
@@ -633,39 +618,52 @@ export default function Show({
                                                 : "Not finalized yet"}
                                         </Typography>
                                     </Box>
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        disabled={
-                                            isFinalizingCoverLetter ||
-                                            !canFinalizeCoverLetter
-                                        }
-                                        onClick={handleFinalizeCoverLetter}
-                                        title={
-                                            coverLetter
-                                                ? "Cover letter already finalized"
-                                                : !latestCoverLetterContent
-                                                  ? "Finalize is available after the assistant returns a cover letter block"
-                                                  : "Extract and save the cover letter from the conversation"
-                                        }
-                                    >
-                                        {isFinalizingCoverLetter ? (
-                                            "Saving..."
-                                        ) : coverLetter ? (
-                                            <AutoFixHighIcon />
-                                        ) : (
-                                            <AutoAwesomeIcon />
+                                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                                        {coverLetter && (
+                                            <IconButton
+                                                size="small"
+                                                component={Link}
+                                                href={`/admin/cover-letters/${coverLetter.id}`}
+                                                title="Edit cover letter"
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
                                         )}
-                                    </Button>
+                                        <IconButton
+                                            size="small"
+                                            color="primary"
+                                            disabled={
+                                                isFinalizingCoverLetter ||
+                                                !canFinalizeCoverLetter
+                                            }
+                                            onClick={handleFinalizeCoverLetter}
+                                            title={
+                                                !latestCoverLetterContent
+                                                    ? "Finalize is available after the assistant returns a cover letter block"
+                                                    : coverLetter
+                                                      ? "Update the cover letter from the latest chat content"
+                                                      : "Extract and save the cover letter from the conversation"
+                                            }
+                                        >
+                                            {isFinalizingCoverLetter ? (
+                                                <CircularProgress size={16} />
+                                            ) : coverLetter ? (
+                                                <AutoFixHighIcon />
+                                            ) : (
+                                                <AutoAwesomeIcon />
+                                            )}
+                                        </IconButton>
+                                    </Box>
                                 </Box>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    {(coverLetter &&
-                                        `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim()) ||
-                                        "Cover letter saved"}
-                                </Typography>
+                                {coverLetter && (
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        {`${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
+                                            "Cover letter saved"}
+                                    </Typography>
+                                )}
                             </CardContent>
                         </Card>
                     </Box>
