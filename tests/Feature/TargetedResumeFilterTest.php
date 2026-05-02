@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeStatus;
+use App\Models\AiSystem;
 use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
+use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -26,6 +28,35 @@ class TargetedResumeFilterTest extends TestCase
         $this->admin = User::factory()->create();
         Permission::findOrCreate('edit-resume', 'web');
         $this->admin->givePermissionTo('edit-resume');
+    }
+
+    public function test_start_seeds_a_single_initial_user_message_with_analysis_prompt_and_job_description(): void
+    {
+        $system = AiSystem::factory()->create(['is_active' => true]);
+        ResumeVersion::factory()->create(['is_current' => true]);
+
+        $jobTitle = 'Senior Laravel Engineer';
+        $jobDescription = 'Build and maintain Laravel applications.';
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.resume.targeted.start'), [
+                'ai_system_id' => $system->id,
+                'job_title' => $jobTitle,
+                'job_description' => $jobDescription,
+            ]);
+
+        $response->assertOk();
+
+        $conversation = AiConversation::query()->findOrFail($response->json('conversation_id'));
+        $messages = $conversation->messages()->orderBy('id')->get();
+
+        $this->assertCount(2, $messages);
+        $this->assertSame('system', $messages[0]->role);
+        $this->assertSame('user', $messages[1]->role);
+        $this->assertSame(
+            "Please begin the analysis on the following job description\n\nJob Title: {$jobTitle}\n\nJob Description:\n\n{$jobDescription}",
+            $messages[1]->content,
+        );
     }
 
     public function test_index_defaults_to_active_and_finalized(): void

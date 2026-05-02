@@ -59,17 +59,11 @@ class TargetedResumeService
             'content' => $systemPrompt,
         ]);
 
-        // Store the initial user messages that should be sent immediately on first load.
+        // Store the initial user message that should be sent immediately on first load.
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'user',
-            'content' => 'Please begin the analysis on the following job description',
-        ]);
-
-        AiConversationMessage::create([
-            'ai_conversation_id' => $conversation->id,
-            'role' => 'user',
-            'content' => $this->buildInitialJobDescriptionMessage($jobDescription, $jobTitle),
+            'content' => $this->buildInitialAnalysisMessage($jobDescription, $jobTitle),
         ]);
 
         return $conversation;
@@ -684,14 +678,16 @@ MEMORY;
         return 'Targeted Resume';
     }
     /**
-     * Build the initial user message from job description.
+     * Build the initial user message that starts analysis with the job description.
      */
-    private function buildInitialJobDescriptionMessage(string $jobDescription, ?string $jobTitle): string
+    private function buildInitialAnalysisMessage(string $jobDescription, ?string $jobTitle): string
     {
-        $message = '';
+        $message = "Please begin the analysis on the following job description\n\n";
+
         if ($jobTitle) {
             $message .= "Job Title: {$jobTitle}\n\n";
         }
+
         $message .= "Job Description:\n\n{$jobDescription}";
 
         return $message;
