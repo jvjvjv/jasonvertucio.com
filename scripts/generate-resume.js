@@ -104,6 +104,10 @@ try {
     const outputBuffer = renderedZip.generate({
         type: 'nodebuffer',
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        compression: 'DEFLATE',
+        compressionOptions: {
+            level: 9,
+        },
     });
 
     // Ensure output directory exists
