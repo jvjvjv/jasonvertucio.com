@@ -380,9 +380,6 @@ export default function Editor({
             >
                 <DialogTitle>Content has changed.</DialogTitle>
                 <DialogContent dividers>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                        The following content has changed:
-                    </Typography>
                     <List dense disablePadding>
                         {changedContent.map((item) => (
                             <ListItem key={item} sx={{ py: 0.25 }}>
@@ -390,6 +387,10 @@ export default function Editor({
                             </ListItem>
                         ))}
                     </List>
+                    <Typography variant="body2" sx={{ mt: 2 }}>
+                        Version is unchanged at {version}, but the content has
+                        been modified. Do you want to save these changes anyway?
+                    </Typography>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setConfirmSaveOpen(false)}>
