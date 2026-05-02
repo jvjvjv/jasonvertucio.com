@@ -8,6 +8,10 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import MenuIcon from '@mui/icons-material/Menu';
 import { ADMIN_NAVIGATION_ITEMS } from '../constants/navigation';
 import type { SharedProps } from '../types';
 
@@ -23,6 +27,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     const [flashOpen, setFlashOpen] = useState(
         !!(flash.success || flash.error)
     );
+    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     return (
         <Box
@@ -40,8 +45,6 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         mx: "auto",
                         px: 2,
                         gap: 2,
-                        flexWrap: "wrap",
-                        py: 1,
                     }}
                 >
                     <Typography
@@ -57,17 +60,14 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         Jason Vertucio
                     </Typography>
 
+                    {/* Desktop nav */}
                     <Box
                         component="nav"
                         sx={{
-                            display: "flex",
+                            display: { xs: "none", md: "flex" },
                             flexWrap: "wrap",
-                            justifyContent: {
-                                xs: "flex-start",
-                                md: "flex-end",
-                            },
+                            justifyContent: "flex-end",
                             gap: 1,
-                            width: { xs: "100%", md: "auto" },
                         }}
                     >
                         {ADMIN_NAVIGATION_ITEMS.map((item) => {
@@ -97,6 +97,39 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                             );
                         })}
                     </Box>
+
+                    {/* Mobile hamburger */}
+                    <IconButton
+                        color="inherit"
+                        aria-label="open navigation menu"
+                        onClick={(e) => setMenuAnchor(e.currentTarget)}
+                        sx={{ display: { xs: "flex", md: "none" } }}
+                    >
+                        <MenuIcon />
+                    </IconButton>
+                    <Menu
+                        anchorEl={menuAnchor}
+                        open={Boolean(menuAnchor)}
+                        onClose={() => setMenuAnchor(null)}
+                    >
+                        {ADMIN_NAVIGATION_ITEMS.map((item) => {
+                            const isActive =
+                                currentPath === item.slug ||
+                                currentPath.startsWith(`${item.slug}/`);
+
+                            return (
+                                <MenuItem
+                                    key={item.slug}
+                                    component={Link}
+                                    href={item.slug}
+                                    onClick={() => setMenuAnchor(null)}
+                                    selected={isActive}
+                                >
+                                    {item.label}
+                                </MenuItem>
+                            );
+                        })}
+                    </Menu>
                 </Toolbar>
             </AppBar>
 
