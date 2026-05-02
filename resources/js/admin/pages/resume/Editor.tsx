@@ -5,8 +5,15 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Checkbox from '@mui/material/Checkbox';
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Fab from '@mui/material/Fab';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Tab from '@mui/material/Tab';
@@ -65,6 +72,8 @@ export default function Editor({
     const [errors, setErrors] = useState<string[]>([]);
     const [notifyRecipients, setNotifyRecipients] = useState(false);
     const [optionsAnchor, setOptionsAnchor] = useState<null | HTMLElement>(null);
+    const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+    const [changedContent, setChangedContent] = useState<string[]>([]);
 
     // --- Updaters ---
 
@@ -99,18 +108,64 @@ export default function Editor({
 
     // --- Save ---
 
-    const handleSave = async () => {
+    const getChangedContent = useCallback((): string[] => {
+        const changes: string[] = [];
+
+        if (version !== initialVersion) {
+            changes.push("Version");
+        }
+
+        if (
+            JSON.stringify(data.personal) !==
+            JSON.stringify(initialData.personal)
+        ) {
+            changes.push("Personal");
+        }
+
+        if (
+            JSON.stringify(data.skills) !== JSON.stringify(initialData.skills)
+        ) {
+            changes.push("Skills");
+        }
+
+        if (
+            JSON.stringify(data.experience) !==
+            JSON.stringify(initialData.experience)
+        ) {
+            changes.push("Experience");
+        }
+
+        if (
+            JSON.stringify(data.projects) !==
+            JSON.stringify(initialData.projects)
+        ) {
+            changes.push("Projects");
+        }
+
+        if (
+            JSON.stringify(data.education) !==
+            JSON.stringify(initialData.education)
+        ) {
+            changes.push("Education");
+        }
+
+        return changes;
+    }, [data, initialData, initialVersion, version]);
+
+    const submitSave = async () => {
         setSaving(true);
         setErrors([]);
 
         try {
-            const response = await fetch('/admin/resume/editor', {
-                method: 'POST',
+            const response = await fetch("/admin/resume/editor", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN':
-                        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '',
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN":
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? "",
                 },
                 body: JSON.stringify({
                     version,
@@ -125,17 +180,34 @@ export default function Editor({
                 if (result.errors) {
                     setErrors(Object.values(result.errors).flat() as string[]);
                 } else {
-                    setErrors([result.message || 'Failed to save']);
+                    setErrors([result.message || "Failed to save"]);
                 }
                 return;
             }
 
             router.reload();
         } catch (error) {
-            setErrors(['Network error: ' + (error as Error).message]);
+            setErrors(["Network error: " + (error as Error).message]);
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleSave = () => {
+        const changes = getChangedContent();
+
+        if (changes.length > 0) {
+            setChangedContent(changes);
+            setConfirmSaveOpen(true);
+            return;
+        }
+
+        void submitSave();
+    };
+
+    const handleSaveAnyway = () => {
+        setConfirmSaveOpen(false);
+        void submitSave();
     };
 
     const tabLabels = ['Version', 'Personal', 'Skills', 'Experience', 'Projects', 'Education'];
@@ -143,11 +215,21 @@ export default function Editor({
     return (
         <AdminLayout>
             <Head title="Resume Builder" />
-            <PageHeader title="Resume Builder" backHref="/admin/resume" backLabel="Back to Resume Management" />
+            <PageHeader
+                title="Resume Builder"
+                backHref="/admin/resume"
+                backLabel="Back to Resume Management"
+            />
 
             {errors.length > 0 && (
-                <Card sx={{ mb: 2, bgcolor: 'error.light', color: 'error.contrastText' }}>
-                    <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Card
+                    sx={{
+                        mb: 2,
+                        bgcolor: "error.light",
+                        color: "error.contrastText",
+                    }}
+                >
+                    <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
                         <ul style={{ margin: 0, paddingLeft: 20 }}>
                             {errors.map((err, i) => (
                                 <li key={i}>{err}</li>
@@ -157,7 +239,11 @@ export default function Editor({
                 </Card>
             )}
 
-            <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2 }}>
+            <Tabs
+                value={activeTab}
+                onChange={(_, v) => setActiveTab(v)}
+                sx={{ mb: 2 }}
+            >
                 {tabLabels.map((label) => (
                     <Tab key={label} label={label} />
                 ))}
@@ -171,19 +257,54 @@ export default function Editor({
                     availableVersions={availableVersions}
                 />
             )}
-            {activeTab === 1 && <PersonalTab personal={data.personal} onChange={updatePersonal} />}
-            {activeTab === 2 && <SkillsTab skills={data.skills} onChange={updateSkillCategories} />}
-            {activeTab === 3 && <ExperienceTab experience={data.experience} onChange={updateExperience} />}
-            {activeTab === 4 && <ProjectsTab projects={data.projects} onChange={updateProjects} />}
-            {activeTab === 5 && <EducationTab education={data.education} onChange={updateEducation} />}
+            {activeTab === 1 && (
+                <PersonalTab
+                    personal={data.personal}
+                    onChange={updatePersonal}
+                />
+            )}
+            {activeTab === 2 && (
+                <SkillsTab
+                    skills={data.skills}
+                    onChange={updateSkillCategories}
+                />
+            )}
+            {activeTab === 3 && (
+                <ExperienceTab
+                    experience={data.experience}
+                    onChange={updateExperience}
+                />
+            )}
+            {activeTab === 4 && (
+                <ProjectsTab
+                    projects={data.projects}
+                    onChange={updateProjects}
+                />
+            )}
+            {activeTab === 5 && (
+                <EducationTab
+                    education={data.education}
+                    onChange={updateEducation}
+                />
+            )}
 
             {/* FAB Save with Options */}
-            <Box sx={{ position: 'fixed', bottom: 32, right: 32, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+            <Box
+                sx={{
+                    position: "fixed",
+                    bottom: 32,
+                    right: 32,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                    gap: 1,
+                }}
+            >
                 <Button
                     variant="outlined"
                     size="small"
                     onClick={(e) => setOptionsAnchor(e.currentTarget)}
-                    sx={{ bgcolor: 'background.paper' }}
+                    sx={{ bgcolor: "background.paper" }}
                 >
                     Options
                 </Button>
@@ -191,41 +312,99 @@ export default function Editor({
                     anchorEl={optionsAnchor}
                     open={Boolean(optionsAnchor)}
                     onClose={() => setOptionsAnchor(null)}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                    transformOrigin={{
+                        vertical: "bottom",
+                        horizontal: "right",
+                    }}
                 >
-                    <MenuItem disableRipple sx={{ '&:hover': { bgcolor: 'transparent' } }}>
+                    <MenuItem
+                        disableRipple
+                        sx={{ "&:hover": { bgcolor: "transparent" } }}
+                    >
                         <FormControlLabel
                             control={
                                 <Checkbox
                                     checked={notifyRecipients}
-                                    onChange={(e) => setNotifyRecipients(e.target.checked)}
+                                    onChange={(e) =>
+                                        setNotifyRecipients(e.target.checked)
+                                    }
                                     disabled={!mailConfigured}
                                     size="small"
                                 />
                             }
                             label={
                                 <Box>
-                                    <Typography variant="body2">Notify share code recipients</Typography>
+                                    <Typography variant="body2">
+                                        Notify share code recipients
+                                    </Typography>
                                     {!mailConfigured && (
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                        >
                                             (mail not configured)
                                         </Typography>
                                     )}
-                                    {mailConfigured && notificationRecipientCount > 0 && (
-                                        <Typography variant="caption" color="primary">
-                                            Will notify {notificationRecipientCount} recipient(s)
-                                        </Typography>
-                                    )}
+                                    {mailConfigured &&
+                                        notificationRecipientCount > 0 && (
+                                            <Typography
+                                                variant="caption"
+                                                color="primary"
+                                            >
+                                                Will notify{" "}
+                                                {notificationRecipientCount}{" "}
+                                                recipient(s)
+                                            </Typography>
+                                        )}
                                 </Box>
                             }
                         />
                     </MenuItem>
                 </Menu>
-                <Fab color="primary" variant="extended" disabled={saving} onClick={handleSave}>
-                    {saving ? 'Saving...' : 'Save Changes'}
+                <Fab
+                    color="primary"
+                    variant="extended"
+                    disabled={saving}
+                    onClick={handleSave}
+                >
+                    {saving ? "Saving..." : "Save Changes"}
                 </Fab>
             </Box>
+
+            <Dialog
+                open={confirmSaveOpen}
+                onClose={() => setConfirmSaveOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Content has changed.</DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        The following content has changed:
+                    </Typography>
+                    <List dense disablePadding>
+                        {changedContent.map((item) => (
+                            <ListItem key={item} sx={{ py: 0.25 }}>
+                                <ListItemText primary={item} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmSaveOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSaveAnyway}
+                        variant="contained"
+                        color="primary"
+                        disabled={saving}
+                    >
+                        Save anyway
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </AdminLayout>
     );
 }
