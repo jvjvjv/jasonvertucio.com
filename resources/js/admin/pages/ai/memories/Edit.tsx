@@ -1,14 +1,14 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import AdminLayout from '../../../layouts/AdminLayout';
-import PageHeader from '../../../components/PageHeader';
-import MemoryForm from './Form';
-import type { FormData } from './Form';
-import type { Memory } from '../../../types';
+import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import AdminLayout from "../../../layouts/AdminLayout";
+import PageHeader from "../../../components/PageHeader";
+import MemoryForm from "./Form";
+import type { FormData } from "./Form";
+import type { Memory } from "../../../types";
 
 interface EditMemory extends Memory, FormData {
     times_reinforced: number;
@@ -38,26 +38,35 @@ export default function Edit({ memory }: EditProps) {
     return (
         <AdminLayout>
             <Head title={`Edit — ${memory.key}`} />
-            <PageHeader title={`Edit: ${memory.key}`} backHref="/admin/ai/memories" backLabel="Back to AI Memories" />
+            <PageHeader
+                title={`Edit: ${memory.key}`}
+                backHref="/admin/ai/memories"
+                backLabel="Back to AI Memories"
+            />
 
             {/* Info box */}
-            <Card sx={{ mb: 2, bgcolor: 'grey.50' }}>
-                <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+            <Card sx={{ mb: 2, bgcolor: "grey.50" }}>
+                <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
                         <Typography variant="body2" color="text.secondary">
                             Feature: <strong>{memory.feature}</strong>
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Reinforced: <strong>{memory.times_reinforced}x</strong>
+                            Reinforced:{" "}
+                            <strong>{memory.times_reinforced}x</strong>
                         </Typography>
                         {memory.last_reinforced_at && (
                             <Typography variant="body2" color="text.secondary">
-                                Last reinforced: <strong>{memory.last_reinforced_at}</strong>
+                                Last reinforced:{" "}
+                                <strong>{memory.last_reinforced_at}</strong>
                             </Typography>
                         )}
                         {memory.source_conversation_id && (
                             <Typography variant="body2" color="text.secondary">
-                                Source conversation: <strong>#{memory.source_conversation_id}</strong>
+                                Source conversation:{" "}
+                                <strong>
+                                    #{memory.source_conversation_id}
+                                </strong>
                             </Typography>
                         )}
                     </Box>
@@ -74,11 +83,26 @@ export default function Edit({ memory }: EditProps) {
                             isEdit
                         />
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                            <Button component={Link} href="/admin/ai/memories" color="inherit">
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 2,
+                                mt: 3,
+                            }}
+                        >
+                            <Button
+                                component={InertiaLink}
+                                href="/admin/ai/memories"
+                                color="inherit"
+                            >
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="contained" disabled={form.processing}>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={form.processing}
+                            >
                                 Update Memory
                             </Button>
                         </Box>

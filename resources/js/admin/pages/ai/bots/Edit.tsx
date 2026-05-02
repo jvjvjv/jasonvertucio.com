@@ -1,14 +1,14 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import AdminLayout from '../../../layouts/AdminLayout';
-import ConfirmDialog from '../../../components/ConfirmDialog';
-import PageHeader from '../../../components/PageHeader';
-import useConfirmDialog from '../../../hooks/useConfirmDialog';
-import type { AiChatBot } from '../../../types';
-import Form, { type FormData } from './Form';
+import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import AdminLayout from "../../../layouts/AdminLayout";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import PageHeader from "../../../components/PageHeader";
+import useConfirmDialog from "../../../hooks/useConfirmDialog";
+import type { AiChatBot } from "../../../types";
+import Form, { type FormData } from "./Form";
 
 interface EditProps {
     bot: AiChatBot;
@@ -21,9 +21,9 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         name: bot.name,
         slug: bot.slug,
         access_path: bot.access_path,
-        description: bot.description ?? '',
-        ai_system_id: bot.ai_system_id ?? '',
-        prompt_template: bot.prompt_template ?? '',
+        description: bot.description ?? "",
+        ai_system_id: bot.ai_system_id ?? "",
+        prompt_template: bot.prompt_template ?? "",
         allowed_roles: bot.allowed_roles ?? [],
         is_active: bot.is_active,
         is_public: bot.is_public,
@@ -46,23 +46,48 @@ export default function Edit({ bot, systems, roles }: EditProps) {
     return (
         <AdminLayout>
             <Head title={`Edit — ${bot.name}`} />
-            <PageHeader title={`Edit: ${bot.name}`} backHref="/admin/ai/chat-bots" backLabel="Back to AI Chat Bots" />
+            <PageHeader
+                title={`Edit: ${bot.name}`}
+                backHref="/admin/ai/chat-bots"
+                backLabel="Back to AI Chat Bots"
+            />
 
             <Card>
                 <CardContent>
                     <Box component="form" onSubmit={handleSubmit}>
-                        <Form data={form.data} setData={form.setData} errors={form.errors} systems={systems} roles={roles} />
+                        <Form
+                            data={form.data}
+                            setData={form.setData}
+                            errors={form.errors}
+                            systems={systems}
+                            roles={roles}
+                        />
 
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mt: 3,
+                            }}
+                        >
                             <Button color="error" onClick={handleDelete}>
                                 Delete
                             </Button>
 
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <Button component={Link} href="/admin/ai/chat-bots" color="inherit">
+                            <Box sx={{ display: "flex", gap: 2 }}>
+                                <Button
+                                    component={InertiaLink}
+                                    href="/admin/ai/chat-bots"
+                                    color="inherit"
+                                >
                                     Cancel
                                 </Button>
-                                <Button type="submit" variant="contained" disabled={form.processing}>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={form.processing}
+                                >
                                     Update Bot
                                 </Button>
                             </Box>

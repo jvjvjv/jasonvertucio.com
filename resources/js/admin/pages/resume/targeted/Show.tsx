@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -17,6 +17,7 @@ import PageHeader from "../../../components/PageHeader";
 import ChatMessageBubble from "../../../components/ChatMessageBubble";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import useConfirmDialog from "../../../hooks/useConfirmDialog";
+import UsageChip from "../../../components/UsageChip";
 import type {
     Conversation,
     CoverLetter,
@@ -459,7 +460,7 @@ export default function Show({
                                 coverLetter ? (
                                     <IconButton
                                         size="small"
-                                        component={Link}
+                                        component={InertiaLink}
                                         href={`/admin/cover-letters/${coverLetter.id}`}
                                         title="Edit cover letter"
                                     >
@@ -662,16 +663,7 @@ export default function Show({
                             <Typography variant="subtitle2" gutterBottom>
                                 Chat Usage
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {conversation.usage?.total_tokens != null
-                                    ? `Total tokens: ${conversation.usage.total_tokens.toLocaleString()}`
-                                    : "Total tokens: —"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {conversation.usage?.cost_usd != null
-                                    ? `Estimated cost: $${conversation.usage.cost_usd.toFixed(4)}`
-                                    : "Estimated cost: —"}
-                            </Typography>
+                            <UsageChip usage={conversation.usage} />
                         </Box>
                         {coverLetter && (
                             <Box
@@ -686,7 +678,7 @@ export default function Show({
                                     Cover Letter
                                 </Typography>
                                 <Button
-                                    component={Link}
+                                    component={InertiaLink}
                                     href={`/admin/cover-letters/${coverLetter.id}`}
                                     size="small"
                                     variant="outlined"

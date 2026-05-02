@@ -1,8 +1,8 @@
-import { Link } from '@inertiajs/react';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import MuiLink from '@mui/material/Link';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Link as InertiaLink } from "@inertiajs/react";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import MuiLink from "@mui/material/Link";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface PageHeaderProps {
     title: string;
@@ -10,16 +10,25 @@ interface PageHeaderProps {
     backLabel?: string;
 }
 
-export default function PageHeader({ title, backHref, backLabel = 'Back' }: PageHeaderProps) {
+export default function PageHeader({
+    title,
+    backHref,
+    backLabel = "Back",
+}: PageHeaderProps) {
     return (
         <Box sx={{ mb: 4 }}>
             {backHref && (
                 <MuiLink
-                    component={Link}
+                    component={InertiaLink}
                     href={backHref}
                     underline="hover"
                     variant="body2"
-                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 1 }}
+                    sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        mb: 1,
+                    }}
                 >
                     <ArrowBackIcon fontSize="small" />
                     {backLabel}

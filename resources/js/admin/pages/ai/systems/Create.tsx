@@ -1,12 +1,12 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import AdminLayout from '../../../layouts/AdminLayout';
-import PageHeader from '../../../components/PageHeader';
-import AiSystemForm from './Form';
-import type { FormData } from './Form';
+import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import AdminLayout from "../../../layouts/AdminLayout";
+import PageHeader from "../../../components/PageHeader";
+import AiSystemForm from "./Form";
+import type { FormData } from "./Form";
 
 interface CreateProps {
     existingDefaults: string[];
@@ -14,28 +14,32 @@ interface CreateProps {
 
 export default function Create({ existingDefaults }: CreateProps) {
     const form = useForm<FormData>({
-        name: '',
-        provider: 'anthropic',
-        api_key: '',
-        model: '',
-        base_url: '',
-        api_version: '',
+        name: "",
+        provider: "anthropic",
+        api_key: "",
+        model: "",
+        base_url: "",
+        api_version: "",
         max_tokens: 4096,
-        temperature: '',
-        config: '',
+        temperature: "",
+        config: "",
         is_active: true,
         feature_defaults: [],
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        form.post('/admin/ai/systems');
+        form.post("/admin/ai/systems");
     };
 
     return (
         <AdminLayout>
             <Head title="Add AI System" />
-            <PageHeader title="Add AI System" backHref="/admin/ai/systems" backLabel="Back to AI Systems" />
+            <PageHeader
+                title="Add AI System"
+                backHref="/admin/ai/systems"
+                backLabel="Back to AI Systems"
+            />
 
             <Card>
                 <CardContent>
@@ -47,11 +51,26 @@ export default function Create({ existingDefaults }: CreateProps) {
                             existingDefaults={existingDefaults}
                         />
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                            <Button component={Link} href="/admin/ai/systems" color="inherit">
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 2,
+                                mt: 3,
+                            }}
+                        >
+                            <Button
+                                component={InertiaLink}
+                                href="/admin/ai/systems"
+                                color="inherit"
+                            >
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="contained" disabled={form.processing}>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={form.processing}
+                            >
                                 Save System
                             </Button>
                         </Box>

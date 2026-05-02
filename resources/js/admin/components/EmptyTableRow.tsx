@@ -1,7 +1,8 @@
-import { Link } from '@inertiajs/react';
-import TableCell from '@mui/material/TableCell';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
+import { Link as InertiaLink } from "@inertiajs/react";
+import Link from "@mui/material/Link";
+import TableCell from "@mui/material/TableCell";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 
 interface EmptyTableRowProps {
     colSpan: number;
@@ -10,14 +11,25 @@ interface EmptyTableRowProps {
     actionHref?: string;
 }
 
-export default function EmptyTableRow({ colSpan, message, actionLabel, actionHref }: EmptyTableRowProps) {
+export default function EmptyTableRow({
+    colSpan,
+    message,
+    actionLabel,
+    actionHref,
+}: EmptyTableRowProps) {
     return (
         <TableRow>
             <TableCell colSpan={colSpan} align="center" sx={{ py: 4 }}>
                 <Typography color="text.secondary">{message}</Typography>
                 {actionLabel && actionHref && (
                     <Typography variant="body2" sx={{ mt: 0.5 }}>
-                        <Link href={actionHref}>{actionLabel}</Link>
+                        <Link
+                            component={InertiaLink}
+                            href={actionHref}
+                            underline="hover"
+                        >
+                            {actionLabel}
+                        </Link>
                     </Typography>
                 )}
             </TableCell>

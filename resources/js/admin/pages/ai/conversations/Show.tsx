@@ -1,16 +1,18 @@
-import { Head, Link, router } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import AdminLayout from '../../../layouts/AdminLayout';
+import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Divider from "@mui/material/Divider";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
+import AdminLayout from "../../../layouts/AdminLayout";
 import ChatMessageBubble from "../../../components/ChatMessageBubble";
-import ConfirmDialog from '../../../components/ConfirmDialog';
-import PageHeader from '../../../components/PageHeader';
-import StatusChip from '../../../components/StatusChip';
-import useConfirmDialog from '../../../hooks/useConfirmDialog';
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import PageHeader from "../../../components/PageHeader";
+import StatusChip from "../../../components/StatusChip";
+import UsageChip from "../../../components/UsageChip";
+import useConfirmDialog from "../../../hooks/useConfirmDialog";
 import type { ConversationUsage, Message, Memory } from "../../../types";
 
 interface ShowProps {
@@ -41,7 +43,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
     const handleDelete = () => {
-        confirm('Delete this AI conversation?', () => {
+        confirm("Delete this AI conversation?", () => {
             router.delete(`/admin/ai/conversations/${conversation.id}`);
         });
     };
@@ -152,22 +154,16 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     {conversation.ai_system_name ?? "-"}
                                 </Box>
                                 <Box>
-                                    <strong>Tokens:</strong>{" "}
-                                    {conversation.usage?.total_tokens != null
-                                        ? conversation.usage.total_tokens.toLocaleString()
-                                        : "-"}
-                                </Box>
-                                <Box>
-                                    <strong>Estimated Cost:</strong>{" "}
-                                    {conversation.usage?.cost_usd != null
-                                        ? `$${conversation.usage.cost_usd.toFixed(4)}`
-                                        : "-"}
+                                    <strong>Usage:</strong>{" "}
+                                    <UsageChip usage={conversation.usage} />
                                 </Box>
                                 <Box>
                                     <strong>Bot:</strong>{" "}
                                     {conversation.ai_chat_bot ? (
                                         <Link
+                                            component={InertiaLink}
                                             href={`/admin/ai/chat-bots/${conversation.ai_chat_bot.id}`}
+                                            underline="hover"
                                         >
                                             {conversation.ai_chat_bot.name}
                                         </Link>
@@ -216,7 +212,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                         {conversation.targeted_resume.position}
                                     </Typography>
                                     <Button
-                                        component={Link}
+                                        component={InertiaLink}
                                         href={`/admin/resume/targeted-builder/${conversation.id}`}
                                         size="small"
                                         sx={{ mt: 1 }}

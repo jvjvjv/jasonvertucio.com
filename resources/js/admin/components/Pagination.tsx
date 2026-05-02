@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link as InertiaLink } from '@inertiajs/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import type { PaginationLink } from '../types';
@@ -18,7 +18,7 @@ export default function Pagination({ links, lastPage }: PaginationProps) {
             {links.map((link, i) => (
                 <Button
                     key={i}
-                    component={link.url ? Link : 'button'}
+                    component={link.url ? InertiaLink : 'button'}
                     href={link.url ?? undefined}
                     size="small"
                     variant={link.active ? 'contained' : 'text'}

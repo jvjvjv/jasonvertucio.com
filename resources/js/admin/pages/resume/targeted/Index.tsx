@@ -1,4 +1,4 @@
-import { Head, router } from "@inertiajs/react";
+import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -17,6 +17,7 @@ import AdminLayout from "../../../layouts/AdminLayout";
 import PageHeader from "../../../components/PageHeader";
 import EmptyTableRow from "../../../components/EmptyTableRow";
 import StatusChip from "../../../components/StatusChip";
+import UsageChip from "../../../components/UsageChip";
 import type { Conversation } from "../../../types";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import useConfirmDialog from "../../../hooks/useConfirmDialog";
@@ -122,7 +123,7 @@ export default function Index({
                 ))}
                 <Box sx={{ flexGrow: 1 }} />
                 <Button
-                    component={Link}
+                    component={InertiaLink}
                     href="/admin/resume/targeted-builder/new"
                     variant="contained"
                 >
@@ -172,7 +173,10 @@ export default function Index({
                                         <TableRow key={conv.id} hover>
                                             <TableCell>
                                                 <Link
+                                                    component={InertiaLink}
                                                     href={`/admin/resume/targeted-builder/${conv.id}`}
+                                                    underline="hover"
+                                                    color="inherit"
                                                 >
                                                     <Typography
                                                         variant="body2"
@@ -201,25 +205,7 @@ export default function Index({
                                                     : "—"}
                                             </TableCell>
                                             <TableCell>
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
-                                                >
-                                                    {conv.usage?.total_tokens !=
-                                                    null
-                                                        ? `${conv.usage.total_tokens.toLocaleString()} tok`
-                                                        : "—"}
-                                                </Typography>
-                                                <br />
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
-                                                >
-                                                    {conv.usage?.cost_usd !=
-                                                    null
-                                                        ? `$${conv.usage.cost_usd.toFixed(4)}`
-                                                        : "—"}
-                                                </Typography>
+                                                <UsageChip usage={conv.usage} />
                                             </TableCell>
                                             <TableCell>
                                                 <StatusChip
@@ -241,7 +227,7 @@ export default function Index({
                                                     }}
                                                 >
                                                     <Button
-                                                        component={Link}
+                                                        component={InertiaLink}
                                                         href={`/admin/resume/targeted-builder/${conv.id}`}
                                                         size="small"
                                                     >

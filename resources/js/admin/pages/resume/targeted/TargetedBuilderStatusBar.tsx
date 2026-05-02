@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import DownloadIcon from "@mui/icons-material/Download";
 import StatusChip from "../../../components/StatusChip";
+import UsageChip from "../../../components/UsageChip";
 import type { Conversation, CoverLetter, TargetedResume } from "../../../types";
 
 interface TargetedBuilderStatusBarProps {
@@ -45,16 +46,7 @@ export default function TargetedBuilderStatusBar({
                     Fit: {targetedResume.fit_score}%
                 </Typography>
             )}
-            {conversation.usage?.total_tokens != null && (
-                <Typography variant="caption" color="text.secondary">
-                    Tokens: {conversation.usage.total_tokens.toLocaleString()}
-                </Typography>
-            )}
-            {conversation.usage?.cost_usd != null && (
-                <Typography variant="caption" color="text.secondary">
-                    Cost: ${conversation.usage.cost_usd.toFixed(4)}
-                </Typography>
-            )}
+            <UsageChip usage={conversation.usage} />
             <Box sx={{ flexGrow: 1 }} />
             {conversation.status === "active" && (
                 <Button

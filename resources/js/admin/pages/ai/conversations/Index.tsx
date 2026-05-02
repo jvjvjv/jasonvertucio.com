@@ -1,23 +1,25 @@
-import { Head, Link, router } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import MenuItem from '@mui/material/MenuItem';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TextField from '@mui/material/TextField';
-import AdminLayout from '../../../layouts/AdminLayout';
-import ConfirmDialog from '../../../components/ConfirmDialog';
-import EmptyTableRow from '../../../components/EmptyTableRow';
-import PageHeader from '../../../components/PageHeader';
-import Pagination from '../../../components/Pagination';
-import StatusChip from '../../../components/StatusChip';
-import useConfirmDialog from '../../../hooks/useConfirmDialog';
-import type { Conversation, PaginatedResponse } from '../../../types';
+import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
+import AdminLayout from "../../../layouts/AdminLayout";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import EmptyTableRow from "../../../components/EmptyTableRow";
+import PageHeader from "../../../components/PageHeader";
+import Pagination from "../../../components/Pagination";
+import StatusChip from "../../../components/StatusChip";
+import UsageChip from "../../../components/UsageChip";
+import useConfirmDialog from "../../../hooks/useConfirmDialog";
+import type { Conversation, PaginatedResponse } from "../../../types";
 
 interface Filters {
     feature?: string;
@@ -35,7 +37,13 @@ interface IndexProps {
     filters: Filters;
 }
 
-export default function Index({ conversations, features, systems, bots, filters }: IndexProps) {
+export default function Index({
+    conversations,
+    features,
+    systems,
+    bots,
+    filters,
+}: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
     const updateFilters = (next: Filters) => {
@@ -45,30 +53,40 @@ export default function Index({ conversations, features, systems, bots, filters 
                 delete params[key];
             }
         });
-        router.get('/admin/ai/conversations', params, { preserveState: true });
+        router.get("/admin/ai/conversations", params, { preserveState: true });
     };
 
     const handleDelete = (conversation: Conversation) => {
-        confirm('Delete this AI conversation?', () => {
+        confirm("Delete this AI conversation?", () => {
             router.delete(`/admin/ai/conversations/${conversation.id}`);
         });
     };
 
     const handleBackfillUsage = () => {
-        confirm('Queue usage backfill for conversations missing usage?', () => {
-            router.post('/admin/ai/conversations/backfill-usage');
-        }, {
-            confirmLabel: 'Queue Backfill',
-        });
+        confirm(
+            "Queue usage backfill for conversations missing usage?",
+            () => {
+                router.post("/admin/ai/conversations/backfill-usage");
+            },
+            {
+                confirmLabel: "Queue Backfill",
+            },
+        );
     };
 
     const handleRecomputeAllUsage = () => {
-        confirm('Recompute usage for all conversations? This may take a while.', () => {
-            router.post('/admin/ai/conversations/backfill-usage', { all: true });
-        }, {
-            confirmLabel: 'Queue Recompute',
-            confirmColor: 'warning',
-        });
+        confirm(
+            "Recompute usage for all conversations? This may take a while.",
+            () => {
+                router.post("/admin/ai/conversations/backfill-usage", {
+                    all: true,
+                });
+            },
+            {
+                confirmLabel: "Queue Recompute",
+                confirmColor: "warning",
+            },
+        );
     };
 
     return (
@@ -80,11 +98,27 @@ export default function Index({ conversations, features, systems, bots, filters 
                 backLabel="Back to AI Tools"
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
-                <Button variant="outlined" size="small" onClick={handleBackfillUsage}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                    mb: 2,
+                }}
+            >
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleBackfillUsage}
+                >
                     Backfill Usage
                 </Button>
-                <Button variant="outlined" color="warning" size="small" onClick={handleRecomputeAllUsage}>
+                <Button
+                    variant="outlined"
+                    color="warning"
+                    size="small"
+                    onClick={handleRecomputeAllUsage}
+                >
                     Recompute All Usage
                 </Button>
             </Box>
@@ -199,11 +233,12 @@ export default function Index({ conversations, features, systems, bots, filters 
                                     <TableRow key={conversation.id} hover>
                                         <TableCell>
                                             <Link
+                                                component={InertiaLink}
                                                 href={`/admin/ai/conversations/${conversation.id}`}
                                                 style={{
-                                                    color: "inherit",
                                                     fontWeight: 500,
                                                 }}
+                                                underline="hover"
                                             >
                                                 {conversation.title ||
                                                     `Conversation #${conversation.id}`}
@@ -240,30 +275,9 @@ export default function Index({ conversations, features, systems, bots, filters 
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Box>
-                                                <Box
-                                                    sx={{
-                                                        color: "text.secondary",
-                                                        fontSize: 12,
-                                                    }}
-                                                >
-                                                    {conversation.usage
-                                                        ?.total_tokens != null
-                                                        ? `${conversation.usage.total_tokens.toLocaleString()} tok`
-                                                        : "—"}
-                                                </Box>
-                                                <Box
-                                                    sx={{
-                                                        color: "text.secondary",
-                                                        fontSize: 12,
-                                                    }}
-                                                >
-                                                    {conversation.usage
-                                                        ?.cost_usd != null
-                                                        ? `$${conversation.usage.cost_usd.toFixed(4)}`
-                                                        : "—"}
-                                                </Box>
-                                            </Box>
+                                            <UsageChip
+                                                usage={conversation.usage}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             {conversation.messages_count ?? 0}
@@ -280,7 +294,7 @@ export default function Index({ conversations, features, systems, bots, filters 
                                                 }}
                                             >
                                                 <Button
-                                                    component={Link}
+                                                    component={InertiaLink}
                                                     href={`/admin/ai/conversations/${conversation.id}`}
                                                     size="small"
                                                 >

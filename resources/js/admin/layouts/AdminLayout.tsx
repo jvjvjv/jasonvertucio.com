@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link as InertiaLink, usePage } from "@inertiajs/react";
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -49,7 +49,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 >
                     <Typography
                         variant="h6"
-                        component={Link}
+                        component={InertiaLink}
                         href="/"
                         sx={{
                             mr: "auto",
@@ -79,7 +79,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                                 <Button
                                     key={item.slug}
                                     color="inherit"
-                                    component={Link}
+                                    component={InertiaLink}
                                     href={item.slug}
                                     variant={isActive ? "outlined" : "text"}
                                     sx={{
@@ -120,7 +120,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                             return (
                                 <MenuItem
                                     key={item.slug}
-                                    component={Link}
+                                    component={InertiaLink}
                                     href={item.slug}
                                     onClick={() => setMenuAnchor(null)}
                                     selected={isActive}

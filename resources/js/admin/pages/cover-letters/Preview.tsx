@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link as InertiaLink } from "@inertiajs/react";
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Fab from '@mui/material/Fab';
+import Link from "@mui/material/Link";
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -53,12 +54,22 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
         <AdminLayout>
             <Head title={`Preview — ${coverLetter.company_name}`} />
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-                <Link href="/admin/cover-letters" style={{ fontSize: '0.875rem' }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+                <Link
+                    component={InertiaLink}
+                    href="/admin/cover-letters"
+                    underline="hover"
+                    sx={{ fontSize: "0.875rem" }}
+                >
                     Cover Letters
                 </Link>
                 <Typography color="text.disabled">/</Typography>
-                <Link href={`/admin/cover-letters/${coverLetter.id}`} style={{ fontSize: '0.875rem' }}>
+                <Link
+                    component={InertiaLink}
+                    href={`/admin/cover-letters/${coverLetter.id}`}
+                    underline="hover"
+                    sx={{ fontSize: "0.875rem" }}
+                >
                     Edit
                 </Link>
             </Box>
@@ -66,8 +77,8 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
             {/* Header banner */}
             <Box
                 sx={{
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
                     px: 4,
                     py: 3,
                     borderTopLeftRadius: 1,
@@ -85,24 +96,27 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
             {/* Letter body */}
             <Box
                 sx={{
-                    bgcolor: 'background.paper',
+                    bgcolor: "background.paper",
                     border: 1,
-                    borderColor: 'divider',
+                    borderColor: "divider",
                     borderTop: 0,
                     p: 5,
                     borderBottomLeftRadius: 1,
                     borderBottomRightRadius: 1,
-                    fontFamily: 'Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                    fontSize: '1rem',
+                    fontFamily:
+                        'Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    fontSize: "1rem",
                     lineHeight: 1.75,
-                    color: 'text.primary',
+                    color: "text.primary",
                     ...letterMarkdownSx,
                 }}
             >
                 <p>{formattedDate}</p>
 
                 {coverLetter.company_address && (
-                    <p style={{ whiteSpace: 'pre-line' }}>{coverLetter.company_address}</p>
+                    <p style={{ whiteSpace: "pre-line" }}>
+                        {coverLetter.company_address}
+                    </p>
                 )}
 
                 <p>{coverLetter.greeting}</p>
@@ -112,7 +126,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                 {coverLetter.closing && <p>{coverLetter.closing}</p>}
 
                 {coverLetter.signature && (
-                    <p><strong>{coverLetter.signature}</strong></p>
+                    <p>
+                        <strong>{coverLetter.signature}</strong>
+                    </p>
                 )}
             </Box>
 
@@ -123,7 +139,7 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                         color="primary"
                         aria-label="Download cover letter"
                         onClick={(e) => setAnchorEl(e.currentTarget)}
-                        sx={{ position: 'fixed', bottom: 24, right: 24 }}
+                        sx={{ position: "fixed", bottom: 24, right: 24 }}
                     >
                         <DownloadIcon />
                     </Fab>
@@ -131,8 +147,11 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                         anchorEl={anchorEl}
                         open={Boolean(anchorEl)}
                         onClose={() => setAnchorEl(null)}
-                        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-                        transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                        transformOrigin={{
+                            vertical: "bottom",
+                            horizontal: "center",
+                        }}
                     >
                         {docxExists && (
                             <MenuItem
@@ -140,7 +159,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                                 href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
                                 onClick={() => setAnchorEl(null)}
                             >
-                                <ListItemIcon><DescriptionIcon color="primary" /></ListItemIcon>
+                                <ListItemIcon>
+                                    <DescriptionIcon color="primary" />
+                                </ListItemIcon>
                                 <ListItemText>Word Document</ListItemText>
                             </MenuItem>
                         )}
@@ -150,7 +171,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                                 href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
                                 onClick={() => setAnchorEl(null)}
                             >
-                                <ListItemIcon><PictureAsPdfIcon color="error" /></ListItemIcon>
+                                <ListItemIcon>
+                                    <PictureAsPdfIcon color="error" />
+                                </ListItemIcon>
                                 <ListItemText>PDF</ListItemText>
                             </MenuItem>
                         )}
