@@ -5,29 +5,26 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import IconButton from "@mui/material/IconButton";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
-import IconButton from "@mui/material/IconButton";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
-import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
-import { marked } from "marked";
+import StatusChip from "../../../components/StatusChip";
 import AdminLayout from "../../../layouts/AdminLayout";
 import PageHeader from "../../../components/PageHeader";
+import ChatMessageBubble from "../../../components/ChatMessageBubble";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import useConfirmDialog from "../../../hooks/useConfirmDialog";
 import type {
     Conversation,
     CoverLetter,
     Message,
     TargetedResume,
 } from "../../../types";
-import { markdownSx } from "../../../utils/markdownSx";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import StatusChip from "../../../components/StatusChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
+import BuilderStatusCard from "./BuilderStatusCard";
+import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
 
 interface ShowProps {
     conversation: Conversation;
@@ -359,44 +356,6 @@ export default function Show({
         conversation?.title ??
         (position ? `${companyName} — ${position}` : companyName);
 
-    const renderMarkdownContent = (content: string) => (
-        <div
-            style={{ wordBreak: "break-word" }}
-            dangerouslySetInnerHTML={{
-                __html: marked.parse(content, { breaks: true }) as string,
-            }}
-        />
-    );
-
-    const getMessageBubbleSx = (role: string) => ({
-        alignSelf: role === "user" ? "flex-end" : "flex-start",
-        maxWidth: "80%",
-        bgcolor: role === "user" ? "primary.main" : "grey.100",
-        color: role === "user" ? "primary.contrastText" : "text.primary",
-        borderRadius: 2,
-        px: 2,
-        py: 1,
-        ...markdownSx,
-        ...(role === "user" && {
-            "& a": {
-                color: "inherit",
-            },
-            "& code": {
-                bgcolor: "rgba(255,255,255,0.2)",
-            },
-            "& pre": {
-                bgcolor: "rgba(255,255,255,0.2)",
-            },
-            "& blockquote": {
-                borderLeftColor: "rgba(255,255,255,0.55)",
-                color: "inherit",
-            },
-            "& hr": {
-                borderTopColor: "rgba(255,255,255,0.35)",
-            },
-        }),
-    });
-
     return (
         <AdminLayout>
             <Head title={pageTitle} />
@@ -406,98 +365,12 @@ export default function Show({
                 backLabel="Back to Targeted Resumes"
             />
 
-            {/* Status bar */}
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 2,
-                    mb: 2,
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                }}
-            >
-                <StatusChip
-                    status={
-                        targetedResume?.status === "finalized"
-                            ? "finalized"
-                            : conversation.status
-                    }
-                />
-                {conversation.ai_system_name && (
-                    <Typography variant="caption" color="text.secondary">
-                        AI: {conversation.ai_system_name}
-                    </Typography>
-                )}
-                {targetedResume?.fit_score != null && (
-                    <Typography variant="caption" color="text.secondary">
-                        Fit: {targetedResume.fit_score}%
-                    </Typography>
-                )}
-                <Box sx={{ flexGrow: 1 }} />
-                {conversation.status === "active" && (
-                    <Button
-                        size="small"
-                        color="warning"
-                        variant="outlined"
-                        onClick={handlePass}
-                    >
-                        Pass
-                    </Button>
-                )}
-
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {targetedResume && (
-                        <>
-                            {targetedResume.docx_path && (
-                                <Button
-                                    size="small"
-                                    startIcon={<DownloadIcon />}
-                                    variant="outlined"
-                                    component="a"
-                                    href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
-                                >
-                                    DOCX
-                                </Button>
-                            )}
-                            {targetedResume.pdf_path && (
-                                <Button
-                                    size="small"
-                                    startIcon={<DownloadIcon />}
-                                    variant="outlined"
-                                    component="a"
-                                    href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
-                                >
-                                    PDF
-                                </Button>
-                            )}
-                        </>
-                    )}
-                    {coverLetter && (
-                        <>
-                            {coverLetter.docx_path && (
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    component="a"
-                                    href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
-                                >
-                                    CL DOCX
-                                </Button>
-                            )}
-                            {coverLetter.pdf_path && (
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    component="a"
-                                    href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
-                                >
-                                    CL PDF
-                                </Button>
-                            )}
-                        </>
-                    )}
-                </Box>
-            </Box>
+            <TargetedBuilderStatusBar
+                conversation={conversation}
+                targetedResume={targetedResume}
+                coverLetter={coverLetter}
+                onPass={handlePass}
+            />
 
             <Tabs
                 value={activeTab}
@@ -508,31 +381,19 @@ export default function Show({
                 <Tab label="Details" />
             </Tabs>
 
-            {/* Finalize errors */}
             {(finalizeError || finalizeCoverLetterError) && (
-                <Box
-                    sx={{
-                        mb: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                    }}
-                >
+                <Box sx={{ mb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
                     {finalizeError && (
                         <Alert severity="error">{finalizeError}</Alert>
                     )}
                     {finalizeCoverLetterError && (
-                        <Alert severity="error">
-                            {finalizeCoverLetterError}
-                        </Alert>
+                        <Alert severity="error">{finalizeCoverLetterError}</Alert>
                     )}
                 </Box>
             )}
 
-            {/* Chat Tab */}
             {activeTab === 0 && (
                 <>
-                    {/* Resume / Cover Letter status cards */}
                     <Box
                         sx={{
                             display: "grid",
@@ -541,180 +402,66 @@ export default function Show({
                             mb: 2,
                         }}
                     >
-                        <Card
-                            variant="outlined"
-                            sx={{
-                                borderColor: targetedResume
-                                    ? "success.light"
-                                    : "divider",
-                                bgcolor: targetedResume
-                                    ? "success.50"
-                                    : "background.paper",
-                            }}
-                        >
-                            <CardContent
-                                sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}
-                            >
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        gap: 1,
-                                    }}
-                                >
-                                    <Box>
-                                        <Typography
-                                            variant="overline"
-                                            color={
-                                                targetedResume
-                                                    ? "success.dark"
-                                                    : "text.secondary"
-                                            }
-                                            sx={{
-                                                display: "block",
-                                                lineHeight: 1.5,
-                                            }}
-                                        >
-                                            Resume
-                                        </Typography>
-                                        <Typography variant="subtitle2">
-                                            {targetedResume
-                                                ? "Finalized and ready"
-                                                : "Not finalized yet"}
-                                        </Typography>
-                                    </Box>
+                        <BuilderStatusCard
+                            label="Resume"
+                            isFinalized={!!targetedResume}
+                            color="success"
+                            canFinalize={canFinalizeResume}
+                            isFinalizing={isFinalizing}
+                            hasUpdate={hasNewerResume}
+                            finalizeTitle={
+                                !latestResumeData
+                                    ? "Finalize is available after the assistant returns a tailored resume block"
+                                    : !canFinalizeResume
+                                      ? "Resume already finalized with the latest content"
+                                      : hasNewerResume
+                                        ? "Update resume and regenerate documents"
+                                        : "Save the tailored resume and generate documents"
+                            }
+                            onFinalize={handleFinalizeResume}
+                            caption={
+                                targetedResume
+                                    ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
+                                    : undefined
+                            }
+                        />
+                        <BuilderStatusCard
+                            label="Cover Letter"
+                            isFinalized={!!coverLetter}
+                            color="primary"
+                            canFinalize={canFinalizeCoverLetter}
+                            isFinalizing={isFinalizingCoverLetter}
+                            hasUpdate={!!coverLetter}
+                            finalizeTitle={
+                                !latestCoverLetterContent
+                                    ? "Finalize is available after the assistant returns a cover letter block"
+                                    : coverLetter
+                                      ? "Update the cover letter from the latest chat content"
+                                      : "Extract and save the cover letter from the conversation"
+                            }
+                            onFinalize={handleFinalizeCoverLetter}
+                            caption={
+                                coverLetter
+                                    ? (`${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`
+                                          .trim() || "Cover letter saved")
+                                    : undefined
+                            }
+                            extraActions={
+                                coverLetter ? (
                                     <IconButton
                                         size="small"
-                                        color="primary"
-                                        disabled={
-                                            isFinalizing || !canFinalizeResume
-                                        }
-                                        onClick={handleFinalizeResume}
-                                        title={
-                                            !latestResumeData
-                                                ? "Finalize is available after the assistant returns a tailored resume block"
-                                                : !targetedResume
-                                                  ? "Save the tailored resume and generate documents"
-                                                  : hasNewerResume
-                                                    ? "Update resume and regenerate documents"
-                                                    : "Resume already finalized with the latest content"
-                                        }
+                                        component={Link}
+                                        href={`/admin/cover-letters/${coverLetter.id}`}
+                                        title="Edit cover letter"
                                     >
-                                        {isFinalizing ? (
-                                            <CircularProgress size={16} />
-                                        ) : hasNewerResume ? (
-                                            <AutoFixHighIcon />
-                                        ) : (
-                                            <AutoAwesomeIcon />
-                                        )}
+                                        <EditIcon fontSize="small" />
                                     </IconButton>
-                                </Box>
-                                {targetedResume && (
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                    >
-                                        {`${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`}
-                                    </Typography>
-                                )}
-                            </CardContent>
-                        </Card>
-                        <Card
-                            variant="outlined"
-                            sx={{
-                                borderColor: coverLetter
-                                    ? "primary.light"
-                                    : "divider",
-                                bgcolor: coverLetter
-                                    ? "primary.50"
-                                    : "background.paper",
-                            }}
-                        >
-                            <CardContent
-                                sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}
-                            >
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        gap: 1,
-                                    }}
-                                >
-                                    <Box>
-                                        <Typography
-                                            variant="overline"
-                                            color={
-                                                coverLetter
-                                                    ? "primary.dark"
-                                                    : "text.secondary"
-                                            }
-                                            sx={{
-                                                display: "block",
-                                                lineHeight: 1.5,
-                                            }}
-                                        >
-                                            Cover Letter
-                                        </Typography>
-                                        <Typography variant="subtitle2">
-                                            {coverLetter
-                                                ? "Finalized and ready"
-                                                : "Not finalized yet"}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: "flex", gap: 0.5 }}>
-                                        {coverLetter && (
-                                            <IconButton
-                                                size="small"
-                                                component={Link}
-                                                href={`/admin/cover-letters/${coverLetter.id}`}
-                                                title="Edit cover letter"
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                        <IconButton
-                                            size="small"
-                                            color="primary"
-                                            disabled={
-                                                isFinalizingCoverLetter ||
-                                                !canFinalizeCoverLetter
-                                            }
-                                            onClick={handleFinalizeCoverLetter}
-                                            title={
-                                                !latestCoverLetterContent
-                                                    ? "Finalize is available after the assistant returns a cover letter block"
-                                                    : coverLetter
-                                                      ? "Update the cover letter from the latest chat content"
-                                                      : "Extract and save the cover letter from the conversation"
-                                            }
-                                        >
-                                            {isFinalizingCoverLetter ? (
-                                                <CircularProgress size={16} />
-                                            ) : coverLetter ? (
-                                                <AutoFixHighIcon />
-                                            ) : (
-                                                <AutoAwesomeIcon />
-                                            )}
-                                        </IconButton>
-                                    </Box>
-                                </Box>
-                                {coverLetter && (
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                    >
-                                        {`${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
-                                            "Cover letter saved"}
-                                    </Typography>
-                                )}
-                            </CardContent>
-                        </Card>
+                                ) : undefined
+                            }
+                        />
                     </Box>
                     <Card>
                         <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-                            {/* Messages */}
                             <Box
                                 sx={{
                                     height: "60vh",
@@ -723,9 +470,7 @@ export default function Show({
                                     display: "flex",
                                     flexDirection: "column",
                                     gap: 2,
-                                    code: {
-                                        textWrapMode: "wrap",
-                                    },
+                                    code: { textWrapMode: "wrap" },
                                 }}
                             >
                                 {messages.length === 0 && !isStreaming && (
@@ -740,32 +485,27 @@ export default function Show({
                                     </Typography>
                                 )}
                                 {messages.map((msg, idx) => (
-                                    <Box
+                                    <ChatMessageBubble
                                         key={idx}
-                                        sx={getMessageBubbleSx(msg.role)}
-                                    >
-                                        {renderMarkdownContent(msg.content)}
-                                    </Box>
+                                        role={msg.role}
+                                        content={msg.content}
+                                        variant="chat"
+                                    />
                                 ))}
                                 {isStreaming && streamingContent && (
-                                    <Box sx={getMessageBubbleSx("assistant")}>
-                                        {renderMarkdownContent(
-                                            streamingContent,
-                                        )}
-                                    </Box>
+                                    <ChatMessageBubble
+                                        role="assistant"
+                                        content={streamingContent}
+                                        variant="chat"
+                                    />
                                 )}
                                 {isStreaming && !streamingContent && (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
+                                    <Typography variant="body2" color="text.secondary">
                                         AI is thinking...
                                     </Typography>
                                 )}
                                 <div ref={messagesEndRef} />
                             </Box>
-
-                            {/* Input */}
                             <Box
                                 sx={{
                                     p: 2,
@@ -782,9 +522,7 @@ export default function Show({
                                     maxRows={4}
                                     placeholder="Type a message... (Ctrl+Enter to send)"
                                     value={userInput}
-                                    onChange={(e) =>
-                                        setUserInput(e.target.value)
-                                    }
+                                    onChange={(e) => setUserInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     disabled={isStreaming}
                                 />
@@ -802,7 +540,6 @@ export default function Show({
                 </>
             )}
 
-            {/* Details Tab */}
             {activeTab === 1 && (
                 <Card>
                     <CardContent>
@@ -815,12 +552,7 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.title}
-                                onChange={(e) =>
-                                    metadataForm.setData(
-                                        "title",
-                                        e.target.value,
-                                    )
-                                }
+                                onChange={(e) => metadataForm.setData("title", e.target.value)}
                                 error={!!metadataForm.errors.title}
                                 helperText={metadataForm.errors.title}
                                 sx={{ mb: 2 }}
@@ -830,12 +562,7 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.company_name}
-                                onChange={(e) =>
-                                    metadataForm.setData(
-                                        "company_name",
-                                        e.target.value,
-                                    )
-                                }
+                                onChange={(e) => metadataForm.setData("company_name", e.target.value)}
                                 error={!!metadataForm.errors.company_name}
                                 helperText={metadataForm.errors.company_name}
                                 sx={{ mb: 2 }}
@@ -845,22 +572,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.job_title}
-                                onChange={(e) =>
-                                    metadataForm.setData(
-                                        "job_title",
-                                        e.target.value,
-                                    )
-                                }
+                                onChange={(e) => metadataForm.setData("job_title", e.target.value)}
                                 error={!!metadataForm.errors.job_title}
                                 helperText={metadataForm.errors.job_title}
                                 sx={{ mb: 3 }}
                             />
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                }}
-                            >
+                            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                                 <Button
                                     type="submit"
                                     variant="contained"
@@ -870,47 +587,21 @@ export default function Show({
                                 </Button>
                             </Box>
                         </Box>
-
-                        {/* Resume & Cover Letter Status */}
                         {targetedResume && (
-                            <Box
-                                sx={{
-                                    mt: 4,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
+                            <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}>
                                 <Typography variant="subtitle2" gutterBottom>
                                     Targeted Resume
                                 </Typography>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        gap: 2,
-                                        alignItems: "center",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <StatusChip
-                                        status={targetedResume.status}
-                                    />
+                                <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 1 }}>
+                                    <StatusChip status={targetedResume.status} />
                                     <Typography variant="body2">
-                                        {targetedResume.company_name} —{" "}
-                                        {targetedResume.position}
+                                        {targetedResume.company_name} — {targetedResume.position}
                                     </Typography>
                                 </Box>
                             </Box>
                         )}
                         {coverLetter && (
-                            <Box
-                                sx={{
-                                    mt: 3,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
+                            <Box sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: "divider" }}>
                                 <Typography variant="subtitle2" gutterBottom>
                                     Cover Letter
                                 </Typography>
