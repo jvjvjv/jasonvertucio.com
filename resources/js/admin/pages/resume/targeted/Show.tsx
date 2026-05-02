@@ -9,6 +9,8 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import { marked } from "marked";
 import AdminLayout from "../../../layouts/AdminLayout";
 import PageHeader from "../../../components/PageHeader";
@@ -45,8 +47,11 @@ export default function Show({
     const [streamingContent, setStreamingContent] = useState("");
     const [isFinalizing, setIsFinalizing] = useState(false);
     const [finalizeError, setFinalizeError] = useState<string | null>(null);
-    const [isFinalizingCoverLetter, setIsFinalizingCoverLetter] = useState(false);
-    const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<string | null>(null);
+    const [isFinalizingCoverLetter, setIsFinalizingCoverLetter] =
+        useState(false);
+    const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<
+        string | null
+    >(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasAutoStarted = useRef(false);
 
@@ -175,7 +180,10 @@ export default function Show({
 
     // --- Resume/Cover Letter parsing helpers ---
 
-    function parseTailoredResumeBlock(raw: string): { title: string | null; content: string } {
+    function parseTailoredResumeBlock(raw: string): {
+        title: string | null;
+        content: string;
+    } {
         const normalized = raw.trim().replace(/\r\n/g, "\n");
         const titleMatch = normalized.match(/^Title:\s*(.+)\n+/i);
         if (!titleMatch) return { title: null, content: normalized };
@@ -189,11 +197,15 @@ export default function Show({
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
-            const contentMatch = msg.content.match(/```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i);
+            const contentMatch = msg.content.match(
+                /```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i,
+            );
             if (!contentMatch) continue;
             const parsed = parseTailoredResumeBlock(contentMatch[1]);
             let fitScore: number | null = null;
-            const scoreMatch = msg.content.match(/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i);
+            const scoreMatch = msg.content.match(
+                /(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i,
+            );
             if (scoreMatch) {
                 const s = parseInt(scoreMatch[1]);
                 if (s <= 100) fitScore = s;
@@ -207,7 +219,9 @@ export default function Show({
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
-            const m = msg.content.match(/```cover[-\s]letter\s*\n([\s\S]*?)```/i);
+            const m = msg.content.match(
+                /```cover[-\s]letter\s*\n([\s\S]*?)```/i,
+            );
             if (m) return m[1].trim();
         }
         return null;
@@ -218,15 +232,20 @@ export default function Show({
 
     const hasNewerResume = (() => {
         if (!targetedResume || !latestResumeData) return false;
-        const normalize = (s: string | null | undefined) => (s || "").trim().replace(/\r\n/g, "\n");
+        const normalize = (s: string | null | undefined) =>
+            (s || "").trim().replace(/\r\n/g, "\n");
         return (
-            normalize(latestResumeData.title) !== normalize(targetedResume.tailored_title) ||
-            normalize(latestResumeData.content) !== normalize(targetedResume.tailored_content)
+            normalize(latestResumeData.title) !==
+                normalize(targetedResume.tailored_title) ||
+            normalize(latestResumeData.content) !==
+                normalize(targetedResume.tailored_content)
         );
     })();
 
-    const canFinalizeResume = latestResumeData !== null && (!targetedResume || hasNewerResume);
-    const canFinalizeCoverLetter = latestCoverLetterContent !== null && !coverLetter;
+    const canFinalizeResume =
+        latestResumeData !== null && (!targetedResume || hasNewerResume);
+    const canFinalizeCoverLetter =
+        latestCoverLetterContent !== null && !coverLetter;
 
     const finalizeResumeLabel = !targetedResume
         ? "Finalize Resume"
@@ -256,7 +275,9 @@ export default function Show({
             );
             const data = await response.json();
             if (!response.ok) {
-                setFinalizeError(data.message || "Failed to save targeted resume.");
+                setFinalizeError(
+                    data.message || "Failed to save targeted resume.",
+                );
                 return;
             }
             window.location.reload();
@@ -281,12 +302,16 @@ export default function Show({
                         "X-CSRF-TOKEN": csrfToken,
                         Accept: "application/json",
                     },
-                    body: JSON.stringify({ cover_letter_content: latestCoverLetterContent }),
+                    body: JSON.stringify({
+                        cover_letter_content: latestCoverLetterContent,
+                    }),
                 },
             );
             const data = await response.json();
             if (!response.ok) {
-                setFinalizeCoverLetterError(data.message || "Failed to save cover letter.");
+                setFinalizeCoverLetterError(
+                    data.message || "Failed to save cover letter.",
+                );
                 return;
             }
             window.location.reload();
@@ -400,41 +425,8 @@ export default function Show({
                     >
                         {isFinalizing ? "Saving..." : finalizeResumeLabel}
                     </Button>
-                    <Button
-                        size="small"
-                        variant="contained"
-                        color="primary"
-                        disabled={isFinalizingCoverLetter || !canFinalizeCoverLetter}
-                        onClick={handleFinalizeCoverLetter}
-                        title={
-                            coverLetter
-                                ? "Cover letter already finalized"
-                                : !latestCoverLetterContent
-                                  ? "Finalize is available after the assistant returns a cover letter block"
-                                  : "Extract and save the cover letter from the conversation"
-                        }
-                    >
-                        {isFinalizingCoverLetter
-                            ? "Saving..."
-                            : coverLetter
-                              ? "Cover Letter Finalized"
-                              : "Finalize Cover Letter"}
-                    </Button>
                     {targetedResume && (
                         <>
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() =>
-                                    router.post(
-                                        `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
-                                    )
-                                }
-                            >
-                                {targetedResume.docx_path
-                                    ? "Regenerate Docs"
-                                    : "Generate Docs"}
-                            </Button>
                             {targetedResume.docx_path && (
                                 <Button
                                     size="small"
@@ -495,9 +487,22 @@ export default function Show({
 
             {/* Finalize errors */}
             {(finalizeError || finalizeCoverLetterError) && (
-                <Box sx={{ mb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-                    {finalizeError && <Alert severity="error">{finalizeError}</Alert>}
-                    {finalizeCoverLetterError && <Alert severity="error">{finalizeCoverLetterError}</Alert>}
+                <Box
+                    sx={{
+                        mb: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                    }}
+                >
+                    {finalizeError && (
+                        <Alert severity="error">{finalizeError}</Alert>
+                    )}
+                    {finalizeCoverLetterError && (
+                        <Alert severity="error">
+                            {finalizeCoverLetterError}
+                        </Alert>
+                    )}
                 </Box>
             )}
 
@@ -505,177 +510,309 @@ export default function Show({
             {activeTab === 0 && (
                 <>
                     {/* Resume / Cover Letter status cards */}
-                    <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, mb: 2 }}>
-                        <Card variant="outlined" sx={{ borderColor: targetedResume ? "success.light" : "divider", bgcolor: targetedResume ? "success.50" : "background.paper" }}>
-                            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                                <Typography variant="overline" color={targetedResume ? "success.dark" : "text.secondary"} sx={{ display: "block", lineHeight: 1.5 }}>
-                                    Resume
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gap: 2,
+                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                            mb: 2,
+                        }}
+                    >
+                        <Card
+                            variant="outlined"
+                            sx={{
+                                borderColor: targetedResume
+                                    ? "success.light"
+                                    : "divider",
+                                bgcolor: targetedResume
+                                    ? "success.50"
+                                    : "background.paper",
+                            }}
+                        >
+                            <CardContent
+                                sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}
+                            >
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        gap: 1,
+                                    }}
+                                >
+                                    <Box>
+                                        <Typography
+                                            variant="overline"
+                                            color={
+                                                targetedResume
+                                                    ? "success.dark"
+                                                    : "text.secondary"
+                                            }
+                                            sx={{
+                                                display: "block",
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
+                                            Resume
+                                        </Typography>
+                                        <Typography variant="subtitle2">
+                                            {targetedResume
+                                                ? "Finalized and ready"
+                                                : "Not finalized yet"}
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        disabled={
+                                            isFinalizing || !canFinalizeResume
+                                        }
+                                        onClick={() =>
+                                            router.post(
+                                                `/admin/resume/targeted-resume/${targetedResume?.id}/regenerate`,
+                                            )
+                                        }
+                                    >
+                                        {targetedResume?.docx_path ? (
+                                            <AutoFixHighIcon />
+                                        ) : (
+                                            <AutoAwesomeIcon />
+                                        )}
+                                    </Button>
+                                </Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    {targetedResume &&
+                                        `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`}
                                 </Typography>
-                                <Typography variant="subtitle2">
-                                    {targetedResume ? "Finalized and ready" : "Not finalized yet"}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {targetedResume
-                                        ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
-                                        : "Finalize a tailored resume from the chat actions above."}
-                                </Typography>
+                                {<Box sx={{ mt: 1 }}></Box>}
                             </CardContent>
                         </Card>
-                        <Card variant="outlined" sx={{ borderColor: coverLetter ? "primary.light" : "divider", bgcolor: coverLetter ? "primary.50" : "background.paper" }}>
-                            <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
-                                <Typography variant="overline" color={coverLetter ? "primary.dark" : "text.secondary"} sx={{ display: "block", lineHeight: 1.5 }}>
-                                    Cover Letter
-                                </Typography>
-                                <Typography variant="subtitle2">
-                                    {coverLetter ? "Finalized and ready" : "Not finalized yet"}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {coverLetter
-                                        ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() || "Cover letter saved"
-                                        : "Finalize a cover letter from the chat actions above."}
+                        <Card
+                            variant="outlined"
+                            sx={{
+                                borderColor: coverLetter
+                                    ? "primary.light"
+                                    : "divider",
+                                bgcolor: coverLetter
+                                    ? "primary.50"
+                                    : "background.paper",
+                            }}
+                        >
+                            <CardContent
+                                sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}
+                            >
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        gap: 1,
+                                    }}
+                                >
+                                    <Box>
+                                        <Typography
+                                            variant="overline"
+                                            color={
+                                                coverLetter
+                                                    ? "primary.dark"
+                                                    : "text.secondary"
+                                            }
+                                            sx={{
+                                                display: "block",
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
+                                            Cover Letter
+                                        </Typography>
+                                        <Typography variant="subtitle2">
+                                            {coverLetter
+                                                ? "Finalized and ready"
+                                                : "Not finalized yet"}
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        disabled={
+                                            isFinalizingCoverLetter ||
+                                            !canFinalizeCoverLetter
+                                        }
+                                        onClick={handleFinalizeCoverLetter}
+                                        title={
+                                            coverLetter
+                                                ? "Cover letter already finalized"
+                                                : !latestCoverLetterContent
+                                                  ? "Finalize is available after the assistant returns a cover letter block"
+                                                  : "Extract and save the cover letter from the conversation"
+                                        }
+                                    >
+                                        {isFinalizingCoverLetter ? (
+                                            "Saving..."
+                                        ) : coverLetter ? (
+                                            <AutoFixHighIcon />
+                                        ) : (
+                                            <AutoAwesomeIcon />
+                                        )}
+                                    </Button>
+                                </Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    {(coverLetter &&
+                                        `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim()) ||
+                                        "Cover letter saved"}
                                 </Typography>
                             </CardContent>
                         </Card>
                     </Box>
                     <Card>
-                    <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-                        {/* Messages */}
-                        <Box
-                            sx={{
-                                height: "60vh",
-                                overflowY: "auto",
-                                p: 2,
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 2,
-                                code: {
-                                    textWrapMode: "wrap",
-                                },
-                            }}
-                        >
-                            {messages.length === 0 && !isStreaming && (
-                                <Typography
-                                    color="text.secondary"
-                                    align="center"
-                                    sx={{ py: 4 }}
-                                >
-                                    {shouldAutoStart
-                                        ? "Starting analysis..."
-                                        : "Send a message to begin the conversation."}
-                                </Typography>
-                            )}
-                            {messages.map((msg, idx) => (
-                                <Box
-                                    key={idx}
-                                    sx={{
-                                        alignSelf:
-                                            msg.role === "user"
-                                                ? "flex-end"
-                                                : "flex-start",
-                                        maxWidth: "80%",
-                                        bgcolor:
-                                            msg.role === "user"
-                                                ? "primary.main"
-                                                : "grey.100",
-                                        color:
-                                            msg.role === "user"
-                                                ? "primary.contrastText"
-                                                : "text.primary",
-                                        borderRadius: 2,
-                                        px: 2,
-                                        py: 1,
-                                        ...(msg.role !== "user" && markdownSx),
-                                    }}
-                                >
-                                    {msg.role === "user" ? (
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                whiteSpace: "pre-wrap",
-                                                wordBreak: "break-word",
-                                            }}
-                                        >
-                                            {msg.content}
-                                        </Typography>
-                                    ) : (
+                        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
+                            {/* Messages */}
+                            <Box
+                                sx={{
+                                    height: "60vh",
+                                    overflowY: "auto",
+                                    p: 2,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                    code: {
+                                        textWrapMode: "wrap",
+                                    },
+                                }}
+                            >
+                                {messages.length === 0 && !isStreaming && (
+                                    <Typography
+                                        color="text.secondary"
+                                        align="center"
+                                        sx={{ py: 4 }}
+                                    >
+                                        {shouldAutoStart
+                                            ? "Starting analysis..."
+                                            : "Send a message to begin the conversation."}
+                                    </Typography>
+                                )}
+                                {messages.map((msg, idx) => (
+                                    <Box
+                                        key={idx}
+                                        sx={{
+                                            alignSelf:
+                                                msg.role === "user"
+                                                    ? "flex-end"
+                                                    : "flex-start",
+                                            maxWidth: "80%",
+                                            bgcolor:
+                                                msg.role === "user"
+                                                    ? "primary.main"
+                                                    : "grey.100",
+                                            color:
+                                                msg.role === "user"
+                                                    ? "primary.contrastText"
+                                                    : "text.primary",
+                                            borderRadius: 2,
+                                            px: 2,
+                                            py: 1,
+                                            ...(msg.role !== "user" &&
+                                                markdownSx),
+                                        }}
+                                    >
+                                        {msg.role === "user" ? (
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    whiteSpace: "pre-wrap",
+                                                    wordBreak: "break-word",
+                                                }}
+                                            >
+                                                {msg.content}
+                                            </Typography>
+                                        ) : (
+                                            <div
+                                                style={{
+                                                    wordBreak: "break-word",
+                                                }}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: marked.parse(
+                                                        msg.content,
+                                                        { breaks: true },
+                                                    ) as string,
+                                                }}
+                                            />
+                                        )}
+                                    </Box>
+                                ))}
+                                {isStreaming && streamingContent && (
+                                    <Box
+                                        sx={{
+                                            alignSelf: "flex-start",
+                                            maxWidth: "80%",
+                                            bgcolor: "grey.100",
+                                            borderRadius: 2,
+                                            px: 2,
+                                            py: 1,
+                                            ...markdownSx,
+                                        }}
+                                    >
                                         <div
                                             style={{ wordBreak: "break-word" }}
                                             dangerouslySetInnerHTML={{
                                                 __html: marked.parse(
-                                                    msg.content,
+                                                    streamingContent,
                                                     { breaks: true },
                                                 ) as string,
                                             }}
                                         />
-                                    )}
-                                </Box>
-                            ))}
-                            {isStreaming && streamingContent && (
-                                <Box
-                                    sx={{
-                                        alignSelf: "flex-start",
-                                        maxWidth: "80%",
-                                        bgcolor: "grey.100",
-                                        borderRadius: 2,
-                                        px: 2,
-                                        py: 1,
-                                        ...markdownSx,
-                                    }}
-                                >
-                                    <div
-                                        style={{ wordBreak: "break-word" }}
-                                        dangerouslySetInnerHTML={{
-                                            __html: marked.parse(
-                                                streamingContent,
-                                                { breaks: true },
-                                            ) as string,
-                                        }}
-                                    />
-                                </Box>
-                            )}
-                            {isStreaming && !streamingContent && (
-                                <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                >
-                                    AI is thinking...
-                                </Typography>
-                            )}
-                            <div ref={messagesEndRef} />
-                        </Box>
+                                    </Box>
+                                )}
+                                {isStreaming && !streamingContent && (
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        AI is thinking...
+                                    </Typography>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </Box>
 
-                        {/* Input */}
-                        <Box
-                            sx={{
-                                p: 2,
-                                borderTop: 1,
-                                borderColor: "divider",
-                                display: "flex",
-                                gap: 1,
-                            }}
-                        >
-                            <TextField
-                                fullWidth
-                                size="small"
-                                multiline
-                                maxRows={4}
-                                placeholder="Type a message... (Ctrl+Enter to send)"
-                                value={userInput}
-                                onChange={(e) => setUserInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                disabled={isStreaming}
-                            />
-                            <Button
-                                variant="contained"
-                                onClick={() => sendMessage()}
-                                disabled={isStreaming || !userInput.trim()}
-                                sx={{ alignSelf: "flex-end" }}
+                            {/* Input */}
+                            <Box
+                                sx={{
+                                    p: 2,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                    display: "flex",
+                                    gap: 1,
+                                }}
                             >
-                                Send
-                            </Button>
-                        </Box>
-                    </CardContent>
-                </Card>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    multiline
+                                    maxRows={4}
+                                    placeholder="Type a message... (Ctrl+Enter to send)"
+                                    value={userInput}
+                                    onChange={(e) =>
+                                        setUserInput(e.target.value)
+                                    }
+                                    onKeyDown={handleKeyDown}
+                                    disabled={isStreaming}
+                                />
+                                <Button
+                                    variant="contained"
+                                    onClick={() => sendMessage()}
+                                    disabled={isStreaming || !userInput.trim()}
+                                    sx={{ alignSelf: "flex-end" }}
+                                >
+                                    Send
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
                 </>
             )}
 
