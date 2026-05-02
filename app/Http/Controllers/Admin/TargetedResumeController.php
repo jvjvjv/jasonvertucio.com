@@ -77,6 +77,13 @@ class TargetedResumeController extends Controller
             'updated_at' => $conv->updated_at->diffForHumans(),
             'messages_count' => $conv->messages_count,
             'context' => $conv->context,
+            'usage' => [
+                'input_tokens' => $conv->usage_input_tokens,
+                'output_tokens' => $conv->usage_output_tokens,
+                'total_tokens' => $conv->usage_total_tokens,
+                'cost_usd' => $conv->usage_cost_usd !== null ? (float) $conv->usage_cost_usd : null,
+                'synced_at' => $conv->usage_synced_at?->toIso8601String(),
+            ],
             'targeted_resume' => $conv->targetedResume ? [
                 'id' => $conv->targetedResume->id,
                 'company_name' => $conv->targetedResume->company_name,
@@ -169,6 +176,13 @@ class TargetedResumeController extends Controller
                 'title' => $conversation->title,
                 'context' => $conversation->context,
                 'ai_system_name' => $conversation->aiSystem?->name,
+                'usage' => [
+                    'input_tokens' => $conversation->usage_input_tokens,
+                    'output_tokens' => $conversation->usage_output_tokens,
+                    'total_tokens' => $conversation->usage_total_tokens,
+                    'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
+                    'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
+                ],
             ],
             'messages' => $messages,
             'targetedResume' => $targetedResume ? [

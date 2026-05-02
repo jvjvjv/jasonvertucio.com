@@ -113,6 +113,14 @@ export interface TargetedResume {
     tailored_title?: string | null;
 }
 
+export interface ConversationUsage {
+    input_tokens: number | null;
+    output_tokens: number | null;
+    total_tokens: number | null;
+    cost_usd: number | null;
+    synced_at?: string | null;
+}
+
 export interface Conversation {
     id: number;
     status: string;
@@ -128,6 +136,7 @@ export interface Conversation {
     context: Record<string, unknown> | null;
     targeted_resume?: TargetedResume | null;
     ai_system_name?: string | null;
+    usage?: ConversationUsage | null;
 }
 
 export interface Message {

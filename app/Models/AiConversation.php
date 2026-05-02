@@ -27,6 +27,11 @@ class AiConversation extends Model
         'visitor_email',
         'status',
         'context',
+        'usage_input_tokens',
+        'usage_output_tokens',
+        'usage_total_tokens',
+        'usage_cost_usd',
+        'usage_synced_at',
     ];
 
     /**
@@ -37,6 +42,11 @@ class AiConversation extends Model
         return [
             'context' => 'array',
             'status' => AiConversationStatus::class,
+            'usage_input_tokens' => 'integer',
+            'usage_output_tokens' => 'integer',
+            'usage_total_tokens' => 'integer',
+            'usage_cost_usd' => 'decimal:6',
+            'usage_synced_at' => 'datetime',
         ];
     }
 

@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\BackfillConversationUsageJob;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\AiFeatureMemory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -84,5 +86,36 @@ class AiConversationControllerTest extends TestCase
             ->where('messages.0.content', 'A saved response.')
             ->where('memories.0.key', 'prefers-concise-tone')
         );
+    }
+
+    public function test_queue_usage_backfill_dispatches_job(): void
+    {
+        Queue::fake();
+        $user = $this->authenticatedUser();
+
+        $response = $this->actingAs($user)
+            ->post(route('admin.ai.conversations.backfill-usage'));
+
+        $response->assertRedirect(route('admin.ai.conversations.index'));
+        Queue::assertPushed(BackfillConversationUsageJob::class, function (BackfillConversationUsageJob $job): bool {
+            return $job->all === false && $job->chunk === 200;
+        });
+    }
+
+    public function test_queue_usage_backfill_can_recompute_all(): void
+    {
+        Queue::fake();
+        $user = $this->authenticatedUser();
+
+        $response = $this->actingAs($user)
+            ->post(route('admin.ai.conversations.backfill-usage'), [
+                'all' => true,
+                'chunk' => 500,
+            ]);
+
+        $response->assertRedirect(route('admin.ai.conversations.index'));
+        Queue::assertPushed(BackfillConversationUsageJob::class, function (BackfillConversationUsageJob $job): bool {
+            return $job->all === true && $job->chunk === 500;
+        });
     }
 }

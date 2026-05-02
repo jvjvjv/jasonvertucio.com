@@ -382,12 +382,21 @@ export default function Show({
             </Tabs>
 
             {(finalizeError || finalizeCoverLetterError) && (
-                <Box sx={{ mb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box
+                    sx={{
+                        mb: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                    }}
+                >
                     {finalizeError && (
                         <Alert severity="error">{finalizeError}</Alert>
                     )}
                     {finalizeCoverLetterError && (
-                        <Alert severity="error">{finalizeCoverLetterError}</Alert>
+                        <Alert severity="error">
+                            {finalizeCoverLetterError}
+                        </Alert>
                     )}
                 </Box>
             )}
@@ -442,8 +451,8 @@ export default function Show({
                             onFinalize={handleFinalizeCoverLetter}
                             caption={
                                 coverLetter
-                                    ? (`${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`
-                                          .trim() || "Cover letter saved")
+                                    ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
+                                      "Cover letter saved"
                                     : undefined
                             }
                             extraActions={
@@ -500,7 +509,10 @@ export default function Show({
                                     />
                                 )}
                                 {isStreaming && !streamingContent && (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
                                         AI is thinking...
                                     </Typography>
                                 )}
@@ -522,7 +534,9 @@ export default function Show({
                                     maxRows={4}
                                     placeholder="Type a message... (Ctrl+Enter to send)"
                                     value={userInput}
-                                    onChange={(e) => setUserInput(e.target.value)}
+                                    onChange={(e) =>
+                                        setUserInput(e.target.value)
+                                    }
                                     onKeyDown={handleKeyDown}
                                     disabled={isStreaming}
                                 />
@@ -552,7 +566,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.title}
-                                onChange={(e) => metadataForm.setData("title", e.target.value)}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "title",
+                                        e.target.value,
+                                    )
+                                }
                                 error={!!metadataForm.errors.title}
                                 helperText={metadataForm.errors.title}
                                 sx={{ mb: 2 }}
@@ -562,7 +581,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.company_name}
-                                onChange={(e) => metadataForm.setData("company_name", e.target.value)}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "company_name",
+                                        e.target.value,
+                                    )
+                                }
                                 error={!!metadataForm.errors.company_name}
                                 helperText={metadataForm.errors.company_name}
                                 sx={{ mb: 2 }}
@@ -572,12 +596,22 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.job_title}
-                                onChange={(e) => metadataForm.setData("job_title", e.target.value)}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "job_title",
+                                        e.target.value,
+                                    )
+                                }
                                 error={!!metadataForm.errors.job_title}
                                 helperText={metadataForm.errors.job_title}
                                 sx={{ mb: 3 }}
                             />
-                            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                }}
+                            >
                                 <Button
                                     type="submit"
                                     variant="contained"
@@ -588,20 +622,66 @@ export default function Show({
                             </Box>
                         </Box>
                         {targetedResume && (
-                            <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: "divider" }}>
+                            <Box
+                                sx={{
+                                    mt: 4,
+                                    pt: 3,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
                                 <Typography variant="subtitle2" gutterBottom>
                                     Targeted Resume
                                 </Typography>
-                                <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 1 }}>
-                                    <StatusChip status={targetedResume.status} />
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        gap: 2,
+                                        alignItems: "center",
+                                        mb: 1,
+                                    }}
+                                >
+                                    <StatusChip
+                                        status={targetedResume.status}
+                                    />
                                     <Typography variant="body2">
-                                        {targetedResume.company_name} — {targetedResume.position}
+                                        {targetedResume.company_name} —{" "}
+                                        {targetedResume.position}
                                     </Typography>
                                 </Box>
                             </Box>
                         )}
+                        <Box
+                            sx={{
+                                mt: 3,
+                                pt: 3,
+                                borderTop: 1,
+                                borderColor: "divider",
+                            }}
+                        >
+                            <Typography variant="subtitle2" gutterBottom>
+                                Chat Usage
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {conversation.usage?.total_tokens != null
+                                    ? `Total tokens: ${conversation.usage.total_tokens.toLocaleString()}`
+                                    : "Total tokens: —"}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {conversation.usage?.cost_usd != null
+                                    ? `Estimated cost: $${conversation.usage.cost_usd.toFixed(4)}`
+                                    : "Estimated cost: —"}
+                            </Typography>
+                        </Box>
                         {coverLetter && (
-                            <Box sx={{ mt: 3, pt: 3, borderTop: 1, borderColor: "divider" }}>
+                            <Box
+                                sx={{
+                                    mt: 3,
+                                    pt: 3,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
                                 <Typography variant="subtitle2" gutterBottom>
                                     Cover Letter
                                 </Typography>

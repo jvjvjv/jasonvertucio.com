@@ -138,6 +138,7 @@ export default function Index({
                                 <TableCell>Company / Job</TableCell>
                                 <TableCell>Base Version</TableCell>
                                 <TableCell>Fit Score</TableCell>
+                                <TableCell>Usage</TableCell>
                                 <TableCell>Status</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>
@@ -146,7 +147,7 @@ export default function Index({
                         <TableBody>
                             {conversations.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={6}
+                                    colSpan={7}
                                     message="No conversations found."
                                     actionLabel="Start one"
                                     actionHref="/admin/resume/targeted-builder/new"
@@ -198,6 +199,27 @@ export default function Index({
                                                 {resume?.fit_score != null
                                                     ? `${resume.fit_score}%`
                                                     : "—"}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                >
+                                                    {conv.usage?.total_tokens !=
+                                                    null
+                                                        ? `${conv.usage.total_tokens.toLocaleString()} tok`
+                                                        : "—"}
+                                                </Typography>
+                                                <br />
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                >
+                                                    {conv.usage?.cost_usd !=
+                                                    null
+                                                        ? `$${conv.usage.cost_usd.toFixed(4)}`
+                                                        : "—"}
+                                                </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <StatusChip

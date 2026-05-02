@@ -144,6 +144,7 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
 
         // AI Conversations
         Route::get('/conversations', [AiConversationController::class, 'index'])->name('conversations.index');
+        Route::post('/conversations/backfill-usage', [AiConversationController::class, 'queueUsageBackfill'])->name('conversations.backfill-usage');
         Route::get('/conversations/{conversation}', [AiConversationController::class, 'show'])->name('conversations.show');
         Route::delete('/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
 

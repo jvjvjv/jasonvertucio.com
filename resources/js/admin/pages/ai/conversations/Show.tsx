@@ -11,7 +11,7 @@ import ConfirmDialog from '../../../components/ConfirmDialog';
 import PageHeader from '../../../components/PageHeader';
 import StatusChip from '../../../components/StatusChip';
 import useConfirmDialog from '../../../hooks/useConfirmDialog';
-import type { Message, Memory } from '../../../types';
+import type { ConversationUsage, Message, Memory } from "../../../types";
 
 interface ShowProps {
     conversation: {
@@ -26,7 +26,12 @@ interface ShowProps {
         user_email: string | null;
         ai_system_name: string | null;
         ai_chat_bot: { id: number; name: string; slug: string } | null;
-        targeted_resume: { id: number; company_name: string; position: string } | null;
+        usage: ConversationUsage | null;
+        targeted_resume: {
+            id: number;
+            company_name: string;
+            position: string;
+        } | null;
     };
     messages: Message[];
     memories: Memory[];
@@ -145,6 +150,18 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                 <Box>
                                     <strong>AI System:</strong>{" "}
                                     {conversation.ai_system_name ?? "-"}
+                                </Box>
+                                <Box>
+                                    <strong>Tokens:</strong>{" "}
+                                    {conversation.usage?.total_tokens != null
+                                        ? conversation.usage.total_tokens.toLocaleString()
+                                        : "-"}
+                                </Box>
+                                <Box>
+                                    <strong>Estimated Cost:</strong>{" "}
+                                    {conversation.usage?.cost_usd != null
+                                        ? `$${conversation.usage.cost_usd.toFixed(4)}`
+                                        : "-"}
                                 </Box>
                                 <Box>
                                     <strong>Bot:</strong>{" "}

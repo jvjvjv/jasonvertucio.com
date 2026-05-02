@@ -45,6 +45,16 @@ export default function TargetedBuilderStatusBar({
                     Fit: {targetedResume.fit_score}%
                 </Typography>
             )}
+            {conversation.usage?.total_tokens != null && (
+                <Typography variant="caption" color="text.secondary">
+                    Tokens: {conversation.usage.total_tokens.toLocaleString()}
+                </Typography>
+            )}
+            {conversation.usage?.cost_usd != null && (
+                <Typography variant="caption" color="text.secondary">
+                    Cost: ${conversation.usage.cost_usd.toFixed(4)}
+                </Typography>
+            )}
             <Box sx={{ flexGrow: 1 }} />
             {conversation.status === "active" && (
                 <Button

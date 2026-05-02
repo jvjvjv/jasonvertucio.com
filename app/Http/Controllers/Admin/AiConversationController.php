@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\BackfillConversationUsageJob;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\AiFeatureMemory;
@@ -75,6 +76,13 @@ class AiConversationController extends Controller
             'user_email' => $conversation->user?->email,
             'ai_system_name' => $conversation->aiSystem?->name,
             'ai_chat_bot_name' => $conversation->aiChatBot?->name,
+            'usage' => [
+                'input_tokens' => $conversation->usage_input_tokens,
+                'output_tokens' => $conversation->usage_output_tokens,
+                'total_tokens' => $conversation->usage_total_tokens,
+                'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
+                'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
+            ],
             'targeted_resume' => $conversation->targetedResume ? [
                 'id' => $conversation->targetedResume->id,
                 'company_name' => $conversation->targetedResume->company_name,
@@ -120,6 +128,13 @@ class AiConversationController extends Controller
                     'name' => $conversation->aiChatBot->name,
                     'slug' => $conversation->aiChatBot->slug,
                 ] : null,
+                'usage' => [
+                    'input_tokens' => $conversation->usage_input_tokens,
+                    'output_tokens' => $conversation->usage_output_tokens,
+                    'total_tokens' => $conversation->usage_total_tokens,
+                    'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
+                    'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
+                ],
                 'targeted_resume' => $conversation->targetedResume ? [
                     'id' => $conversation->targetedResume->id,
                     'company_name' => $conversation->targetedResume->company_name,
@@ -149,5 +164,23 @@ class AiConversationController extends Controller
 
         return redirect()->route('admin.ai.conversations.index')
             ->with('success', 'AI conversation deleted successfully.');
+    }
+
+    public function queueUsageBackfill(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'all' => ['nullable', 'boolean'],
+            'chunk' => ['nullable', 'integer', 'min:1', 'max:5000'],
+        ]);
+
+        $all = (bool) ($validated['all'] ?? false);
+        $chunk = (int) ($validated['chunk'] ?? 200);
+
+        BackfillConversationUsageJob::dispatch($all, $chunk);
+
+        return redirect()->route('admin.ai.conversations.index')
+            ->with('success', $all
+                ? 'Usage recompute has been queued for all conversations.'
+                : 'Usage backfill has been queued for conversations missing usage.');
     }
 }
