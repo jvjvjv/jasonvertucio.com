@@ -347,13 +347,17 @@ export default function Show({
         );
     };
 
-    const companyName =
+    const companyName: string =
         targetedResume?.company_name ||
-        conversation.context?.company_name ||
+        (conversation.context?.company_name as string) ||
         "Conversation";
-    const position =
-        targetedResume?.position || conversation.context?.job_title || "";
-    const pageTitle = position ? `${companyName} — ${position}` : companyName;
+    const position: string =
+        targetedResume?.position ||
+        (conversation.context?.job_title as string) ||
+        "";
+    const pageTitle: string =
+        conversation?.title ??
+        (position ? `${companyName} — ${position}` : companyName);
 
     return (
         <AdminLayout>
