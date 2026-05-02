@@ -1,6 +1,8 @@
 <?php
 
+use App\Jobs\BackfillConversationUsageJob;
 use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Schedule;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +18,12 @@ use Illuminate\Foundation\Inspiring;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->describe('Display an inspiring quote');
+
+Schedule::command('ai:sync-conversation-usage')
+    ->twiceDaily(0, 12)
+    ->withoutOverlapping();
+
+Schedule::job(new BackfillConversationUsageJob(false, 500))
+    ->dailyAt('02:30')
+    ->name('ai:daily-conversation-usage-backfill')
+    ->withoutOverlapping();

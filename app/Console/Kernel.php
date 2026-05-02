@@ -24,9 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('ai:sync-conversation-usage')
-            ->everyMinute()
-            ->withoutOverlapping();
+        // Schedules are registered in routes/console.php.
     }
 
     /**
