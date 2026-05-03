@@ -195,7 +195,7 @@ class ChatBotController extends Controller
         $conversations = AiConversation::query()
             ->where('ai_chat_bot_id', $aiChatBot->id)
             ->whereIn('public_id', $historyItems->pluck('public_id')->all())
-            ->orderByDesc('updated_at')
+            ->orderByLastMessageAtDesc()
             ->get()
             ->keyBy('public_id');
 
@@ -214,7 +214,9 @@ class ChatBotController extends Controller
                     'handle' => $item['handle'],
                     'label' => $label,
                     'is_current' => ($state['current'] ?? null) === $conversation->public_id,
-                    'updated_at' => $conversation->updated_at?->diffForHumans() ?? 'just now',
+                    'updated_at' => $conversation->last_message_at?->diffForHumans()
+                        ?? $conversation->updated_at?->diffForHumans()
+                        ?? 'just now',
                 ];
             })
             ->filter()

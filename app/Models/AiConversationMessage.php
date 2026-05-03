@@ -30,21 +30,6 @@ class AiConversationMessage extends Model
         ];
     }
 
-    protected static function booted(): void
-    {
-        static::created(function (self $message): void {
-            if ($message->role === 'system') {
-                return;
-            }
-
-            AiConversation::query()
-                ->whereKey($message->ai_conversation_id)
-                ->update([
-                    'updated_at' => $message->created_at ?? now(),
-                ]);
-        });
-    }
-
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(AiConversation::class, 'ai_conversation_id');

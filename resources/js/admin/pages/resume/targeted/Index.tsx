@@ -241,7 +241,8 @@ export default function Index({
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="caption">
-                                                    {conv.updated_at}
+                                                    {conv.last_message_at ??
+                                                        "-"}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell align="right">

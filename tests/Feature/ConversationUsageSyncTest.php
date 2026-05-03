@@ -25,6 +25,15 @@ class ConversationUsageSyncTest extends TestCase
             'updated_at' => $originalUpdatedAt,
         ]);
 
+        $messageTimestamp = now()->subMinute()->setMicrosecond(0);
+        Carbon::setTestNow($messageTimestamp);
+        AiConversationMessage::create([
+            'ai_conversation_id' => $conversation->id,
+            'role' => 'assistant',
+            'content' => 'Recent assistant response',
+        ]);
+        Carbon::setTestNow();
+
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
@@ -96,6 +105,15 @@ class ConversationUsageSyncTest extends TestCase
             'updated_at' => now()->subMinutes(30),
         ]);
 
+        $oldMessageTimestamp = now()->subMinutes(30)->setMicrosecond(0);
+        Carbon::setTestNow($oldMessageTimestamp);
+        AiConversationMessage::create([
+            'ai_conversation_id' => $conversation->id,
+            'role' => 'assistant',
+            'content' => 'Old assistant response',
+        ]);
+        Carbon::setTestNow();
+
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
@@ -120,7 +138,7 @@ class ConversationUsageSyncTest extends TestCase
         $this->assertNull($conversation->usage_synced_at);
     }
 
-    public function testConversationUpdatedAtTracksLatestUserAndAssistantMessages(): void
+    public function testConversationLastMessageAtTracksLatestUserAndAssistantMessages(): void
     {
         $conversation = AiConversation::factory()->create([
             'updated_at' => now()->subDay(),
@@ -136,6 +154,7 @@ class ConversationUsageSyncTest extends TestCase
         Carbon::setTestNow();
 
         $conversation->refresh();
+        $this->assertNull($conversation->last_message_at);
         $this->assertNotSame(
             $systemMessageTimestamp->toDateTimeString(),
             $conversation->updated_at?->toDateTimeString(),
@@ -153,7 +172,7 @@ class ConversationUsageSyncTest extends TestCase
         $conversation->refresh();
         $this->assertSame(
             $userMessageTimestamp->toDateTimeString(),
-            $conversation->updated_at?->toDateTimeString(),
+            $conversation->last_message_at?->toDateTimeString(),
         );
 
         $assistantMessageTimestamp = now()->subMinutes(30)->setMicrosecond(0);
@@ -168,78 +187,7 @@ class ConversationUsageSyncTest extends TestCase
         $conversation->refresh();
         $this->assertSame(
             $assistantMessageTimestamp->toDateTimeString(),
-            $conversation->updated_at?->toDateTimeString(),
+            $conversation->last_message_at?->toDateTimeString(),
         );
-    }
-
-    public function testSyncConversationUpdatedAtCommandRepairsConversationTimestamp(): void
-    {
-        $conversation = AiConversation::factory()->create([
-            'updated_at' => now()->subDay(),
-        ]);
-
-        $latestMessageTimestamp = now()->subMinutes(15)->setMicrosecond(0);
-        Carbon::setTestNow($latestMessageTimestamp);
-        AiConversationMessage::create([
-            'ai_conversation_id' => $conversation->id,
-            'role' => 'assistant',
-            'content' => 'Latest message',
-        ]);
-        Carbon::setTestNow();
-        $message = AiConversationMessage::query()
-            ->where('ai_conversation_id', $conversation->id)
-            ->latest('id')
-            ->firstOrFail();
-
-        AiConversation::withoutTimestamps(function () use ($conversation): void {
-            $conversation->forceFill(['updated_at' => now()->subDays(2)])->save();
-        });
-
-        $this->artisan('ai:sync-conversation-updated-at', [
-            '--conversation-id' => $conversation->id,
-        ])->assertExitCode(0);
-
-        $conversation->refresh();
-
-        $this->assertSame(
-            $message->created_at?->toDateTimeString(),
-            $conversation->updated_at?->toDateTimeString(),
-        );
-    }
-
-    public function testSyncConversationUpdatedAtCommandSupportsDryRun(): void
-    {
-        $conversation = AiConversation::factory()->create([
-            'updated_at' => now()->subDay(),
-        ]);
-
-        $latestMessageTimestamp = now()->subMinutes(10)->setMicrosecond(0);
-        Carbon::setTestNow($latestMessageTimestamp);
-        AiConversationMessage::create([
-            'ai_conversation_id' => $conversation->id,
-            'role' => 'assistant',
-            'content' => 'Dry run message',
-        ]);
-        Carbon::setTestNow();
-        $message = AiConversationMessage::query()
-            ->where('ai_conversation_id', $conversation->id)
-            ->latest('id')
-            ->firstOrFail();
-
-        AiConversation::withoutTimestamps(function () use ($conversation): void {
-            $conversation->forceFill(['updated_at' => now()->subDays(3)])->save();
-        });
-
-        $before = $conversation->fresh()?->updated_at?->toDateTimeString();
-
-        $this->artisan('ai:sync-conversation-updated-at', [
-            '--conversation-id' => $conversation->id,
-            '--dry-run' => true,
-        ])->assertExitCode(0);
-
-        $after = $conversation->fresh()?->updated_at?->toDateTimeString();
-
-        $this->assertSame($before, $after);
-        $this->assertNotSame($message->created_at?->toDateTimeString(), $after);
     }
 }

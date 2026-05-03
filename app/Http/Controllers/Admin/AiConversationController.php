@@ -23,7 +23,7 @@ class AiConversationController extends Controller
         $query = AiConversation::query()
             ->with(['aiSystem', 'aiChatBot', 'user', 'targetedResume'])
             ->withCount(['messages' => fn ($messages) => $messages->where('role', '!=', 'system')])
-            ->orderByDesc('updated_at');
+            ->orderByLastMessageAtDesc();
 
         if ($request->filled('feature')) {
             $query->where('feature', $request->string('feature'));
@@ -68,7 +68,8 @@ class AiConversationController extends Controller
             'title' => $conversation->title,
             'feature' => $conversation->feature,
             'status' => $conversation->status->value,
-            'updated_at' => $conversation->updated_at?->diffForHumans(),
+            'updated_at' => $conversation->last_message_at?->diffForHumans()
+                ?? $conversation->updated_at?->diffForHumans(),
             'messages_count' => $conversation->messages_count,
             'visitor_name' => $conversation->visitor_name,
             'visitor_email' => $conversation->visitor_email,

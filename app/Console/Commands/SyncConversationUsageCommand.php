@@ -50,11 +50,16 @@ class SyncConversationUsageCommand extends Command
 
         $minutes = max((int) $this->option('minutes'), 1);
         $limit = max((int) $this->option('limit'), 1);
+        $activityCutoff = now()->subMinutes($minutes);
 
         $conversations = AiConversation::query()
             ->where('status', AiConversationStatus::Active->value)
-            ->where('updated_at', '>=', now()->subMinutes($minutes))
-            ->orderByDesc('updated_at')
+            ->whereHas('messages', function ($messageQuery) use ($activityCutoff): void {
+                $messageQuery
+                    ->where('role', '!=', 'system')
+                    ->where('created_at', '>=', $activityCutoff);
+            })
+            ->orderByLastMessageAtDesc()
             ->limit($limit)
             ->get();
 

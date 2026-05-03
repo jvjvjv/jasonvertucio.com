@@ -72,10 +72,12 @@ class TargetedResumeController extends Controller
             });
         }
 
-        $conversations = $query->orderByDesc('updated_at')->get()->map(fn ($conv) => [
+        $conversations = $query->orderByLastMessageAtDesc()->get()->map(fn ($conv) => [
             'id' => $conv->id,
             'status' => $conv->status->value,
-            'updated_at' => $conv->updated_at->diffForHumans(),
+            'last_message_at' => $conv->last_message_at?->diffForHumans()
+                ?? $conv->updated_at?->diffForHumans(),
+            'updated_at' => $conv->updated_at?->diffForHumans(),
             'messages_count' => $conv->messages_count,
             'context' => $conv->context,
             'usage' => [

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AiConversationStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +43,7 @@ class AiConversation extends Model
         return [
             'context' => 'array',
             'status' => AiConversationStatus::class,
+            'last_message_at' => 'datetime',
             'usage_input_tokens' => 'integer',
             'usage_output_tokens' => 'integer',
             'usage_total_tokens' => 'integer',
@@ -77,6 +79,37 @@ class AiConversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(AiConversationMessage::class)->orderBy('created_at');
+    }
+
+    public function scopeWithLastMessageAt(Builder $query): Builder
+    {
+        return $query->withMax([
+            'messages as last_message_at' => fn (Builder $messageQuery) => $messageQuery->where('role', '!=', 'system'),
+        ], 'created_at');
+    }
+
+    public function scopeOrderByLastMessageAtDesc(Builder $query): Builder
+    {
+        return $query
+            ->withLastMessageAt()
+            ->orderByDesc('last_message_at')
+            ->orderByDesc('updated_at');
+    }
+
+    public function getLastMessageAtAttribute(): ?\Illuminate\Support\Carbon
+    {
+        if (array_key_exists('last_message_at', $this->attributes)) {
+            $lastMessageAt = $this->attributes['last_message_at'];
+
+            return $lastMessageAt ? $this->asDateTime($lastMessageAt) : null;
+        }
+
+        $lastMessageTimestamp = $this->messages()
+            ->where('role', '!=', 'system')
+            ->latest('created_at')
+            ->value('created_at');
+
+        return $lastMessageTimestamp ? $this->asDateTime($lastMessageTimestamp) : null;
     }
 
     public function interactionLogs(): HasMany

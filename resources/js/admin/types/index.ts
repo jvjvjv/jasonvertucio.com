@@ -126,6 +126,7 @@ export interface Conversation {
     id: number;
     status: string;
     title?: string | null;
+    last_message_at?: string;
     updated_at?: string;
     messages_count?: number;
     feature?: string;
