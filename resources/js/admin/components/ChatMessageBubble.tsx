@@ -39,18 +39,27 @@ export default function ChatMessageBubble({
 
     const baseBubbleSx = {
         alignSelf: isChatVariant
-            ? (isUser ? 'flex-end' : 'flex-start')
-            : 'stretch',
-        maxWidth: isChatVariant ? maxWidth : '100%',
+            ? isUser
+                ? "flex-end"
+                : "flex-start"
+            : "stretch",
+        maxWidth: isChatVariant ? maxWidth : "100%",
         bgcolor: isChatVariant
-            ? (isUser ? 'primary.main' : 'grey.100')
-            : 'transparent',
+            ? isUser
+                ? "primary.main"
+                : "grey.100"
+            : "transparent",
         color: isChatVariant
-            ? (isUser ? 'primary.contrastText' : 'text.primary')
-            : 'text.primary',
+            ? isUser
+                ? "primary.contrastText"
+                : "text.primary"
+            : "text.primary",
         borderRadius: isChatVariant ? 2 : 0,
         px: isChatVariant ? 2 : 0,
         py: isChatVariant ? 1 : 0,
+        "& p::first-child": {
+            mt: 0,
+        },
     };
 
     return (

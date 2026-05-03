@@ -13,7 +13,7 @@ const baseMarkdownSx = {
 export const markdownSx: SxProps<Theme> = {
     ...baseMarkdownSx,
     fontSize: '0.875rem',
-    '& p': { mb: '0.75em', '&:last-child': { mb: 0 } },
+    '& p': { mb: '0.75em', '&:first-child': { mt: 0 }, '&:last-child': { mb: 0 } },
     '& ul, & ol': { ...baseMarkdownSx['& ul, & ol'], mb: '0.75em' },
     '& blockquote': { borderLeft: '3px solid #d1d5db', pl: '1em', color: '#6b7280', mb: '0.75em' },
     '& code': { bgcolor: 'rgba(0,0,0,0.06)', px: '0.3em', py: '0.1em', borderRadius: '3px', fontSize: '0.85em' },
