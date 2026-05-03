@@ -13,6 +13,7 @@ class JobUrlParser extends Model
     protected $fillable = [
         'domain',
         'company_name_selector',
+        'job_location_selector',
         'job_title_selector',
         'job_description_selector',
         'html',

@@ -22,6 +22,8 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
     const [aiSystemId, setAiSystemId] = useState<number | ''>(defaultSystemId ?? '');
     const [jobUrl, setJobUrl] = useState('');
     const [jobTitle, setJobTitle] = useState('');
+    const [companyName, setCompanyName] = useState("");
+    const [jobLocation, setJobLocation] = useState("");
     const [jobDescription, setJobDescription] = useState('');
     const [isParsing, setIsParsing] = useState(false);
     const [parseError, setParseError] = useState('');
@@ -61,8 +63,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             }
 
             if (result.job_title) setJobTitle(result.job_title);
-            if (result.job_description) setJobDescription(result.job_description);
-            if (result.company_name && !jobTitle) setJobTitle(result.job_title || '');
+            if (result.company_name) setCompanyName(result.company_name);
+            if (result.job_location) setJobLocation(result.job_location);
+            if (result.job_description)
+                setJobDescription(result.job_description);
         } catch (err) {
             setParseError('Network error: ' + (err as Error).message);
         } finally {
@@ -139,7 +143,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             size="small"
                             fullWidth
                             value={aiSystemId}
-                            onChange={(e) => setAiSystemId(Number(e.target.value))}
+                            onChange={(e) =>
+                                setAiSystemId(Number(e.target.value))
+                            }
                             sx={{ mb: 3 }}
                         >
                             {systems.map((s) => (
@@ -149,10 +155,15 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             ))}
                         </TextField>
 
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            Paste a job URL to auto-extract the description, or enter it manually below.
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 1 }}
+                        >
+                            Paste a job URL to auto-extract the description, or
+                            enter it manually below.
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+                        <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
                             <TextField
                                 label="Job URL"
                                 size="small"
@@ -165,9 +176,13 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                                 variant="outlined"
                                 onClick={handleParseUrl}
                                 disabled={isParsing || !jobUrl.trim()}
-                                sx={{ whiteSpace: 'nowrap' }}
+                                sx={{ whiteSpace: "nowrap" }}
                             >
-                                {isParsing ? <CircularProgress size={20} /> : 'Parse'}
+                                {isParsing ? (
+                                    <CircularProgress size={20} />
+                                ) : (
+                                    "Parse"
+                                )}
                             </Button>
                         </Box>
                         {parseError && (
@@ -187,6 +202,26 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                         />
 
                         <TextField
+                            label="Company Name"
+                            size="small"
+                            fullWidth
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="(optional)"
+                            sx={{ mb: 3 }}
+                        />
+
+                        <TextField
+                            label="Job Location"
+                            size="small"
+                            fullWidth
+                            value={jobLocation}
+                            onChange={(e) => setJobLocation(e.target.value)}
+                            placeholder="(optional)"
+                            sx={{ mb: 3 }}
+                        />
+
+                        <TextField
                             label="Job Description"
                             required
                             size="small"
@@ -199,13 +234,17 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             sx={{ mb: 3 }}
                         />
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Box
+                            sx={{ display: "flex", justifyContent: "flex-end" }}
+                        >
                             <Button
                                 type="submit"
                                 variant="contained"
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? 'Starting...' : 'Start Analysis'}
+                                {isSubmitting
+                                    ? "Starting..."
+                                    : "Start Analysis"}
                             </Button>
                         </Box>
                     </Box>

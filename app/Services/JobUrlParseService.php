@@ -7,8 +7,7 @@ use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
 
-class JobUrlParseService
-{
+class JobUrlParseService {
     private const MAX_HTML_LENGTH = 100000;
 
     public function __construct(
@@ -21,8 +20,7 @@ class JobUrlParseService
      *
      * @return array{job_title: string, company_name: string, job_description: string, parser_id: int, used_existing_parser: bool}
      */
-    public function parseUrl(string $url, AiSystem $aiSystem): array
-    {
+    public function parseUrl(string $url, AiSystem $aiSystem): array {
         $domain = $this->extractDomain($url);
         $html = $this->fetchHtml($url);
 
@@ -48,8 +46,7 @@ class JobUrlParseService
      *
      * @return array{job_title: string, company_name: string, job_description: string}|null
      */
-    private function extractWithSelectors(string $html, JobUrlParser $parser): ?array
-    {
+    private function extractWithSelectors(string $html, JobUrlParser $parser): ?array {
         $crawler = new Crawler($html);
 
         try {
@@ -64,6 +61,10 @@ class JobUrlParseService
             $jobDescription = $parser->job_description_selector
                 ? $crawler->filter($parser->job_description_selector)->first()->text('')
                 : '';
+
+            $jobLocation = $parser->job_location_selector
+                ? $crawler->filter($parser->job_location_selector)->first()->text('')
+                : '';
         } catch (\Exception) {
             return null;
         }
@@ -75,6 +76,7 @@ class JobUrlParseService
         return [
             'job_title' => trim($jobTitle),
             'company_name' => trim($companyName),
+            'job_location' => trim($jobLocation),
             'job_description' => trim($jobDescription),
         ];
     }
@@ -84,8 +86,7 @@ class JobUrlParseService
      *
      * @return array{job_title: string, company_name: string, job_description: string, parser_id: int, used_existing_parser: bool}
      */
-    public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array
-    {
+    public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array {
         $cleanedHtml = $this->cleanHtml($html);
 
         $client = $this->clientFactory->forSystem($aiSystem);
@@ -113,6 +114,7 @@ class JobUrlParseService
             'domain' => $domain,
             'company_name_selector' => $parsed['company_name_selector'] ?? null,
             'job_title_selector' => $parsed['job_title_selector'] ?? null,
+            'job_location_selector' => $parsed['job_location_selector'] ?? null,
             'job_description_selector' => $parsed['job_description_selector'] ?? null,
             'html' => $html,
             'ai_reasoning' => $parsed['reasoning'] ?? null,
@@ -122,6 +124,7 @@ class JobUrlParseService
         return [
             'job_title' => $parsed['job_title'] ?? '',
             'company_name' => $parsed['company_name'] ?? '',
+            'job_location' => $parsed['job_location'] ?? '',
             'job_description' => $parsed['job_description'] ?? '',
             'parser_id' => $parser->id,
             'used_existing_parser' => false,
@@ -131,8 +134,7 @@ class JobUrlParseService
     /**
      * Mark a parser as active and deactivate others for the same domain.
      */
-    public function confirmParser(JobUrlParser $parser): void
-    {
+    public function confirmParser(JobUrlParser $parser): void {
         JobUrlParser::query()
             ->forDomain($parser->domain)
             ->active()
@@ -145,8 +147,7 @@ class JobUrlParseService
     /**
      * Keep a parser as inactive.
      */
-    public function rejectParser(JobUrlParser $parser, ?string $feedback = null): void
-    {
+    public function rejectParser(JobUrlParser $parser, ?string $feedback = null): void {
         $parser->update(['status' => 'inactive']);
     }
 
@@ -155,8 +156,7 @@ class JobUrlParseService
      *
      * @return array{job_title: string, company_name: string, job_description: string, parser_id: int, used_existing_parser: bool}
      */
-    public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array
-    {
+    public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array {
         $html = $parser->html;
 
         if (empty($html)) {
@@ -172,8 +172,7 @@ class JobUrlParseService
     /**
      * Fetch HTML content from a URL.
      */
-    private function fetchHtml(string $url): string
-    {
+    private function fetchHtml(string $url): string {
         $response = Http::timeout(15)
             ->withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -202,8 +201,7 @@ class JobUrlParseService
     /**
      * Extract the domain from a URL, stripping "www." prefix.
      */
-    public function extractDomain(string $url): string
-    {
+    public function extractDomain(string $url): string {
         $host = parse_url($url, PHP_URL_HOST) ?? '';
 
         return preg_replace('/^www\./', '', strtolower($host));
@@ -212,8 +210,7 @@ class JobUrlParseService
     /**
      * Clean HTML by removing non-content elements and truncating.
      */
-    public function cleanHtml(string $html): string
-    {
+    public function cleanHtml(string $html): string {
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
         $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
         $html = preg_replace('/<svg\b[^>]*>.*?<\/svg>/is', '', $html);
@@ -232,27 +229,30 @@ class JobUrlParseService
     /**
      * Build the system prompt for AI extraction.
      */
-    private function buildSystemPrompt(): string
-    {
+    private function buildSystemPrompt(): string {
         return <<<'PROMPT'
 You are a job posting parser. You will receive the HTML content of a job posting webpage.
 
 Extract the following information:
 1. job_title - The title of the job position
 2. company_name - The name of the hiring company
-3. job_description - The full job description including responsibilities, requirements, qualifications, and any other relevant details. Include all text content relevant for a job seeker to understand the role. Format as clean plain text with line breaks between sections.
+3. job_location - The location of the job if available, as well as if it is onsite, hybrid, or remote
+4. job_description - The full job description including responsibilities, requirements, qualifications, and any other relevant details. Include all text content relevant for a job seeker to understand the role. Format as you see fit as clean plain text with line breaks between sections or as Markdown.
 
 Additionally, provide CSS selectors that could be used to extract each field from similar pages on this same website:
-4. job_title_selector - CSS selector for the job title element
-5. company_name_selector - CSS selector for the company name element
-6. job_description_selector - CSS selector for the job description container element
+5. job_title_selector - CSS selector for the job title element
+6. job_location_selector - CSS selector for the job location element
+7. company_name_selector - CSS selector for the company name element
+8. job_description_selector - CSS selector for the job description container element
 
 Respond with valid JSON only, no markdown formatting or code fences:
 {
   "job_title": "...",
   "company_name": "...",
   "job_description": "...",
+  "job_location": "...",
   "job_title_selector": "...",
+  "job_location_selector": "...",
   "company_name_selector": "...",
   "job_description_selector": "...",
   "reasoning": "Brief explanation of how you identified each field and chose the selectors"
@@ -265,8 +265,7 @@ PROMPT;
      *
      * @return array<string, string>
      */
-    private function parseAiResponse(array $response): array
-    {
+    private function parseAiResponse(array $response): array {
         $text = '';
 
         foreach ($response['content'] ?? [] as $block) {
