@@ -139,19 +139,24 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         setError('');
 
         try {
-            const response = await fetch('/admin/resume/targeted-builder/start', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
+            const response = await fetch(
+                "/admin/resume/targeted-builder/start",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                    },
+                    body: JSON.stringify({
+                        ai_system_id: aiSystemId,
+                        job_title: jobTitle,
+                        job_location: jobLocation,
+                        company_name: companyName,
+                        job_description: jobDescription,
+                    }),
                 },
-                body: JSON.stringify({
-                    ai_system_id: aiSystemId,
-                    job_title: jobTitle,
-                    job_description: jobDescription,
-                }),
-            });
+            );
 
             const result = await response.json();
 

@@ -136,9 +136,11 @@ class TargetedResumeController extends Controller
 
         $conversation = $this->targetedResumeService->startConversation(
             system: $system,
+            companyName: $request->validated('company_name'),
+            jobTitle: $request->validated('job_title'),
+            jobLocation: $request->validated('job_location'),
             jobDescription: $request->validated('job_description'),
             resumeVersion: $resumeVersion,
-            jobTitle: $request->validated('job_title'),
         );
 
         return response()->json([

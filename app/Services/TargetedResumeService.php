@@ -35,6 +35,8 @@ class TargetedResumeService
         string $jobDescription,
         ResumeVersion $resumeVersion,
         ?string $jobTitle = null,
+        ?string $companyName = null,
+        ?string $jobLocation = null,
     ): AiConversation {
         $conversation = AiConversation::create([
             'user_id' => auth()->id(),
@@ -63,7 +65,7 @@ class TargetedResumeService
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'user',
-            'content' => $this->buildInitialAnalysisMessage($jobDescription, $jobTitle),
+            'content' => $this->buildInitialAnalysisMessage($jobDescription, $jobTitle, $jobLocation, $companyName),
         ]);
 
         return $conversation;
@@ -680,12 +682,20 @@ MEMORY;
     /**
      * Build the initial user message that starts analysis with the job description.
      */
-    private function buildInitialAnalysisMessage(string $jobDescription, ?string $jobTitle): string
+    private function buildInitialAnalysisMessage(string $jobDescription, ?string $jobTitle, ?string $jobLocation, ?string $companyName): string
     {
         $message = "Please begin the analysis on the following job description\n\n";
 
         if ($jobTitle) {
             $message .= "Job Title: {$jobTitle}\n\n";
+        }
+
+        if ($jobLocation) {
+            $message .= "Job Location: {$jobLocation}\n\n";
+        }
+
+        if ($companyName) {
+            $message .= "Company Name: {$companyName}\n\n";
         }
 
         $message .= "Job Description:\n\n{$jobDescription}";

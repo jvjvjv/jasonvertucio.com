@@ -42,6 +42,9 @@ class JobUrlParser extends Model
      */
     public static function findActiveForDomain(string $domain): ?self
     {
-        return static::query()->active()->forDomain($domain)->first();
+        /** @var ?self $parser */
+        $parser = static::query()->active()->forDomain($domain)->latest()->first();
+
+        return $parser;
     }
 }
