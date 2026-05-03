@@ -107,6 +107,7 @@ export interface TargetedResume {
     fit_score: number | null;
     status: string;
     resume_version?: string | null;
+    applied_at?: string | null;
     docx_path?: boolean;
     pdf_path?: boolean;
     tailored_content?: string | null;

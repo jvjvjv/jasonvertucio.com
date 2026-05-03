@@ -20,6 +20,7 @@ class UpdateTargetedResumeConversationRequest extends FormRequest
             'title' => ['nullable', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'job_title' => ['nullable', 'string', 'max:255'],
+            'applied_at' => ['nullable', 'date'],
         ];
     }
 }

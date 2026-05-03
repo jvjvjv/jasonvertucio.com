@@ -199,6 +199,7 @@ class TargetedResumeService
     {
         $context = $conversation->context ?? [];
         $parsedResume = $this->parseTailoredResumeContent($tailoredContent);
+        $existingTargetedResume = $conversation->targetedResume;
 
         $targetedResume = TargetedResume::updateOrCreate(
             ['ai_conversation_id' => $conversation->id],
@@ -216,7 +217,10 @@ class TargetedResumeService
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
-                'status' => TargetedResumeStatus::Finalized,
+                'status' => $existingTargetedResume?->status === TargetedResumeStatus::Applied
+                    ? TargetedResumeStatus::Applied
+                    : TargetedResumeStatus::Finalized,
+                'applied_at' => $existingTargetedResume?->applied_at,
             ]
         );
 
@@ -546,6 +550,7 @@ MEMORY;
         $title = trim((string) ($data['title'] ?? ''));
         $companyName = trim((string) ($data['company_name'] ?? ''));
         $jobTitle = trim((string) ($data['job_title'] ?? ''));
+        $appliedAt = $data['applied_at'] ?? null;
 
         $conversation->title = $title !== '' ? $title : null;
 
@@ -569,12 +574,21 @@ MEMORY;
         $conversation->save();
 
         if ($conversation->targetedResume) {
-            $conversation->targetedResume->update([
+            $targetedResumeData = [
                 'company_name' => $context['company_name'] ?? $conversation->targetedResume->company_name,
                 'position' => $context['job_title'] ?? $conversation->targetedResume->position,
                 'fit_score' => $context['fit_score'] ?? $conversation->targetedResume->fit_score,
                 'fit_summary' => $context['fit_summary'] ?? $conversation->targetedResume->fit_summary,
-            ]);
+                'applied_at' => $appliedAt,
+            ];
+
+            if ($appliedAt !== null && $appliedAt !== '') {
+                $targetedResumeData['status'] = TargetedResumeStatus::Applied;
+            } elseif ($conversation->targetedResume->status === TargetedResumeStatus::Applied) {
+                $targetedResumeData['status'] = TargetedResumeStatus::Finalized;
+            }
+
+            $conversation->targetedResume->update($targetedResumeData);
         }
 
         return $conversation->fresh(['targetedResume']);

@@ -10,6 +10,7 @@ use App\Models\AiConversationMessage;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
@@ -96,16 +97,20 @@ class TargetedResumeFilterTest extends TestCase
         $active = AiConversation::factory()->active()->create();
         $completed = AiConversation::factory()->completed()->create();
         $pass = AiConversation::factory()->pass()->create();
+        $applied = AiConversation::factory()->completed()->create();
+        TargetedResume::factory()->applied()->create([
+            'ai_conversation_id' => $applied->id,
+        ]);
 
         $response = $this->actingAs($this->admin)
             ->get(route('admin.resume.targeted.index', [
-                'status' => ['active', 'completed', 'pass', 'draft', 'finalized'],
+                'status' => ['active', 'completed', 'pass', 'draft', 'finalized', 'applied'],
             ]));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
             ->component('resume/targeted/Index', false)
-            ->where('conversations', fn ($conversations) => collect($conversations)->pluck('id')->sort()->values()->all() === collect([$active->id, $completed->id, $pass->id])->sort()->values()->all())
+                ->where('conversations', fn($conversations) => collect($conversations)->pluck('id')->sort()->values()->all() === collect([$active->id, $completed->id, $pass->id, $applied->id])->sort()->values()->all())
         );
     }
 
@@ -134,6 +139,96 @@ class TargetedResumeFilterTest extends TestCase
             ->where('conversations', fn ($conversations) => collect($conversations)->count() === 1
                 && data_get(collect($conversations)->first(), 'targeted_resume.company_name') === 'FinalizedCo')
         );
+    }
+
+    public function test_filter_by_applied_resume_status_and_exposes_applied_date(): void {
+        Carbon::setTestNow('2026-05-03 09:30:00');
+
+        $finalized = AiConversation::factory()->completed()->create();
+        TargetedResume::factory()->finalized()->create([
+            'ai_conversation_id' => $finalized->id,
+            'company_name' => 'FinalizedCo',
+        ]);
+
+        $applied = AiConversation::factory()->completed()->create();
+        TargetedResume::factory()->applied()->create([
+            'ai_conversation_id' => $applied->id,
+            'company_name' => 'AppliedCo',
+            'applied_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.resume.targeted.index', ['status' => ['applied']]));
+
+        $response->assertStatus(200);
+        $response->assertInertia(
+            fn(Assert $page) => $page
+                ->component('resume/targeted/Index', false)
+                ->where('conversations', fn($conversations) => collect($conversations)->count() === 1
+                    && data_get(collect($conversations)->first(), 'targeted_resume.company_name') === 'AppliedCo'
+                    && data_get(collect($conversations)->first(), 'targeted_resume.applied_at') === '2026-05-03')
+        );
+
+        Carbon::setTestNow();
+    }
+
+    public function test_marking_a_targeted_resume_as_applied_sets_status_and_date(): void {
+        Carbon::setTestNow('2026-05-03 14:15:00');
+
+        $conversation = AiConversation::factory()->completed()->create();
+        $targetedResume = TargetedResume::factory()->finalized()->create([
+            'ai_conversation_id' => $conversation->id,
+            'applied_at' => null,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.resume.targeted.applied', $conversation));
+
+        $response->assertRedirect(route('admin.resume.targeted.show', $conversation));
+
+        $targetedResume->refresh();
+
+        $this->assertSame(TargetedResumeStatus::Applied, $targetedResume->status);
+        $this->assertSame('2026-05-03 14:15:00', $targetedResume->applied_at?->format('Y-m-d H:i:s'));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_updating_metadata_can_set_applied_date(): void
+    {
+        $conversation = AiConversation::factory()->completed()->create([
+            'title' => 'Original Title',
+            'context' => [
+                'company_name' => 'Old Company',
+                'job_title' => 'Old Title',
+            ],
+        ]);
+
+        $targetedResume = TargetedResume::factory()->finalized()->create([
+            'ai_conversation_id' => $conversation->id,
+            'company_name' => 'Old Company',
+            'position' => 'Old Title',
+            'applied_at' => null,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->put(route('admin.resume.targeted.update-metadata', $conversation), [
+                'title' => 'Updated Title',
+                'company_name' => 'New Company',
+                'job_title' => 'New Title',
+                'applied_at' => '2026-05-01',
+            ]);
+
+        $response->assertRedirect(route('admin.resume.targeted.show', $conversation));
+
+        $conversation->refresh();
+        $targetedResume->refresh();
+
+        $this->assertSame('Updated Title', $conversation->title);
+        $this->assertSame('New Company', data_get($conversation->context, 'company_name'));
+        $this->assertSame('New Title', data_get($conversation->context, 'job_title'));
+        $this->assertSame(TargetedResumeStatus::Applied, $targetedResume->status);
+        $this->assertSame('2026-05-01', $targetedResume->applied_at?->toDateString());
     }
 
     public function test_filter_by_single_status(): void

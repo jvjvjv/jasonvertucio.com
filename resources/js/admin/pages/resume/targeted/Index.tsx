@@ -2,9 +2,13 @@ import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
 import Link from "@mui/material/Link";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -21,6 +25,9 @@ import UsageChip from "../../../components/UsageChip";
 import type { Conversation } from "../../../types";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import useConfirmDialog from "../../../hooks/useConfirmDialog";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 
 interface StatusOption {
     value: string;
@@ -49,11 +56,9 @@ export default function Index({
         );
     };
 
-    const handleStatusToggle = (value: string) => {
-        const current = filters.statuses ?? [];
-        const updated = current.includes(value)
-            ? current.filter((s) => s !== value)
-            : [...current, value];
+    const handleStatusChange = (event: SelectChangeEvent<string[]>) => {
+        const value = event.target.value;
+        const updated = typeof value === "string" ? value.split(",") : value;
         router.get(
             "/admin/resume/targeted-builder",
             { status: updated, search: filters.search },
@@ -106,21 +111,36 @@ export default function Index({
                     placeholder="Company, job title, or message..."
                     sx={{ minWidth: 250 }}
                 />
-                {allStatuses.map((s) => (
-                    <FormControlLabel
-                        key={s.value}
-                        control={
-                            <Checkbox
-                                size="small"
-                                checked={(filters.statuses ?? []).includes(
-                                    s.value,
-                                )}
-                                onChange={() => handleStatusToggle(s.value)}
-                            />
-                        }
-                        label={s.label}
-                    />
-                ))}
+                <FormControl size="small" sx={{ minWidth: 240 }}>
+                    <InputLabel id="targeted-statuses-label">
+                        Statuses
+                    </InputLabel>
+                    <Select
+                        labelId="targeted-statuses-label"
+                        multiple
+                        value={filters.statuses ?? []}
+                        onChange={handleStatusChange}
+                        input={<OutlinedInput label="Statuses" />}
+                        renderValue={(selected) => {
+                            if (selected.length === 0) {
+                                return "All statuses";
+                            }
+
+                            return allStatuses
+                                .filter((status) =>
+                                    selected.includes(status.value),
+                                )
+                                .map((status) => status.label)
+                                .join(", ");
+                        }}
+                    >
+                        {allStatuses.map((status) => (
+                            <MenuItem key={status.value} value={status.value}>
+                                {status.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
                 <Box sx={{ flexGrow: 1 }} />
                 <Button
                     component={InertiaLink}
@@ -141,6 +161,7 @@ export default function Index({
                                 <TableCell>Fit Score</TableCell>
                                 <TableCell>Usage</TableCell>
                                 <TableCell>Status</TableCell>
+                                <TableCell>Applied</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
@@ -148,7 +169,7 @@ export default function Index({
                         <TableBody>
                             {conversations.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={7}
+                                    colSpan={8}
                                     message="No conversations found."
                                     actionLabel="Start one"
                                     actionHref="/admin/resume/targeted-builder/new"
@@ -165,8 +186,9 @@ export default function Index({
                                         conv.context?.job_title ||
                                         "";
                                     const displayStatus =
-                                        resume?.status === "finalized"
-                                            ? "finalized"
+                                        resume?.status === "finalized" ||
+                                        resume?.status === "applied"
+                                            ? resume.status
                                             : conv.status;
 
                                     return (
@@ -214,6 +236,11 @@ export default function Index({
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="caption">
+                                                    {resume?.applied_at ?? "—"}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="caption">
                                                     {conv.updated_at}
                                                 </Typography>
                                             </TableCell>
@@ -226,38 +253,48 @@ export default function Index({
                                                         gap: 1,
                                                     }}
                                                 >
-                                                    <Button
+                                                    <IconButton
                                                         component={InertiaLink}
                                                         href={`/admin/resume/targeted-builder/${conv.id}`}
                                                         size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        title="View"
+                                                        aria-label="View"
                                                     >
-                                                        View
-                                                    </Button>
+                                                        <AutoFixHighOutlinedIcon fontSize="small" />
+                                                    </IconButton>
                                                     {conv.status ===
                                                         "active" && (
-                                                        <Button
+                                                        <IconButton
                                                             size="small"
                                                             color="warning"
+                                                            variant="outlined"
+                                                            title="Pass"
+                                                            aria-label="Pass"
                                                             onClick={() =>
                                                                 handlePass(
                                                                     conv.id,
                                                                 )
                                                             }
                                                         >
-                                                            Pass
-                                                        </Button>
+                                                            <BackHandOutlinedIcon fontSize="small" />
+                                                        </IconButton>
                                                     )}
-                                                    <Button
+                                                    <IconButton
                                                         size="small"
                                                         color="error"
+                                                        variant="outlined"
+                                                        title="Delete"
+                                                        aria-label="Delete"
                                                         onClick={() =>
                                                             handleDelete(
                                                                 conv.id,
                                                             )
                                                         }
                                                     >
-                                                        Delete
-                                                    </Button>
+                                                        <DeleteOutlineIcon fontSize="small" />
+                                                    </IconButton>
                                                 </Box>
                                             </TableCell>
                                         </TableRow>

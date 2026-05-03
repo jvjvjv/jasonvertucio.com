@@ -10,6 +10,7 @@ interface TargetedBuilderStatusBarProps {
     conversation: Conversation;
     targetedResume: TargetedResume | null;
     coverLetter: CoverLetter | null;
+    onApplied: () => void;
     onPass: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function TargetedBuilderStatusBar({
     conversation,
     targetedResume,
     coverLetter,
+    onApplied,
     onPass,
 }: TargetedBuilderStatusBarProps) {
     return (
@@ -46,8 +48,23 @@ export default function TargetedBuilderStatusBar({
                     Fit: {targetedResume.fit_score}%
                 </Typography>
             )}
+            {targetedResume?.applied_at && (
+                <Typography variant="caption" color="text.secondary">
+                    Applied: {targetedResume.applied_at}
+                </Typography>
+            )}
             <UsageChip usage={conversation.usage} />
             <Box sx={{ flexGrow: 1 }} />
+            {targetedResume && targetedResume.status !== "applied" && (
+                <Button
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    onClick={onApplied}
+                >
+                    Applied
+                </Button>
+            )}
             {conversation.status === "active" && (
                 <Button
                     size="small"

@@ -30,6 +30,7 @@ class TargetedResumeFactory extends Factory
             'fit_score' => fake()->optional()->numberBetween(1, 100),
             'fit_summary' => fake()->optional()->sentence(),
             'status' => TargetedResumeStatus::Draft,
+            'applied_at' => null,
         ];
     }
 
@@ -44,6 +45,13 @@ class TargetedResumeFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => TargetedResumeStatus::Finalized,
+        ]);
+    }
+
+    public function applied(): static {
+        return $this->state(fn(array $attributes) => [
+            'status' => TargetedResumeStatus::Applied,
+            'applied_at' => now(),
         ]);
     }
 }

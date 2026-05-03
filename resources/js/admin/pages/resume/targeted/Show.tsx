@@ -65,6 +65,7 @@ export default function Show({
             "",
         job_title:
             targetedResume?.position || conversation.context?.job_title || "",
+        applied_at: targetedResume?.applied_at || "",
     });
 
     const csrfToken =
@@ -338,6 +339,18 @@ export default function Show({
         );
     };
 
+    const handleApplied = () => {
+        confirm(
+            "Mark this job as applied?",
+            () => {
+                router.post(
+                    `/admin/resume/targeted-builder/${conversation.id}/applied`,
+                );
+            },
+            { confirmLabel: "Applied", confirmColor: "success" },
+        );
+    };
+
     const handleMetadataSave = (e: React.FormEvent) => {
         e.preventDefault();
         metadataForm.put(
@@ -370,6 +383,7 @@ export default function Show({
                 conversation={conversation}
                 targetedResume={targetedResume}
                 coverLetter={coverLetter}
+                onApplied={handleApplied}
                 onPass={handlePass}
             />
 
@@ -605,6 +619,26 @@ export default function Show({
                                 }
                                 error={!!metadataForm.errors.job_title}
                                 helperText={metadataForm.errors.job_title}
+                                sx={{ mb: 3 }}
+                            />
+                            <TextField
+                                label="Applied Date"
+                                type="date"
+                                size="small"
+                                fullWidth
+                                value={metadataForm.data.applied_at}
+                                onChange={(e) =>
+                                    metadataForm.setData(
+                                        "applied_at",
+                                        e.target.value,
+                                    )
+                                }
+                                error={!!metadataForm.errors.applied_at}
+                                helperText={
+                                    metadataForm.errors.applied_at ||
+                                    "Leave blank if you have not applied yet."
+                                }
+                                slotProps={{ inputLabel: { shrink: true } }}
                                 sx={{ mb: 3 }}
                             />
                             <Box

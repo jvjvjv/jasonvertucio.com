@@ -6,4 +6,5 @@ enum TargetedResumeStatus: string
 {
     case Draft = 'draft';
     case Finalized = 'finalized';
+    case Applied = 'applied';
 }

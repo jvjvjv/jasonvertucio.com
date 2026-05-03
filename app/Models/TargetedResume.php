@@ -25,6 +25,7 @@ class TargetedResume extends Model
         'docx_path',
         'pdf_path',
         'status',
+        'applied_at',
     ];
 
     /**
@@ -36,6 +37,7 @@ class TargetedResume extends Model
             'tailored_data' => 'array',
             'fit_score' => 'integer',
             'status' => TargetedResumeStatus::class,
+            'applied_at' => 'datetime',
         ];
     }
 

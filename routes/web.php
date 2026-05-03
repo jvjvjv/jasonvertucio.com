@@ -191,6 +191,7 @@ Route::middleware(['auth', 'can:edit-resume', \App\Http\Middleware\HandleInertia
         Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize'])->name('targeted.finalize');
         Route::post('/targeted-builder/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter'])->name('targeted.finalize-cover-letter');
         Route::post('/targeted-builder/{conversation}/pass', [TargetedResumeController::class, 'pass'])->name('targeted.pass');
+        Route::post('/targeted-builder/{conversation}/applied', [TargetedResumeController::class, 'applied'])->name('targeted.applied');
         Route::delete('/targeted-builder/{conversation}', [TargetedResumeController::class, 'destroy'])->name('targeted.destroy');
 
         // Job URL Parsing

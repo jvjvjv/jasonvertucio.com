@@ -34,6 +34,7 @@ class TargetedResumeController extends Controller
     {
         $defaultStatuses = [AiConversationStatus::Active->value, TargetedResumeStatus::Finalized->value];
         $statuses = $request->input('status', $request->has('search') ? [] : $defaultStatuses);
+        $statuses = is_array($statuses) ? $statuses : [$statuses];
         $search = $request->input('search', '');
 
         $query = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion'])
@@ -91,6 +92,7 @@ class TargetedResumeController extends Controller
                 'fit_score' => $conv->targetedResume->fit_score,
                 'status' => $conv->targetedResume->status->value ?? $conv->targetedResume->status,
                 'resume_version' => $conv->targetedResume->resumeVersion?->version,
+                'applied_at' => $conv->targetedResume->applied_at?->toDateString(),
             ] : null,
         ]);
 
@@ -195,6 +197,7 @@ class TargetedResumeController extends Controller
                 'status' => $targetedResume->status->value ?? $targetedResume->status,
                 'docx_path' => $targetedResume->docx_path ? true : false,
                 'pdf_path' => $targetedResume->pdf_path ? true : false,
+                'applied_at' => $targetedResume->applied_at?->toDateString(),
                 'tailored_content' => data_get($targetedResume->tailored_data, 'markdown')
                     ?? data_get($targetedResume->tailored_data, 'content'),
                 'tailored_title' => $targetedResume->title,
@@ -362,6 +365,26 @@ class TargetedResumeController extends Controller
 
         return redirect()->route('admin.resume.targeted.index')
             ->with('success', 'Conversation marked as passed.');
+    }
+
+    /**
+     * Mark a targeted resume as applied.
+     */
+    public function applied(AiConversation $conversation): RedirectResponse {
+        $targetedResume = $conversation->targetedResume;
+
+        if (!$targetedResume) {
+            return redirect()->route('admin.resume.targeted.show', $conversation)
+                ->with('error', 'Finalize the targeted resume before marking it as applied.');
+        }
+
+        $targetedResume->update([
+            'status' => TargetedResumeStatus::Applied,
+            'applied_at' => now(),
+        ]);
+
+        return redirect()->route('admin.resume.targeted.show', $conversation)
+            ->with('success', 'Job marked as applied.');
     }
 
     /**
