@@ -1,46 +1,53 @@
-import { useState } from 'react';
-import { Head } from '@inertiajs/react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CircularProgress from '@mui/material/CircularProgress';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import AdminLayout from '../../../layouts/AdminLayout';
-import PageHeader from '../../../components/PageHeader';
-import type { AiSystem } from '../../../types';
+import { useState } from "react";
+import { marked } from "marked";
+import { Head } from "@inertiajs/react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import AdminLayout from "../../../layouts/AdminLayout";
+import PageHeader from "../../../components/PageHeader";
+import type { AiSystem } from "../../../types";
 
 interface CreateProps {
-    systems: Pick<AiSystem, 'id' | 'name' | 'model'>[];
+    systems: Pick<AiSystem, "id" | "name" | "model">[];
     defaultSystemId: number | null;
 }
 
 export default function Create({ systems, defaultSystemId }: CreateProps) {
-    const [aiSystemId, setAiSystemId] = useState<number | ''>(defaultSystemId ?? '');
-    const [jobUrl, setJobUrl] = useState('');
-    const [jobTitle, setJobTitle] = useState('');
+    const [aiSystemId, setAiSystemId] = useState<number | "">(
+        defaultSystemId ?? "",
+    );
+    const [jobUrl, setJobUrl] = useState("");
+    const [jobTitle, setJobTitle] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [jobLocation, setJobLocation] = useState("");
-    const [jobDescription, setJobDescription] = useState('');
+    const [jobDescription, setJobDescription] = useState("");
     const [isParsing, setIsParsing] = useState(false);
-    const [parseError, setParseError] = useState('');
-    const [parseReasoning, setParseReasoning] = useState('');
+    const [parseError, setParseError] = useState("");
+    const [parseReasoning, setParseReasoning] = useState("");
     const [parserId, setParserId] = useState<number | null>(null);
+    const [usedExistingParser, setUsedExistingParser] = useState<
+        boolean | null
+    >(null);
     const [reparseFeedback, setReparseFeedback] = useState("");
     const [isReparsing, setIsReparsing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
 
     const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+            ?.content ?? "";
 
     const handleParseUrl = async () => {
         if (!jobUrl.trim()) return;
         setIsParsing(true);
-        setParseError('');
+        setParseError("");
 
         try {
             const response = await fetch(
@@ -62,7 +69,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             const result = await response.json();
 
             if (!response.ok) {
-                setParseError(result.message || 'Failed to parse URL');
+                setParseError(result.message || "Failed to parse URL");
                 return;
             }
 
@@ -71,10 +78,11 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
-            setParseReasoning(result.reasoning || '');
+            setParseReasoning(result.reasoning || "");
             if (result.parser_id) setParserId(result.parser_id);
+            if (result.used_existing_parser) setUsedExistingParser(true);
         } catch (err) {
-            setParseError('Network error: ' + (err as Error).message);
+            setParseError("Network error: " + (err as Error).message);
         } finally {
             setIsParsing(false);
         }
@@ -114,7 +122,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
-            setParseReasoning(result.reasoning || '');
+            setParseReasoning(result.reasoning || "");
             if (result.parser_id) setParserId(result.parser_id);
             setReparseFeedback("");
         } catch (err) {
@@ -127,16 +135,16 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!aiSystemId) {
-            setError('Please select an AI system.');
+            setError("Please select an AI system.");
             return;
         }
         if (!jobDescription.trim()) {
-            setError('Please provide a job description.');
+            setError("Please provide a job description.");
             return;
         }
 
         setIsSubmitting(true);
-        setError('');
+        setError("");
 
         try {
             const response = await fetch(
@@ -161,13 +169,13 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             const result = await response.json();
 
             if (!response.ok) {
-                setError(result.message || 'Failed to start session');
+                setError(result.message || "Failed to start session");
                 return;
             }
 
             window.location.href = result.redirect;
         } catch (err) {
-            setError('Network error: ' + (err as Error).message);
+            setError("Network error: " + (err as Error).message);
         } finally {
             setIsSubmitting(false);
         }
@@ -248,12 +256,39 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
 
                         {parseReasoning && (
                             <Alert severity="info" sx={{ mb: 2 }}>
-                                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{ mb: 0.5 }}
+                                >
                                     Parser reasoning
                                 </Typography>
-                                <Typography variant="body2">
-                                    {parseReasoning}
-                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    dangerouslySetInnerHTML={{
+                                        __html: marked.parse(parseReasoning, {
+                                            breaks: true,
+                                        }) as string,
+                                    }}
+                                ></Typography>
+                                <Typography
+                                    variant="caption"
+                                    sx={{ mt: 1, display: "block" }}
+                                ></Typography>
+                                {usedExistingParser && (
+                                    <Typography
+                                        variant="caption"
+                                        color="secondary.main"
+                                    >
+                                        <strong>
+                                            Note: This URL was parsed using an
+                                            existing parser (id:{parserId}) for
+                                            this domain. If any information was
+                                            extracted incorrectly, please
+                                            provide feedback and re-parse to
+                                            help improve the parser.
+                                        </strong>
+                                    </Typography>
+                                )}
                             </Alert>
                         )}
 
@@ -293,7 +328,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             value={jobTitle}
                             onChange={(e) => {
                                 setJobTitle(e.target.value);
-                                setParseReasoning('');
+                                setParseReasoning("");
                             }}
                             placeholder="(optional)"
                             sx={{ mb: 3 }}
@@ -306,7 +341,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             value={companyName}
                             onChange={(e) => {
                                 setCompanyName(e.target.value);
-                                setParseReasoning('');
+                                setParseReasoning("");
                             }}
                             placeholder="(optional)"
                             sx={{ mb: 3 }}
@@ -319,7 +354,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             value={jobLocation}
                             onChange={(e) => {
                                 setJobLocation(e.target.value);
-                                setParseReasoning('');
+                                setParseReasoning("");
                             }}
                             placeholder="(optional)"
                             sx={{ mb: 3 }}
@@ -335,7 +370,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             value={jobDescription}
                             onChange={(e) => {
                                 setJobDescription(e.target.value);
-                                setParseReasoning('');
+                                setParseReasoning("");
                             }}
                             placeholder="Paste or type the full job description here..."
                             sx={{ mb: 3 }}
