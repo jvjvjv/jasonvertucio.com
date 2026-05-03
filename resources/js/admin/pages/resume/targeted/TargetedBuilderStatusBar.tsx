@@ -1,7 +1,8 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import DownloadIcon from "@mui/icons-material/Download";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StatusChip from "../../../components/StatusChip";
 import UsageChip from "../../../components/UsageChip";
 import type { Conversation, CoverLetter, TargetedResume } from "../../../types";
@@ -21,6 +22,8 @@ export default function TargetedBuilderStatusBar({
     onApplied,
     onPass,
 }: TargetedBuilderStatusBarProps) {
+    const isApplied = targetedResume?.status === "applied";
+
     return (
         <Box
             sx={{
@@ -38,11 +41,6 @@ export default function TargetedBuilderStatusBar({
                         : conversation.status
                 }
             />
-            {conversation.ai_system_name && (
-                <Typography variant="caption" color="text.secondary">
-                    AI: {conversation.ai_system_name}
-                </Typography>
-            )}
             {targetedResume?.fit_score != null && (
                 <Typography variant="caption" color="text.secondary">
                     Fit: {targetedResume.fit_score}%
@@ -55,16 +53,15 @@ export default function TargetedBuilderStatusBar({
             )}
             <UsageChip usage={conversation.usage} />
             <Box sx={{ flexGrow: 1 }} />
-            {targetedResume && targetedResume.status !== "applied" && (
-                <Button
-                    size="small"
-                    color="success"
-                    variant="outlined"
-                    onClick={onApplied}
-                >
-                    Applied
-                </Button>
-            )}
+            <Button
+                size="small"
+                color="success"
+                variant="outlined"
+                onClick={onApplied}
+                disabled={!targetedResume || isApplied}
+            >
+                {isApplied ? "Applied" : "Mark Applied"}
+            </Button>
             {conversation.status === "active" && (
                 <Button
                     size="small"
@@ -81,23 +78,23 @@ export default function TargetedBuilderStatusBar({
                         {targetedResume.docx_path && (
                             <Button
                                 size="small"
-                                startIcon={<DownloadIcon />}
                                 variant="outlined"
                                 component="a"
-                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
+                                color="success"
+                                href={`/admin/resume/targeted-resume/${targetedResume.id}/StickyNote2/docx`}
                             >
-                                DOCX
+                                <StickyNote2Icon />
                             </Button>
                         )}
                         {targetedResume.pdf_path && (
                             <Button
                                 size="small"
-                                startIcon={<DownloadIcon />}
                                 variant="outlined"
                                 component="a"
-                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
+                                color="success"
+                                href={`/admin/resume/targeted-resume/${targetedResume.id}/StickyNote2/pdf`}
                             >
-                                PDF
+                                <PictureAsPdfIcon />
                             </Button>
                         )}
                     </>
@@ -109,9 +106,10 @@ export default function TargetedBuilderStatusBar({
                                 size="small"
                                 variant="outlined"
                                 component="a"
-                                href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
+                                color="secondary"
+                                href={`/admin/cover-letters/${coverLetter.id}/StickyNote2/docx`}
                             >
-                                CL DOCX
+                                <StickyNote2Icon />
                             </Button>
                         )}
                         {coverLetter.pdf_path && (
@@ -119,9 +117,10 @@ export default function TargetedBuilderStatusBar({
                                 size="small"
                                 variant="outlined"
                                 component="a"
-                                href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
+                                color="secondary"
+                                href={`/admin/cover-letters/${coverLetter.id}/StickyNote2/pdf`}
                             >
-                                CL PDF
+                                <PictureAsPdfIcon />
                             </Button>
                         )}
                     </>

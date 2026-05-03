@@ -452,7 +452,7 @@ export default function Show({
                         <BuilderStatusCard
                             label="Cover Letter"
                             isFinalized={!!coverLetter}
-                            color="primary"
+                            color="secondary"
                             canFinalize={canFinalizeCoverLetter}
                             isFinalizing={isFinalizingCoverLetter}
                             hasUpdate={!!coverLetter}
@@ -591,6 +591,18 @@ export default function Show({
                                 helperText={metadataForm.errors.title}
                                 sx={{ mb: 2 }}
                             />
+                            <Box sx={{ mb: 2 }}>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: "block" }}
+                                >
+                                    AI System
+                                </Typography>
+                                <Typography variant="body2">
+                                    {conversation.ai_system_name || "Unknown"}
+                                </Typography>
+                            </Box>
                             <TextField
                                 label="Company Name"
                                 size="small"
