@@ -259,7 +259,6 @@ export default function Index({
                                                         href={`/admin/resume/targeted-builder/${conv.id}`}
                                                         size="small"
                                                         color="primary"
-                                                        variant="outlined"
                                                         title="View"
                                                         aria-label="View"
                                                     >
@@ -270,7 +269,6 @@ export default function Index({
                                                         <IconButton
                                                             size="small"
                                                             color="warning"
-                                                            variant="outlined"
                                                             title="Pass"
                                                             aria-label="Pass"
                                                             onClick={() =>
