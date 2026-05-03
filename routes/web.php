@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\AiChatBotController as AdminAiChatBotController;
 use App\Http\Controllers\Admin\AiConversationController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiMemoryController;
+use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\ChatBotController;
 use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\TargetedResumeController;
@@ -155,6 +156,14 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::get('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'edit'])->name('bots.edit');
         Route::put('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'update'])->name('bots.update');
         Route::delete('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'destroy'])->name('bots.destroy');
+
+        // Job URL Parsers
+        Route::get('/job-url-parsers', [JobUrlParserController::class, 'index'])->name('job-url-parsers.index');
+        Route::get('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'edit'])->name('job-url-parsers.edit');
+        Route::put('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'update'])->name('job-url-parsers.update');
+        Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview'])->name('job-url-parsers.preview');
+        Route::post('/job-url-parsers/{jobUrlParser}/approve', [JobUrlParserController::class, 'approve'])->name('job-url-parsers.approve');
+        Route::post('/job-url-parsers/{jobUrlParser}/reject', [JobUrlParserController::class, 'reject'])->name('job-url-parsers.reject');
     });
 
 Route::prefix('chat')->name('chat-bots.chat.')->group(function () {

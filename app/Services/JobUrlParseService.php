@@ -136,12 +136,10 @@ class JobUrlParseService {
     }
 
     /**
-     * Mark a parser as active and deactivate others for the same domain.
+     * Mark a parser as active and deactivate all other parsers.
      */
     public function confirmParser(JobUrlParser $parser): void {
         JobUrlParser::query()
-            ->forDomain($parser->domain)
-            ->active()
             ->where('id', '!=', $parser->id)
             ->update(['status' => 'inactive']);
 

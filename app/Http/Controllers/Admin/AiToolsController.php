@@ -50,6 +50,13 @@ class AiToolsController extends Controller
                 'label' => 'AI Memory',
                 'description' => 'View and manage learned insights from AI conversations',
             ],
+            [
+                'can' => null,
+                'href' => route('admin.ai.job-url-parsers.index'),
+                'icon' => 'Rule',
+                'label' => 'Job URL Parsers',
+                'description' => 'Review, approve, and edit saved parsers generated from job posting URLs',
+            ],
         ];
 
         $user = $request->user();

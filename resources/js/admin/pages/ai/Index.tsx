@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import MemoryIcon from '@mui/icons-material/Memory';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import RuleIcon from "@mui/icons-material/Rule";
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import AdminLayout from '../../layouts/AdminLayout';
 import PageHeader from '../../components/PageHeader';
@@ -20,6 +21,7 @@ interface AiIndexProps {
 const iconMap: Record<string, React.ReactNode> = {
     Memory: <MemoryIcon fontSize="large" />,
     Psychology: <PsychologyIcon fontSize="large" />,
+    Rule: <RuleIcon fontSize="large" />,
     TrackChanges: <TrackChangesIcon fontSize="large" />,
 };
 
