@@ -27,6 +27,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
     const [jobDescription, setJobDescription] = useState('');
     const [isParsing, setIsParsing] = useState(false);
     const [parseError, setParseError] = useState('');
+    const [parseReasoning, setParseReasoning] = useState('');
+    const [parserId, setParserId] = useState<number | null>(null);
+    const [reparseFeedback, setReparseFeedback] = useState("");
+    const [isReparsing, setIsReparsing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
@@ -67,10 +71,56 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
+            setParseReasoning(result.reasoning || '');
+            if (result.parser_id) setParserId(result.parser_id);
         } catch (err) {
             setParseError('Network error: ' + (err as Error).message);
         } finally {
             setIsParsing(false);
+        }
+    };
+
+    const handleReparse = async () => {
+        if (!parserId || !reparseFeedback.trim()) return;
+        setIsReparsing(true);
+        setParseError("");
+
+        try {
+            const response = await fetch(
+                `/admin/resume/targeted-builder/parser/${parserId}/reparse`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                    },
+                    body: JSON.stringify({
+                        ai_system_id: aiSystemId,
+                        feedback: reparseFeedback,
+                    }),
+                },
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                setParseError(result.message || "Failed to re-parse URL");
+                return;
+            }
+
+            if (result.job_title) setJobTitle(result.job_title);
+            if (result.company_name) setCompanyName(result.company_name);
+            if (result.job_location) setJobLocation(result.job_location);
+            if (result.job_description)
+                setJobDescription(result.job_description);
+            setParseReasoning(result.reasoning || '');
+            if (result.parser_id) setParserId(result.parser_id);
+            setReparseFeedback("");
+        } catch (err) {
+            setParseError("Network error: " + (err as Error).message);
+        } finally {
+            setIsReparsing(false);
         }
     };
 
@@ -191,12 +241,55 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             </Alert>
                         )}
 
+                        {parseReasoning && (
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                    Parser reasoning
+                                </Typography>
+                                <Typography variant="body2">
+                                    {parseReasoning}
+                                </Typography>
+                            </Alert>
+                        )}
+
+                        {parserId && (
+                            <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
+                                <TextField
+                                    label="Re-parse feedback"
+                                    size="small"
+                                    fullWidth
+                                    value={reparseFeedback}
+                                    onChange={(e) =>
+                                        setReparseFeedback(e.target.value)
+                                    }
+                                    placeholder="Describe what was extracted incorrectly..."
+                                />
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleReparse}
+                                    disabled={
+                                        isReparsing || !reparseFeedback.trim()
+                                    }
+                                    sx={{ whiteSpace: "nowrap" }}
+                                >
+                                    {isReparsing ? (
+                                        <CircularProgress size={20} />
+                                    ) : (
+                                        "Re-parse"
+                                    )}
+                                </Button>
+                            </Box>
+                        )}
+
                         <TextField
                             label="Job Title"
                             size="small"
                             fullWidth
                             value={jobTitle}
-                            onChange={(e) => setJobTitle(e.target.value)}
+                            onChange={(e) => {
+                                setJobTitle(e.target.value);
+                                setParseReasoning('');
+                            }}
                             placeholder="(optional)"
                             sx={{ mb: 3 }}
                         />
@@ -206,7 +299,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             size="small"
                             fullWidth
                             value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
+                            onChange={(e) => {
+                                setCompanyName(e.target.value);
+                                setParseReasoning('');
+                            }}
                             placeholder="(optional)"
                             sx={{ mb: 3 }}
                         />
@@ -216,7 +312,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             size="small"
                             fullWidth
                             value={jobLocation}
-                            onChange={(e) => setJobLocation(e.target.value)}
+                            onChange={(e) => {
+                                setJobLocation(e.target.value);
+                                setParseReasoning('');
+                            }}
                             placeholder="(optional)"
                             sx={{ mb: 3 }}
                         />
@@ -229,7 +328,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             multiline
                             rows={12}
                             value={jobDescription}
-                            onChange={(e) => setJobDescription(e.target.value)}
+                            onChange={(e) => {
+                                setJobDescription(e.target.value);
+                                setParseReasoning('');
+                            }}
                             placeholder="Paste or type the full job description here..."
                             sx={{ mb: 3 }}
                         />

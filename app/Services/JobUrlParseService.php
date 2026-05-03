@@ -7,6 +7,8 @@ use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
 
+use Log;
+
 class JobUrlParseService {
     private const MAX_HTML_LENGTH = 100000;
 
@@ -18,7 +20,7 @@ class JobUrlParseService {
     /**
      * Parse a job URL and extract job information.
      *
-     * @return array{job_title: string, company_name: string, job_description: string, parser_id: int, used_existing_parser: bool}
+        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
      */
     public function parseUrl(string $url, AiSystem $aiSystem): array {
         $domain = $this->extractDomain($url);
@@ -44,7 +46,7 @@ class JobUrlParseService {
     /**
      * Extract job data using CSS selectors from an active parser.
      *
-     * @return array{job_title: string, company_name: string, job_description: string}|null
+        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string}|null
      */
     private function extractWithSelectors(string $html, JobUrlParser $parser): ?array {
         $crawler = new Crawler($html);
@@ -78,13 +80,14 @@ class JobUrlParseService {
             'company_name' => trim($companyName),
             'job_location' => trim($jobLocation),
             'job_description' => trim($jobDescription),
+            'reasoning' => trim((string) ($parser->ai_reasoning ?? '')),
         ];
     }
 
     /**
      * Use AI to extract job data from HTML.
      *
-     * @return array{job_title: string, company_name: string, job_description: string, parser_id: int, used_existing_parser: bool}
+        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
      */
     public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array {
         $cleanedHtml = $this->cleanHtml($html);
@@ -126,6 +129,7 @@ class JobUrlParseService {
             'company_name' => $parsed['company_name'] ?? '',
             'job_location' => $parsed['job_location'] ?? '',
             'job_description' => $parsed['job_description'] ?? '',
+            'reasoning' => $parsed['reasoning'] ?? '',
             'parser_id' => $parser->id,
             'used_existing_parser' => false,
         ];
@@ -154,7 +158,7 @@ class JobUrlParseService {
     /**
      * Re-parse using stored HTML with user feedback.
      *
-     * @return array{job_title: string, company_name: string, job_description: string, parser_id: int, used_existing_parser: bool}
+        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
      */
     public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array {
         $html = $parser->html;
@@ -275,6 +279,8 @@ PROMPT;
         }
 
         $parsed = json_decode($text, true);
+
+        Log::debug('AI response text: ' . $text);
 
         if ($parsed !== null) {
             return $parsed;
