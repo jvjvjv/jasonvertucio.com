@@ -150,18 +150,19 @@ class JobUrlParserController extends Controller
     }
 
     /**
-     * Mark one parser as active and deactivate all others.
+     * Mark one parser as active and deactivate all others for the same domain.
      */
     public function approve(JobUrlParser $jobUrlParser): RedirectResponse
     {
         JobUrlParser::query()
+            ->where('domain', $jobUrlParser->domain)
             ->where('id', '!=', $jobUrlParser->id)
             ->update(['status' => 'inactive']);
 
         $jobUrlParser->update(['status' => 'active']);
 
         return redirect()->route('admin.ai.job-url-parsers.index')
-            ->with('success', "Parser #{$jobUrlParser->id} approved. All other parsers were set to inactive.");
+            ->with('success', "Parser #{$jobUrlParser->id} approved. Other parsers for {$jobUrlParser->domain} were set to inactive.");
     }
 
     /**

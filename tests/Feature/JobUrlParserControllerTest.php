@@ -78,6 +78,22 @@ class JobUrlParserControllerTest extends TestCase
         $this->assertDatabaseHas('job_url_parsers', ['id' => $parser->id]);
     }
 
+    public function test_approve_deactivates_only_same_domain_parsers(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $sameDomainActive = JobUrlParser::factory()->active()->create(['domain' => 'example.com']);
+        $otherDomainActive = JobUrlParser::factory()->active()->create(['domain' => 'other.com']);
+        $target = JobUrlParser::factory()->create(['domain' => 'example.com', 'status' => 'inactive']);
+
+        $this->actingAs($user)
+            ->post(route('admin.ai.job-url-parsers.approve', $target));
+
+        $this->assertDatabaseHas('job_url_parsers', ['id' => $target->id, 'status' => 'active']);
+        $this->assertDatabaseHas('job_url_parsers', ['id' => $sameDomainActive->id, 'status' => 'inactive']);
+        $this->assertDatabaseHas('job_url_parsers', ['id' => $otherDomainActive->id, 'status' => 'active']);
+    }
+
     public function test_destroy_cascades_to_associated_job_urls(): void
     {
         $user = $this->authenticatedUser();

@@ -66,7 +66,7 @@ export default function Index({ parsers, filters, domains }: IndexProps) {
 
     const handleApprove = (id: number, domain: string) => {
         confirm(
-            `Approve parser #${id} for ${domain}? This will set all other parsers across all domains to inactive.`,
+            `Approve parser #${id} for ${domain}? All other parsers for ${domain} will be set to inactive.`,
             () => {
                 router.post(`/admin/ai/job-url-parsers/${id}/approve`);
             },
@@ -104,7 +104,7 @@ export default function Index({ parsers, filters, domains }: IndexProps) {
             />
 
             <Alert severity="info" sx={{ mb: 2 }}>
-                Approving a parser here activates it and marks every other parser across all domains as inactive.
+                Approving a parser activates it and marks every other parser for the same domain as inactive. Parsers for other domains are unaffected.
             </Alert>
 
             <Box

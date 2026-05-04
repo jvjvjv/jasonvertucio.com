@@ -124,6 +124,10 @@ class JobUrlParseTest extends TestCase
             'domain' => 'example.com',
         ]);
 
+        $otherDomain = JobUrlParser::factory()->active()->create([
+            'domain' => 'other.com',
+        ]);
+
         $newParser = JobUrlParser::factory()->create([
             'domain' => 'example.com',
             'status' => 'inactive',
@@ -139,6 +143,11 @@ class JobUrlParseTest extends TestCase
         $this->assertDatabaseHas('job_url_parsers', [
             'id' => $existing->id,
             'status' => 'inactive',
+        ]);
+        // parsers for other domains must not be affected
+        $this->assertDatabaseHas('job_url_parsers', [
+            'id' => $otherDomain->id,
+            'status' => 'active',
         ]);
     }
 
