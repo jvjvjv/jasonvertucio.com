@@ -11,7 +11,7 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 interface BuilderStatusCardProps {
     label: string;
     isFinalized: boolean;
-    color: "success" | "primary";
+    color: "primary" | "secondary" | "error" | "warning" | "info" | "success";
     canFinalize: boolean;
     isFinalizing: boolean;
     hasUpdate: boolean;

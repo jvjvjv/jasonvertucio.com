@@ -105,7 +105,6 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     <Box
                                         sx={{
                                             display: "flex",
-                                            justifyContent: "space-between",
                                             alignItems: "center",
                                             mb: 1,
                                         }}
@@ -116,17 +115,12 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                         >
                                             {message.role}
                                         </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                        >
-                                            {message.created_at ?? ""}
-                                        </Typography>
                                     </Box>
                                     <ChatMessageBubble
                                         role={message.role}
                                         content={message.content}
                                         variant="history"
+                                        sentAt={message.created_at ?? null}
                                     />
                                 </Box>
                             ))}

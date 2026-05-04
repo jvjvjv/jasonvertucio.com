@@ -88,7 +88,11 @@ export default function Show({
             if (text) {
                 setMessages((prev) => [
                     ...prev,
-                    { role: "user", content: text },
+                    {
+                        role: "user",
+                        content: text,
+                        created_at: new Date().toISOString(),
+                    },
                 ]);
                 setUserInput("");
             }
@@ -154,7 +158,11 @@ export default function Show({
                 if (accumulated) {
                     setMessages((prev) => [
                         ...prev,
-                        { role: "assistant", content: accumulated },
+                        {
+                            role: "assistant",
+                            content: accumulated,
+                            created_at: new Date().toISOString(),
+                        },
                     ]);
                 }
             } catch (err) {
@@ -163,6 +171,7 @@ export default function Show({
                     {
                         role: "assistant",
                         content: `**Error:** ${(err as Error).message}`,
+                        created_at: new Date().toISOString(),
                     },
                 ]);
             } finally {
@@ -514,6 +523,7 @@ export default function Show({
                                         role={msg.role}
                                         content={msg.content}
                                         variant="chat"
+                                        sentAt={msg.created_at ?? null}
                                     />
                                 ))}
                                 {isStreaming && streamingContent && (

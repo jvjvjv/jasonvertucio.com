@@ -167,6 +167,7 @@ class TargetedResumeController extends Controller
             ->map(fn ($msg) => [
                 'role' => $msg->role,
                 'content' => $msg->content,
+                'created_at' => $msg->created_at?->toIso8601String(),
             ])
             ->toArray();
 

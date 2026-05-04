@@ -10,7 +10,13 @@ export interface ConfirmDialogProps {
     title?: string;
     message: string;
     confirmLabel?: string;
-    confirmColor?: 'error' | 'warning' | 'primary';
+    confirmColor?:
+        | "error"
+        | "warning"
+        | "primary"
+        | "secondary"
+        | "info"
+        | "success";
     onConfirm: () => void;
     onCancel: () => void;
 }
