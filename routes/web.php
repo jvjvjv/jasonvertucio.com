@@ -164,6 +164,7 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview'])->name('job-url-parsers.preview');
         Route::post('/job-url-parsers/{jobUrlParser}/approve', [JobUrlParserController::class, 'approve'])->name('job-url-parsers.approve');
         Route::post('/job-url-parsers/{jobUrlParser}/reject', [JobUrlParserController::class, 'reject'])->name('job-url-parsers.reject');
+        Route::delete('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'destroy'])->name('job-url-parsers.destroy');
     });
 
 Route::prefix('chat')->name('chat-bots.chat.')->group(function () {

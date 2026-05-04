@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AiSystem;
+use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
@@ -32,6 +33,8 @@ class JobUrlParseService {
             $extracted = $this->extractWithSelectors($html, $activeParser);
 
             if ($extracted !== null) {
+                $this->storeJobUrl($url, $activeParser, $extracted);
+
                 return [
                     ...$extracted,
                     'parser_id' => $activeParser->id,
@@ -124,12 +127,18 @@ class JobUrlParseService {
             'status' => 'inactive',
         ]);
 
-        return [
+        $extracted = [
             'job_title' => $parsed['job_title'] ?? '',
             'company_name' => $parsed['company_name'] ?? '',
             'job_location' => $parsed['job_location'] ?? '',
             'job_description' => $parsed['job_description'] ?? '',
             'reasoning' => $parsed['reasoning'] ?? '',
+        ];
+
+        $this->storeJobUrl($url, $parser, $extracted);
+
+        return [
+            ...$extracted,
             'parser_id' => $parser->id,
             'used_existing_parser' => false,
         ];
@@ -169,6 +178,19 @@ class JobUrlParseService {
         $url = "https://{$domain}";
 
         return $this->extractWithAi($html, $url, $domain, $aiSystem, $feedback);
+    }
+
+    /**
+     * Store a parsed job URL record linked to its parser.
+     *
+     * @param array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string} $extracted
+     */
+    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): void {
+        JobUrl::create([
+            'job_url_parser_id' => $parser->id,
+            'url' => $url,
+            'contents' => json_encode($extracted, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+        ]);
     }
 
     /**

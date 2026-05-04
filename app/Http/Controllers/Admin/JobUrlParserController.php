@@ -174,4 +174,17 @@ class JobUrlParserController extends Controller
         return redirect()->route('admin.ai.job-url-parsers.index')
             ->with('success', "Parser #{$jobUrlParser->id} marked as inactive.");
     }
+
+    /**
+     * Delete an inactive parser.
+     */
+    public function destroy(JobUrlParser $jobUrlParser): RedirectResponse
+    {
+        abort_if($jobUrlParser->status === 'active', 403, 'Active parsers cannot be deleted.');
+
+        $jobUrlParser->delete();
+
+        return redirect()->route('admin.ai.job-url-parsers.index')
+            ->with('success', "Parser #{$jobUrlParser->id} deleted.");
+    }
 }
