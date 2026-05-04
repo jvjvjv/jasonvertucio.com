@@ -20,7 +20,9 @@ export default function StatusChip({
     tip = undefined,
 }: StatusChipProps) {
     const color = colorMap?.[status] ?? statusColor(status);
-    const variant = color === "default" ? "outlined" : "filled";
+    const variant = ["pass", "finalized", "applied"].includes(status)
+        ? "outlined"
+        : "filled";
     const chip = (
         <Chip
             label={label ?? status}

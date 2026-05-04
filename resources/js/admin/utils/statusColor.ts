@@ -4,12 +4,13 @@ export function statusColor(status: string): ChipColor {
     switch (status) {
         case 'finalized':
             return 'primary';
+        case 'applied':
         case 'completed':
             return 'success';
         case 'active':
-            return 'default';
-        case 'pass':
             return 'info';
+        case 'pass':
+            return 'secondary';
         default:
             return 'default';
     }
