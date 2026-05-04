@@ -43,7 +43,7 @@ export default function Index({ systems }: IndexProps) {
 
     return (
         <AdminLayout>
-            <Head title="AI Systems" />
+            <Head title="AI Systems | AI Tools" />
             <PageHeader
                 title="AI Systems"
                 backHref="/admin/ai"

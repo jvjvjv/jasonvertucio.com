@@ -37,7 +37,7 @@ export default function Edit({ memory }: EditProps) {
 
     return (
         <AdminLayout>
-            <Head title={`Edit — ${memory.key}`} />
+            <Head title={`${memory.key} | Memories`} />
             <PageHeader
                 title={`Edit: ${memory.key}`}
                 backHref="/admin/ai/memories"

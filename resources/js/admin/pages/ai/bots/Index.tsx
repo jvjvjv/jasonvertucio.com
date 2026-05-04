@@ -32,7 +32,7 @@ export default function Index({ bots }: IndexProps) {
 
     return (
         <AdminLayout>
-            <Head title="AI Chat Bots" />
+            <Head title="Chat Bots | AI Tools" />
             <PageHeader
                 title="AI Chat Bots"
                 backHref="/admin/ai"

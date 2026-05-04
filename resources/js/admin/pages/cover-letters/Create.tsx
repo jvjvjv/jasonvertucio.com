@@ -32,7 +32,7 @@ export default function Create({ resumeVersions }: CreateProps) {
 
     return (
         <AdminLayout>
-            <Head title="New Cover Letter" />
+            <Head title="New | Cover Letters" />
             <PageHeader
                 title="New Cover Letter"
                 backHref="/admin/cover-letters"

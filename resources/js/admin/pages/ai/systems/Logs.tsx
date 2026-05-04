@@ -22,7 +22,7 @@ interface LogsProps {
 export default function Logs({ aiSystem, logs }: LogsProps) {
     return (
         <AdminLayout>
-            <Head title={`Logs — ${aiSystem.name}`} />
+            <Head title={`${aiSystem.name} Logs | AI Systems`} />
             <PageHeader title={`Logs: ${aiSystem.name}`} backHref={`/admin/ai/systems/${aiSystem.id}`} backLabel="Back to System" />
 
             <Card>

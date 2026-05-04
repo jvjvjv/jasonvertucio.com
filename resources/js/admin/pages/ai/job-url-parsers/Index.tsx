@@ -96,7 +96,7 @@ export default function Index({ parsers, filters, domains }: IndexProps) {
 
     return (
         <AdminLayout>
-            <Head title="Job URL Parsers" />
+            <Head title="Job URL Parsers | AI Tools" />
             <PageHeader
                 title="Job URL Parsers"
                 backHref="/admin/ai"

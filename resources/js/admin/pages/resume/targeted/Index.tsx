@@ -89,7 +89,7 @@ export default function Index({
 
     return (
         <AdminLayout>
-            <Head title="Targeted Resume Builder" />
+            <Head title="Targeted Resumes | Resume" />
             <PageHeader
                 title="Targeted Resume Builder"
                 backHref="/admin/resume"

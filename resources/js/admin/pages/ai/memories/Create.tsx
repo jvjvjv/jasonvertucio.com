@@ -25,7 +25,7 @@ export default function Create() {
 
     return (
         <AdminLayout>
-            <Head title="Add Memory Entry" />
+            <Head title="New | Memories" />
             <PageHeader
                 title="Add Memory Entry"
                 backHref="/admin/ai/memories"

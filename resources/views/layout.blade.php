@@ -48,7 +48,19 @@
     @endforeach
     @yield("meta")
 
-    <title>@yield("title", "Home") | Jason Vertucio</title>
+    @php
+        $siteTitle = "Jason Vertucio";
+        $pageTitle = trim($__env->yieldContent("title"));
+
+        if ($pageTitle === "") {
+            $routeName = request()->route()?->getName();
+            $pageTitle = $routeName ? Str::headline(str_replace([".", "-"], " ", $routeName)) : "Home";
+        }
+
+        $fullTitle = $pageTitle === $siteTitle ? $siteTitle : "{$pageTitle} | {$siteTitle}";
+    @endphp
+
+    <title>{{ $fullTitle }}</title>
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect"

@@ -33,7 +33,7 @@ export default function Create({ systems, roles }: CreateProps) {
 
     return (
         <AdminLayout>
-            <Head title="Add AI Chat Bot" />
+            <Head title="New | Chat Bots" />
             <PageHeader
                 title="Add AI Chat Bot"
                 backHref="/admin/ai/chat-bots"

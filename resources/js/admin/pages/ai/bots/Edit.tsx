@@ -45,7 +45,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
 
     return (
         <AdminLayout>
-            <Head title={`Edit — ${bot.name}`} />
+            <Head title={`${bot.name} | Chat Bots`} />
             <PageHeader
                 title={`Edit: ${bot.name}`}
                 backHref="/admin/ai/chat-bots"

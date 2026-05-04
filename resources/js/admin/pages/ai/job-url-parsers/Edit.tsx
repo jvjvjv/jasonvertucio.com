@@ -114,7 +114,7 @@ export default function Edit({ parser }: EditProps) {
 
     return (
         <AdminLayout>
-            <Head title={`Edit Parser #${parser.id}`} />
+            <Head title={`Parser #${parser.id} | Job URL Parsers`} />
             <PageHeader
                 title={`Edit Parser #${parser.id}`}
                 backHref="/admin/ai/job-url-parsers"

@@ -50,7 +50,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
 
     return (
         <AdminLayout>
-            <Head title={`Edit — ${aiSystem.name}`} />
+            <Head title={`${aiSystem.name} | AI Systems`} />
             <PageHeader
                 title={`Edit: ${aiSystem.name}`}
                 backHref="/admin/ai/systems"

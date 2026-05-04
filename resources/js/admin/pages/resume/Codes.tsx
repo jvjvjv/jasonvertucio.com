@@ -94,7 +94,7 @@ export default function Codes({ codes, mailConfigured, todayDate }: CodesProps) 
 
     return (
         <AdminLayout>
-            <Head title="Resume Share Codes" />
+            <Head title="Share Codes | Resume" />
             <PageHeader title="Resume Share Codes" backHref="/admin/resume" backLabel="Back to Resume Management" />
 
             {/* Create Form */}

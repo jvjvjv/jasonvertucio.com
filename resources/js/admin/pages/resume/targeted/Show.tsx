@@ -377,11 +377,11 @@ export default function Show({
         "";
     const pageTitle: string =
         conversation?.title ??
-        (position ? `${companyName} — ${position}` : companyName);
+        (position ? `${companyName} - ${position}` : companyName);
 
     return (
         <AdminLayout>
-            <Head title={pageTitle} />
+            <Head title={`${pageTitle} | Targeted Resumes`} />
             <PageHeader
                 title={pageTitle}
                 backHref="/admin/resume/targeted-builder"

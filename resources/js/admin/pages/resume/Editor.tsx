@@ -214,7 +214,7 @@ export default function Editor({
 
     return (
         <AdminLayout>
-            <Head title="Resume Builder" />
+            <Head title="Resume Builder | Resume" />
             <PageHeader
                 title="Resume Builder"
                 backHref="/admin/resume"

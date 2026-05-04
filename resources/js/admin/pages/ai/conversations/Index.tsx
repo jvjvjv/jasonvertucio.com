@@ -91,7 +91,7 @@ export default function Index({
 
     return (
         <AdminLayout>
-            <Head title="AI Conversations" />
+            <Head title="Conversations | AI Tools" />
             <PageHeader
                 title="AI Conversations"
                 backHref="/admin/ai"

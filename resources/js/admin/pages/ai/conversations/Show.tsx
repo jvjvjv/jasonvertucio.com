@@ -51,7 +51,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
     return (
         <AdminLayout>
             <Head
-                title={conversation.title || `Conversation #${conversation.id}`}
+                title={`${conversation.title || `Conversation #${conversation.id}`} | Conversations`}
             />
             <PageHeader
                 title={conversation.title || `Conversation #${conversation.id}`}

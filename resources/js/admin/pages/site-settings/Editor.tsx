@@ -136,7 +136,7 @@ export default function SiteSettingsEditor({ links: initialLinks, permissions }:
 
     return (
         <AdminLayout>
-            <Head title="Site Settings — Navigation" />
+            <Head title="Navigation | Site Settings" />
             <PageHeader title="Site Settings" backHref="/admin" backLabel="Back to Admin" />
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3, mt: -2 }}>
                 Manage the sidebar navigation links. Use arrows to reorder.

@@ -62,7 +62,7 @@ export default function Index({ memories, features, filters }: IndexProps) {
 
     return (
         <AdminLayout>
-            <Head title="AI Memories" />
+            <Head title="Memories | AI Tools" />
             <PageHeader
                 title="AI Memories"
                 backHref="/admin/ai"

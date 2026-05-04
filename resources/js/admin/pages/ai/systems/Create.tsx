@@ -34,7 +34,7 @@ export default function Create({ existingDefaults }: CreateProps) {
 
     return (
         <AdminLayout>
-            <Head title="Add AI System" />
+            <Head title="New | AI Systems" />
             <PageHeader
                 title="Add AI System"
                 backHref="/admin/ai/systems"

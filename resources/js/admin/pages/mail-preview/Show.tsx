@@ -22,7 +22,7 @@ interface MailPreviewShowProps {
 export default function MailPreviewShow({ mailable, subject, previewUrl, error }: MailPreviewShowProps) {
     return (
         <AdminLayout>
-            <Head title={`Mail Preview: ${mailable.name}`} />
+            <Head title={`${mailable.name} | Mail Preview`} />
             <PageHeader
                 title={mailable.name}
                 backHref="/admin/mail-preview"

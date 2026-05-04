@@ -52,7 +52,7 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
 
     return (
         <AdminLayout>
-            <Head title={`Preview — ${coverLetter.company_name}`} />
+            <Head title={`${coverLetter.company_name} Preview | Cover Letters`} />
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
                 <Link

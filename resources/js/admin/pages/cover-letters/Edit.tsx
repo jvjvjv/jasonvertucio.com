@@ -51,7 +51,7 @@ export default function Edit({ coverLetter, resumeVersions }: EditProps) {
 
     return (
         <AdminLayout>
-            <Head title={`Edit — ${coverLetter.company_name}`} />
+            <Head title={`${coverLetter.company_name} | Cover Letters`} />
             <PageHeader
                 title={coverLetter.company_name}
                 backHref="/admin/cover-letters"

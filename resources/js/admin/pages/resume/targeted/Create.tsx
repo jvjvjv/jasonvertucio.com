@@ -183,7 +183,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
 
     return (
         <AdminLayout>
-            <Head title="New Targeted Resume" />
+            <Head title="New | Targeted Resumes" />
             <PageHeader
                 title="New Targeted Resume"
                 backHref="/admin/resume/targeted-builder"
