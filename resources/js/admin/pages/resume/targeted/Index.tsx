@@ -2,6 +2,7 @@ import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
@@ -28,6 +29,8 @@ import useConfirmDialog from "../../../hooks/useConfirmDialog";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import { Tooltip } from "@mui/material";
+import React from "react";
 
 interface StatusOption {
     value: string;
@@ -161,7 +164,6 @@ export default function Index({
                                 <TableCell>Fit Score</TableCell>
                                 <TableCell>Usage</TableCell>
                                 <TableCell>Status</TableCell>
-                                <TableCell>Applied</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
@@ -232,12 +234,26 @@ export default function Index({
                                             <TableCell>
                                                 <StatusChip
                                                     status={displayStatus}
+                                                    colorMap={{
+                                                        applied: "success",
+                                                        finalized: "primary",
+                                                        pass: "default",
+                                                        active: "info",
+                                                    }}
+                                                    tip={
+                                                        resume?.applied_at &&
+                                                        new Date(
+                                                            resume.applied_at,
+                                                        ).toLocaleDateString(
+                                                            undefined,
+                                                            {
+                                                                year: "numeric",
+                                                                month: "short",
+                                                                day: "numeric",
+                                                            },
+                                                        )
+                                                    }
                                                 />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography variant="caption">
-                                                    {resume?.applied_at ?? "—"}
-                                                </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="caption">

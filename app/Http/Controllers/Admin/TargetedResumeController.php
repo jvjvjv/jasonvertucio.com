@@ -32,7 +32,7 @@ class TargetedResumeController extends Controller
      */
     public function index(Request $request): InertiaResponse
     {
-        $defaultStatuses = [AiConversationStatus::Active->value, TargetedResumeStatus::Finalized->value];
+        $defaultStatuses = [];
         $statuses = $request->input('status', $request->has('search') ? [] : $defaultStatuses);
         $statuses = is_array($statuses) ? $statuses : [$statuses];
         $search = $request->input('search', '');

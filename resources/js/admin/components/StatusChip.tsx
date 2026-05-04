@@ -1,30 +1,44 @@
-import Chip from '@mui/material/Chip';
-import { statusColor } from '../utils/statusColor';
-import type { ChipColor } from '../utils/statusColor';
+import { ReactNode } from "react";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import { statusColor } from "../utils/statusColor";
+import type { ChipColor } from "../utils/statusColor";
 
 interface StatusChipProps {
     status: string;
     label?: string;
     colorMap?: Record<string, ChipColor>;
-    variant?: 'outlined' | 'filled';
-    size?: 'small' | 'medium';
+    variant?: "outlined" | "filled";
+    size?: "small" | "medium";
+    tip?: ReactNode;
 }
-
 export default function StatusChip({
     status,
     label,
     colorMap,
-    variant = 'outlined',
-    size = 'small',
+    size = "small",
+    tip = undefined,
 }: StatusChipProps) {
     const color = colorMap?.[status] ?? statusColor(status);
-
-    return (
+    const variant = color === "default" ? "outlined" : "filled";
+    const chip = (
         <Chip
             label={label ?? status}
             size={size}
             color={color}
             variant={variant}
+            sx={{
+                cursor: tip ? "pointer" : "default",
+                userSelect: "none",
+            }}
         />
+    );
+
+    return tip ? (
+        <Tooltip title={tip} arrow placement="right">
+            {chip}
+        </Tooltip>
+    ) : (
+        chip
     );
 }

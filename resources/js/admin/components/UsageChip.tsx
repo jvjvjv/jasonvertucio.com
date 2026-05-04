@@ -3,6 +3,7 @@ import type { ChipProps } from "@mui/material/Chip";
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import type { ConversationUsage } from '../types';
+import { ReactNode } from "react";
 
 interface UsageChipProps {
     usage?: ConversationUsage | null;
@@ -39,15 +40,20 @@ export default function UsageChip({ usage }: UsageChipProps) {
     ].join('\n');
 
     return (
-        <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{tooltip}</span>} arrow>
+        <Tooltip
+            title={<span style={{ whiteSpace: "pre-line" }}>{tooltip}</span>}
+            arrow
+            placement="left"
+        >
             <Chip
                 label={`$${usage.cost_usd.toFixed(2)}`}
                 size="small"
                 color={chipColor}
                 variant={chipVariant}
                 sx={{
-                    display: 'inline-flex',
+                    display: "inline-flex",
                     fontWeight: 600,
+                    userSelect: "none",
                 }}
             />
         </Tooltip>
