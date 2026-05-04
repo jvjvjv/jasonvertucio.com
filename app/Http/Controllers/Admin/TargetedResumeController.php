@@ -145,6 +145,7 @@ class TargetedResumeController extends Controller
             jobLocation: $request->validated('job_location'),
             jobDescription: $request->validated('job_description'),
             resumeVersion: $resumeVersion,
+            jobUrlId: $request->validated('job_url_id'),
         );
 
         return response()->json([

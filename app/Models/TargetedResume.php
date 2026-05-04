@@ -15,6 +15,7 @@ class TargetedResume extends Model
     protected $fillable = [
         'resume_version_id',
         'ai_conversation_id',
+        'job_url_id',
         'company_name',
         'position',
         'title',
@@ -49,6 +50,11 @@ class TargetedResume extends Model
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(AiConversation::class, 'ai_conversation_id');
+    }
+
+    public function jobUrl(): BelongsTo
+    {
+        return $this->belongsTo(JobUrl::class);
     }
 
     public function coverLetters(): HasMany

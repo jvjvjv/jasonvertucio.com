@@ -37,6 +37,7 @@ class TargetedResumeService
         ?string $jobTitle = null,
         ?string $companyName = null,
         ?string $jobLocation = null,
+        ?string $jobUrlId = null,
     ): AiConversation {
         $conversation = AiConversation::create([
             'user_id' => auth()->id(),
@@ -48,6 +49,7 @@ class TargetedResumeService
                 'job_title' => $jobTitle,
                 'job_description' => $jobDescription,
                 'resume_version_id' => $resumeVersion->id,
+                'job_url_id' => $jobUrlId,
                 'step' => 'analysis',
                 'auto_start_pending' => true,
             ],
@@ -205,6 +207,7 @@ class TargetedResumeService
             ['ai_conversation_id' => $conversation->id],
             [
                 'resume_version_id' => $context['resume_version_id'],
+                'job_url_id' => $context['job_url_id'] ?? null,
                 'company_name' => $context['company_name'] ?? 'Unknown Company',
                 'position' => $context['job_title'] ?? 'Unknown Position',
                 'title' => $parsedResume['title'] ?? ($context['job_title'] ?? null),
