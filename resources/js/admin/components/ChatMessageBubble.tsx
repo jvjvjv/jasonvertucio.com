@@ -145,7 +145,7 @@ export default function ChatMessageBubble({
                     }}
                 />
                 {relativeSentLabel && localeDateTime ? (
-                    <Tooltip title={localeDateTime} arrow>
+                    <Tooltip title={`Sent: ${localeDateTime}`} arrow>
                         <Typography
                             variant="caption"
                             sx={{
@@ -154,6 +154,7 @@ export default function ChatMessageBubble({
                                 lineHeight: 1,
                                 color: `${isChatVariant ? (isUser ? "primary.contrastText" : "text.secondary") : "text.primary"}`,
                                 cursor: "help",
+                                opacity: 0.7,
                             }}
                         >
                             {relativeSentLabel}
