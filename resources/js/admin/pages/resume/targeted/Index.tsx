@@ -234,12 +234,6 @@ export default function Index({
                                             <TableCell>
                                                 <StatusChip
                                                     status={displayStatus}
-                                                    colorMap={{
-                                                        applied: "success",
-                                                        finalized: "primary",
-                                                        pass: "default",
-                                                        active: "info",
-                                                    }}
                                                     tip={
                                                         resume?.applied_at &&
                                                         new Date(

@@ -1,14 +1,15 @@
-export type ChipColor = 'success' | 'warning' | 'error' | 'default';
+export type ChipColor = 'primary' | 'secondary' |'success' | 'warning' | 'error' | 'info' | 'default';
 
 export function statusColor(status: string): ChipColor {
     switch (status) {
         case 'finalized':
+            return 'primary';
         case 'completed':
             return 'success';
         case 'active':
-            return 'warning';
+            return 'default';
         case 'pass':
-            return 'error';
+            return 'info';
         default:
             return 'default';
     }
