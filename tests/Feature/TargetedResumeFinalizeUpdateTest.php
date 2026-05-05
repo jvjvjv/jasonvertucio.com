@@ -4,16 +4,23 @@ namespace Tests\Feature;
 
 use App\Contracts\ResumeDataServiceContract;
 use App\Enums\AiConversationStatus;
+use App\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Models\AiConversation;
+use App\Models\AiInteractionLog;
+use App\Models\AiSystem;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\AiClientFactory;
 use App\Services\AiMemoryService;
+use App\Services\ClaudeService;
+use App\Services\ConversationUsageService;
 use App\Services\CoverLetterDocumentService;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
+use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Mockery;
 use Tests\TestCase;
 
 class TargetedResumeFinalizeUpdateTest extends TestCase
@@ -48,6 +55,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
             $this->createMock(AiMemoryService::class),
+            new ConversationUsageService(),
         );
 
         $firstResume = $service->saveTailoredResume($conversation, "Title: Full Stack Engineer\n\n# Summary\nOriginal content", 72);
@@ -108,6 +116,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
             $this->createMock(AiMemoryService::class),
+            new ConversationUsageService(),
         );
 
         $resume = $service->saveTailoredResume(
@@ -118,5 +127,83 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
 
         $this->assertSame('Senior Frontend Engineer', $resume->title);
         $this->assertSame('Senior Frontend Engineer', data_get($resume->tailored_data, 'title'));
+    }
+
+    public function testContinueConversationSyncsUsageAfterSuccessfulResponse(): void {
+        $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);
+        $resumeVersion = ResumeVersion::factory()->create();
+
+        $client = Mockery::mock(ClaudeService::class);
+        $client->shouldReceive('withSystem')->once()->andReturnSelf();
+        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
+        $client->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
+
+        $clientFactory = Mockery::mock(AiClientFactory::class);
+        $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
+
+        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+        $resumeDataService->shouldReceive('getAllEditableData')->once()->andReturn([]);
+
+        $memoryService = Mockery::mock(AiMemoryService::class);
+        $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
+
+        $service = new TargetedResumeService(
+            $clientFactory,
+            $resumeDataService,
+            $this->createMock(TargetedResumeDocumentService::class),
+            $this->createMock(CoverLetterDocumentService::class),
+            $memoryService,
+            new ConversationUsageService(),
+        );
+
+        $conversation = $service->startConversation(
+            $system,
+            'Build and maintain Laravel applications.',
+            $resumeVersion,
+            'Senior Laravel Engineer',
+            'Example Co',
+        );
+
+        iterator_to_array($service->continueConversation($conversation));
+
+        $conversation->refresh();
+
+        $this->assertSame(1200, $conversation->usage_input_tokens);
+        $this->assertSame(300, $conversation->usage_output_tokens);
+        $this->assertSame(1500, $conversation->usage_total_tokens);
+        $this->assertSame('0.008100', (string) $conversation->usage_cost_usd);
+        $this->assertNotNull($conversation->usage_synced_at);
+
+        $this->assertDatabaseHas('ai_interaction_logs', [
+            'ai_conversation_id' => $conversation->id,
+            'feature' => 'targeted-resume',
+            'status' => AiInteractionStatus::Success->value,
+            'input_tokens' => 1200,
+            'output_tokens' => 300,
+        ]);
+    }
+
+    private function usageAwareStream(): Generator {
+        yield [
+            'type' => 'message_start',
+            'message' => [
+                'usage' => ['input_tokens' => 1200],
+            ],
+        ];
+        yield [
+            'type' => 'content_block_delta',
+            'delta' => ['text' => 'Targeted resume analysis complete.'],
+        ];
+        yield [
+            'type' => 'message_delta',
+            'usage' => ['output_tokens' => 300],
+        ];
+        yield ['type' => 'message_stop'];
+    }
+
+    protected function tearDown(): void {
+        Mockery::close();
+
+        parent::tearDown();
     }
 }

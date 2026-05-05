@@ -18,6 +18,7 @@ class AiChatBotConversationService
     public function __construct(
         private AiClientFactory $clientFactory,
         private AiMemoryService $memoryService,
+        private ConversationUsageService $conversationUsageService,
     ) {
     }
 
@@ -150,6 +151,8 @@ class AiChatBotConversationService
                 'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
                 'status' => AiInteractionStatus::Success,
             ]);
+
+            $this->conversationUsageService->syncConversation($conversation->fresh());
         } catch (\Exception $exception) {
             AiInteractionLog::create([
                 'ai_system_id' => $conversation->aiSystem->id,

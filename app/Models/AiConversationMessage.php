@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class AiConversationMessage extends Model
 {
@@ -12,11 +13,20 @@ class AiConversationMessage extends Model
 
     public $timestamps = false;
 
+    protected static function booted(): void {
+        static::creating(function (self $message): void {
+            if ($message->created_at === null) {
+                $message->created_at = Carbon::now();
+            }
+        });
+    }
+
     protected $fillable = [
         'ai_conversation_id',
         'role',
         'content',
         'metadata',
+        'created_at',
     ];
 
     /**

@@ -26,13 +26,12 @@ class ConversationUsageSyncTest extends TestCase
         ]);
 
         $messageTimestamp = now()->subMinute()->setMicrosecond(0);
-        Carbon::setTestNow($messageTimestamp);
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'assistant',
             'content' => 'Recent assistant response',
+            'created_at' => $messageTimestamp,
         ]);
-        Carbon::setTestNow();
 
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
@@ -106,13 +105,12 @@ class ConversationUsageSyncTest extends TestCase
         ]);
 
         $oldMessageTimestamp = now()->subMinutes(30)->setMicrosecond(0);
-        Carbon::setTestNow($oldMessageTimestamp);
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'assistant',
             'content' => 'Old assistant response',
+            'created_at' => $oldMessageTimestamp,
         ]);
-        Carbon::setTestNow();
 
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
@@ -145,13 +143,12 @@ class ConversationUsageSyncTest extends TestCase
         ]);
 
         $systemMessageTimestamp = now()->subHours(2)->setMicrosecond(0);
-        Carbon::setTestNow($systemMessageTimestamp);
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'system',
             'content' => 'System prompt',
+            'created_at' => $systemMessageTimestamp,
         ]);
-        Carbon::setTestNow();
 
         $conversation->refresh();
         $this->assertNull($conversation->last_message_at);
@@ -161,13 +158,12 @@ class ConversationUsageSyncTest extends TestCase
         );
 
         $userMessageTimestamp = now()->subHour()->setMicrosecond(0);
-        Carbon::setTestNow($userMessageTimestamp);
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'user',
             'content' => 'Hello there',
+            'created_at' => $userMessageTimestamp,
         ]);
-        Carbon::setTestNow();
 
         $conversation->refresh();
         $this->assertSame(
@@ -176,13 +172,12 @@ class ConversationUsageSyncTest extends TestCase
         );
 
         $assistantMessageTimestamp = now()->subMinutes(30)->setMicrosecond(0);
-        Carbon::setTestNow($assistantMessageTimestamp);
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'assistant',
             'content' => 'Hi back!',
+            'created_at' => $assistantMessageTimestamp,
         ]);
-        Carbon::setTestNow();
 
         $conversation->refresh();
         $this->assertSame(

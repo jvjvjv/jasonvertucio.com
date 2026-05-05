@@ -2,11 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiChatBot;
 use App\Services\AiChatBotConversationService;
 use App\Services\AiClientFactory;
 use App\Services\AiMemoryService;
 use App\Services\ClaudeService;
-use App\Models\AiChatBot;
+use App\Services\ConversationUsageService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Mockery;
@@ -31,7 +32,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
 
         $conversation = $service->startConversation($bot);
 
@@ -43,11 +44,65 @@ class AiChatBotConversationServiceTest extends TestCase
         );
     }
 
+    public function test_continue_conversation_syncs_usage_after_successful_response(): void {
+        $bot = AiChatBot::factory()->create();
+
+        $client = Mockery::mock(ClaudeService::class);
+        $client->shouldReceive('withSystem')->once()->andReturnSelf();
+        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
+        $client->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
+
+        $clientFactory = Mockery::mock(AiClientFactory::class);
+        $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
+
+        $memoryService = Mockery::mock(AiMemoryService::class);
+        $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
+
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
+
+        $conversation = $service->startConversation($bot->fresh());
+
+        iterator_to_array($service->continueConversation($conversation, 'Tell me about Jason.'));
+
+        $conversation->refresh();
+
+        $this->assertSame(1200, $conversation->usage_input_tokens);
+        $this->assertSame(300, $conversation->usage_output_tokens);
+        $this->assertSame(1500, $conversation->usage_total_tokens);
+        $this->assertSame('0.008100', (string) $conversation->usage_cost_usd);
+        $this->assertNotNull($conversation->usage_synced_at);
+
+        $this->assertDatabaseHas('ai_interaction_logs', [
+            'ai_conversation_id' => $conversation->id,
+            'status' => 'success',
+            'input_tokens' => 1200,
+            'output_tokens' => 300,
+        ]);
+    }
+
     private function fakeStream(): Generator
     {
         yield [
             'type' => 'content_block_delta',
             'delta' => ['text' => 'Jason has led engineering teams and shipped backend systems.'],
+        ];
+        yield ['type' => 'message_stop'];
+    }
+
+    private function usageAwareStream(): Generator {
+        yield [
+            'type' => 'message_start',
+            'message' => [
+                'usage' => ['input_tokens' => 1200],
+            ],
+        ];
+        yield [
+            'type' => 'content_block_delta',
+            'delta' => ['text' => 'Jason has built backend systems.'],
+        ];
+        yield [
+            'type' => 'message_delta',
+            'usage' => ['output_tokens' => 300],
         ];
         yield ['type' => 'message_stop'];
     }

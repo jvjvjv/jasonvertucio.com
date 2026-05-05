@@ -105,6 +105,7 @@ class AiConversation extends Model
         }
 
         $lastMessageTimestamp = $this->messages()
+            ->reorder()
             ->where('role', '!=', 'system')
             ->latest('created_at')
             ->value('created_at');

@@ -24,6 +24,7 @@ class TargetedResumeService
         private \App\Services\TargetedResumeDocumentService $documentService,
         private CoverLetterDocumentService $coverLetterDocumentService,
         private AiMemoryService $memoryService,
+        private ConversationUsageService $conversationUsageService,
     ) {
     }
 
@@ -176,6 +177,8 @@ class TargetedResumeService
                 'duration_ms' => $durationMs,
                 'status' => AiInteractionStatus::Success,
             ]);
+
+            $this->conversationUsageService->syncConversation($conversation->fresh());
         } catch (\Exception $e) {
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
