@@ -50,8 +50,9 @@ class ConversationUsageService
                 $query->whereNotNull('input_tokens')
                     ->orWhereNotNull('output_tokens');
             })
-            ->selectRaw('model, COALESCE(SUM(input_tokens), 0) as input_tokens_sum, COALESCE(SUM(output_tokens), 0) as output_tokens_sum')
-            ->groupBy('model')
+            ->join('ai_systems', 'ai_systems.id', '=', 'ai_interaction_logs.ai_system_id')
+            ->selectRaw('ai_systems.provider as provider, ai_interaction_logs.model as model, COALESCE(SUM(ai_interaction_logs.input_tokens), 0) as input_tokens_sum, COALESCE(SUM(ai_interaction_logs.output_tokens), 0) as output_tokens_sum')
+            ->groupBy('ai_systems.provider', 'ai_interaction_logs.model')
             ->get();
 
         if ($rows->isEmpty()) {
@@ -78,14 +79,21 @@ class ConversationUsageService
 
     private function estimateCostUsd(Collection $rows): ?float
     {
-        $pricingByModel = (array) config('claude.pricing.models', []);
-        $defaultPricing = (array) config('claude.pricing.default', []);
-        $defaultInputRate = isset($defaultPricing['input_per_million']) ? (float) $defaultPricing['input_per_million'] : null;
-        $defaultOutputRate = isset($defaultPricing['output_per_million']) ? (float) $defaultPricing['output_per_million'] : null;
-
         $totalCost = 0.0;
 
         foreach ($rows as $row) {
+            $providerPricing = $this->pricingConfigForProvider((string) ($row->provider ?? ''));
+
+            if ($providerPricing === null) {
+                return null;
+            }
+
+            $pricingByModel = (array) ($providerPricing['models'] ?? []);
+            $defaultPricing = (array) ($providerPricing['default'] ?? []);
+
+            $defaultInputRate = isset($defaultPricing['input_per_million']) ? (float) $defaultPricing['input_per_million'] : null;
+            $defaultOutputRate = isset($defaultPricing['output_per_million']) ? (float) $defaultPricing['output_per_million'] : null;
+
             $model = (string) ($row->model ?? '');
             $modelPricing = (array) ($pricingByModel[$model] ?? []);
 
@@ -108,5 +116,16 @@ class ConversationUsageService
         }
 
         return round($totalCost, 6);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function pricingConfigForProvider(string $provider): ?array {
+        return match ($provider) {
+            'anthropic' => (array) config('claude.pricing', []),
+            'openai', 'openai-compatible' => (array) config('openai.pricing', []),
+            default => null,
+        };
     }
 }

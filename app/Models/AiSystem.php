@@ -22,6 +22,15 @@ class AiSystem extends Model
         'is_active',
         'config',
         'system_prompt',
+        'credentials',
+        'auth_type',
+        'endpoint_type',
+        'stream_protocol',
+        'system_prompt_mode',
+        'supports_tools',
+        'supports_json_mode',
+        'is_local_endpoint',
+        'pricing_profile',
     ];
 
     /**
@@ -32,7 +41,12 @@ class AiSystem extends Model
         return [
             'api_key' => 'encrypted',
             'config' => 'array',
+            'credentials' => 'encrypted:array',
+            'pricing_profile' => 'array',
             'is_active' => 'boolean',
+            'supports_tools' => 'boolean',
+            'supports_json_mode' => 'boolean',
+            'is_local_endpoint' => 'boolean',
             'temperature' => 'decimal:2',
             'max_tokens' => 'integer',
         ];

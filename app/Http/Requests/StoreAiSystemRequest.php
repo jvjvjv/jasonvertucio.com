@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\AiProvider;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAiSystemRequest extends FormRequest
 {
@@ -23,8 +25,12 @@ class StoreAiSystemRequest extends FormRequest
     {
         return [
             'name'        => ['required', 'string', 'max:255'],
-            'provider'    => ['required', 'string', 'in:anthropic'],
-            'api_key'     => ['required', 'string'],
+            'provider' => ['required', 'string', Rule::in(AiProvider::values())],
+            'api_key' => [
+                Rule::requiredIf(fn(): bool => $this->input('provider') !== AiProvider::OpenAICompatible->value),
+                'nullable',
+                'string',
+            ],
             'model'       => ['required', 'string', 'max:255'],
             'base_url'    => ['nullable', 'string', 'url', 'max:255'],
             'api_version' => ['nullable', 'string', 'max:50'],
@@ -33,6 +39,15 @@ class StoreAiSystemRequest extends FormRequest
             'is_active'   => ['boolean'],
             'system_prompt' => ['nullable', 'string'],
             'config'      => ['nullable', 'json'],
+            'credentials' => ['nullable', 'json'],
+            'auth_type' => ['nullable', 'string', 'max:50'],
+            'endpoint_type' => ['nullable', 'string', 'max:50'],
+            'stream_protocol' => ['nullable', 'string', 'max:50'],
+            'system_prompt_mode' => ['nullable', 'string', 'max:50'],
+            'supports_tools' => ['boolean'],
+            'supports_json_mode' => ['boolean'],
+            'is_local_endpoint' => ['boolean'],
+            'pricing_profile' => ['nullable', 'json'],
             'feature_defaults'   => ['nullable', 'array'],
             'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],
         ];

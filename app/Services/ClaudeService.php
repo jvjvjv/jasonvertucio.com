@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Contracts\AiClientContract;
 use Generator;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
-class ClaudeService
+class ClaudeService implements AiClientContract
 {
     private string $apiKey;
     private string $defaultModel;

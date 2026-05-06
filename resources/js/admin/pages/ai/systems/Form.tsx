@@ -35,7 +35,16 @@ interface AiSystemFormProps {
 }
 
 const ALL_FEATURES = ['targeted-resume', 'cover-letter'];
-const PROVIDERS = [{ value: 'anthropic', label: 'Anthropic' }];
+const PROVIDERS = [
+    { value: "anthropic", label: "Anthropic" },
+    { value: "openai", label: "OpenAI" },
+    {
+        value: "openai-compatible",
+        label: "OpenAI-Compatible (LM Studio, OpenRouter, Together, Groq)",
+    },
+];
+
+const PROVIDERS_REQUIRING_API_KEY = new Set(["anthropic", "openai"]);
 
 export default function AiSystemForm({ data, setData, errors, existingDefaults, isEdit = false }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
@@ -43,19 +52,30 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
     const [fetchError, setFetchError] = useState('');
 
     const fetchModels = async () => {
-        if (!data.provider || !data.api_key) return;
+        if (!data.provider) return;
+
+        if (PROVIDERS_REQUIRING_API_KEY.has(data.provider) && !data.api_key) {
+            return;
+        }
 
         setFetchingModels(true);
         setFetchError('');
 
         try {
-            const response = await fetch('/admin/ai/systems/fetch-models', {
-                method: 'POST',
+            const response = await fetch("/admin/ai/systems/fetch-models", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '',
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN":
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? "",
                 },
-                body: JSON.stringify({ provider: data.provider, api_key: data.api_key }),
+                body: JSON.stringify({
+                    provider: data.provider,
+                    api_key: data.api_key,
+                    base_url: data.base_url || null,
+                }),
             });
 
             const result = await response.json();
@@ -76,9 +96,24 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
 
     const handleProviderChange = (value: string) => {
         setData('provider', value);
+        setData("model", "");
         setAvailableModels([]);
         setFetchError('');
     };
+
+    const apiKeyHelperText = PROVIDERS_REQUIRING_API_KEY.has(data.provider)
+        ? errors.api_key || "Models will be fetched when you leave this field"
+        : errors.api_key || "Optional for local/self-hosted endpoints";
+
+    const baseUrlPlaceholder =
+        data.provider === "openai"
+            ? "https://api.openai.com/v1"
+            : data.provider === "openai-compatible"
+              ? "http://127.0.0.1:1234/v1"
+              : "https://api.anthropic.com/v1";
+
+    const apiVersionPlaceholder =
+        data.provider === "anthropic" ? "2023-06-01" : "Optional";
 
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
@@ -91,13 +126,20 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
 
     return (
         <>
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 2 }}>
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
                 <TextField
                     label="Name"
                     required
                     size="small"
                     value={data.name}
-                    onChange={(e) => setData('name', e.target.value)}
+                    onChange={(e) => setData("name", e.target.value)}
                     error={!!errors.name}
                     helperText={errors.name}
                     placeholder="My Claude System"
@@ -109,26 +151,46 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     size="small"
                     value={data.provider}
                     onChange={(e) => handleProviderChange(e.target.value)}
+                    disabled={isEdit}
                     error={!!errors.provider}
-                    helperText={errors.provider}
+                    helperText={
+                        errors.provider ||
+                        (isEdit
+                            ? "Provider cannot be changed after creation."
+                            : undefined)
+                    }
                 >
                     {PROVIDERS.map((p) => (
-                        <MenuItem key={p.value} value={p.value}>{p.label}</MenuItem>
+                        <MenuItem key={p.value} value={p.value}>
+                            {p.label}
+                        </MenuItem>
                     ))}
                 </TextField>
             </Box>
 
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 2 }}>
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
                 <TextField
                     label="API Key"
                     type="password"
                     required
                     size="small"
                     value={data.api_key}
-                    onChange={(e) => setData('api_key', e.target.value)}
+                    onChange={(e) => setData("api_key", e.target.value)}
+                    disabled={isEdit}
                     onBlur={fetchModels}
                     error={!!errors.api_key}
-                    helperText={errors.api_key || 'Models will be fetched when you leave this field'}
+                    helperText={
+                        isEdit
+                            ? "API key is stored securely and can only be changed by duplicating this system."
+                            : apiKeyHelperText
+                    }
                 />
                 <Box>
                     <TextField
@@ -138,12 +200,21 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                         size="small"
                         fullWidth
                         value={data.model}
-                        onChange={(e) => setData('model', e.target.value)}
+                        onChange={(e) => setData("model", e.target.value)}
+                        disabled={isEdit}
                         error={!!errors.model}
-                        helperText={errors.model || fetchError}
+                        helperText={
+                            errors.model ||
+                            fetchError ||
+                            (isEdit
+                                ? "Model cannot be changed after creation."
+                                : undefined)
+                        }
                         slotProps={{
                             input: {
-                                endAdornment: fetchingModels ? <CircularProgress size={20} /> : undefined,
+                                endAdornment: fetchingModels ? (
+                                    <CircularProgress size={20} />
+                                ) : undefined,
                             },
                         }}
                     >
@@ -156,35 +227,51 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 </Box>
             </Box>
 
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 2 }}>
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
                 <TextField
                     label="Base URL"
                     size="small"
                     value={data.base_url}
-                    onChange={(e) => setData('base_url', e.target.value)}
+                    onChange={(e) => setData("base_url", e.target.value)}
                     error={!!errors.base_url}
                     helperText={errors.base_url}
-                    placeholder="https://api.anthropic.com/v1"
+                    placeholder={baseUrlPlaceholder}
                 />
                 <TextField
                     label="API Version"
                     size="small"
                     value={data.api_version}
-                    onChange={(e) => setData('api_version', e.target.value)}
+                    onChange={(e) => setData("api_version", e.target.value)}
                     error={!!errors.api_version}
                     helperText={errors.api_version}
-                    placeholder="2023-06-01"
+                    placeholder={apiVersionPlaceholder}
                 />
             </Box>
 
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 2 }}>
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
                 <TextField
                     label="Max Tokens"
                     type="number"
                     required
                     size="small"
                     value={data.max_tokens}
-                    onChange={(e) => setData('max_tokens', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                        setData("max_tokens", parseInt(e.target.value) || 0)
+                    }
                     error={!!errors.max_tokens}
                     helperText={errors.max_tokens}
                     slotProps={{ htmlInput: { min: 1, max: 200000 } }}
@@ -194,7 +281,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     type="number"
                     size="small"
                     value={data.temperature}
-                    onChange={(e) => setData('temperature', e.target.value)}
+                    onChange={(e) => setData("temperature", e.target.value)}
                     error={!!errors.temperature}
                     helperText={errors.temperature}
                     slotProps={{ htmlInput: { min: 0, max: 1, step: 0.01 } }}
@@ -208,10 +295,10 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 multiline
                 rows={4}
                 value={data.config}
-                onChange={(e) => setData('config', e.target.value)}
+                onChange={(e) => setData("config", e.target.value)}
                 error={!!errors.config}
-                helperText={errors.config || 'Optional JSON configuration'}
-                slotProps={{ input: { sx: { fontFamily: 'monospace' } } }}
+                helperText={errors.config || "Optional JSON configuration"}
+                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
                 sx={{ mb: 2 }}
             />
 
@@ -219,7 +306,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 control={
                     <Checkbox
                         checked={data.is_active}
-                        onChange={(e) => setData('is_active', e.target.checked)}
+                        onChange={(e) => setData("is_active", e.target.checked)}
                     />
                 }
                 label="Active"
@@ -227,9 +314,17 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
             />
 
             <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Feature Defaults</Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                    Select features this system should be the default for. Greyed-out features are already assigned to another system.
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Feature Defaults
+                </Typography>
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ mb: 1 }}
+                >
+                    Select features this system should be the default for.
+                    Greyed-out features are already assigned to another system.
                 </Typography>
                 {ALL_FEATURES.map((feature) => {
                     const takenByOther = existingDefaults.includes(feature);
@@ -238,8 +333,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                             key={feature}
                             control={
                                 <Checkbox
-                                    checked={data.feature_defaults.includes(feature)}
-                                    onChange={() => handleFeatureToggle(feature)}
+                                    checked={data.feature_defaults.includes(
+                                        feature,
+                                    )}
+                                    onChange={() =>
+                                        handleFeatureToggle(feature)
+                                    }
                                     disabled={takenByOther}
                                 />
                             }

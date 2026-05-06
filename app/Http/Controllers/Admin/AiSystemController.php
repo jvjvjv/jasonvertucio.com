@@ -3,15 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Enums\AiProvider;
 use App\Http\Requests\StoreAiSystemRequest;
 use App\Http\Requests\UpdateAiSystemRequest;
 use App\Models\AiInteractionLog;
 use App\Models\AiSystem;
 use App\Models\AiSystemFeatureDefault;
 use App\Services\ClaudeService;
+use App\Services\OpenAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -57,9 +60,7 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
-        if (isset($data['config'])) {
-            $data['config'] = json_decode($data['config'], true);
-        }
+        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
 
         $system = AiSystem::create($data);
 
@@ -96,9 +97,7 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
-        if (isset($data['config'])) {
-            $data['config'] = json_decode($data['config'], true);
-        }
+        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
 
         $aiSystem->update($data);
 
@@ -149,26 +148,38 @@ class AiSystemController extends Controller
     public function fetchModels(Request $request): JsonResponse
     {
         $request->validate([
-            'provider' => ['required', 'string', 'in:anthropic'],
-            'api_key' => ['required', 'string'],
+            'provider' => ['required', 'string', Rule::in(AiProvider::values())],
+            'api_key' => ['nullable', 'string'],
+            'base_url' => ['nullable', 'string', 'url', 'max:255'],
         ]);
 
         try {
-            if ($request->input('provider') === 'anthropic') {
-                $client = new ClaudeService(
-                    apiKey: $request->input('api_key'),
-                );
-                $models = $client->listModels();
+            $provider = AiProvider::from($request->string('provider')->toString());
 
-                $formatted = collect($models)->map(fn (array $m) => [
-                    'id' => $m['id'],
-                    'name' => $m['display_name'] ?? $m['id'],
-                ])->sortBy('name')->values()->toArray();
-
-                return response()->json(['models' => $formatted]);
+            if ($provider->requiresApiKey() && blank($request->input('api_key'))) {
+                return response()->json(['models' => [], 'error' => 'API key is required for this provider.'], 422);
             }
 
-            return response()->json(['models' => [], 'message' => 'Provider not yet supported.'], 422);
+            $client = match ($provider) {
+                AiProvider::Anthropic => new ClaudeService(
+                    apiKey: (string) ($request->input('api_key') ?? ''),
+                    baseUrl: $request->string('base_url')->toString() ?: null,
+                ),
+                AiProvider::OpenAI, AiProvider::OpenAICompatible => new OpenAiService(
+                    apiKey: (string) ($request->input('api_key') ?? ''),
+                    baseUrl: $request->string('base_url')->toString() ?: null,
+                ),
+            };
+
+            $models = $client->listModels();
+
+            $formatted = collect($models)->map(fn(array $m) => [
+                'id' => $m['id'],
+                'name' => $m['display_name'] ?? $m['id'],
+            ])->sortBy('name')->values()->toArray();
+
+            return response()->json(['models' => $formatted]);
+
         } catch (\Exception $e) {
             return response()->json(['models' => [], 'error' => 'Failed to fetch models: ' . $e->getMessage()], 422);
         }
@@ -208,6 +219,22 @@ class AiSystemController extends Controller
                 'ai_system_id' => $system->id,
                 'feature' => $feature,
             ]);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param array<int, string> $fields
+     */
+    private function decodeJsonFields(array &$data, array $fields): void {
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $data) || $data[$field] === null || $data[$field] === '') {
+                continue;
+            }
+
+            if (is_string($data[$field])) {
+                $data[$field] = json_decode($data[$field], true);
+            }
         }
     }
 }

@@ -41,6 +41,15 @@ export interface AiSystem {
     max_tokens: number;
     temperature: number | null;
     config: Record<string, unknown> | null;
+    credentials?: Record<string, unknown> | null;
+    auth_type?: string | null;
+    endpoint_type?: string | null;
+    stream_protocol?: string | null;
+    system_prompt_mode?: string | null;
+    supports_tools?: boolean;
+    supports_json_mode?: boolean;
+    is_local_endpoint?: boolean;
+    pricing_profile?: Record<string, unknown> | null;
     is_active: boolean;
     interaction_logs_count: number;
     feature_defaults_list: string[];
