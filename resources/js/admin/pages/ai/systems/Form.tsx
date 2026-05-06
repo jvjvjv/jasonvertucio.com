@@ -48,17 +48,89 @@ const ALL_FEATURES = ['targeted-resume', 'cover-letter'];
 const PROVIDERS = [
     { value: "anthropic", label: "Anthropic" },
     { value: "openai", label: "OpenAI" },
+    { value: "gemini", label: "Google Gemini" },
+    { value: "grok", label: "xAI Grok" },
     {
         value: "openai-compatible",
         label: "OpenAI-Compatible (LM Studio, OpenRouter, Together, Groq)",
     },
 ];
 
-const PROVIDERS_REQUIRING_API_KEY = new Set(["anthropic", "openai"]);
+const PROVIDERS_REQUIRING_API_KEY = new Set([
+    "anthropic",
+    "openai",
+    "gemini",
+    "grok",
+]);
 const AUTH_TYPES = ["bearer", "x-api-key", "none", "custom"];
 const ENDPOINT_TYPES = ["managed", "openai-compatible", "local"];
 const STREAM_PROTOCOLS = ["sse", "chunked-json", "json-lines"];
 const SYSTEM_PROMPT_MODES = ["top-level", "messages"];
+
+const PROVIDER_DEFAULTS: Record<
+    string,
+    {
+        model: string;
+        baseUrl: string;
+        apiVersion: string;
+        authType: string;
+        endpointType: string;
+        streamProtocol: string;
+        systemPromptMode: string;
+        isLocalEndpoint: boolean;
+    }
+> = {
+    anthropic: {
+        model: "claude-sonnet-4-6",
+        baseUrl: "https://api.anthropic.com/v1",
+        apiVersion: "2023-06-01",
+        authType: "x-api-key",
+        endpointType: "managed",
+        streamProtocol: "sse",
+        systemPromptMode: "top-level",
+        isLocalEndpoint: false,
+    },
+    openai: {
+        model: "gpt-4o-mini",
+        baseUrl: "https://api.openai.com/v1",
+        apiVersion: "",
+        authType: "bearer",
+        endpointType: "managed",
+        streamProtocol: "chunked-json",
+        systemPromptMode: "messages",
+        isLocalEndpoint: false,
+    },
+    gemini: {
+        model: "gemini-2.5-flash",
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+        apiVersion: "v1beta",
+        authType: "x-api-key",
+        endpointType: "managed",
+        streamProtocol: "sse",
+        systemPromptMode: "top-level",
+        isLocalEndpoint: false,
+    },
+    grok: {
+        model: "grok-3-mini",
+        baseUrl: "https://api.x.ai/v1",
+        apiVersion: "",
+        authType: "bearer",
+        endpointType: "managed",
+        streamProtocol: "chunked-json",
+        systemPromptMode: "messages",
+        isLocalEndpoint: false,
+    },
+    "openai-compatible": {
+        model: "",
+        baseUrl: "http://127.0.0.1:1234/v1",
+        apiVersion: "",
+        authType: "none",
+        endpointType: "openai-compatible",
+        streamProtocol: "chunked-json",
+        systemPromptMode: "messages",
+        isLocalEndpoint: true,
+    },
+};
 
 export default function AiSystemForm({ data, setData, errors, existingDefaults, isEdit = false }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
@@ -109,25 +181,34 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
     };
 
     const handleProviderChange = (value: string) => {
+        const defaults = PROVIDER_DEFAULTS[value];
+
         setData('provider', value);
         setData("model", "");
         setAvailableModels([]);
         setFetchError('');
+
+        if (defaults !== undefined) {
+            setData("base_url", defaults.baseUrl);
+            setData("api_version", defaults.apiVersion);
+            setData("auth_type", defaults.authType);
+            setData("endpoint_type", defaults.endpointType);
+            setData("stream_protocol", defaults.streamProtocol);
+            setData("system_prompt_mode", defaults.systemPromptMode);
+            setData("is_local_endpoint", defaults.isLocalEndpoint);
+        }
     };
 
     const apiKeyHelperText = PROVIDERS_REQUIRING_API_KEY.has(data.provider)
         ? errors.api_key || "Models will be fetched when you leave this field"
         : errors.api_key || "Optional for local/self-hosted endpoints";
 
-    const baseUrlPlaceholder =
-        data.provider === "openai"
-            ? "https://api.openai.com/v1"
-            : data.provider === "openai-compatible"
-              ? "http://127.0.0.1:1234/v1"
-              : "https://api.anthropic.com/v1";
-
-    const apiVersionPlaceholder =
-        data.provider === "anthropic" ? "2023-06-01" : "Optional";
+    const providerDefaults =
+        PROVIDER_DEFAULTS[data.provider] ?? PROVIDER_DEFAULTS.anthropic;
+    const baseUrlPlaceholder = providerDefaults.baseUrl;
+    const apiVersionPlaceholder = providerDefaults.apiVersion || "Optional";
+    const modelPlaceholder =
+        providerDefaults.model || "Fetch models or enter model id";
 
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
@@ -217,6 +298,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                         onChange={(e) => setData("model", e.target.value)}
                         disabled={isEdit}
                         error={!!errors.model}
+                        placeholder={modelPlaceholder}
                         helperText={
                             errors.model ||
                             fetchError ||
