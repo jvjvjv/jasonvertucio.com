@@ -3,7 +3,8 @@
     "type": "module",
     "scripts": {
         "serve": "npm run dev",
-        "dev": "concurrently --kill-others-on-fail --names vite,proxy,laravel \"npm run dev:vite\" \"npm run https-proxy\" \"php artisan serve --host=0.0.0.0 --port=8001\"",
+        "dev": "concurrently --names vite,proxy,laravel \"npm run dev:vite\" \"npm run https-proxy\" \"php artisan serve --host=0.0.0.0 --port=8001\"",
+        "dev:clean": "fuser -k 8000/tcp 8001/tcp 5173/tcp >/dev/null 2>&1 || true",
         "dev:vite": "vite --host=localhost --port=5173 --strictPort",
         "https-proxy": "local-ssl-proxy --hostname 0.0.0.0 --source 8000 --target 8001 --cert .certs/localhost.pem --key .certs/localhost-key.pem",
         "build": "vite build",
