@@ -33,6 +33,18 @@ class AiClientFactory
                 maxTokens: $system->max_tokens,
                 baseUrl: $system->base_url,
             ),
+            AiProvider::Gemini => new GeminiService(
+                apiKey: $system->api_key,
+                model: $system->model,
+                maxTokens: $system->max_tokens,
+                baseUrl: $system->base_url,
+            ),
+            AiProvider::Grok => new GrokService(
+                apiKey: $system->api_key,
+                model: $system->model,
+                maxTokens: $system->max_tokens,
+                baseUrl: $system->base_url,
+            ),
         };
 
         if ($system->temperature !== null) {

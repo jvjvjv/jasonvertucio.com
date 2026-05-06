@@ -10,6 +10,8 @@ use App\Models\AiInteractionLog;
 use App\Models\AiSystem;
 use App\Models\AiSystemFeatureDefault;
 use App\Services\ClaudeService;
+use App\Services\GeminiService;
+use App\Services\GrokService;
 use App\Services\OpenAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -166,6 +168,14 @@ class AiSystemController extends Controller
                     baseUrl: $request->string('base_url')->toString() ?: null,
                 ),
                 AiProvider::OpenAI, AiProvider::OpenAICompatible => new OpenAiService(
+                    apiKey: (string) ($request->input('api_key') ?? ''),
+                    baseUrl: $request->string('base_url')->toString() ?: null,
+                ),
+                AiProvider::Gemini => new GeminiService(
+                    apiKey: (string) ($request->input('api_key') ?? ''),
+                    baseUrl: $request->string('base_url')->toString() ?: null,
+                ),
+                AiProvider::Grok => new GrokService(
                     apiKey: (string) ($request->input('api_key') ?? ''),
                     baseUrl: $request->string('base_url')->toString() ?: null,
                 ),
