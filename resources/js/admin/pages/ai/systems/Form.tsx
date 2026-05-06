@@ -21,7 +21,17 @@ interface FormData {
     api_version: string;
     max_tokens: number;
     temperature: string;
+    system_prompt: string;
     config: string;
+    credentials: string;
+    auth_type: string;
+    endpoint_type: string;
+    stream_protocol: string;
+    system_prompt_mode: string;
+    supports_tools: boolean;
+    supports_json_mode: boolean;
+    is_local_endpoint: boolean;
+    pricing_profile: string;
     is_active: boolean;
     feature_defaults: string[];
 }
@@ -45,6 +55,10 @@ const PROVIDERS = [
 ];
 
 const PROVIDERS_REQUIRING_API_KEY = new Set(["anthropic", "openai"]);
+const AUTH_TYPES = ["bearer", "x-api-key", "none", "custom"];
+const ENDPOINT_TYPES = ["managed", "openai-compatible", "local"];
+const STREAM_PROTOCOLS = ["sse", "chunked-json", "json-lines"];
+const SYSTEM_PROMPT_MODES = ["top-level", "messages"];
 
 export default function AiSystemForm({ data, setData, errors, existingDefaults, isEdit = false }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
@@ -179,7 +193,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 <TextField
                     label="API Key"
                     type="password"
-                    required
+                    required={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
                     size="small"
                     value={data.api_key}
                     onChange={(e) => setData("api_key", e.target.value)}
@@ -289,6 +303,22 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
             </Box>
 
             <TextField
+                label="System Prompt"
+                size="small"
+                fullWidth
+                multiline
+                rows={4}
+                value={data.system_prompt}
+                onChange={(e) => setData("system_prompt", e.target.value)}
+                error={!!errors.system_prompt}
+                helperText={
+                    errors.system_prompt ||
+                    "Optional default system prompt for this AI system"
+                }
+                sx={{ mb: 2 }}
+            />
+
+            <TextField
                 label="Config (JSON)"
                 size="small"
                 fullWidth
@@ -301,6 +331,183 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
                 sx={{ mb: 2 }}
             />
+
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
+                <TextField
+                    label="Auth Type"
+                    select
+                    size="small"
+                    value={data.auth_type}
+                    onChange={(e) => setData("auth_type", e.target.value)}
+                    error={!!errors.auth_type}
+                    helperText={
+                        errors.auth_type || "Optional provider auth mode"
+                    }
+                >
+                    <MenuItem value="">Default</MenuItem>
+                    {AUTH_TYPES.map((value) => (
+                        <MenuItem key={value} value={value}>
+                            {value}
+                        </MenuItem>
+                    ))}
+                </TextField>
+
+                <TextField
+                    label="Endpoint Type"
+                    select
+                    size="small"
+                    value={data.endpoint_type}
+                    onChange={(e) => setData("endpoint_type", e.target.value)}
+                    error={!!errors.endpoint_type}
+                    helperText={
+                        errors.endpoint_type ||
+                        "Optional endpoint classification"
+                    }
+                >
+                    <MenuItem value="">Default</MenuItem>
+                    {ENDPOINT_TYPES.map((value) => (
+                        <MenuItem key={value} value={value}>
+                            {value}
+                        </MenuItem>
+                    ))}
+                </TextField>
+            </Box>
+
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
+                <TextField
+                    label="Stream Protocol"
+                    select
+                    size="small"
+                    value={data.stream_protocol}
+                    onChange={(e) => setData("stream_protocol", e.target.value)}
+                    error={!!errors.stream_protocol}
+                    helperText={
+                        errors.stream_protocol || "Optional stream parser hint"
+                    }
+                >
+                    <MenuItem value="">Default</MenuItem>
+                    {STREAM_PROTOCOLS.map((value) => (
+                        <MenuItem key={value} value={value}>
+                            {value}
+                        </MenuItem>
+                    ))}
+                </TextField>
+
+                <TextField
+                    label="System Prompt Mode"
+                    select
+                    size="small"
+                    value={data.system_prompt_mode}
+                    onChange={(e) =>
+                        setData("system_prompt_mode", e.target.value)
+                    }
+                    error={!!errors.system_prompt_mode}
+                    helperText={
+                        errors.system_prompt_mode ||
+                        "How provider expects system prompts"
+                    }
+                >
+                    <MenuItem value="">Default</MenuItem>
+                    {SYSTEM_PROMPT_MODES.map((value) => (
+                        <MenuItem key={value} value={value}>
+                            {value}
+                        </MenuItem>
+                    ))}
+                </TextField>
+            </Box>
+
+            <TextField
+                label="Credentials (JSON)"
+                size="small"
+                fullWidth
+                multiline
+                rows={4}
+                value={data.credentials}
+                onChange={(e) => setData("credentials", e.target.value)}
+                error={!!errors.credentials}
+                helperText={
+                    errors.credentials ||
+                    "Optional encrypted credential payload for provider-specific keys"
+                }
+                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
+                sx={{ mb: 2 }}
+            />
+
+            <TextField
+                label="Pricing Profile (JSON)"
+                size="small"
+                fullWidth
+                multiline
+                rows={4}
+                value={data.pricing_profile}
+                onChange={(e) => setData("pricing_profile", e.target.value)}
+                error={!!errors.pricing_profile}
+                helperText={
+                    errors.pricing_profile ||
+                    "Optional per-system pricing override"
+                }
+                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
+                sx={{ mb: 2 }}
+            />
+
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 1,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={data.supports_tools}
+                            onChange={(e) =>
+                                setData("supports_tools", e.target.checked)
+                            }
+                        />
+                    }
+                    label="Supports Tools"
+                />
+
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={data.supports_json_mode}
+                            onChange={(e) =>
+                                setData("supports_json_mode", e.target.checked)
+                            }
+                        />
+                    }
+                    label="Supports JSON Mode"
+                />
+
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={data.is_local_endpoint}
+                            onChange={(e) =>
+                                setData("is_local_endpoint", e.target.checked)
+                            }
+                        />
+                    }
+                    label="Local Endpoint"
+                />
+            </Box>
 
             <FormControlLabel
                 control={

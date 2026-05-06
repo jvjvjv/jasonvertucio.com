@@ -26,7 +26,21 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         api_version: aiSystem.api_version ?? "",
         max_tokens: aiSystem.max_tokens,
         temperature: aiSystem.temperature?.toString() ?? "",
+        system_prompt: aiSystem.system_prompt ?? "",
         config: aiSystem.config ? JSON.stringify(aiSystem.config, null, 2) : "",
+        credentials: aiSystem.credentials
+            ? JSON.stringify(aiSystem.credentials, null, 2)
+            : "",
+        auth_type: aiSystem.auth_type ?? "",
+        endpoint_type: aiSystem.endpoint_type ?? "",
+        stream_protocol: aiSystem.stream_protocol ?? "",
+        system_prompt_mode: aiSystem.system_prompt_mode ?? "",
+        supports_tools: aiSystem.supports_tools ?? false,
+        supports_json_mode: aiSystem.supports_json_mode ?? false,
+        is_local_endpoint: aiSystem.is_local_endpoint ?? false,
+        pricing_profile: aiSystem.pricing_profile
+            ? JSON.stringify(aiSystem.pricing_profile, null, 2)
+            : "",
         is_active: aiSystem.is_active,
         feature_defaults: aiSystem.feature_defaults_list ?? [],
     });
