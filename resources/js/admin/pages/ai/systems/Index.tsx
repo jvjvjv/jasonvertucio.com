@@ -171,7 +171,7 @@ export default function Index({ systems }: IndexProps) {
                                                         )
                                                     }
                                                 >
-                                                    Copy
+                                                    Duplicate
                                                 </Button>
                                                 <Button
                                                     size="small"

@@ -8,6 +8,13 @@ interface PaginationProps {
     lastPage: number;
 }
 
+function decodePaginationLabel(label: string): string {
+    return label
+        .replace(/&laquo;/g, '«')
+        .replace(/&raquo;/g, '»')
+        .replace(/&amp;/g, '&');
+}
+
 export default function Pagination({ links, lastPage }: PaginationProps) {
     if (lastPage <= 1) {
         return null;
@@ -23,8 +30,9 @@ export default function Pagination({ links, lastPage }: PaginationProps) {
                     size="small"
                     variant={link.active ? 'contained' : 'text'}
                     disabled={!link.url}
-                    dangerouslySetInnerHTML={{ __html: link.label }}
-                />
+                >
+                    {decodePaginationLabel(link.label)}
+                </Button>
             ))}
         </Box>
     );

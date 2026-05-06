@@ -3,9 +3,9 @@
     "type": "module",
     "scripts": {
         "serve": "npm run dev",
-        "dev": "concurrently --kill-others-on-fail --names vite,proxy,laravel \"npm run dev:vite\" \"npm run https-proxy\" \"php artisan serve --host=127.0.0.1 --port=8001\"",
+        "dev": "concurrently --kill-others-on-fail --names vite,proxy,laravel \"npm run dev:vite\" \"npm run https-proxy\" \"php artisan serve --host=0.0.0.0 --port=8001\"",
         "dev:vite": "vite --host=localhost --port=5173 --strictPort",
-        "https-proxy": "local-ssl-proxy --source 8000 --target 8001 --cert .certs/localhost.pem --key .certs/localhost-key.pem",
+        "https-proxy": "local-ssl-proxy --hostname 0.0.0.0 --source 8000 --target 8001 --cert .certs/localhost.pem --key .certs/localhost-key.pem",
         "build": "vite build",
         "prod": "vite build",
         "push": "git checkout master && git merge develop --no-ff -m \"Merge branch 'develop'\" && git push && git checkout develop",
