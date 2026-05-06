@@ -7,6 +7,7 @@ enum AiProvider: string
     case Anthropic = 'anthropic';
     case OpenAI = 'openai';
     case OpenAICompatible = 'openai-compatible';
+    case Gemini = 'gemini';
 
     /**
      * @return array<int, string>

@@ -37,7 +37,7 @@ class ClaudeService implements AiClientContract
         ?string $apiVersion = null,
         ?string $baseUrl = null,
     ) {
-        $this->apiKey = $apiKey ?? config('claude.api_key', '');
+        $this->apiKey = $apiKey ?? '';
         $this->defaultModel = $model ?? config('claude.model', 'claude-sonnet-4-6');
         $this->defaultMaxTokens = $maxTokens ?? (int) config('claude.max_tokens', 1024);
         $this->apiVersion = $apiVersion ?? config('claude.api_version', '2023-06-01');
