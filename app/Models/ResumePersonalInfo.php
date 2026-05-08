@@ -20,6 +20,7 @@ class ResumePersonalInfo extends Model
         'email',
         'phone',
         'linkedin',
+        'url',
         'summary',
     ];
 

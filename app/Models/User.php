@@ -61,17 +61,6 @@ class User extends Authenticatable implements HasPasskeys
     ];
 
     /**
-     * Check if user can manage Canvas blog posts.
-     * Now uses RBAC instead of hardcoded email check.
-     *
-     * @return bool
-     */
-    public function canManageBinshopsBlogPosts(): bool
-    {
-        return $this->hasAnyRole(['super-admin', 'admin', 'editor']);
-    }
-
-    /**
      * Canvas compatibility: Check if user is an Admin.
      *
      * @return bool

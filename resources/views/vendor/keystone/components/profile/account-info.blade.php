@@ -11,7 +11,7 @@
             display: flex;
             justify-content: space-between;
             padding: 0.75rem 0;
-            border-bottom: 1px solid var(--keystone-border, #e5e7eb);
+            border-bottom: 1px solid var(--authkit-border, #e5e7eb);
         }
 
         .keystone-info-row:last-child {
@@ -20,11 +20,11 @@
 
         .keystone-info-label {
             font-weight: 500;
-            color: var(--keystone-text-muted, #6b7280);
+            color: var(--authkit-text-muted, #6b7280);
         }
 
         .keystone-info-value {
-            color: var(--keystone-text, #1f2937);
+            color: var(--authkit-text, #1f2937);
         }
     </style>
 

@@ -1,6 +1,6 @@
 <div class="keystone-form-container">
     <div class="keystone-form">
-        <h2 style="margin-bottom: 1.5rem; text-align: center; color: var(--keystone-text);">
+        <h2 style="margin-bottom: 1.5rem; text-align: center; color: var(--authkit-text);">
             Sign in with Passkey
         </h2>
 
@@ -21,7 +21,7 @@
         const statusDiv = document.getElementById('passkey-status');
 
         try {
-            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Preparing passkey authentication...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Preparing passkey authentication...</p>';
 
             // Get authentication options from server
             const optionsResponse = await fetch('{{ $loginOptionsUrl }}', {
@@ -48,7 +48,7 @@
                 }));
             }
 
-            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Follow your browser prompt...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Follow your browser prompt...</p>';
 
             // Get credential
             const credential = await navigator.credentials.get({ publicKey: options });
@@ -57,7 +57,7 @@
                 throw new Error('Passkey authentication was cancelled');
             }
 
-            statusDiv.innerHTML = '<p style="color: var(--keystone-primary);">Verifying...</p>';
+            statusDiv.innerHTML = '<p style="color: var(--authkit-primary);">Verifying...</p>';
 
             // Send credential to server
             const response = await fetch('{{ $authenticateUrl }}', {
@@ -94,7 +94,7 @@
 
         } catch (error) {
             console.error('Passkey authentication error:', error);
-            statusDiv.innerHTML = `<p style="color: var(--keystone-danger);">Error: ${error.message}</p>`;
+            statusDiv.innerHTML = `<p style="color: var(--authkit-danger);">Error: ${error.message}</p>`;
         }
     }
 

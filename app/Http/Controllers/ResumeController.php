@@ -75,6 +75,8 @@ class ResumeController extends Controller
         return view('resume.index', [
             'data' => $data,
             'canSave' => $canSave,
+            'docxExists' => (bool) $this->versionService->getLatestDocxPath(),
+            'pdfExists' => (bool) $this->versionService->getLatestPdfPath(),
         ]);
     }
 

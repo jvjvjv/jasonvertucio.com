@@ -81,3 +81,58 @@ In CentOS, SELinux may cause issues with storage.
 chcon -R -t httpd_sys_rw_content_t storage
 
 ```
+
+## Docker
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+### Build and run
+```bash
+docker compose up --build
+```
+
+The application will be available at **http://localhost:8003**.
+Vite HMR dev server runs on port **5175** (mapped from internal 5173).
+
+### Database configuration
+
+By default, the app connects to your **host machine's MySQL** via `host.docker.internal`. To use the containerized MariaDB instead, set `DB_HOST=db`:
+
+```bash
+DB_HOST=db docker compose up --build
+```
+
+Or create a `.env` file:
+```env
+DB_HOST=db
+DB_DATABASE=jasonvertucio
+DB_USERNAME=jasonvertucio
+DB_PASSWORD=jvsecret
+```
+
+### Services
+
+The Docker setup includes:
+- **app** — Laravel application with PHP-FPM, Nginx, Vite, and queue worker
+- **db** — MariaDB 11 (port 3308)
+- **redis** — Redis 7 Alpine (port 6379) for caching, sessions, and queues
+
+### Useful commands
+```bash
+# Run artisan commands inside the container
+docker compose exec app php artisan migrate
+docker compose exec app php artisan db:seed
+
+# Generate resume DOCX
+docker compose exec app node scripts/generate-resume.js
+
+# Access the container shell
+docker compose exec app bash
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (fresh start)
+docker compose down -v
+```

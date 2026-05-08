@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class AiFeatureMemory extends Model
+{
+    /** @use HasFactory<\Database\Factories\AiFeatureMemoryFactory> */
+    use HasFactory;
+
+    protected $fillable = [
+        'feature',
+        'category',
+        'key',
+        'content',
+        'confidence',
+        'source_conversation_id',
+        'last_reinforced_at',
+        'times_reinforced',
+        'is_active',
+        'metadata',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     */
+    protected function casts(): array
+    {
+        return [
+            'confidence' => 'integer',
+            'times_reinforced' => 'integer',
+            'is_active' => 'boolean',
+            'metadata' => 'array',
+            'last_reinforced_at' => 'datetime',
+        ];
+    }
+
+    public function sourceConversation(): BelongsTo
+    {
+        return $this->belongsTo(AiConversation::class, 'source_conversation_id');
+    }
+
+    /**
+     * @param Builder<self> $query
+     */
+    public function scopeForFeature(Builder $query, string $feature): Builder
+    {
+        return $query->where('feature', $feature);
+    }
+
+    /**
+     * @param Builder<self> $query
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * @param Builder<self> $query
+     */
+    public function scopeByCategory(Builder $query, string $category): Builder
+    {
+        return $query->where('category', $category);
+    }
+}

@@ -1,0 +1,82 @@
+services:
+  # ─── Database ──────────────────────────────────────────────────────────────
+  db:
+    image: mariadb:11
+    container_name: jv-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+      MARIADB_DATABASE: "${DB_DATABASE:-jasonvertucio}"
+      MARIADB_USER: "${DB_USERNAME:-jasonvertucio}"
+      MARIADB_PASSWORD: "${DB_PASSWORD:-jvsecret}"
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    networks:
+      - jv
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: jv-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - jv
+
+  # ─── Application (Laravel / PHP 8.4) ──────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: jv-app
+    restart: unless-stopped
+    working_dir: /var/www/app
+    volumes:
+      - .:/var/www/app
+      - vendor:/var/www/app/vendor
+      - node_modules:/var/www/app/node_modules
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8003"
+      DB_CONNECTION: mysql
+      # Default: connect to host MySQL. Change to "db" to use the container.
+      DB_HOST: "${DB_HOST:-host.docker.internal}"
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-jasonvertucio}"
+      DB_USERNAME: "${DB_USERNAME:-jasonvertucio}"
+      DB_PASSWORD: "${DB_PASSWORD:-jvsecret}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      LOG_CHANNEL: stderr
+    ports:
+      - "8003:8003"
+      - "5175:5173"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - jv
+
+volumes:
+  db_data:
+  vendor:
+  node_modules:
+
+networks:
+  jv:
+    driver: bridge

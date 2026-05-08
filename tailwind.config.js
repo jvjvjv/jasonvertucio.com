@@ -14,8 +14,8 @@ export default {
         link: '#4351a0',
       },
       fontFamily: {
-        heading: ['"Convection Condensed"', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
-        body: ['Corbel', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        heading: ['"Josefin Sans"', '"Impact"', '"Arial"', 'sans-serif'],
+        body: ['"Montserrat"', '"Arial"', 'sans-serif'],
       },
     },
   },

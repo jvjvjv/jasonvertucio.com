@@ -5,17 +5,19 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Support\Facades\File;
 use ReflectionClass;
 use Illuminate\Mail\Mailable;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class MailPreviewController {
-    public function index() {
+    public function index(): InertiaResponse {
         $mailables = $this->discoverMailables();
 
-        return view('admin.mail-preview.index', [
+        return Inertia::render('mail-preview/Index', [
             'mailables' => $mailables,
         ]);
     }
 
-    public function show($mailable) {
+    public function show($mailable): InertiaResponse {
         $mailables = $this->discoverMailables();
         $class = collect($mailables)->firstWhere('class', $mailable);
 
@@ -26,15 +28,16 @@ class MailPreviewController {
         try {
             $instance = $this->instantiateMailable($class['class']);
 
-            return view('admin.mail-preview.show', [
+            return Inertia::render('mail-preview/Show', [
                 'mailable' => $class,
                 'subject' => $instance->envelope()->subject ?? 'No Subject',
-                'mailableClass' => $mailable,
+                'previewUrl' => route('admin.mail-preview.preview', $mailable),
             ]);
         } catch (\Exception $e) {
-            return view('admin.mail-preview.show', [
+            return Inertia::render('mail-preview/Show', [
                 'mailable' => $class,
                 'error' => $e->getMessage(),
+                'previewUrl' => null,
             ]);
         }
     }

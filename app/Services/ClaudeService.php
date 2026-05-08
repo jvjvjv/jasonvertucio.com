@@ -1,0 +1,270 @@
+<?php
+
+namespace App\Services;
+
+use App\Contracts\AiClientContract;
+use Generator;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Http;
+
+class ClaudeService implements AiClientContract
+{
+    private string $apiKey;
+    private string $defaultModel;
+    private int $defaultMaxTokens;
+    private string $apiVersion;
+    private string $baseUrl;
+
+    /** @var string|null Per-request system prompt */
+    private ?string $system = null;
+
+    /** @var string|null Per-request model override */
+    private ?string $model = null;
+
+    /** @var int|null Per-request max_tokens override */
+    private ?int $maxTokens = null;
+
+    /** @var float|null Per-request temperature override */
+    private ?float $temperature = null;
+
+    /** @var array<int, array<string, mixed>> Per-request tools (user-defined or server-side) */
+    private array $tools = [];
+
+    public function __construct(
+        ?string $apiKey = null,
+        ?string $model = null,
+        ?int $maxTokens = null,
+        ?string $apiVersion = null,
+        ?string $baseUrl = null,
+    ) {
+        $this->apiKey = $apiKey ?? '';
+        $this->defaultModel = $model ?? config('claude.model', 'claude-sonnet-4-6');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('claude.max_tokens', 1024);
+        $this->apiVersion = $apiVersion ?? config('claude.api_version', '2023-06-01');
+        $this->baseUrl = $baseUrl ?? config('claude.base_url', 'https://api.anthropic.com/v1');
+    }
+
+    /**
+     * Set a system prompt for the next request.
+     */
+    public function withSystem(string $system): self
+    {
+        $this->system = $system;
+
+        return $this;
+    }
+
+    /**
+     * Override the model for the next request.
+     */
+    public function withModel(string $model): self
+    {
+        $this->model = $model;
+
+        return $this;
+    }
+
+    /**
+     * Override max tokens for the next request.
+     */
+    public function withMaxTokens(int $maxTokens): self
+    {
+        $this->maxTokens = $maxTokens;
+
+        return $this;
+    }
+
+    /**
+     * Set the temperature for the next request (0.0 to 1.0).
+     */
+    public function withTemperature(float $temperature): self
+    {
+        $this->temperature = $temperature;
+
+        return $this;
+    }
+
+    /**
+     * Attach tools for the next request.
+     *
+     * Accepts user-defined tools (name, description, input_schema) or
+     * server-side tool declarations (type, name) such as web_search_20260209.
+     *
+     * @param array<int, array<string, mixed>> $tools
+     */
+    public function withTools(array $tools): self
+    {
+        $this->tools = $tools;
+
+        return $this;
+    }
+
+    /**
+     * Enable Anthropic's server-side web search and web fetch tools for the next request.
+     *
+     * These are executed on Anthropic's infrastructure — no client-side handling required.
+     * The model searches the web automatically when it determines it is necessary.
+     */
+    public function withWebSearch(): self
+    {
+        $this->tools = [
+            ['type' => 'web_search_20260209', 'name' => 'web_search'],
+            ['type' => 'web_fetch_20260209', 'name' => 'web_fetch'],
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Send a message and return the parsed response.
+     *
+     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @return array{id: string, type: string, role: string, content: array<int, mixed>, model: string, stop_reason: string, usage: array{input_tokens: int, output_tokens: int}}
+     *
+     * @throws \RuntimeException
+     */
+    public function message(array $messages): array
+    {
+        $payload = $this->buildPayload($messages);
+
+        $response = Http::withHeaders($this->headers())
+            ->timeout(120)
+            ->post($this->baseUrl . '/messages', $payload);
+
+        $this->reset();
+
+        if (!$response->ok()) {
+            $body = $response->json();
+            $errorMessage = $body['error']['message'] ?? "HTTP {$response->status()}";
+            throw new \RuntimeException("Anthropic API error: {$errorMessage}");
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Send a message with streaming enabled.
+     *
+     * Yields decoded SSE event arrays. Use the 'type' key to distinguish
+     * event types (e.g., 'content_block_delta', 'message_stop').
+     *
+     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @return Generator<int, array<string, mixed>>
+     *
+     * @throws RequestException
+     */
+    public function stream(array $messages): Generator
+    {
+        $payload = $this->buildPayload($messages, streaming: true);
+
+        $response = Http::withHeaders($this->headers())
+            ->withOptions(['stream' => true])
+            ->timeout(120)
+            ->post($this->baseUrl . '/messages', $payload);
+
+        $this->reset();
+
+        if (!$response->ok()) {
+            $body = $response->json();
+            $errorMessage = $body['error']['message'] ?? "HTTP {$response->status()}";
+            throw new \RuntimeException("Anthropic API error: {$errorMessage}");
+        }
+
+        $body = $response->toPsrResponse()->getBody();
+        $buffer = '';
+
+        while (!$body->eof()) {
+            $buffer .= $body->read(1024);
+
+            while (($pos = strpos($buffer, "\n")) !== false) {
+                $line = substr($buffer, 0, $pos);
+                $buffer = substr($buffer, $pos + 1);
+
+                if (str_starts_with($line, 'data: ')) {
+                    $data = json_decode(substr($line, 6), true);
+
+                    if ($data !== null) {
+                        yield $data;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Build the request payload from current state.
+     *
+     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     */
+    private function buildPayload(array $messages, bool $streaming = false): array
+    {
+        $resolvedModel = $this->model ?? $this->defaultModel;
+
+        $payload = [
+            'model' => $resolvedModel,
+            'max_tokens' => $this->maxTokens ?? $this->defaultMaxTokens,
+            'messages' => $messages,
+        ];
+
+        if ($this->system !== null) {
+            $payload['system'] = $this->system;
+        }
+
+        if ($this->tools !== []) {
+            $payload['tools'] = $this->tools;
+        }
+
+        // claude-opus-4-7 removed sampling parameters (temperature, top_p, top_k)
+        if ($this->temperature !== null && $resolvedModel !== 'claude-opus-4-7') {
+            $payload['temperature'] = $this->temperature;
+        }
+
+        if ($streaming) {
+            $payload['stream'] = true;
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Get configured HTTP headers for the Anthropic API.
+     *
+     * @return array{x-api-key: string, anthropic-version: string, content-type: string}
+     */
+    private function headers(): array
+    {
+        return [
+            'x-api-key' => $this->apiKey,
+            'anthropic-version' => $this->apiVersion,
+            'content-type' => 'application/json',
+        ];
+    }
+
+    /**
+     * List available models from the Anthropic API.
+     *
+     * @return array<int, array{id: string, display_name: string, created_at: string}>
+     */
+    public function listModels(): array
+    {
+        $response = Http::withHeaders($this->headers())
+            ->timeout(15)
+            ->get($this->baseUrl . '/models', ['limit' => 100]);
+
+        $response->throw();
+
+        return $response->json('data', []);
+    }
+
+    /**
+     * Reset per-request overrides back to defaults.
+     */
+    private function reset(): void
+    {
+        $this->system = null;
+        $this->model = null;
+        $this->maxTokens = null;
+        $this->temperature = null;
+        $this->tools = [];
+    }
+}

@@ -6,6 +6,8 @@ use App\Mail\ResumeUpdated;
 use App\Models\ResumeShareCode;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ResumeUpdateEmailTest extends TestCase
@@ -22,6 +24,9 @@ class ResumeUpdateEmailTest extends TestCase
             'email' => 'admin-' . uniqid() . '@test.com',
             'password' => bcrypt('password'),
         ]);
+
+        Role::findOrCreate('admin', 'web');
+        Permission::findOrCreate('edit-resume', 'web');
         $this->admin->assignRole('admin');
         $this->admin->givePermissionTo('edit-resume');
     }

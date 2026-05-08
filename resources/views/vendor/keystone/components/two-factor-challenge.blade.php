@@ -3,7 +3,7 @@
         @csrf
 
         <div id="code-input" style="display: block;">
-            <div class="keystone-form-group">
+            <div class="keystone-form-group flex gap-2 flex-nowrap flex-col">
                 <label for="code" class="keystone-label">Authentication Code</label>
                 <input
                     id="code"
@@ -12,11 +12,12 @@
                     inputmode="numeric"
                     autofocus
                     autocomplete="one-time-code"
-                    class="keystone-input"
+                    class="keystone-input p-3 border border-primary/50 focus:border-primary border-radius-md"
                     placeholder="123456"
                     maxlength="6"
+                    required
                 >
-                <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
+                <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
                     Enter the code from your authenticator app.
                 </p>
                 @error('code')
@@ -33,10 +34,10 @@
                         id="recovery_code"
                         type="text"
                         name="recovery_code"
-                        class="keystone-input"
+                        class="keystone-input p-3 border border-primary/50 focus:border-primary border-radius-md"
                         placeholder="xxxxx-xxxxx"
                     >
-                    <p style="font-size: 0.875rem; color: var(--keystone-text-muted); margin-top: 0.5rem;">
+                    <p style="font-size: 0.875rem; color: var(--authkit-text-muted); margin-top: 0.5rem;">
                         Enter one of your recovery codes.
                     </p>
                     @error('recovery_code')
@@ -46,7 +47,7 @@
             </div>
         @endif
 
-        <button type="submit" class="keystone-button">
+        <button type="submit" class="keystone-button w-full mt-6 bg-primary text-white p-3 border border-primary border-radius-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
             Verify
         </button>
 

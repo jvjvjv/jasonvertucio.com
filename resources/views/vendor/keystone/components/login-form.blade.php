@@ -19,10 +19,10 @@
         }
 
         .keystone-form {
-            background: var(--keystone-bg);
+            background: var(--authkit-bg);
             padding: 2rem;
-            border-radius: var(--keystone-radius);
-            box-shadow: var(--keystone-shadow);
+            border-radius: var(--authkit-radius);
+            box-shadow: var(--authkit-shadow);
         }
 
         .keystone-form-group {
@@ -33,21 +33,21 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: var(--keystone-text);
+            color: var(--authkit-text);
         }
 
         .keystone-input {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid var(--keystone-border);
-            border-radius: var(--keystone-radius);
+            border: 1px solid var(--authkit-border);
+            border-radius: var(--authkit-radius);
             font-size: 1rem;
             transition: border-color 0.2s;
         }
 
         .keystone-input:focus {
             outline: none;
-            border-color: var(--keystone-primary);
+            border-color: var(--authkit-primary);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
@@ -60,10 +60,10 @@
         .keystone-button {
             width: 100%;
             padding: 0.75rem 1.5rem;
-            background: var(--keystone-primary);
+            background: var(--authkit-primary);
             color: white;
             border: none;
-            border-radius: var(--keystone-radius);
+            border-radius: var(--authkit-radius);
             font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
@@ -71,12 +71,12 @@
         }
 
         .keystone-button:hover {
-            background: var(--keystone-primary-hover);
+            background: var(--authkit-primary-hover);
         }
 
         .keystone-button-secondary {
-            background: var(--keystone-bg-secondary);
-            color: var(--keystone-text);
+            background: var(--authkit-bg-secondary);
+            color: var(--authkit-text);
             margin-top: 0.75rem;
         }
 
@@ -85,7 +85,7 @@
         }
 
         .keystone-error {
-            color: var(--keystone-danger);
+            color: var(--authkit-danger);
             font-size: 0.875rem;
             margin-top: 0.25rem;
         }
@@ -98,7 +98,7 @@
         }
 
         .keystone-link {
-            color: var(--keystone-primary);
+            color: var(--authkit-primary);
             text-decoration: none;
         }
 
@@ -111,14 +111,14 @@
             align-items: center;
             text-align: center;
             margin: 1.5rem 0;
-            color: var(--keystone-text-muted);
+            color: var(--authkit-text-muted);
         }
 
         .keystone-divider::before,
         .keystone-divider::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid var(--keystone-border);
+            border-bottom: 1px solid var(--authkit-border);
         }
 
         .keystone-divider::before {

@@ -17,12 +17,8 @@
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://db.onlinewebfonts.com">
-    <link rel="preconnect" href="https://fonts.cdnfonts.com">
     {{-- Fonts --}}
-    <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet">
-    <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
-    <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;700&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
     {{-- Custom styles for this template --}}
     @vite(['resources/css/app.css'])
     {{--
@@ -36,25 +32,30 @@
 
 <body id="page-top" class="fonts-loading font-body text-dark bg-gray-50">
 
+    <button
+        type="button"
+        class="sr-skip-to-content"
+        aria-controls="main-content"
+        onclick="document.getElementById('main-content')?.focus()"
+    >Skip to content</button>
+
     <header>
         <h1 class="sr-only">{{ $config['aria_title'] }}</h1>
-
     </header>
 
     <x-navigation :links="$config['links']" />
 
-    <main id="main-content" class="p-0 md:ml-52 lg:ml-64">
+    <main id="main-content" tabindex="-1" class="p-0 md:ml-52 lg:ml-64">
 
-
-        <x-about :about-me="$config['about_me']" />
+        <x-about :about-me="$config['about_me']" :summary="$resumeData['personal']['summary'] ?? ''" />
 
         <x-latest-blog :post="$blog" />
 
         <hr class="m-0 border-0 border-t border-dark/50">
 
-        <x-projects :projects="$config['projects']" />
+        <x-projects :projects="$resumeData['projects']" />
 
-        <x-skills :icons="$config['icons']" :workflow="$config['workflow']" />
+        <x-skills :skills="$resumeData['skills']" />
 
         {{-- <x-experience :experience="$config['experience']" /> --}}
 
@@ -78,6 +79,14 @@
             initFontLoader();
         }
     </script>
+
+    <button id="back-to-top"
+        type="button"
+        aria-label="Back to top"
+        onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white opacity-0 transition-opacity duration-300 pointer-events-none">
+        <i class="fa-solid fa-chevron-up text-xs"></i>
+    </button>
 
     @include('cookies')
     @include('gtag')

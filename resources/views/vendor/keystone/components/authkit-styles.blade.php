@@ -25,7 +25,7 @@
             border: 1px solid rgba(15, 23, 42, 0.12);
             border-radius: 1rem;
             padding: 2rem;
-            color: var(--keystone-text-primary);
+            color: var(--authkit-text-primary);
         }
 
         .keystone-form-group {
@@ -63,7 +63,7 @@
             gap: 0.5rem;
             font-weight: 500;
 
-            color: var(--keystone-text);
+            color: var(--authkit-text);
         }
 
         .keystone-button {
@@ -91,7 +91,7 @@
         }
 
         .keystone-error {
-            color: var(--keystone-danger);
+            color: var(--authkit-danger);
             font-size: 0.85rem;
             margin-top: 0.25rem;
         }
@@ -141,7 +141,7 @@
         /* Utility buttons + badges */
         .keystone-btn {
             padding: 0.65rem 1rem;
-            border-radius: var(--keystone-radius);
+            border-radius: var(--authkit-radius);
             font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
@@ -160,22 +160,22 @@
         }
 
         .keystone-btn-primary {
-            background: var(--keystone-primary);
+            background: var(--authkit-primary);
             color: var(--surface, #fff);
         }
 
         .keystone-btn-primary:hover {
-            background: var(--keystone-primary-hover);
+            background: var(--authkit-primary-hover);
         }
 
         .keystone-btn-secondary {
-            background: var(--keystone-bg-secondary);
-            color: var(--keystone-text);
-            border-color: var(--keystone-border);
+            background: var(--authkit-bg-secondary);
+            color: var(--authkit-text);
+            border-color: var(--authkit-border);
         }
 
         .keystone-btn-danger {
-            background: var(--keystone-danger);
+            background: var(--authkit-danger);
             color: #fff;
         }
 
@@ -185,7 +185,7 @@
         }
 
         .keystone-text-muted {
-            color: var(--keystone-text-muted);
+            color: var(--authkit-text-muted);
         }
 
         .keystone-text-success {
@@ -193,7 +193,7 @@
         }
 
         .keystone-text-error {
-            color: var(--keystone-danger);
+            color: var(--authkit-danger);
         }
 
         .keystone-badge {

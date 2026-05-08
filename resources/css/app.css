@@ -4,6 +4,7 @@
 @import "@fortawesome/fontawesome-free/css/solid.css";
 @import "@fortawesome/fontawesome-free/css/brands.css";
 @import "./font-loading.css";
+@import "./scrollbars.css";
 
 html {
     scroll-behavior: smooth;
@@ -21,12 +22,9 @@ html {
     --color-dark: #25292c;
     --color-link: #4351a0;
 
-    --font-family-heading: "Convection Condensed", "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
-    --font-family-subheading: "Saira Extra Condensed", "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
-    --font-family-body: Corbel, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-        sans-serif;
+    --font-family-heading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-subheading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-body: "Montserrat", "Arial", sans-serif;
 }
 
 /* Apply fonts globally */
@@ -55,6 +53,24 @@ h6 {
 }
 
 /* Other classes */
+
+.sr-skip-to-content {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    padding: 4px;
+    border-radius: 2px;
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    opacity: 0;
+    color:  #ffffff;
+    transition: all 0.2s ease-in-out;
+
+    &:focus {
+
+        opacity: 1;
+    }
+}
 
 .sr-only {
     color: #0000 !important;

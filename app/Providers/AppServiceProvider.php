@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\AiConversation;
 use App\Models\Comment;
+use App\Observers\AiConversationObserver;
 use App\Observers\CommentObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Schema::defaultStringLength(191);
+        AiConversation::observe(AiConversationObserver::class);
         Comment::observe(CommentObserver::class);
 
         // Force HTTPS in local development when using local-ssl-proxy

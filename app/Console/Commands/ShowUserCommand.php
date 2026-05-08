@@ -77,10 +77,6 @@ class ShowUserCommand extends Command
         if (method_exists($user, 'isSuperAdmin')) {
             $this->line("Super Admin: " . ($user->isSuperAdmin() ? "Yes" : "No"));
         }
-        if (method_exists($user, 'canManageBinshopsBlogPosts')) {
-            $this->line("Can Manage Blog: " . ($user->canManageBinshopsBlogPosts() ? "Yes" : "No"));
-        }
-
         return 0;
     }
 }
