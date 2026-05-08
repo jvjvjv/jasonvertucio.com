@@ -27,7 +27,7 @@ class AiSystemController extends Controller
      */
     public function index(): InertiaResponse
     {
-        $systems = AiSystem::withCount('interactionLogs')
+        $systems = AiSystem::withCount(['interactionLogs', 'chatBots'])
             ->with('featureDefaults')
             ->orderBy('name')
             ->get();
@@ -111,14 +111,26 @@ class AiSystemController extends Controller
 
     /**
      * Remove the specified AI system.
+     *
+     * Deactivates any linked chat bots (preserving the relationship) and soft-deletes the system.
      */
     public function destroy(AiSystem $aiSystem): RedirectResponse
     {
         $name = $aiSystem->name;
+        $botCount = $aiSystem->chatBots()->count();
+
+        if ($botCount > 0) {
+            $aiSystem->chatBots()->update(['is_active' => false]);
+        }
+
         $aiSystem->delete();
 
+        $message = $botCount > 0
+            ? "AI system \"{$name}\" deleted. {$botCount} chat bot(s) were deactivated."
+            : "AI system \"{$name}\" deleted successfully.";
+
         return redirect()->route('admin.ai.systems.index')
-            ->with('success', "AI system \"{$name}\" deleted successfully.");
+            ->with('success', $message);
     }
 
     /**

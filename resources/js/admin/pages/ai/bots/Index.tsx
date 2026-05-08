@@ -14,6 +14,7 @@ import AdminLayout from "../../../layouts/AdminLayout";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import EmptyTableRow from "../../../components/EmptyTableRow";
 import PageHeader from "../../../components/PageHeader";
+import UsageChip from "../../../components/UsageChip";
 import useConfirmDialog from "../../../hooks/useConfirmDialog";
 import type { AiChatBot } from "../../../types";
 
@@ -26,7 +27,7 @@ export default function Index({ bots }: IndexProps) {
 
     const handleDelete = (bot: AiChatBot) => {
         confirm(`Delete AI chat bot "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.id}`);
+            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
         });
     };
 
@@ -58,14 +59,15 @@ export default function Index({ bots }: IndexProps) {
                                 <TableCell>Slug</TableCell>
                                 <TableCell>AI System</TableCell>
                                 <TableCell>Access</TableCell>
-                                <TableCell>Conversations</TableCell>
+                                <TableCell>Sessions</TableCell>
+                                <TableCell>Usage</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {bots.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={6}
+                                    colSpan={7}
                                     message="No AI chat bots configured yet."
                                     actionLabel="Add your first one"
                                     actionHref="/admin/ai/chat-bots/new"
@@ -82,7 +84,7 @@ export default function Index({ bots }: IndexProps) {
                                         <TableCell>
                                             <Link
                                                 component={InertiaLink}
-                                                href={`/admin/ai/chat-bots/${bot.id}`}
+                                                href={`/admin/ai/chat-bots/${bot.slug}`}
                                                 underline="hover"
                                                 color="inherit"
                                                 sx={{ fontWeight: 500 }}
@@ -142,7 +144,20 @@ export default function Index({ bots }: IndexProps) {
                                             </Box>
                                         </TableCell>
                                         <TableCell>
-                                            {bot.conversations_count ?? 0}
+                                            {(bot.conversations_count ?? 0) > 0 ? (
+                                                <Link
+                                                    component={InertiaLink}
+                                                    href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
+                                                    underline="hover"
+                                                >
+                                                    {bot.conversations_count}
+                                                </Link>
+                                            ) : (
+                                                "0"
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <UsageChip usage={bot.usage} />
                                         </TableCell>
                                         <TableCell align="right">
                                             <Box
@@ -168,7 +183,8 @@ export default function Index({ bots }: IndexProps) {
                                                 </Button>
                                                 <Button
                                                     component={InertiaLink}
-                                                    href={`/admin/ai/chat-bots/${bot.id}`}
+                                                    href={`/admin/ai/chat-bots/${bot.slug}`}
+                                                    target="_blank"
                                                     size="small"
                                                 >
                                                     Edit

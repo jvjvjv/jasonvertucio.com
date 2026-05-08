@@ -22,6 +22,9 @@ class AiChatBotController extends Controller
         $bots = AiChatBot::query()
             ->with('aiSystem')
             ->withCount('conversations')
+            ->withSum('conversations', 'usage_input_tokens')
+            ->withSum('conversations', 'usage_output_tokens')
+            ->withSum('conversations', 'usage_cost_usd')
             ->orderBy('name')
             ->get()
             ->map(fn (AiChatBot $bot) => [
@@ -37,6 +40,13 @@ class AiChatBotController extends Controller
                 'require_visitor_identity' => $bot->require_visitor_identity,
                 'conversations_count' => $bot->conversations_count,
                 'ai_system_name' => $bot->aiSystem?->name,
+                'usage' => $bot->conversations_sum_usage_cost_usd !== null ? [
+                    'input_tokens' => (int) ($bot->conversations_sum_usage_input_tokens ?? 0),
+                    'output_tokens' => (int) ($bot->conversations_sum_usage_output_tokens ?? 0),
+                    'total_tokens' => null,
+                    'cost_usd' => (float) $bot->conversations_sum_usage_cost_usd,
+                    'synced_at' => null,
+                ] : null,
             ]);
 
         return Inertia::render('ai/bots/Index', [

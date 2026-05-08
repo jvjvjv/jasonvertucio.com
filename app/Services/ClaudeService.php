@@ -121,7 +121,7 @@ class ClaudeService implements AiClientContract
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
      * @return array{id: string, type: string, role: string, content: array<int, mixed>, model: string, stop_reason: string, usage: array{input_tokens: int, output_tokens: int}}
      *
-     * @throws RequestException
+     * @throws \RuntimeException
      */
     public function message(array $messages): array
     {
@@ -133,7 +133,11 @@ class ClaudeService implements AiClientContract
 
         $this->reset();
 
-        $response->throw();
+        if (!$response->ok()) {
+            $body = $response->json();
+            $errorMessage = $body['error']['message'] ?? "HTTP {$response->status()}";
+            throw new \RuntimeException("Anthropic API error: {$errorMessage}");
+        }
 
         return $response->json();
     }
@@ -160,7 +164,11 @@ class ClaudeService implements AiClientContract
 
         $this->reset();
 
-        $response->throw();
+        if (!$response->ok()) {
+            $body = $response->json();
+            $errorMessage = $body['error']['message'] ?? "HTTP {$response->status()}";
+            throw new \RuntimeException("Anthropic API error: {$errorMessage}");
+        }
 
         $body = $response->toPsrResponse()->getBody();
         $buffer = '';
@@ -190,8 +198,10 @@ class ClaudeService implements AiClientContract
      */
     private function buildPayload(array $messages, bool $streaming = false): array
     {
+        $resolvedModel = $this->model ?? $this->defaultModel;
+
         $payload = [
-            'model' => $this->model ?? $this->defaultModel,
+            'model' => $resolvedModel,
             'max_tokens' => $this->maxTokens ?? $this->defaultMaxTokens,
             'messages' => $messages,
         ];
@@ -204,7 +214,8 @@ class ClaudeService implements AiClientContract
             $payload['tools'] = $this->tools;
         }
 
-        if ($this->temperature !== null) {
+        // claude-opus-4-7 removed sampling parameters (temperature, top_p, top_k)
+        if ($this->temperature !== null && $resolvedModel !== 'claude-opus-4-7') {
             $payload['temperature'] = $this->temperature;
         }
 

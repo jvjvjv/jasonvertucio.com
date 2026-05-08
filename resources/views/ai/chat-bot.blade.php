@@ -157,6 +157,13 @@
             messagesNode.scrollTop = messagesNode.scrollHeight;
         };
 
+        textarea?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                form?.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+            }
+        });
+
         form?.addEventListener('submit', async (event) => {
             event.preventDefault();
             errorNode.textContent = '';

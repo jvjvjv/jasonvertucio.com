@@ -25,10 +25,15 @@ interface IndexProps {
 export default function Index({ systems }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleDelete = (id: number, name: string) => {
-        confirm(`Delete AI system "${name}"? This cannot be undone.`, () => {
-            router.delete(`/admin/ai/systems/${id}`);
-        });
+    const handleDelete = (system: AiSystem) => {
+        const botCount = system.chat_bots_count ?? 0;
+        const message = botCount > 0
+            ? `"${system.name}" is used by ${botCount} chat bot(s). Deleting it will deactivate those bots. The system data will be preserved. Continue?`
+            : `Delete AI system "${system.name}"? This cannot be undone.`;
+
+        confirm(message, () => {
+            router.delete(`/admin/ai/systems/${system.id}`);
+        }, { title: botCount > 0 ? 'System In Use' : 'Confirm Delete' });
     };
 
     const handleDuplicate = (id: number) => {
@@ -177,10 +182,7 @@ export default function Index({ systems }: IndexProps) {
                                                     size="small"
                                                     color="error"
                                                     onClick={() =>
-                                                        handleDelete(
-                                                            system.id,
-                                                            system.name,
-                                                        )
+                                                        handleDelete(system)
                                                     }
                                                 >
                                                     Delete

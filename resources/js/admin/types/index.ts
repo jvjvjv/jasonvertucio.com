@@ -52,6 +52,7 @@ export interface AiSystem {
     pricing_profile?: Record<string, unknown> | null;
     is_active: boolean;
     interaction_logs_count: number;
+    chat_bots_count: number;
     feature_defaults_list: string[];
 }
 
@@ -70,6 +71,7 @@ export interface AiChatBot {
     conversations_count?: number;
     ai_system_id?: number;
     ai_system_name?: string | null;
+    usage?: ConversationUsage | null;
 }
 
 export interface LogEntry {
