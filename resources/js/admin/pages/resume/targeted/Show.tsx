@@ -10,7 +10,12 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ChatIcon from "@mui/icons-material/Chat";
 import EditIcon from "@mui/icons-material/Edit";
+import InfoIcon from "@mui/icons-material/Info";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import StatusChip from "../../../components/StatusChip";
 import AdminLayout from "../../../layouts/AdminLayout";
 import PageHeader from "../../../components/PageHeader";
@@ -382,28 +387,87 @@ export default function Show({
     return (
         <AdminLayout>
             <Head title={`${pageTitle} | Targeted Resumes`} />
-            <PageHeader
-                title={pageTitle}
-                backHref="/admin/resume/targeted-builder"
-                backLabel="Back to Targeted Resumes"
-            />
+            <PageHeader title={pageTitle} />
 
             <TargetedBuilderStatusBar
                 conversation={conversation}
                 targetedResume={targetedResume}
                 coverLetter={coverLetter}
-                onApplied={handleApplied}
-                onPass={handlePass}
             />
 
-            <Tabs
-                value={activeTab}
-                onChange={(_, v) => setActiveTab(v)}
-                sx={{ mb: 2 }}
+            <Box
+                sx={{
+                    position: "sticky",
+                    top: { xs: 56, md: 64 },
+                    zIndex: 10,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    bgcolor: "background.paper",
+                    borderBottom: 1,
+                    borderColor: "divider",
+                }}
             >
-                <Tab label="Chat" />
-                <Tab label="Details" />
-            </Tabs>
+                <IconButton
+                    component={InertiaLink}
+                    href="/admin/resume/targeted-builder"
+                    aria-label="Back to Targeted Resumes"
+                    size="small"
+                    sx={{ ml: 0.5 }}
+                >
+                    <ArrowBackIcon fontSize="small" />
+                </IconButton>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, v) => setActiveTab(v)}
+                    aria-label="Targeted resume tabs"
+                    sx={{
+                        "& .MuiTab-root": {
+                            minWidth: 0,
+                            px: 2,
+                            py: 1.5,
+                        },
+                    }}
+                >
+                    <Tab icon={<ChatIcon />} />
+                    <Tab icon={<InfoIcon />} />
+                </Tabs>
+                <Box sx={{ flexGrow: 1 }} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        pr: 1,
+                    }}
+                >
+                    <Button
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                        onClick={handleApplied}
+                        disabled={
+                            !targetedResume ||
+                            targetedResume.status === "applied"
+                        }
+                    >
+                        {targetedResume?.status === "applied"
+                            ? "Applied"
+                            : "Mark Applied"}
+                    </Button>
+                    {conversation.status === "active" && (
+                        <Button
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                            onClick={handlePass}
+                        >
+                            Pass
+                        </Button>
+                    )}
+                </Box>
+            </Box>
 
             {(finalizeError || finalizeCoverLetterError) && (
                 <Box
@@ -457,6 +521,34 @@ export default function Show({
                                     ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
                                     : undefined
                             }
+                            extraActions={
+                                targetedResume ? (
+                                    <>
+                                        {targetedResume.docx_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/StickyNote2/docx`}
+                                                title="Download resume DOCX"
+                                                color="success"
+                                            >
+                                                <StickyNote2Icon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        {targetedResume.pdf_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/StickyNote2/pdf`}
+                                                title="Download resume PDF"
+                                                color="success"
+                                            >
+                                                <PictureAsPdfIcon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                    </>
+                                ) : undefined
+                            }
                         />
                         <BuilderStatusCard
                             label="Cover Letter"
@@ -481,14 +573,38 @@ export default function Show({
                             }
                             extraActions={
                                 coverLetter ? (
-                                    <IconButton
-                                        size="small"
-                                        component={InertiaLink}
-                                        href={`/admin/cover-letters/${coverLetter.id}`}
-                                        title="Edit cover letter"
-                                    >
-                                        <EditIcon fontSize="small" />
-                                    </IconButton>
+                                    <>
+                                        {coverLetter.docx_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/cover-letters/${coverLetter.id}/StickyNote2/docx`}
+                                                title="Download cover letter DOCX"
+                                                color="secondary"
+                                            >
+                                                <StickyNote2Icon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        {coverLetter.pdf_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/cover-letters/${coverLetter.id}/StickyNote2/pdf`}
+                                                title="Download cover letter PDF"
+                                                color="secondary"
+                                            >
+                                                <PictureAsPdfIcon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        <IconButton
+                                            size="small"
+                                            component={InertiaLink}
+                                            href={`/admin/cover-letters/${coverLetter.id}`}
+                                            title="Edit cover letter"
+                                        >
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                    </>
                                 ) : undefined
                             }
                         />
@@ -531,6 +647,7 @@ export default function Show({
                                         role="assistant"
                                         content={streamingContent}
                                         variant="chat"
+                                        isStreaming
                                     />
                                 )}
                                 {isStreaming && !streamingContent && (

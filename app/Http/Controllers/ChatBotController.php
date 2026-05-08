@@ -52,6 +52,9 @@ class ChatBotController extends Controller
                 'description' => $aiChatBot->description,
                 'is_public' => $aiChatBot->is_public,
                 'require_visitor_identity' => $aiChatBot->require_visitor_identity,
+                'total_cost_usd' => (float) (AiConversation::query()
+                    ->where('ai_chat_bot_id', $aiChatBot->id)
+                    ->sum('usage_cost_usd') ?? 0),
             ],
             'messages' => $messages,
             'history' => $history,
@@ -189,7 +192,7 @@ class ChatBotController extends Controller
     }
 
     /**
-     * @return array<int, array{handle: string, label: string, is_current: bool, updated_at: string}>
+    * @return array<int, array{handle: string, label: string, is_current: bool, updated_at: string, cost_usd: ?float}>
      */
     private function historyForBot(Request $request, AiChatBot $aiChatBot): array
     {
@@ -225,6 +228,9 @@ class ChatBotController extends Controller
                     'updated_at' => $conversation->last_message_at?->diffForHumans()
                         ?? $conversation->updated_at?->diffForHumans()
                         ?? 'just now',
+                    'cost_usd' => $conversation->usage_cost_usd !== null
+                        ? (float) $conversation->usage_cost_usd
+                        : null,
                 ];
             })
             ->filter()

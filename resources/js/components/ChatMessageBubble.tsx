@@ -1,8 +1,9 @@
-import Box from '@mui/material/Box';
+import Box from "@mui/material/Box";
+import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { marked } from 'marked';
-import { markdownSx } from '../admin/utils/markdownSx';
+import { marked } from "marked";
+import { markdownSx } from "../admin/utils/markdownSx";
 
 interface ChatMessageBubbleProps {
     content: string;
@@ -10,6 +11,7 @@ interface ChatMessageBubbleProps {
     maxWidth?: string;
     variant?: "chat" | "history";
     sentAt?: string | null;
+    isStreaming?: boolean;
 }
 
 function getRelativeSentLabel(
@@ -73,21 +75,21 @@ function getLocaleDateTime(sentAt: string | null | undefined): string | null {
 }
 
 const userMarkdownOverrides = {
-    '& a': {
-        color: 'inherit',
+    "& a": {
+        color: "inherit",
     },
-    '& code': {
-        bgcolor: 'rgba(255,255,255,0.2)',
+    "& code": {
+        bgcolor: "rgba(255,255,255,0.2)",
     },
-    '& pre': {
-        bgcolor: 'rgba(255,255,255,0.2)',
+    "& pre": {
+        bgcolor: "rgba(255,255,255,0.2)",
     },
-    '& blockquote': {
-        borderLeftColor: 'rgba(255,255,255,0.55)',
-        color: 'inherit',
+    "& blockquote": {
+        borderLeftColor: "rgba(255,255,255,0.55)",
+        color: "inherit",
     },
-    '& hr': {
-        borderTopColor: 'rgba(255,255,255,0.35)',
+    "& hr": {
+        borderTopColor: "rgba(255,255,255,0.35)",
     },
 };
 
@@ -97,6 +99,7 @@ export default function ChatMessageBubble({
     maxWidth = "80%",
     variant = "chat",
     sentAt = null,
+    isStreaming = false,
 }: ChatMessageBubbleProps) {
     const isUser = role === "user";
     const isChatVariant = variant === "chat";
@@ -160,6 +163,19 @@ export default function ChatMessageBubble({
                             {relativeSentLabel}
                         </Typography>
                     </Tooltip>
+                ) : null}
+                {isStreaming ? (
+                    <Box
+                        sx={{
+                            mt: 1.5,
+                            width: "100%",
+                        }}
+                        role="status"
+                        aria-live="polite"
+                        aria-label="Assistant response is still streaming"
+                    >
+                        <LinearProgress />
+                    </Box>
                 ) : null}
             </Box>
         </Box>

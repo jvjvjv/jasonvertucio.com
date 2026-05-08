@@ -1,12 +1,14 @@
 import { Head, router } from '@inertiajs/react';
+import AddCommentIcon from "@mui/icons-material/AddComment";
+import ChatIcon from "@mui/icons-material/Chat";
+import InfoIcon from "@mui/icons-material/Info";
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CircularProgress from '@mui/material/CircularProgress';
+import CardContent from "@mui/material/CardContent";
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
@@ -23,6 +25,7 @@ interface HistoryItem {
     label: string;
     is_current: boolean;
     updated_at: string;
+    cost_usd: number | null;
 }
 
 interface ChatMessage {
@@ -35,6 +38,7 @@ interface Bot {
     description: string | null;
     is_public: boolean;
     require_visitor_identity: boolean;
+    total_cost_usd: number;
 }
 
 interface ChatBotProps {
@@ -66,6 +70,14 @@ export default function ChatBot({
     const [messageText, setMessageText] = useState('');
     const [activeTab, setActiveTab] = useState(0);
     const messagesRef = useRef<HTMLDivElement>(null);
+
+    const formatCost = (value: number | null | undefined): string => {
+        if (value == null) {
+            return "—";
+        }
+
+        return `$${value.toFixed(2)}`;
+    };
 
     useEffect(() => {
         setMessages(initialMessages);
@@ -128,33 +140,61 @@ export default function ChatBot({
 
             const decoder = new TextDecoder();
             let accumulated = '';
+            let bufferedText = "";
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    break;
+            const processDataLine = (line: string): void => {
+                if (!line.startsWith("data: ")) {
+                    return;
                 }
 
-                for (const line of decoder.decode(value, { stream: true }).split('\n')) {
-                    if (!line.startsWith('data: ')) {
-                        continue;
-                    }
-                    const jsonStr = line.slice(6).trim();
-                    if (!jsonStr || jsonStr === '[DONE]') {
-                        continue;
-                    }
-                    const event = JSON.parse(jsonStr) as {
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr || jsonStr === "[DONE]") {
+                    return;
+                }
+
+                let event: {
+                    type: string;
+                    delta?: { text?: string };
+                    message?: string;
+                };
+
+                try {
+                    event = JSON.parse(jsonStr) as {
                         type: string;
                         delta?: { text?: string };
                         message?: string;
                     };
-                    if (event.type === 'content_block_delta' && event.delta?.text) {
-                        accumulated += event.delta.text;
-                        setStreamingContent(accumulated);
-                    } else if (event.type === 'error') {
-                        throw new Error(event.message ?? 'Unknown error');
-                    }
+                } catch {
+                    return;
                 }
+
+                if (event.type === "content_block_delta" && event.delta?.text) {
+                    accumulated += event.delta.text;
+                    setStreamingContent(accumulated);
+                } else if (event.type === "error") {
+                    throw new Error(event.message ?? "Unknown error");
+                }
+            };
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                bufferedText += decoder.decode(value, { stream: true });
+                const lines = bufferedText.split("\n");
+                bufferedText = lines.pop() ?? "";
+
+                for (const line of lines) {
+                    processDataLine(line);
+                }
+            }
+
+            bufferedText += decoder.decode();
+            for (const line of bufferedText.split("\n")) {
+                processDataLine(line);
             }
 
             if (accumulated) {
@@ -180,82 +220,129 @@ export default function ChatBot({
     return (
         <>
             <Head title={bot.name} />
-            <Box sx={{ mx: 'auto', width: '100%', maxWidth: 1200, px: 2, py: 4 }}>
-                <Stack spacing={3}>
-                    <Card>
-                        <CardContent>
-                            <Stack
-                                direction={{ xs: 'column', md: 'row' }}
-                                justifyContent="space-between"
-                                alignItems={{ xs: 'flex-start', md: 'flex-start' }}
-                                spacing={2}
+            <Box
+                sx={{ mx: "auto", width: "100%", maxWidth: 1200, px: 2, py: 4 }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            position: "sticky",
+                            top: { xs: 56, md: 64 },
+                            zIndex: 10,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            bgcolor: "background.paper",
+                            borderBottom: 1,
+                            borderColor: "divider",
+                        }}
+                    >
+                        <Tabs
+                            value={activeTab}
+                            onChange={(_, v) => setActiveTab(v)}
+                            aria-label="Chat page tabs"
+                            sx={{
+                                "& .MuiTab-root": {
+                                    minWidth: 0,
+                                    px: 2,
+                                    py: 1.5,
+                                },
+                            }}
+                        >
+                            <Tab icon={<ChatIcon />} />
+                            <Tab icon={<InfoIcon />} />
+                        </Tabs>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Box sx={{ pr: 1 }}>
+                            <IconButton
+                                aria-label="Start a new chat"
+                                size="small"
+                                onClick={handleReset}
                             >
-                                <Box>
-                                    <Typography
-                                        variant="overline"
-                                        color="text.secondary"
-                                        sx={{ letterSpacing: '0.18em' }}
-                                    >
-                                        AI Chat Bot
-                                    </Typography>
-                                    <Typography variant="h2" sx={{ mt: 0.25 }}>
-                                        {bot.name}
-                                    </Typography>
-                                    {bot.description ? (
-                                        <Typography sx={{ mt: 1, maxWidth: 840 }} color="text.secondary">
-                                            {bot.description}
-                                        </Typography>
-                                    ) : null}
-                                </Box>
-                                <Button
-                                    type="button"
-                                    variant="outlined"
-                                    onClick={handleReset}
-                                    sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' } }}
-                                >
-                                    New Chat
-                                </Button>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-
-                    <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-                        <Tab label="Chat" />
-                        <Tab label="Details" />
-                    </Tabs>
+                                <AddCommentIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    </Box>
 
                     {activeTab === 0 ? (
                         <Card>
                             <CardContent sx={{ p: 0 }}>
-                                <Box sx={{ px: 3, py: 2 }}>
-                                    <Typography variant="h4">Conversation</Typography>
-                                </Box>
-                                <Divider />
-
                                 <Box
                                     ref={messagesRef}
                                     sx={{
-                                        maxHeight: '62vh',
-                                        overflowY: 'auto',
-                                        display: 'flex',
-                                        flexDirection: 'column',
+                                        display: "flex",
+                                        flexDirection: "column",
                                         gap: 2,
                                         px: 3,
                                         py: 2.5,
                                     }}
                                 >
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Stack
+                                                direction={{
+                                                    xs: "column",
+                                                    md: "row",
+                                                }}
+                                                justifyContent="space-between"
+                                                alignItems={{
+                                                    xs: "flex-start",
+                                                    md: "flex-start",
+                                                }}
+                                                spacing={2}
+                                            >
+                                                <Box>
+                                                    <Typography
+                                                        variant="overline"
+                                                        color="text.secondary"
+                                                        sx={{
+                                                            letterSpacing:
+                                                                "0.18em",
+                                                        }}
+                                                    >
+                                                        AI Chat Bot
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="h3"
+                                                        sx={{ mt: 0.25 }}
+                                                    >
+                                                        {bot.name}
+                                                    </Typography>
+                                                    {bot.description ? (
+                                                        <Typography
+                                                            sx={{
+                                                                mt: 1,
+                                                                maxWidth: 840,
+                                                            }}
+                                                            color="text.secondary"
+                                                        >
+                                                            {bot.description}
+                                                        </Typography>
+                                                    ) : null}
+                                                </Box>
+                                            </Stack>
+                                        </CardContent>
+                                    </Card>
+
                                     {messages.length === 0 && !isStreaming ? (
                                         <Box
                                             sx={{
-                                                border: '1px dashed',
-                                                borderColor: 'divider',
+                                                border: "1px dashed",
+                                                borderColor: "divider",
                                                 py: 3,
                                                 px: 2,
-                                                textAlign: 'center',
-                                                color: 'text.secondary',
+                                                textAlign: "center",
+                                                color: "text.secondary",
                                             }}
                                         >
-                                            Send the first message to start the conversation.
+                                            Send the first message to start the
+                                            conversation.
                                         </Box>
                                     ) : (
                                         messages.map((message, index) => (
@@ -271,48 +358,18 @@ export default function ChatBot({
                                 {isStreaming ? (
                                     <>
                                         <Divider />
-                                        <Box sx={{ px: 3, py: 2.5, bgcolor: 'grey.50' }}>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    display: 'block',
-                                                    mb: 1,
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '0.16em',
-                                                    color: 'text.secondary',
-                                                }}
-                                            >
-                                                assistant
-                                            </Typography>
-                                            {streamingContent ? (
-                                                <ChatMessageBubble
-                                                    role="assistant"
-                                                    content={streamingContent}
-                                                />
-                                            ) : (
-                                                <Typography color="text.secondary">...</Typography>
-                                            )}
-                                            <Stack
-                                                direction="row"
-                                                spacing={1.5}
-                                                alignItems="center"
-                                                sx={{ mt: 1.5 }}
-                                                role="status"
-                                                aria-live="polite"
-                                                aria-label="Assistant response is still streaming"
-                                            >
-                                                <CircularProgress size={14} thickness={6} />
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
-                                                    sx={{ letterSpacing: '0.12em', textTransform: 'uppercase' }}
-                                                >
-                                                    Streaming response
-                                                </Typography>
-                                                <Box sx={{ width: 132 }}>
-                                                    <LinearProgress />
-                                                </Box>
-                                            </Stack>
+                                        <Box
+                                            sx={{
+                                                px: 3,
+                                                py: 2.5,
+                                                bgcolor: "grey.50",
+                                            }}
+                                        >
+                                            <ChatMessageBubble
+                                                role="assistant"
+                                                content={streamingContent || "..."}
+                                                isStreaming
+                                            />
                                         </Box>
                                     </>
                                 ) : null}
@@ -330,15 +387,22 @@ export default function ChatBot({
                                         {showIdentityForm ? (
                                             <Box
                                                 sx={{
-                                                    display: 'grid',
+                                                    display: "grid",
                                                     gap: 2,
-                                                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                                                    gridTemplateColumns: {
+                                                        xs: "1fr",
+                                                        md: "1fr 1fr",
+                                                    },
                                                 }}
                                             >
                                                 <TextField
                                                     label="Name"
                                                     value={visitorName}
-                                                    onChange={(e) => setVisitorName(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setVisitorName(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     required
                                                     fullWidth
                                                 />
@@ -346,7 +410,11 @@ export default function ChatBot({
                                                     label="Email"
                                                     type="email"
                                                     value={visitorEmail}
-                                                    onChange={(e) => setVisitorEmail(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setVisitorEmail(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     required
                                                     fullWidth
                                                 />
@@ -358,15 +426,26 @@ export default function ChatBot({
                                             multiline
                                             minRows={5}
                                             value={messageText}
-                                            onChange={(e) => setMessageText(e.target.value)}
+                                            onChange={(e) =>
+                                                setMessageText(e.target.value)
+                                            }
                                             onKeyDown={handleKeyDown}
                                             required
                                             fullWidth
                                         />
 
-                                        {error ? <Alert severity="error">{error}</Alert> : null}
+                                        {error ? (
+                                            <Alert severity="error">
+                                                {error}
+                                            </Alert>
+                                        ) : null}
 
-                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "flex-end",
+                                            }}
+                                        >
                                             <Button
                                                 type="submit"
                                                 variant="contained"
@@ -384,21 +463,52 @@ export default function ChatBot({
                             <Card>
                                 <CardContent>
                                     <Stack
-                                        direction={{ xs: 'column', sm: 'row' }}
-                                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                        direction={{ xs: "column", sm: "row" }}
+                                        alignItems={{
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        }}
                                         justifyContent="space-between"
                                         spacing={1}
                                         sx={{ mb: 1 }}
                                     >
-                                        <Typography variant="h5">Your Chats</Typography>
+                                        <Typography variant="h5">
+                                            Your Chats
+                                        </Typography>
                                         <Typography
                                             variant="caption"
                                             color="text.secondary"
-                                            sx={{ textTransform: 'uppercase', letterSpacing: '0.14em' }}
+                                            sx={{
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.14em",
+                                            }}
                                         >
                                             Private to this browser
                                         </Typography>
                                     </Stack>
+
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            mb: 1.5,
+                                            px: 1,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Overall Chatbot Cost
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ fontWeight: 700 }}
+                                        >
+                                            {formatCost(bot.total_cost_usd)}
+                                        </Typography>
+                                    </Box>
 
                                     {history.length > 0 ? (
                                         <List disablePadding>
@@ -406,31 +516,77 @@ export default function ChatBot({
                                                 <ListItemButton
                                                     key={item.handle}
                                                     selected={item.is_current}
-                                                    onClick={() => handleSwitch(item.handle)}
+                                                    onClick={() =>
+                                                        handleSwitch(
+                                                            item.handle,
+                                                        )
+                                                    }
                                                     sx={{
-                                                        border: '1px solid',
-                                                        borderColor: item.is_current
-                                                            ? 'primary.main'
-                                                            : 'divider',
+                                                        border: "1px solid",
+                                                        borderColor:
+                                                            item.is_current
+                                                                ? "primary.main"
+                                                                : "divider",
                                                         mb: 1,
                                                     }}
                                                 >
                                                     <ListItemText
                                                         primary={item.label}
-                                                        secondary={item.updated_at}
-                                                        secondaryTypographyProps={{
-                                                            sx: {
-                                                                textTransform: 'uppercase',
-                                                                letterSpacing: '0.08em',
-                                                                fontSize: '0.7rem',
-                                                            },
-                                                        }}
+                                                        secondary={
+                                                            <Box
+                                                                sx={{
+                                                                    display:
+                                                                        "flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                    justifyContent:
+                                                                        "space-between",
+                                                                    mt: 0.5,
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    component="span"
+                                                                    sx={{
+                                                                        textTransform:
+                                                                            "uppercase",
+                                                                        letterSpacing:
+                                                                            "0.08em",
+                                                                        fontSize:
+                                                                            "0.7rem",
+                                                                        color: "text.secondary",
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        item.updated_at
+                                                                    }
+                                                                </Typography>
+                                                                <Typography
+                                                                    component="span"
+                                                                    sx={{
+                                                                        fontSize:
+                                                                            "0.72rem",
+                                                                        color: "text.secondary",
+                                                                        fontWeight: 600,
+                                                                    }}
+                                                                >
+                                                                    Cost:{" "}
+                                                                    {formatCost(
+                                                                        item.cost_usd,
+                                                                    )}
+                                                                </Typography>
+                                                            </Box>
+                                                        }
                                                     />
                                                     {item.is_current ? (
                                                         <Typography
                                                             variant="caption"
                                                             color="primary"
-                                                            sx={{ textTransform: 'uppercase', letterSpacing: '0.12em' }}
+                                                            sx={{
+                                                                textTransform:
+                                                                    "uppercase",
+                                                                letterSpacing:
+                                                                    "0.12em",
+                                                            }}
                                                         >
                                                             Current
                                                         </Typography>
@@ -439,9 +595,13 @@ export default function ChatBot({
                                             ))}
                                         </List>
                                     ) : (
-                                        <Typography variant="body2" color="text.secondary">
-                                            No saved chats in this browser yet. Start a message to create a
-                                            private thread.
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            No saved chats in this browser yet.
+                                            Start a message to create a private
+                                            thread.
                                         </Typography>
                                     )}
                                 </CardContent>
@@ -453,16 +613,28 @@ export default function ChatBot({
                                         Access
                                     </Typography>
                                     <Stack spacing={0.75}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {bot.is_public ? 'Public bot' : 'Restricted bot'}
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            {bot.is_public
+                                                ? "Public bot"
+                                                : "Restricted bot"}
                                         </Typography>
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
                                             {bot.require_visitor_identity
-                                                ? 'Name and email are required before the first guest message.'
-                                                : 'No guest identity is required by this bot.'}
+                                                ? "Name and email are required before the first guest message."
+                                                : "No guest identity is required by this bot."}
                                         </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Only chats created in this browser are listed here.
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Only chats created in this browser
+                                            are listed here.
                                         </Typography>
                                     </Stack>
                                 </CardContent>
@@ -473,15 +645,19 @@ export default function ChatBot({
                                     <Typography variant="h5" sx={{ mb: 1 }}>
                                         Prompt Notes
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        The conversation is saved and can contribute new insights to AI
-                                        Memory for this bot.
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        The conversation is saved and can
+                                        contribute new insights to AI Memory for
+                                        this bot.
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Stack>
                     )}
-                </Stack>
+                </Box>
             </Box>
         </>
     );
