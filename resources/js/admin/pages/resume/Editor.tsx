@@ -111,10 +111,6 @@ export default function Editor({
     const getChangedContent = useCallback((): string[] => {
         const changes: string[] = [];
 
-        if (version !== initialVersion) {
-            changes.push("Version");
-        }
-
         if (
             JSON.stringify(data.personal) !==
             JSON.stringify(initialData.personal)
@@ -196,7 +192,7 @@ export default function Editor({
     const handleSave = () => {
         const changes = getChangedContent();
 
-        if (changes.length > 0) {
+        if (changes.length > 0 && version === initialVersion) {
             setChangedContent(changes);
             setConfirmSaveOpen(true);
             return;
