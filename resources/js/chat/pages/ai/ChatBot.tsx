@@ -11,6 +11,8 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
@@ -62,6 +64,7 @@ export default function ChatBot({
     const [visitorName, setVisitorName] = useState('');
     const [visitorEmail, setVisitorEmail] = useState('');
     const [messageText, setMessageText] = useState('');
+    const [activeTab, setActiveTab] = useState(0);
     const messagesRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -216,13 +219,12 @@ export default function ChatBot({
                         </CardContent>
                     </Card>
 
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            gap: 3,
-                            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,2fr) 320px' },
-                        }}
-                    >
+                    <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+                        <Tab label="Chat" />
+                        <Tab label="Details" />
+                    </Tabs>
+
+                    {activeTab === 0 ? (
                         <Card>
                             <CardContent sx={{ p: 0 }}>
                                 <Box sx={{ px: 3, py: 2 }}>
@@ -233,7 +235,7 @@ export default function ChatBot({
                                 <Box
                                     ref={messagesRef}
                                     sx={{
-                                        maxHeight: '60vh',
+                                        maxHeight: '62vh',
                                         overflowY: 'auto',
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -288,7 +290,7 @@ export default function ChatBot({
                                                     content={streamingContent}
                                                 />
                                             ) : (
-                                                <Typography color="text.secondary">…</Typography>
+                                                <Typography color="text.secondary">...</Typography>
                                             )}
                                             <Stack
                                                 direction="row"
@@ -377,7 +379,7 @@ export default function ChatBot({
                                 </Box>
                             </CardContent>
                         </Card>
-
+                    ) : (
                         <Stack spacing={2}>
                             <Card>
                                 <CardContent>
@@ -478,7 +480,7 @@ export default function ChatBot({
                                 </CardContent>
                             </Card>
                         </Stack>
-                    </Box>
+                    )}
                 </Stack>
             </Box>
         </>
