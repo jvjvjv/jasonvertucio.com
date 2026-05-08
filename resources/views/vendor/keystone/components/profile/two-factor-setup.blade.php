@@ -1,45 +1,45 @@
-<div class="authkit-2fa-setup" id="2fa-setup">
-    @include('authkit::components.authkit-styles')
+<div class="keystone-2fa-setup" id="2fa-setup">
+    @include('keystone::components.keystone-styles')
     <style>
-        .authkit-2fa-setup {
+        .keystone-2fa-setup {
             padding: 1rem;
             background: var(--authkit-bg-secondary, #f9fafb);
             border-radius: var(--authkit-radius, 0.5rem);
         }
 
-        .authkit-setup-step {
+        .keystone-setup-step {
             display: none;
         }
 
-        .authkit-setup-step.active {
+        .keystone-setup-step.active {
             display: block;
         }
 
-        .authkit-text {
+        .keystone-text {
             color: var(--authkit-text-muted, #6b7280);
             font-size: 0.875rem;
             margin-bottom: 1rem;
         }
 
-        .authkit-qr-container {
+        .keystone-qr-container {
             display: flex;
             justify-content: center;
             margin: 1.5rem 0;
         }
 
-        .authkit-qr-code {
+        .keystone-qr-code {
             background: white;
             padding: 1rem;
             border-radius: var(--authkit-radius, 0.5rem);
         }
 
-        .authkit-text-small {
+        .keystone-text-small {
             font-size: 0.75rem;
             color: var(--authkit-text-muted, #6b7280);
             margin-bottom: 1rem;
         }
 
-        .authkit-code {
+        .keystone-code {
             font-family: monospace;
             background: #e5e7eb;
             padding: 0.25rem 0.5rem;
@@ -47,11 +47,11 @@
             font-size: 0.875rem;
         }
 
-        .authkit-form-group {
+        .keystone-form-group {
             margin-bottom: 1rem;
         }
 
-        .authkit-label {
+        .keystone-label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
@@ -59,7 +59,7 @@
             font-size: 0.875rem;
         }
 
-        .authkit-input-code {
+        .keystone-input-code {
             width: 8rem;
             padding: 0.75rem;
             border: 1px solid var(--authkit-border, #d1d5db);
@@ -70,13 +70,13 @@
             letter-spacing: 0.5rem;
         }
 
-        .authkit-input-code:focus {
+        .keystone-input-code:focus {
             outline: none;
             border-color: var(--authkit-primary, #4f46e5);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        .authkit-btn {
+        .keystone-btn {
             padding: 0.5rem 1rem;
             border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
@@ -86,37 +86,37 @@
             transition: background-color 0.2s;
         }
 
-        .authkit-btn-primary {
+        .keystone-btn-primary {
             background: var(--authkit-primary, #4f46e5);
             color: white;
         }
 
-        .authkit-btn-primary:hover {
+        .keystone-btn-primary:hover {
             background: var(--authkit-primary-hover, #4338ca);
         }
 
-        .authkit-btn-secondary {
+        .keystone-btn-secondary {
             background: var(--authkit-bg-secondary, #f3f4f6);
             color: var(--authkit-text, #1f2937);
             border: 1px solid var(--authkit-border, #d1d5db);
         }
 
-        .authkit-btn-secondary:hover {
+        .keystone-btn-secondary:hover {
             background: #e5e7eb;
         }
 
-        .authkit-btn:disabled {
+        .keystone-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .authkit-error {
+        .keystone-error {
             color: var(--authkit-danger, #dc2626);
             font-size: 0.875rem;
             margin-bottom: 0.5rem;
         }
 
-        .authkit-alert-warning {
+        .keystone-alert-warning {
             background: #fef3c7;
             color: #92400e;
             padding: 1rem;
@@ -125,14 +125,14 @@
             font-size: 0.875rem;
         }
 
-        .authkit-recovery-codes-grid {
+        .keystone-recovery-codes-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
 
-        .authkit-recovery-code {
+        .keystone-recovery-code {
             font-family: monospace;
             background: white;
             padding: 0.5rem 0.75rem;
@@ -141,7 +141,7 @@
             text-align: center;
         }
 
-        .authkit-setup-actions {
+        .keystone-setup-actions {
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
@@ -149,49 +149,49 @@
     </style>
 
     {{-- Step 1: QR Code --}}
-    <div id="step-qr" class="authkit-setup-step active">
-        <p class="authkit-text">
+    <div id="step-qr" class="keystone-setup-step active">
+        <p class="keystone-text">
             Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
         </p>
 
-        <div class="authkit-qr-container">
-            <div id="qr-code" class="authkit-qr-code">Loading...</div>
+        <div class="keystone-qr-container">
+            <div id="qr-code" class="keystone-qr-code">Loading...</div>
         </div>
 
-        <p class="authkit-text-small">
-            Or enter this code manually: <code id="secret-key" class="authkit-code">Loading...</code>
+        <p class="keystone-text-small">
+            Or enter this code manually: <code id="secret-key" class="keystone-code">Loading...</code>
         </p>
 
-        <div class="authkit-form-group">
-            <label class="authkit-label">Enter the 6-digit code from your app:</label>
+        <div class="keystone-form-group">
+            <label class="keystone-label">Enter the 6-digit code from your app:</label>
             <input type="text" id="totp-code" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-                class="authkit-input-code" placeholder="000000">
+                class="keystone-input-code" placeholder="000000">
         </div>
 
-        <div id="setup-error" class="authkit-error" style="display: none;"></div>
+        <div id="setup-error" class="keystone-error" style="display: none;"></div>
 
-        <button type="button" onclick="confirmTwoFactor()" id="verify-btn" class="authkit-btn authkit-btn-primary">
+        <button type="button" onclick="confirmTwoFactor()" id="verify-btn" class="keystone-btn keystone-btn-primary">
             Verify & Enable
         </button>
     </div>
 
     {{-- Step 2: Recovery Codes --}}
-    <div id="step-recovery" class="authkit-setup-step">
-        <div class="authkit-alert-warning">
+    <div id="step-recovery" class="keystone-setup-step">
+        <div class="keystone-alert-warning">
             <strong>Important!</strong> Save these recovery codes in a secure location.
             They can be used to recover access to your account if you lose your authenticator device.
         </div>
 
-        <div id="setup-recovery-codes" class="authkit-recovery-codes-grid">
+        <div id="setup-recovery-codes" class="keystone-recovery-codes-grid">
             <!-- Recovery codes will be populated here -->
         </div>
 
-        <div class="authkit-setup-actions">
-            <button type="button" onclick="downloadSetupCodes()" class="authkit-btn authkit-btn-secondary">
+        <div class="keystone-setup-actions">
+            <button type="button" onclick="downloadSetupCodes()" class="keystone-btn keystone-btn-secondary">
                 Download Codes
             </button>
 
-            <button type="button" onclick="finishSetup()" class="authkit-btn authkit-btn-primary">
+            <button type="button" onclick="finishSetup()" class="keystone-btn keystone-btn-primary">
                 I've Saved My Codes
             </button>
         </div>
@@ -297,7 +297,7 @@
                 const codesContainer = document.getElementById('setup-recovery-codes');
                 if (setupRecoveryCodes.length > 0) {
                     codesContainer.innerHTML = setupRecoveryCodes.map(c =>
-                        `<code class="authkit-recovery-code">${c}</code>`
+                        `<code class="keystone-recovery-code">${c}</code>`
                     ).join('');
                 } else {
                     // Fetch recovery codes if not already available
@@ -311,7 +311,7 @@
                         const codesData = await codesResponse.json();
                         setupRecoveryCodes = codesData.codes || [];
                         codesContainer.innerHTML = setupRecoveryCodes.map(c =>
-                            `<code class="authkit-recovery-code">${c}</code>`
+                            `<code class="keystone-recovery-code">${c}</code>`
                         ).join('');
                     }
                 }

@@ -1,15 +1,15 @@
-<div class="authkit-password-form">
-    @include('authkit::components.authkit-styles')
+<div class="keystone-password-form">
+    @include('keystone::components.keystone-styles')
     <style>
-        .authkit-password-form {
+        .keystone-password-form {
             /* Base styles */
         }
 
-        .authkit-form-group {
+        .keystone-form-group {
             margin-bottom: 1rem;
         }
 
-        .authkit-label {
+        .keystone-label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
@@ -17,7 +17,7 @@
             font-size: 0.875rem;
         }
 
-        .authkit-input {
+        .keystone-input {
             width: 100%;
             padding: 0.5rem 0.75rem;
             border: 1px solid var(--authkit-border, #d1d5db);
@@ -25,23 +25,23 @@
             font-size: 0.875rem;
         }
 
-        .authkit-input:focus {
+        .keystone-input:focus {
             outline: none;
             border-color: var(--authkit-primary, #4f46e5);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        .authkit-input-error {
+        .keystone-input-error {
             border-color: var(--authkit-danger, #dc2626);
         }
 
-        .authkit-error {
+        .keystone-error {
             color: var(--authkit-danger, #dc2626);
             font-size: 0.75rem;
             margin-top: 0.25rem;
         }
 
-        .authkit-btn {
+        .keystone-btn {
             padding: 0.5rem 1rem;
             border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
@@ -51,12 +51,12 @@
             transition: background-color 0.2s;
         }
 
-        .authkit-btn-primary {
+        .keystone-btn-primary {
             background: var(--authkit-primary, #4f46e5);
             color: white;
         }
 
-        .authkit-btn-primary:hover {
+        .keystone-btn-primary:hover {
             background: var(--authkit-primary-hover, #4338ca);
         }
     </style>
@@ -65,33 +65,33 @@
         @csrf
         @method('PUT')
 
-        <div class="authkit-form-group">
-            <label for="current_password" class="authkit-label">Current Password</label>
+        <div class="keystone-form-group">
+            <label for="current_password" class="keystone-label">Current Password</label>
             <input type="password" name="current_password" id="current_password"
-                class="authkit-input @error('current_password', 'updatePassword') authkit-input-error @enderror"
+                class="keystone-input @error('current_password', 'updatePassword') keystone-input-error @enderror"
                 required>
             @error('current_password', 'updatePassword')
-                <span class="authkit-error">{{ $message }}</span>
+                <span class="keystone-error">{{ $message }}</span>
             @enderror
         </div>
 
-        <div class="authkit-form-group">
-            <label for="password" class="authkit-label">New Password</label>
+        <div class="keystone-form-group">
+            <label for="password" class="keystone-label">New Password</label>
             <input type="password" name="password" id="password"
-                class="authkit-input @error('password', 'updatePassword') authkit-input-error @enderror"
+                class="keystone-input @error('password', 'updatePassword') keystone-input-error @enderror"
                 required>
             @error('password', 'updatePassword')
-                <span class="authkit-error">{{ $message }}</span>
+                <span class="keystone-error">{{ $message }}</span>
             @enderror
         </div>
 
-        <div class="authkit-form-group">
-            <label for="password_confirmation" class="authkit-label">Confirm New Password</label>
+        <div class="keystone-form-group">
+            <label for="password_confirmation" class="keystone-label">Confirm New Password</label>
             <input type="password" name="password_confirmation" id="password_confirmation"
-                class="authkit-input" required>
+                class="keystone-input" required>
         </div>
 
-        <button type="submit" class="authkit-btn authkit-btn-primary">
+        <button type="submit" class="keystone-btn keystone-btn-primary">
             Update Password
         </button>
     </form>

@@ -14,19 +14,21 @@
         "php": "^8.2.0",
         "austintoddj/canvas": "^6.0.55",
         "bspdx/keystone": "^0.6.0",
-        "fakerphp/faker": "^1.24",
+        "fakerphp/faker": "^1.24.1",
         "guzzlehttp/guzzle": "^7.10.0",
-        "laravel/fortify": "^1.33",
-        "laravel/framework": "^12.48.1",
-        "laravel/tinker": "^2.11",
-        "laravel/ui": "^4.6.1",
+        "inertiajs/inertia-laravel": "^2.0",
+        "laravel/fortify": "^1.36.1",
+        "laravel/framework": "^12.54.1",
+        "laravel/tinker": "^2.11.1",
+        "laravel/ui": "^4.6.2",
+        "symfony/dom-crawler": "^8.0",
         "twilio/sdk": "^6.44.4"
     },
     "require-dev": {
         "filp/whoops": "^2.18.4",
-        "laravel/boost": "^2.0",
+        "laravel/boost": "^2.3.1",
         "mockery/mockery": "^1.6.12",
-        "phpunit/phpunit": "^10.5.60"
+        "phpunit/phpunit": "^10.5.63"
     },
     "config": {
         "optimize-autoloader": true,
@@ -67,7 +69,7 @@
         ],
         "test": [
             "@php artisan config:clear --ansi",
-            "@php artisan test"
+            "@php vendor/bin/phpunit"
         ]
     }
 }

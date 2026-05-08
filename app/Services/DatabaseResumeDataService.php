@@ -4,14 +4,7 @@ namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
 use App\Enums\ResumeSkillGroup;
-use App\Models\ResumeEducation;
-use App\Models\ResumeExperience;
-use App\Models\ResumeExperienceBullet;
 use App\Models\ResumePersonalInfo;
-use App\Models\ResumeProject;
-use App\Models\ResumeProjectBullet;
-use App\Models\ResumeSkill;
-use App\Models\ResumeSkillCategory;
 use App\Models\ResumeVersion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -46,8 +39,8 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
         return [
             'personal' => $this->transformPersonalInfo($version->personalInfo),
             'skills' => $this->transformSkills($version->skillCategories),
-            'experience' => $this->transformExperiences($version->experiences),
-            'education' => $this->transformEducations($version->educations),
+            'experience' => $this->transformExperiences($version->experiences, includeSalary: true),
+            'education' => $this->transformEducations($version->educations, forEditor: true),
             'projects' => $this->transformProjects($version->projects),
         ];
     }
@@ -88,6 +81,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 'email' => $data['personal']['email'],
                 'phone' => $data['personal']['phone'] ?? null,
                 'linkedin' => $data['personal']['linkedin'] ?? null,
+                'url' => $data['personal']['url'] ?? null,
                 'summary' => $data['personal']['summary'] ?? null,
             ]);
 
@@ -118,8 +112,13 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                     'job_title' => $exp['jobTitle'],
                     'company' => $exp['company'],
                     'location' => $exp['location'] ?? null,
-                    'date_start' => $dates[0] ?? null,
-                    'date_end' => !empty($dates) ? end($dates) : null,
+                    'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
+                    'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
+                    'salary_start_amount' => !empty($exp['salaryStart']['amount']) ? $exp['salaryStart']['amount'] : null,
+                    'salary_start_period' => !empty($exp['salaryStart']['period']) ? $exp['salaryStart']['period'] : null,
+                    'salary_end_amount' => !empty($exp['salaryEnd']['amount']) ? $exp['salaryEnd']['amount'] : null,
+                    'salary_end_period' => !empty($exp['salaryEnd']['period']) ? $exp['salaryEnd']['period'] : null,
+                    'is_freelance' => (bool) ($exp['isFreelance'] ?? false),
                     'sort_order' => $expIndex,
                 ]);
 
@@ -137,8 +136,8 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 $version->educations()->create([
                     'institution' => $edu['institution'],
                     'degree' => $edu['degree'] ?? null,
-                    'date_start' => $dates[0] ?? null,
-                    'date_end' => !empty($dates) ? end($dates) : null,
+                    'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
+                    'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
                     'description' => $edu['description'] ?? null,
                     'sort_order' => $eduIndex,
                 ]);
@@ -234,6 +233,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             'email' => $info->email,
             'phone' => $info->phone,
             'linkedin' => $info->linkedin,
+            'url' => $info->url ?? 'https://jasonvertucio.com',
             'summary' => $info->summary,
         ], fn ($value) => $value !== null);
     }
@@ -262,30 +262,97 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     }
 
     /**
+     * Format a date value for public display (always show year only).
+     *
+     * "2024-03-15" → "2024", "2024" → "2024", "Present" → "Present"
+     */
+    private function formatDateForDisplay(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        if (strcasecmp($value, 'present') === 0) {
+            return 'Present';
+        }
+
+        // Extract just the year from YYYY or YYYY-MM-DD
+        return substr($value, 0, 4);
+    }
+
+    /**
+     * Validate a date value is either year-only, full date (YYYY-MM-DD), "Present", or empty.
+     */
+    private function sanitizeDateValue(?string $value, bool $allowPresent = false): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($allowPresent && strcasecmp($value, 'present') === 0) {
+            return 'Present';
+        }
+
+        if (preg_match('/^\d{4}$/', $value)) {
+            return $value;
+        }
+
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/', $value)) {
+            return $value;
+        }
+
+        return null;
+    }
+
+    /**
      * Transform experiences collection to the expected array format.
      */
-    protected function transformExperiences($experiences): array
+    protected function transformExperiences($experiences, bool $includeSalary = false): array
     {
-        return $experiences->map(function ($exp) {
-            $dates = array_filter([$exp->date_start, $exp->date_end]);
+        return $experiences->map(function ($exp) use ($includeSalary) {
+            $dates = $includeSalary
+                ? [$exp->date_start ?? '', $exp->date_end ?? '']
+                : array_values(array_filter([
+                    $this->formatDateForDisplay($exp->date_start),
+                    $this->formatDateForDisplay($exp->date_end),
+                ]));
 
-            return [
+            $result = [
                 'jobTitle' => $exp->job_title,
                 'company' => $exp->company,
                 'location' => $exp->location,
                 'dates' => array_values($dates),
                 'bullets' => $exp->bullets->pluck('content')->toArray(),
             ];
+
+            if ($includeSalary) {
+                $result['salaryStart'] = $exp->salary_start_amount ? [
+                    'amount' => (float) $exp->salary_start_amount,
+                    'period' => $exp->salary_start_period?->value,
+                ] : null;
+                $result['salaryEnd'] = $exp->salary_end_amount ? [
+                    'amount' => (float) $exp->salary_end_amount,
+                    'period' => $exp->salary_end_period?->value,
+                ] : null;
+                $result['isFreelance'] = $exp->is_freelance;
+            }
+
+            return $result;
         })->toArray();
     }
 
     /**
      * Transform educations collection to the expected array format.
      */
-    protected function transformEducations($educations): array
+    protected function transformEducations($educations, bool $forEditor = false): array
     {
-        return $educations->map(function ($edu) {
-            $dates = array_filter([$edu->date_start, $edu->date_end]);
+        return $educations->map(function ($edu) use ($forEditor) {
+            $dates = $forEditor
+                ? [$edu->date_start ?? '', $edu->date_end ?? '']
+                : array_values(array_filter([
+                    $this->formatDateForDisplay($edu->date_start),
+                    $this->formatDateForDisplay($edu->date_end),
+                ]));
 
             return array_filter([
                 'institution' => $edu->institution,
@@ -317,21 +384,37 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     {
         $flat = $data['personal'];
 
-        $flat['experience'] = array_map(function ($job) {
-            if (isset($job['dates']) && is_array($job['dates'])) {
-                $job['dateStart'] = $job['dates'][0] ?? '';
-                $job['dateEnd'] = $job['dates'][1] ?? '';
-                $job['dateRange'] = implode(' - ', $job['dates']);
+        $buildDateDisplay = function (array $dates, string $separator = ' • '): string {
+            $start = $dates[0] ?? '';
+            $end = $dates[1] ?? '';
+
+            if ($start === '' && $end === '') {
+                return '';
             }
+
+            $range = $start;
+            if ($end !== '') {
+                $range .= " \u{2013} " . $end;
+            }
+
+            return $separator . $range;
+        };
+
+        $flat['experience'] = array_map(function ($job) use ($buildDateDisplay) {
+            $dates = $job['dates'] ?? [];
+            $job['dateStart'] = $dates[0] ?? '';
+            $job['dateEnd'] = $dates[1] ?? '';
+            $job['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
+            $job['dateDisplay'] = $buildDateDisplay($dates) . (count($dates) > 0 ? ' • ' : '');
             return $job;
         }, $data['experience']);
 
-        $flat['education'] = array_map(function ($edu) {
-            if (isset($edu['dates']) && is_array($edu['dates'])) {
-                $edu['dateStart'] = $edu['dates'][0] ?? '';
-                $edu['dateEnd'] = $edu['dates'][1] ?? '';
-                $edu['dateRange'] = implode(' - ', $edu['dates']);
-            }
+        $flat['education'] = array_map(function ($edu) use ($buildDateDisplay) {
+            $dates = $edu['dates'] ?? [];
+            $edu['dateStart'] = $dates[0] ?? '';
+            $edu['dateEnd'] = $dates[1] ?? '';
+            $edu['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
+            $edu['dateDisplay'] = $buildDateDisplay($dates);
             return $edu;
         }, $data['education']);
 

@@ -1,45 +1,66 @@
-<nav class="fixed top-0 left-0 w-full md:w-52 lg:w-64 md:h-screen bg-primary text-white z-50 flex flex-col md:justify-center md:items-center"
-    id="sideNav"
-    role="navigation">
-    <a class="me m-2 p-2 md:flex md:justify-center md:items-center md:mb-0 rounded-2xl" href="#page-top">
-        <span class="block md:hidden text-xl">Jason Vertucio</span>
+<nav id="sideNav"
+     class="md:fixed left-0 top-0 z-50 flex w-full flex-col bg-primary text-white md:h-screen md:w-52 md:items-center md:justify-center lg:w-64"
+     role="navigation">
+    <a class="me m-2 rounded-2xl p-2 md:mb-0 md:flex md:items-center md:justify-center" href="#page-top">
+        <span class="block text-xl md:hidden">Jason Vertucio</span>
         <span class="hidden md:block">
-            <img class="w-40 h-40 rounded-full border-4 border-white/20 mx-auto" src="{{ asset('img/jv.png') }}"
-                alt="Jason Vertucio">
+            <img class="mx-auto h-40 w-40 rounded-full border-4 border-white/20"
+                 src="{{ asset("img/jv.png") }}"
+                 alt="Jason Vertucio">
         </span>
     </a>
-    <button class="md:hidden absolute top-4 right-4 p-2 text-white" type="button"
-        onclick="document.getElementById('navbarSupportedContent').classList.toggle('hidden')"
-        aria-label="Toggle navigation">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    <button class="absolute right-4 top-4 p-2 text-white md:hidden"
+            type="button"
+            onclick="document.getElementById('navbarSupportedContent').classList.toggle('hidden')"
+            aria-label="Toggle navigation">
+        <svg class="h-6 w-6"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
     </button>
-    <div class="hidden md:flex md:flex-col md:items-center" id="navbarSupportedContent">
-        <ul class="flex flex-col gap-y-2">
-            @ifcanvasauthenticated
-            <li>
-                <a class="block px-4 py-1 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md"
-                    href="/{{ config('canvas.path') }}">Canvas</a>
-            </li>
-            @endifcanvasauthenticated
-            @can('manage-unauthenticated-viewers')
-                <li>
-                    <a href="{{ route('admin.index') }}"
-                        class="block px-4 py-1 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md">Admin</a>
-                </li>
-            @endcan
-            @foreach($links as $link)
-                <li>
-                    @if (isset($link['target']))
-                        <a class="block px-4 py-2 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md"
-                            href="{{ $link['href'] }}" target="{{ $link['target'] }}"
-                            role="link" title="{{ $link_label($link) }}">{{ $link['label'] }}</a>
-                    @else
-                        <a class="block px-4 py-1 text-white hover:text-white hover:underline uppercase tracking-wider font-bold transition-all rounded-md"
-                            href="{{ $link['href'] }}" role="link" title="{{ $link_label($link) }}">{{ $link['label'] }}</a>
-                    @endif
-                </li>
+    <div id="navbarSupportedContent" class="mt-8 hidden md:flex md:flex-col md:items-center">
+        <ul class="flex flex-col items-center gap-y-2">
+            @foreach ($links as $link)
+                @if (!empty($link["can"]))
+                    @can($link["can"])
+                        <li>
+                            @if (isset($link["target"]))
+                                <a class="block rounded-md px-4 py-2 font-bold uppercase tracking-wider text-white transition-all hover:text-white hover:underline"
+                                   href="{{ $link["href"] }}"
+                                   target="{{ $link["target"] }}"
+                                   role="link"
+                                   title="{{ $link_label($link) }}">{{ $link["label"] }}</a>
+                            @else
+                                <a class="block rounded-md px-4 py-1 font-bold uppercase tracking-wider text-white transition-all hover:text-white hover:underline"
+                                   href="{{ $link["href"] }}"
+                                   role="link"
+                                   title="{{ $link_label($link) }}">{{ $link["label"] }}</a>
+                            @endif
+                        </li>
+                    @endcan
+                @else
+                    <li>
+                        @if (isset($link["href"]))
+                            @if (isset($link["target"]))
+                                <a class="block rounded-md px-4 py-2 font-bold uppercase tracking-wider text-white transition-all hover:text-white hover:underline"
+                                   href="{{ $link["href"] }}"
+                                   target="{{ $link["target"] }}"
+                                   role="link"
+                                   title="{{ $link_label($link) }}">{{ $link["label"] }}</a>
+                            @else
+                                <a class="block rounded-md px-4 py-1 font-bold uppercase tracking-wider text-white transition-all hover:text-white hover:underline"
+                                   href="{{ $link["href"] }}"
+                                   role="link"
+                                   title="{{ $link_label($link) }}">{{ $link["label"] }}</a>
+                            @endif
+                        @endif
+                    </li>
+                @endif
             @endforeach
         </ul>
     </div>

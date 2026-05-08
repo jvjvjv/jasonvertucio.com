@@ -1,8 +1,19 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
+  server: {
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      host: 'localhost',
+      protocol: 'ws',
+      clientPort: 5173,
+    },
+  },
     plugins: [
         laravel({
             input: [
@@ -11,12 +22,16 @@ export default defineConfig({
                 'resources/js/currently-watching.js',
                 'resources/js/font-loader.js',
                 'resources/js/home.js',
+                'resources/js/admin/app.tsx',
+                'resources/js/chat/app.tsx',
                 'resources/css/app.css',
                 'resources/css/blog.css',
                 'resources/css/resume.css',
+                'resources/css/cover-letter.css',
             ],
             refresh: true,
         }),
+        react(),
         viteStaticCopy({
             targets: [
                 { src: 'resources/config/config.json', dest: '' },

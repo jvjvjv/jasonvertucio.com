@@ -15,8 +15,6 @@
  * Output: JSON to stdout with success status and path or error details
  */
 
-import { execSync } from 'child_process';
-
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import fs from 'fs';
@@ -66,10 +64,50 @@ try {
     // Render the document with data
     doc.render(data);
 
-    // Generate the output buffer
-    const outputBuffer = doc.getZip().generate({
+    // Get zip once — all modifications and output generation use this reference
+    const renderedZip = doc.getZip();
+
+    // Post-process: convert a plain-text URL run into a Word hyperlink.
+    if (data.url) {
+        const fullUrl = data.url;
+        const displayUrl = fullUrl.replace(/^https?:\/\//, '');
+        const escapedUrl = fullUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let docXml = renderedZip.file('word/document.xml').asText();
+
+        // Only match when the full URL is contained inside a single run. Word can
+        // split nearby content across many runs, and a broader regex can corrupt XML.
+        const runPattern = new RegExp(
+            `(<w:r(?:\\s[^>]*)?>(?:(?!</w:r>)[\\s\\S])*?<w:t(?:[^>]*)?>)${escapedUrl}(</w:t>(?:(?!</w:r>)[\\s\\S])*?</w:r>)`,
+        );
+
+        if (runPattern.test(docXml)) {
+            const relsFile = 'word/_rels/document.xml.rels';
+            let relsXml = renderedZip.file(relsFile).asText();
+            const relIdMatches = [...relsXml.matchAll(/Id="rId(\d+)"/g)];
+            const nextRelNumber = relIdMatches.reduce((maxRelNumber, match) => {
+                return Math.max(maxRelNumber, Number.parseInt(match[1], 10));
+            }, 0) + 1;
+            const hyperlinkRelId = `rId${nextRelNumber}`;
+            const newRel = `<Relationship Id="${hyperlinkRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${fullUrl}" TargetMode="External"/>`;
+
+            relsXml = relsXml.replace('</Relationships>', `${newRel}</Relationships>`);
+
+            const hyperlinkXml = `<w:hyperlink r:id="${hyperlinkRelId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">$1${displayUrl}$2</w:hyperlink>`;
+            docXml = docXml.replace(runPattern, hyperlinkXml);
+
+            renderedZip.file(relsFile, relsXml);
+            renderedZip.file('word/document.xml', docXml);
+        }
+    }
+
+    // Generate the output buffer from the (possibly modified) zip
+    const outputBuffer = renderedZip.generate({
         type: 'nodebuffer',
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        compression: 'DEFLATE',
+        compressionOptions: {
+            level: 9,
+        },
     });
 
     // Ensure output directory exists

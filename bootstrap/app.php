@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         then: function () {
             Route::middleware('web')
-                ->group(base_path('routes/authkit-web.php'));
+                ->group(base_path('routes/keystone-web.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {

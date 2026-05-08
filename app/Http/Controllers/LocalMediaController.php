@@ -116,7 +116,7 @@ class LocalMediaController extends Controller {
 
         $media = LocalMedia::where('jellyfin_item_id', $data['ItemId'])->first();
         if ($media) {
-            $media->event_type = $data['ItemDeleted'];
+            $media->event_type = $data['NotificationType'] ?? 'ItemDeleted';
             $media->save();
             Log::info('Deleted media item', ['jellyfin_item_id' => $data['ItemId']]);
         }
@@ -138,7 +138,7 @@ class LocalMediaController extends Controller {
             ['jellyfin_item_id' => $data['ItemId']],
             [
                 'jellyfin_user_id' => $data['UserId'] ?? null,
-                'event_type' => $data['NotificationType'] ?? 'Playback',
+                'event_type' => $data['NotificationType'] ?? 'UnknownEventType',
                 'media_type' => $data['ItemType'] ?? null,
                 'title' => $data['Name'] ?? 'Unknown',
                 'series_name' => $data['SeriesName'] ?? null,

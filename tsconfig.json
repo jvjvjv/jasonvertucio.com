@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "paths": {
+            "@admin/*": [
+                "./resources/js/admin/*"
+            ]
+        }
+    },
+    "include": [
+        "./resources/js/admin/**/*.ts",
+        "./resources/js/admin/**/*.tsx",
+        "./resources/js/chat/**/*.ts",
+        "./resources/js/chat/**/*.tsx"
+    ],
+    "exclude": ["node_modules"]
+}

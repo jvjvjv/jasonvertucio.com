@@ -2,24 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Contracts\Auth\Factory as Auth;
+use App\Contracts\ResumeDataServiceContract;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 use Canvas\Models\Post;
-use GuzzleHttp\Client as Guzzle;
 
 class HomeController extends Controller {
 
+    public function __construct(protected ResumeDataServiceContract $resumeData) {}
+
     public function index(Request $request) {
 
-        $path = resource_path() . "/config/config.json"; // ie: /var/www/laravel/public/filename.json
+        $path = resource_path() . "/config/config.json";
         $config = json_decode(file_get_contents($path), true);
         $latest_post = Post::published()->orderBy('published_at', 'DESC')->first();
+        $resumeData = $this->resumeData->getDisplayData();
+
         return view('home', [
-            'blog' => $latest_post,
-            'config' => $config,
-            'btc' => null,
+            'blog'       => $latest_post,
+            'config'     => $config,
+            'btc'        => null,
+            'resumeData' => $resumeData,
         ]);
     }
 }

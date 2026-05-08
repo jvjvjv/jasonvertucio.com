@@ -4,17 +4,7 @@
     }
 
     $config = json_decode(file_get_contents(resource_path() . "/config/config.json"), true);
-    $places = collect([]);
-    collect($config["links"])->each(function ($p) use ($places) {
-        if (count($places) > 0 && $p["href"] == "/blog") {
-            $places->push('<div class="border-t border-gray-200"></div>');
-            return;
-        }
-        if ($p["href"] != "/blog") {
-            $places->push($p);
-            return;
-        }
-    });
+    $navLinks = $config["links"] ?? [];
 
     $meta = [
         "viewport" => "width=device-width, initial-scale=1, shrink-to-fit=no",
@@ -58,18 +48,26 @@
     @endforeach
     @yield("meta")
 
-    <title>@yield("title", "Home") | Jason Vertucio</title>
+    @php
+        $siteTitle = "Jason Vertucio";
+        $pageTitle = trim($__env->yieldContent("title"));
+
+        if ($pageTitle === "") {
+            $routeName = request()->route()?->getName();
+            $pageTitle = $routeName ? Str::headline(str_replace([".", "-"], " ", $routeName)) : "Home";
+        }
+
+        $fullTitle = $pageTitle === $siteTitle ? $siteTitle : "{$pageTitle} | {$siteTitle}";
+    @endphp
+
+    <title>{{ $fullTitle }}</title>
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect"
           href="https://fonts.gstatic.com"
           crossorigin>
-    <link rel="preconnect" href="https://db.onlinewebfonts.com">
-    <link rel="preconnect" href="https://fonts.cdnfonts.com">
     {{-- Fonts --}}
-    <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet">
-    <link href="https://db.onlinewebfonts.com/c/29dc27977e417a98e56556776f41607c?family=Corbel" rel="stylesheet">
-    <link href="https://fonts.cdnfonts.com/css/convection" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;700&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
     {{-- Custom styles for this template --}}
     @vite(["resources/css/blog.css"])
     @stack("styles")
@@ -98,26 +96,20 @@
             <div class="flex h-16 items-center justify-between">
                 <div class="flex items-center">
                     <a class="font-heading text-xl text-white" href="{{ route("home") }}">Jason Vertucio</a>
-                    <ul class="ml-10 hidden space-x-4 md:flex">
-                        @foreach ($links as $link)
-                            <li>
-                                <a href="{{ $link["href"] }}"
-                                   class="rounded-md px-3 py-2 text-white/75 hover:text-white">{{ $link["label"] }}</a>
-                            </li>
-                        @endforeach
-
-                    </ul>
                 </div>
                 <div class="flex items-center">
                     <div class="relative" x-data="{ open: false }">
-                        <button class="bg-primarypx-4 rounded-md py-2 text-white hover:bg-primary/80 focus:outline-none"
+                        <button class="rounded-md py-2 text-white hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
                                 type="button"
+                                aria-haspopup="menu"
+                                :aria-expanded="open"
                                 @click="open = !open">
                             Places
                             <svg class="ml-2 inline-block h-4 w-4"
                                  fill="none"
                                  stroke="currentColor"
-                                 viewBox="0 0 24 24">
+                                 viewBox="0 0 24 24"
+                                 aria-hidden="true">
                                 <path stroke-linecap="round"
                                       stroke-linejoin="round"
                                       stroke-width="2"
@@ -125,74 +117,53 @@
                             </svg>
                         </button>
                         <div x-show="open"
+                             role="menu"
+                             aria-label="Places"
                              class="absolute right-0 z-50 mt-2 w-48 rounded-md bg-white py-1 shadow-lg"
                              style="display: none;"
                              @click.away="open = false">
                             <a class="block px-4 py-2 text-dark hover:bg-gray-100"
-                               href="{{ route("home") }}"
-                               title="Go back home">
+                               role="menuitem"
+                               href="{{ route("home") }}">
                                 Home
                             </a>
-                            @foreach ($places as $link)
-                                @if (is_string($link))
-                                    {!! $link !!}
-                                @else
+                            @foreach ($navLinks as $link)
+                                @if (!empty($link["divider"]))
+                                    <hr aria-hidden="true" class="border-gray-200 my-1">
+                                @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
                                     <a class="block px-4 py-2 text-dark hover:bg-gray-100"
+                                       role="menuitem"
                                        href="{{ $link["href"] }}"
-                                       title="{{ $link["label"] }}"
-                                       {{ isset($link["target"]) ? ' target="' . $link["target"] . '"' : "" }}>
+                                       @if (!empty($link["target"])) target="{{ $link["target"] }}" rel="noopener noreferrer" @endif>
                                         {{ $link["label"] }}
                                     </a>
                                 @endif
                             @endforeach
-                            @ifcanvasauthenticated
-                            <div class="border-t border-gray-200"></div>
-                            <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="/{{ config("canvas.path") }}">
-                                Canvas Blog
-                            </a>
-                            @endifcanvasauthenticated
-                            @can("manage-unauthenticated-viewers")
-                                <div class="border-t border-gray-200"></div>
-                                <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="{{ route("admin.index") }}">
-                                    Admin
-                                </a>
-                            @endcan
-                            @ifauthenticated
-                            <div class="border-t border-gray-200"></div>
-                            <a class="block px-4 py-2 text-dark hover:bg-gray-100"
-                               href="{{ route("keystone.profile.show") }}">
-                                My Profile
-                            </a>
-                            <a class="block px-4 py-2 text-dark hover:bg-gray-100" href="/logout">
-                                Log out
-                            </a>
-                            @endifauthenticated
                         </div>
                     </div>
-                    <button class="ml-4 text-white md:hidden"
-                            onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
-                        <svg class="h-6 w-6"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M4 6h16M4 12h16M4 18h16"></path>
+                    <button class="ml-4 text-white md:hidden focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                            aria-label="Toggle navigation menu"
+                            aria-controls="mobileMenu"
+                            onclick="this.setAttribute('aria-expanded', document.getElementById('mobileMenu').classList.toggle('hidden') ? 'false' : 'true')">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
                 </div>
             </div>
-            <div id="mobileMenu" class="hidden pb-4 md:hidden">
-                <ul class="space-y-2">
-                    @foreach ($links as $link)
-                        <li>
-                            <a href="{{ $link["href"] }}"
-                               class="block px-3 py-2 text-white/75 hover:text-white">{{ $link["label"] }}</a>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+            <nav id="mobileMenu" aria-label="Mobile navigation" class="hidden md:hidden" style="margin: auto -16px;">
+                @foreach ($navLinks as $link)
+                    @if (!empty($link["divider"]))
+                        <hr aria-hidden="true" class="border-white/20 my-1">
+                    @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
+                        <a href="{{ $link["href"] }}"
+                           class="block px-4 py-2 text-white hover:text-white/75 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                           @if (!empty($link["target"])) target="{{ $link["target"] }}" rel="noopener noreferrer" @endif>
+                            {{ $link["label"] }}
+                        </a>
+                    @endif
+                @endforeach
+            </nav>
         </div>
     </nav>
 

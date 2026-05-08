@@ -6,6 +6,8 @@ use App\Mail\ResumeShareCodeCreated;
 use App\Models\ResumeShareCode;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ResumeShareCodeEmailTest extends TestCase
@@ -22,7 +24,11 @@ class ResumeShareCodeEmailTest extends TestCase
             'email' => 'admin-' . uniqid() . '@test.com',
             'password' => bcrypt('password'),
         ]);
+
+        Role::findOrCreate('admin', 'web');
+        Permission::findOrCreate('manage-unauthenticated-viewers', 'web');
         $this->admin->assignRole('admin');
+        $this->admin->givePermissionTo('manage-unauthenticated-viewers');
     }
 
     public function test_create_share_code_without_email(): void

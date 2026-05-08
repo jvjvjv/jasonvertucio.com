@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fortawesome/fontawesome-free/css/fontawesome.css";
 @import "@fortawesome/fontawesome-free/css/solid.css";
+@import "./scrollbars.css";
 
 /* Resume page styles - following home page patterns */
 
@@ -10,9 +11,9 @@
     --color-dark: #495057;
     --color-link: #4351a0;
 
-    --font-family-heading: "Convection Condensed", "Bebas Neue", "Impact", "Arial Black", sans-serif;
-    --font-family-subheading: "Saira Extra Condensed", "Impact", sans-serif;
-    --font-family-body: Corbel, "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "DejaVu Sans", "Bitstream Vera Sans", "Liberation Sans", Verdana, sans-serif;
+    --font-family-heading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-subheading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-body: "Montserrat", "Arial", sans-serif;
 }
 
 /* Resume container */
@@ -62,7 +63,7 @@
 
 /* FAB download button */
 .fab-download {
-    @apply fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg;
+    @apply w-14 h-14 bg-primary text-white rounded-full;
     @apply hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/50;
     @apply transition-all flex items-center justify-center;
     @apply transform hover:scale-110;

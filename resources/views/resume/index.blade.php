@@ -30,10 +30,8 @@
     </div>
 </div>
 
-{{-- FAB Download Button (shown only if user has save-resume permission) --}}
-@if($canSave)
-<x-resume.download-fab />
-@endif
+{{-- FAB Download Button --}}
+<x-resume.download-fab :docxExists="$docxExists" :pdfExists="$pdfExists" />
 @endsection
 
 @push('styles')

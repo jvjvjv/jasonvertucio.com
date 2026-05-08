@@ -8,18 +8,18 @@
         }
 
         .keystone-text {
-            color: var(--keystone-text-muted, #6b7280);
+            color: var(--authkit-text-muted, #6b7280);
             font-size: 0.875rem;
             margin-bottom: 1rem;
         }
 
         .keystone-error {
-            color: var(--keystone-danger, #dc2626);
+            color: var(--authkit-danger, #dc2626);
             font-size: 0.875rem;
             margin-bottom: 1rem;
             padding: 0.75rem;
             background: #fee2e2;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(--authkit-radius, 0.5rem);
         }
 
         .keystone-checkbox-group {
@@ -34,8 +34,8 @@
             align-items: flex-start;
             gap: 0.75rem;
             padding: 1rem;
-            background: var(--keystone-bg-secondary, #f9fafb);
-            border-radius: var(--keystone-radius, 0.5rem);
+            background: var(--authkit-bg-secondary, #f9fafb);
+            border-radius: var(--authkit-radius, 0.5rem);
             cursor: pointer;
             transition: background-color 0.2s;
         }
@@ -50,7 +50,7 @@
         }
 
         .keystone-checkbox-label.keystone-disabled:hover {
-            background: var(--keystone-bg-secondary, #f9fafb);
+            background: var(--authkit-bg-secondary, #f9fafb);
         }
 
         .keystone-checkbox {
@@ -71,12 +71,12 @@
 
         .keystone-checkbox-title {
             font-weight: 500;
-            color: var(--keystone-text, #1f2937);
+            color: var(--authkit-text, #1f2937);
         }
 
         .keystone-checkbox-description {
             font-size: 0.875rem;
-            color: var(--keystone-text-muted, #6b7280);
+            color: var(--authkit-text-muted, #6b7280);
         }
 
         .keystone-text-warning {
@@ -86,7 +86,7 @@
 
         .keystone-btn {
             padding: 0.5rem 1rem;
-            border-radius: var(--keystone-radius, 0.5rem);
+            border-radius: var(--authkit-radius, 0.5rem);
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
@@ -95,12 +95,12 @@
         }
 
         .keystone-btn-primary {
-            background: var(--keystone-primary, #4f46e5);
+            background: var(--authkit-primary, #4f46e5);
             color: white;
         }
 
         .keystone-btn-primary:hover {
-            background: var(--keystone-primary-hover, #4338ca);
+            background: var(--authkit-primary-hover, #4338ca);
         }
     </style>
 
