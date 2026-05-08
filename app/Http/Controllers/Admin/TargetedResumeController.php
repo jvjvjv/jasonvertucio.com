@@ -9,6 +9,8 @@ use App\Http\Requests\StartTargetedResumeRequest;
 use App\Http\Requests\UpdateTargetedResumeConversationRequest;
 use App\Models\AiConversation;
 use App\Models\AiSystem;
+use App\Models\CoverLetter;
+use App\Models\JobUrl;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\TargetedResumeDocumentService;
@@ -173,7 +175,16 @@ class TargetedResumeController extends Controller
             ->toArray();
 
         $targetedResume = $conversation->targetedResume;
-        $coverLetter = $targetedResume?->coverLetters()->latest()->first();
+        $coverLetterRecord = $targetedResume?->coverLetters()->latest()->first();
+        $coverLetter = $coverLetterRecord instanceof CoverLetter ? $coverLetterRecord : null;
+        $jobUrl = null;
+
+        if (is_string(data_get($conversation->context, 'job_url_id'))) {
+            $jobUrl = JobUrl::query()
+                ->whereKey(data_get($conversation->context, 'job_url_id'))
+                ->value('url');
+        }
+
         $shouldAutoStart = ($conversation->messages->where('role', 'assistant')->count() === 0)
             && ((bool) data_get($conversation->context, 'auto_start_pending', false));
 
@@ -191,6 +202,7 @@ class TargetedResumeController extends Controller
                     'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
                     'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
                 ],
+                'job_url' => $jobUrl,
             ],
             'messages' => $messages,
             'targetedResume' => $targetedResume ? [

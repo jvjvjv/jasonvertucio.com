@@ -19,9 +19,9 @@ class JobUrlParseService {
     }
 
     /**
-     * Parse a job URL and extract job information.
-     *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
+      * Parse a job URL and extract job information.
+      *
+      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
     public function parseUrl(string $url, AiSystem $aiSystem): array {
         $domain = $this->extractDomain($url);
@@ -33,10 +33,11 @@ class JobUrlParseService {
             $extracted = $this->extractWithSelectors($html, $activeParser);
 
             if ($extracted !== null) {
-                $this->storeJobUrl($url, $activeParser, $extracted);
+                $jobUrl = $this->storeJobUrl($url, $activeParser, $extracted);
 
                 return [
                     ...$extracted,
+                    'job_url_id' => $jobUrl->id,
                     'parser_id' => $activeParser->id,
                     'used_existing_parser' => true,
                 ];
@@ -88,9 +89,9 @@ class JobUrlParseService {
     }
 
     /**
-     * Use AI to extract job data from HTML.
-     *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
+      * Use AI to extract job data from HTML.
+      *
+      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
     public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array {
         $cleanedHtml = $this->cleanHtml($html);
@@ -135,10 +136,11 @@ class JobUrlParseService {
             'reasoning' => $parsed['reasoning'] ?? '',
         ];
 
-        $this->storeJobUrl($url, $parser, $extracted);
+        $jobUrl = $this->storeJobUrl($url, $parser, $extracted);
 
         return [
             ...$extracted,
+            'job_url_id' => $jobUrl->id,
             'parser_id' => $parser->id,
             'used_existing_parser' => false,
         ];
@@ -164,9 +166,9 @@ class JobUrlParseService {
     }
 
     /**
-     * Re-parse using stored HTML with user feedback.
-     *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
+      * Re-parse using stored HTML with user feedback.
+      *
+      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
     public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array {
         $html = $parser->html;
@@ -186,8 +188,8 @@ class JobUrlParseService {
      *
      * @param array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string} $extracted
      */
-    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): void {
-        JobUrl::create([
+    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): JobUrl {
+        return JobUrl::create([
             'job_url_parser_id' => $parser->id,
             'url' => $url,
             'contents' => json_encode($extracted, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),

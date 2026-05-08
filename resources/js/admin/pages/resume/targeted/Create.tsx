@@ -24,6 +24,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         defaultSystemId ?? "",
     );
     const [jobUrl, setJobUrl] = useState("");
+    const [jobUrlId, setJobUrlId] = useState<string | null>(null);
     const [jobTitle, setJobTitle] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [jobLocation, setJobLocation] = useState("");
@@ -78,6 +79,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
+            setJobUrlId(result.job_url_id ?? null);
             setParseReasoning(result.reasoning || "");
             if (result.parser_id) setParserId(result.parser_id);
             if (result.used_existing_parser) setUsedExistingParser(true);
@@ -122,6 +124,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
+            setJobUrlId(result.job_url_id ?? null);
             setParseReasoning(result.reasoning || "");
             if (result.parser_id) setParserId(result.parser_id);
             setReparseFeedback("");
@@ -158,6 +161,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                     },
                     body: JSON.stringify({
                         ai_system_id: aiSystemId,
+                        job_url_id: jobUrlId,
                         job_title: jobTitle,
                         job_location: jobLocation,
                         company_name: companyName,
@@ -251,6 +255,12 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                         {parseError && (
                             <Alert severity="warning" sx={{ mb: 2 }}>
                                 {parseError}
+                            </Alert>
+                        )}
+
+                        {jobUrlId && !parseError && (
+                            <Alert severity="success" sx={{ mb: 2 }}>
+                                Parsed job URL attached to this session.
                             </Alert>
                         )}
 

@@ -6,6 +6,7 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
@@ -466,6 +467,19 @@ export default function Show({
                             Pass
                         </Button>
                     )}
+                    {conversation.job_url && (
+                        <Button
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            component="a"
+                            href={conversation.job_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Job URL
+                        </Button>
+                    )}
                 </Box>
             </Box>
 
@@ -760,6 +774,26 @@ export default function Show({
                                 helperText={metadataForm.errors.job_title}
                                 sx={{ mb: 3 }}
                             />
+                            {conversation.job_url && (
+                                <Box sx={{ mb: 3 }}>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{ display: "block" }}
+                                    >
+                                        Parsed Job URL
+                                    </Typography>
+                                    <Link
+                                        href={conversation.job_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        underline="hover"
+                                        sx={{ wordBreak: "break-all" }}
+                                    >
+                                        {conversation.job_url}
+                                    </Link>
+                                </Box>
+                            )}
                             <TextField
                                 label="Applied Date"
                                 type="date"
