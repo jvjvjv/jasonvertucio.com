@@ -51,6 +51,10 @@ class AiClientFactory
             $client->withTemperature((float) $system->temperature);
         }
 
+        if ($client instanceof ClaudeService && ($system->config['web_search_enabled'] ?? false)) {
+            $client->withWebSearch();
+        }
+
         return $client;
     }
 

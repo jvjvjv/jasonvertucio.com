@@ -27,7 +27,7 @@ class ClaudeService implements AiClientContract
     /** @var float|null Per-request temperature override */
     private ?float $temperature = null;
 
-    /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> Per-request tools */
+    /** @var array<int, array<string, mixed>> Per-request tools (user-defined or server-side) */
     private array $tools = [];
 
     public function __construct(
@@ -87,13 +87,30 @@ class ClaudeService implements AiClientContract
     /**
      * Attach tools for the next request.
      *
-     * Each tool should have: name, description, and input_schema.
+     * Accepts user-defined tools (name, description, input_schema) or
+     * server-side tool declarations (type, name) such as web_search_20260209.
      *
-     * @param array<int, array{name: string, description: string, input_schema: array<string, mixed>}> $tools
+     * @param array<int, array<string, mixed>> $tools
      */
     public function withTools(array $tools): self
     {
         $this->tools = $tools;
+
+        return $this;
+    }
+
+    /**
+     * Enable Anthropic's server-side web search and web fetch tools for the next request.
+     *
+     * These are executed on Anthropic's infrastructure — no client-side handling required.
+     * The model searches the web automatically when it determines it is necessary.
+     */
+    public function withWebSearch(): self
+    {
+        $this->tools = [
+            ['type' => 'web_search_20260209', 'name' => 'web_search'],
+            ['type' => 'web_fetch_20260209', 'name' => 'web_fetch'],
+        ];
 
         return $this;
     }
