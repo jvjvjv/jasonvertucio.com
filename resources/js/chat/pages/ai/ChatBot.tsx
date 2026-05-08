@@ -1,6 +1,20 @@
 import { Head, router } from '@inertiajs/react';
-import { marked } from 'marked';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import LinearProgress from '@mui/material/LinearProgress';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
+import ChatMessageBubble from "../../../components/ChatMessageBubble";
 
 interface HistoryItem {
     handle: string;
@@ -29,33 +43,6 @@ interface ChatBotProps {
     resetUrl: string;
     switchUrl: string;
     showIdentityForm: boolean;
-}
-
-function MarkdownContent({ content, isUser }: { content: string; isUser: boolean }) {
-    return (
-        <div
-            className={`chat-markdown text-sm leading-6${isUser ? ' chat-markdown--user' : ''}`}
-            dangerouslySetInnerHTML={{
-                __html: marked.parse(content, { breaks: true }) as string,
-            }}
-        />
-    );
-}
-
-function MessageBubble({ message }: { message: ChatMessage }) {
-    const isUser = message.role === 'user';
-    return (
-        <article
-            className={`border px-4 py-3 ${isUser ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 bg-slate-50 text-slate-900'}`}
-        >
-            <p
-                className={`mb-2 text-xs uppercase tracking-[0.16em] ${isUser ? 'text-slate-200' : 'text-slate-500'}`}
-            >
-                {message.role}
-            </p>
-            <MarkdownContent content={message.content} isUser={isUser} />
-        </article>
-    );
 }
 
 export default function ChatBot({
@@ -88,7 +75,7 @@ export default function ChatBot({
         }
     }, [messages, streamingContent]);
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             void handleSubmit();
@@ -190,189 +177,310 @@ export default function ChatBot({
     return (
         <>
             <Head title={bot.name} />
-            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
-                <section className="border border-slate-300 bg-white p-6">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div className="flex flex-col gap-2">
-                            <p className="text-sm uppercase tracking-[0.2em] text-slate-500">
-                                AI Chat Bot
-                            </p>
-                            <h1 className="font-heading text-4xl text-slate-900">{bot.name}</h1>
-                            {bot.description && (
-                                <p className="max-w-3xl text-base text-slate-700">
-                                    {bot.description}
-                                </p>
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleReset}
-                            className="border border-slate-400 px-4 py-2 text-sm uppercase tracking-[0.12em] text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
-                        >
-                            New Chat
-                        </button>
-                    </div>
-                </section>
-
-                <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_320px]">
-                    <div className="border border-slate-300 bg-white">
-                        <div className="border-b border-slate-300 px-6 py-4">
-                            <h2 className="font-heading text-2xl text-slate-900">Conversation</h2>
-                        </div>
-
-                        <div
-                            ref={messagesRef}
-                            className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-6 py-5"
-                        >
-                            {messages.length === 0 && !isStreaming ? (
-                                <div className="border border-dashed border-slate-300 px-4 py-8 text-center text-slate-500">
-                                    Send the first message to start the conversation.
-                                </div>
-                            ) : (
-                                messages.map((message, index) => (
-                                    <MessageBubble key={index} message={message} />
-                                ))
-                            )}
-                        </div>
-
-                        {isStreaming && (
-                            <div className="border-t border-slate-300 bg-slate-50 px-6 py-4">
-                                <p className="mb-2 text-xs uppercase tracking-[0.16em] text-slate-500">
-                                    assistant
-                                </p>
-                                {streamingContent ? (
-                                    <MarkdownContent content={streamingContent} isUser={false} />
-                                ) : (
-                                    <span className="text-sm text-slate-400">…</span>
-                                )}
-                            </div>
-                        )}
-
-                        <form
-                            className="border-t border-slate-300 px-6 py-5"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                void handleSubmit();
-                            }}
-                        >
-                            {showIdentityForm && (
-                                <div className="mb-4 grid gap-4 md:grid-cols-2">
-                                    <label className="flex flex-col gap-2 text-sm text-slate-700">
-                                        <span>Name</span>
-                                        <input
-                                            type="text"
-                                            value={visitorName}
-                                            onChange={(e) => setVisitorName(e.target.value)}
-                                            className="border border-slate-300 px-3 py-2 text-slate-900"
-                                            required
-                                        />
-                                    </label>
-                                    <label className="flex flex-col gap-2 text-sm text-slate-700">
-                                        <span>Email</span>
-                                        <input
-                                            type="email"
-                                            value={visitorEmail}
-                                            onChange={(e) => setVisitorEmail(e.target.value)}
-                                            className="border border-slate-300 px-3 py-2 text-slate-900"
-                                            required
-                                        />
-                                    </label>
-                                </div>
-                            )}
-                            <div className="flex flex-col gap-3">
-                                <label className="flex flex-col gap-2 text-sm text-slate-700">
-                                    <span>Your message</span>
-                                    <textarea
-                                        value={messageText}
-                                        onChange={(e) => setMessageText(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                        rows={5}
-                                        className="border border-slate-300 px-3 py-3 text-slate-900"
-                                        required
-                                    />
-                                </label>
-                                <div className="flex items-center justify-between gap-3">
-                                    {error && <p className="text-sm text-red-700">{error}</p>}
-                                    <button
-                                        type="submit"
-                                        disabled={isStreaming}
-                                        className="ml-auto border border-slate-900 bg-slate-900 px-5 py-3 text-sm uppercase tracking-[0.16em] text-white transition hover:bg-slate-700 disabled:opacity-50"
+            <Box sx={{ mx: 'auto', width: '100%', maxWidth: 1200, px: 2, py: 4 }}>
+                <Stack spacing={3}>
+                    <Card>
+                        <CardContent>
+                            <Stack
+                                direction={{ xs: 'column', md: 'row' }}
+                                justifyContent="space-between"
+                                alignItems={{ xs: 'flex-start', md: 'flex-start' }}
+                                spacing={2}
+                            >
+                                <Box>
+                                    <Typography
+                                        variant="overline"
+                                        color="text.secondary"
+                                        sx={{ letterSpacing: '0.18em' }}
                                     >
-                                        Send Message
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                                        AI Chat Bot
+                                    </Typography>
+                                    <Typography variant="h2" sx={{ mt: 0.25 }}>
+                                        {bot.name}
+                                    </Typography>
+                                    {bot.description ? (
+                                        <Typography sx={{ mt: 1, maxWidth: 840 }} color="text.secondary">
+                                            {bot.description}
+                                        </Typography>
+                                    ) : null}
+                                </Box>
+                                <Button
+                                    type="button"
+                                    variant="outlined"
+                                    onClick={handleReset}
+                                    sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' } }}
+                                >
+                                    New Chat
+                                </Button>
+                            </Stack>
+                        </CardContent>
+                    </Card>
 
-                    <aside className="flex flex-col gap-4">
-                        <section className="border border-slate-300 bg-white p-5">
-                            <div className="mb-3 flex items-center justify-between gap-3">
-                                <h2 className="font-heading text-2xl text-slate-900">Your Chats</h2>
-                                <span className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                                    Private to this browser
-                                </span>
-                            </div>
-                            {history.length > 0 ? (
-                                <div className="flex flex-col gap-2">
-                                    {history.map((item) => (
-                                        <button
-                                            key={item.handle}
-                                            type="button"
-                                            onClick={() => handleSwitch(item.handle)}
-                                            className={`flex w-full items-center justify-between gap-3 border px-3 py-3 text-left transition ${item.is_current ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-slate-50 text-slate-900 hover:border-slate-900'}`}
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gap: 3,
+                            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0,2fr) 320px' },
+                        }}
+                    >
+                        <Card>
+                            <CardContent sx={{ p: 0 }}>
+                                <Box sx={{ px: 3, py: 2 }}>
+                                    <Typography variant="h4">Conversation</Typography>
+                                </Box>
+                                <Divider />
+
+                                <Box
+                                    ref={messagesRef}
+                                    sx={{
+                                        maxHeight: '60vh',
+                                        overflowY: 'auto',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 2,
+                                        px: 3,
+                                        py: 2.5,
+                                    }}
+                                >
+                                    {messages.length === 0 && !isStreaming ? (
+                                        <Box
+                                            sx={{
+                                                border: '1px dashed',
+                                                borderColor: 'divider',
+                                                py: 3,
+                                                px: 2,
+                                                textAlign: 'center',
+                                                color: 'text.secondary',
+                                            }}
                                         >
-                                            <span className="min-w-0 flex-1">
-                                                <span className="block truncate text-sm font-medium">
-                                                    {item.label}
-                                                </span>
-                                                <span
-                                                    className={`block text-xs uppercase tracking-[0.14em] ${item.is_current ? 'text-slate-200' : 'text-slate-500'}`}
-                                                >
-                                                    {item.updated_at}
-                                                </span>
-                                            </span>
-                                            {item.is_current && (
-                                                <span className="text-[11px] uppercase tracking-[0.14em] text-slate-200">
-                                                    Current
-                                                </span>
+                                            Send the first message to start the conversation.
+                                        </Box>
+                                    ) : (
+                                        messages.map((message, index) => (
+                                            <ChatMessageBubble
+                                                key={index}
+                                                role={message.role}
+                                                content={message.content}
+                                            />
+                                        ))
+                                    )}
+                                </Box>
+
+                                {isStreaming ? (
+                                    <>
+                                        <Divider />
+                                        <Box sx={{ px: 3, py: 2.5, bgcolor: 'grey.50' }}>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    display: 'block',
+                                                    mb: 1,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.16em',
+                                                    color: 'text.secondary',
+                                                }}
+                                            >
+                                                assistant
+                                            </Typography>
+                                            {streamingContent ? (
+                                                <ChatMessageBubble
+                                                    role="assistant"
+                                                    content={streamingContent}
+                                                />
+                                            ) : (
+                                                <Typography color="text.secondary">…</Typography>
                                             )}
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-sm leading-6 text-slate-700">
-                                    No saved chats in this browser yet. Start a message to create a
-                                    private thread.
-                                </p>
-                            )}
-                        </section>
+                                            <Stack
+                                                direction="row"
+                                                spacing={1.5}
+                                                alignItems="center"
+                                                sx={{ mt: 1.5 }}
+                                                role="status"
+                                                aria-live="polite"
+                                                aria-label="Assistant response is still streaming"
+                                            >
+                                                <CircularProgress size={14} thickness={6} />
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    sx={{ letterSpacing: '0.12em', textTransform: 'uppercase' }}
+                                                >
+                                                    Streaming response
+                                                </Typography>
+                                                <Box sx={{ width: 132 }}>
+                                                    <LinearProgress />
+                                                </Box>
+                                            </Stack>
+                                        </Box>
+                                    </>
+                                ) : null}
 
-                        <section className="border border-slate-300 bg-white p-5">
-                            <h2 className="mb-3 font-heading text-2xl text-slate-900">Access</h2>
-                            <div className="flex flex-col gap-2 text-sm text-slate-700">
-                                <p>{bot.is_public ? 'Public bot' : 'Restricted bot'}</p>
-                                <p>
-                                    {bot.require_visitor_identity
-                                        ? 'Name and email are required before the first guest message.'
-                                        : 'No guest identity is required by this bot.'}
-                                </p>
-                                <p>Only chats created in this browser are listed here.</p>
-                            </div>
-                        </section>
+                                <Divider />
+                                <Box
+                                    component="form"
+                                    sx={{ px: 3, py: 2.5 }}
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        void handleSubmit();
+                                    }}
+                                >
+                                    <Stack spacing={2}>
+                                        {showIdentityForm ? (
+                                            <Box
+                                                sx={{
+                                                    display: 'grid',
+                                                    gap: 2,
+                                                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                                                }}
+                                            >
+                                                <TextField
+                                                    label="Name"
+                                                    value={visitorName}
+                                                    onChange={(e) => setVisitorName(e.target.value)}
+                                                    required
+                                                    fullWidth
+                                                />
+                                                <TextField
+                                                    label="Email"
+                                                    type="email"
+                                                    value={visitorEmail}
+                                                    onChange={(e) => setVisitorEmail(e.target.value)}
+                                                    required
+                                                    fullWidth
+                                                />
+                                            </Box>
+                                        ) : null}
 
-                        <section className="border border-slate-300 bg-white p-5">
-                            <h2 className="mb-3 font-heading text-2xl text-slate-900">
-                                Prompt Notes
-                            </h2>
-                            <p className="text-sm leading-6 text-slate-700">
-                                The conversation is saved and can contribute new insights to AI
-                                Memory for this bot.
-                            </p>
-                        </section>
-                    </aside>
-                </section>
-            </div>
+                                        <TextField
+                                            label="Your message"
+                                            multiline
+                                            minRows={5}
+                                            value={messageText}
+                                            onChange={(e) => setMessageText(e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                            required
+                                            fullWidth
+                                        />
+
+                                        {error ? <Alert severity="error">{error}</Alert> : null}
+
+                                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                            <Button
+                                                type="submit"
+                                                variant="contained"
+                                                disabled={isStreaming}
+                                            >
+                                                Send Message
+                                            </Button>
+                                        </Box>
+                                    </Stack>
+                                </Box>
+                            </CardContent>
+                        </Card>
+
+                        <Stack spacing={2}>
+                            <Card>
+                                <CardContent>
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                        justifyContent="space-between"
+                                        spacing={1}
+                                        sx={{ mb: 1 }}
+                                    >
+                                        <Typography variant="h5">Your Chats</Typography>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ textTransform: 'uppercase', letterSpacing: '0.14em' }}
+                                        >
+                                            Private to this browser
+                                        </Typography>
+                                    </Stack>
+
+                                    {history.length > 0 ? (
+                                        <List disablePadding>
+                                            {history.map((item) => (
+                                                <ListItemButton
+                                                    key={item.handle}
+                                                    selected={item.is_current}
+                                                    onClick={() => handleSwitch(item.handle)}
+                                                    sx={{
+                                                        border: '1px solid',
+                                                        borderColor: item.is_current
+                                                            ? 'primary.main'
+                                                            : 'divider',
+                                                        mb: 1,
+                                                    }}
+                                                >
+                                                    <ListItemText
+                                                        primary={item.label}
+                                                        secondary={item.updated_at}
+                                                        secondaryTypographyProps={{
+                                                            sx: {
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.08em',
+                                                                fontSize: '0.7rem',
+                                                            },
+                                                        }}
+                                                    />
+                                                    {item.is_current ? (
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="primary"
+                                                            sx={{ textTransform: 'uppercase', letterSpacing: '0.12em' }}
+                                                        >
+                                                            Current
+                                                        </Typography>
+                                                    ) : null}
+                                                </ListItemButton>
+                                            ))}
+                                        </List>
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary">
+                                            No saved chats in this browser yet. Start a message to create a
+                                            private thread.
+                                        </Typography>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h5" sx={{ mb: 1 }}>
+                                        Access
+                                    </Typography>
+                                    <Stack spacing={0.75}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {bot.is_public ? 'Public bot' : 'Restricted bot'}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {bot.require_visitor_identity
+                                                ? 'Name and email are required before the first guest message.'
+                                                : 'No guest identity is required by this bot.'}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Only chats created in this browser are listed here.
+                                        </Typography>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h5" sx={{ mb: 1 }}>
+                                        Prompt Notes
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        The conversation is saved and can contribute new insights to AI
+                                        Memory for this bot.
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Stack>
+                    </Box>
+                </Stack>
+            </Box>
         </>
     );
 }
