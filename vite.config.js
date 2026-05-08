@@ -23,6 +23,7 @@ export default defineConfig({
                 'resources/js/font-loader.js',
                 'resources/js/home.js',
                 'resources/js/admin/app.tsx',
+                'resources/js/chat/app.tsx',
                 'resources/css/app.css',
                 'resources/css/blog.css',
                 'resources/css/resume.css',

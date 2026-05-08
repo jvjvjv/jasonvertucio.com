@@ -19,7 +19,9 @@
     },
     "include": [
         "./resources/js/admin/**/*.ts",
-        "./resources/js/admin/**/*.tsx"
+        "./resources/js/admin/**/*.tsx",
+        "./resources/js/chat/**/*.ts",
+        "./resources/js/chat/**/*.tsx"
     ],
     "exclude": ["node_modules"]
 }

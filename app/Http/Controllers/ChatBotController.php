@@ -7,10 +7,11 @@ use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Services\AiChatBotConversationService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ChatBotController extends Controller
@@ -25,7 +26,7 @@ class ChatBotController extends Controller
     /**
      * Display the chat bot page.
      */
-    public function show(Request $request, AiChatBot $aiChatBot): View
+    public function show(Request $request, AiChatBot $aiChatBot): InertiaResponse
     {
         $this->abortIfInaccessible($request, $aiChatBot);
 
@@ -45,14 +46,21 @@ class ChatBotController extends Controller
                 ->all();
         }
 
-        return view('ai.chat-bot', [
-            'bot' => $aiChatBot,
+        return Inertia::render('ai/ChatBot', [
+            'bot' => [
+                'name' => $aiChatBot->name,
+                'description' => $aiChatBot->description,
+                'is_public' => $aiChatBot->is_public,
+                'require_visitor_identity' => $aiChatBot->require_visitor_identity,
+            ],
             'messages' => $messages,
-            'conversation' => $conversation,
             'history' => $history,
             'messageUrl' => $this->routeUrlFor($aiChatBot, 'message'),
             'resetUrl' => $this->routeUrlFor($aiChatBot, 'reset'),
             'switchUrl' => $this->routeUrlFor($aiChatBot, 'switch'),
+            'showIdentityForm' => !$request->user()
+                && $aiChatBot->require_visitor_identity
+                && $conversation === null,
         ]);
     }
 
