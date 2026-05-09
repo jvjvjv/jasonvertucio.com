@@ -1,4 +1,5 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -12,6 +13,10 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import AdminLayout from "../../../layouts/AdminLayout";
 import PageHeader from "../../../components/PageHeader";
 import EmptyTableRow from "../../../components/EmptyTableRow";
@@ -34,6 +39,8 @@ interface IndexProps {
 
 export default function Index({ memories, features, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
+    const [rebuildDialogOpen, setRebuildDialogOpen] = useState(false);
+    const [selectedFeature, setSelectedFeature] = useState<string>("");
 
     const handleFilter = (key: string, value: string) => {
         const params: Record<string, string> = { ...filters, [key]: value };
@@ -58,6 +65,29 @@ export default function Index({ memories, features, filters }: IndexProps) {
             },
             { confirmLabel: "Rebuild", confirmColor: "warning" },
         );
+    };
+
+    const openRebuildDialog = () => {
+        setSelectedFeature("");
+        setRebuildDialogOpen(true);
+    };
+
+    const closeRebuildDialog = () => {
+        setRebuildDialogOpen(false);
+        setSelectedFeature("");
+    };
+
+    const handleRebuildWithSelection = () => {
+        if (selectedFeature) {
+            closeRebuildDialog();
+            confirm(
+                `Rebuild all memories for "${selectedFeature}"? Existing memories will be deactivated and regenerated.`,
+                () => {
+                    router.post(`/admin/ai/memories/rebuild/${selectedFeature}`);
+                },
+                { confirmLabel: "Rebuild", confirmColor: "warning" },
+            );
+        }
     };
 
     return (
@@ -128,16 +158,13 @@ export default function Index({ memories, features, filters }: IndexProps) {
 
                 <Box sx={{ flexGrow: 1 }} />
 
-                {features.map((f) => (
-                    <Button
-                        key={f}
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleRebuild(f)}
-                    >
-                        Rebuild {f}
-                    </Button>
-                ))}
+                <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={openRebuildDialog}
+                >
+                    Rebuild
+                </Button>
 
                 <Button
                     component={InertiaLink}
@@ -245,6 +272,40 @@ export default function Index({ memories, features, filters }: IndexProps) {
                 />
             </Card>
             <ConfirmDialog {...dialogProps} />
+
+            <Dialog open={rebuildDialogOpen} onClose={closeRebuildDialog} maxWidth="sm" fullWidth>
+                <DialogTitle>Select Feature to Rebuild</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Choose which feature's memories you want to rebuild. Existing memories for the selected feature will be deactivated and regenerated.
+                    </Typography>
+                    <TextField
+                        select
+                        fullWidth
+                        label="Feature"
+                        size="small"
+                        value={selectedFeature}
+                        onChange={(e) => setSelectedFeature(e.target.value)}
+                        sx={{ mt: 1 }}
+                    >
+                        <MenuItem value=""><em>Select a feature...</em></MenuItem>
+                        {features.map((f) => (
+                            <MenuItem key={f} value={f}>{f}</MenuItem>
+                        ))}
+                    </TextField>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeRebuildDialog}>Cancel</Button>
+                    <Button
+                        onClick={handleRebuildWithSelection}
+                        disabled={!selectedFeature}
+                        variant="contained"
+                        color="warning"
+                    >
+                        Rebuild
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </AdminLayout>
     );
 }

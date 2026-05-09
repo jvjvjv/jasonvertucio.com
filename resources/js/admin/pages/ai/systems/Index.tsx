@@ -55,7 +55,12 @@ export default function Index({ systems }: IndexProps) {
                 backLabel="Back to AI Tools"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button component={InertiaLink} href="/admin/ai/chat-bots" variant="outlined">AI Chat Bots</Button>
+                    <Button component={InertiaLink} href="/admin/ai/conversations" variant="outlined">AI Conversations</Button>
+                    <Button component={InertiaLink} href="/admin/ai/memories" variant="outlined">AI Memories</Button>
+                </Box>
                 <Button
                     component={InertiaLink}
                     href="/admin/ai/systems/new"
