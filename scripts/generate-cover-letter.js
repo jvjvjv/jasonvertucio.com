@@ -54,7 +54,6 @@ try {
     const templateContent = fs.readFileSync(templatePath);
     const data = JSON.parse(fs.readFileSync(dataJsonPath, 'utf8'));
 
-    // Convert messageBody from Markdown to OOXML for the {@messageBody} raw tag
     if (data.messageBody) {
         data.messageBody = markdownToOoxml(data.messageBody);
     }

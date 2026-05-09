@@ -373,11 +373,48 @@ class TargetedResumeService
 
     /**
      * Parse cover letter content into greeting, body, and closing.
+     * Detects if AI returned raw OOXML (wrapped in ```cover-letter code block) or plain text.
      *
      * @return array{greeting: string, message_body: string, closing: string}
      */
     private function parseCoverLetterContent(string $content): array
     {
+        // Check if AI returned raw OOXML wrapped in a markdown code block
+        $codeBlockMatch = null;
+        if (preg_match('/```cover[-\s]?letter\s*\n([\s\S]*?)```/i', $content, $codeBlockMatch)) {
+            // Extract the content inside the code block - this is raw OOXML text
+            $rawContent = trim($codeBlockMatch[1]);
+
+            // Try to extract greeting from beginning of OOXML (it's plain text)
+            $greeting = 'Dear Hiring Manager,';
+            $closing = 'Sincerely,';
+
+            if (preg_match('/^(<w:p[^>]*><w:r[^>]*><w:t[^>]*>)?([^<]+)<\/w:t>(<\/w:r><\/w:p>)?/s', $rawContent, $greetingMatch)) {
+                $extractedGreeting = trim($greetingMatch[2]);
+                if (preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $extractedGreeting)) {
+                    $greeting = $extractedGreeting;
+                }
+            }
+
+            // Try to extract closing from end of OOXML
+            if (preg_match('/(<w:p[^>]*><w:r[^>]*><w:t[^>]*>)?([^<]+)<\/w:t>(<\/w:r><\/w:p>)?\s*$/', $rawContent, $closingMatch)) {
+                $extractedClosing = trim($closingMatch[2]);
+                if (preg_match('/^(Sincerely|Best regards|Kind regards|Regards|Warm regards|Respectfully|Thank you|With appreciation)/i', $extractedClosing)) {
+                    $closing = $extractedClosing;
+                }
+            }
+
+            // Extract the message body (OOXML paragraphs between greeting and closing)
+            $messageBody = trim($rawContent);
+
+            return [
+                'greeting' => $greeting,
+                'message_body' => $messageBody,
+                'closing' => $closing,
+            ];
+        }
+
+        // Fallback: treat as plain text cover letter
         $lines = preg_split('/\r?\n/', trim($content));
 
         $greeting = 'Dear Hiring Manager,';
