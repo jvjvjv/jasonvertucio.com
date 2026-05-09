@@ -155,6 +155,11 @@ class TargetedResumeService
 
             yield "data: [DONE]\n\n";
 
+            $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
+                $conversation->aiSystem,
+                $conversation->aiSystem->model,
+            );
+
             // Save the assistant response
             if ($fullResponse) {
                 AiConversationMessage::create([
@@ -181,6 +186,8 @@ class TargetedResumeService
                 'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
                 'model' => $conversation->aiSystem->model,
+                'input_token_price_snapshot' => $pricingSnapshot['input_token_price_snapshot'],
+                'output_token_price_snapshot' => $pricingSnapshot['output_token_price_snapshot'],
                 'duration_ms' => $durationMs,
                 'status' => AiInteractionStatus::Success,
             ]);

@@ -268,8 +268,7 @@ export default function Show({
         );
     })();
 
-    const canFinalizeResume =
-        latestResumeData !== null && (!targetedResume || hasNewerResume);
+    const canFinalizeResume = latestResumeData !== null;
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {

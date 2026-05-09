@@ -45,7 +45,18 @@ class AiChatBotConversationServiceTest extends TestCase
     }
 
     public function test_continue_conversation_syncs_usage_after_successful_response(): void {
-        $bot = AiChatBot::factory()->create();
+        $bot = AiChatBot::factory()->create([
+            'ai_system_id' => \App\Models\AiSystem::factory()->create([
+                'pricing_profile' => [
+                    'models' => [
+                        'claude-sonnet-4-6' => [
+                            'input_per_million' => 50.00,
+                            'output_per_million' => 100.00,
+                        ],
+                    ],
+                ],
+            ])->id,
+        ]);
 
         $client = Mockery::mock(ClaudeService::class);
         $client->shouldReceive('withSystem')->once()->andReturnSelf();
@@ -69,7 +80,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $this->assertSame(1200, $conversation->usage_input_tokens);
         $this->assertSame(300, $conversation->usage_output_tokens);
         $this->assertSame(1500, $conversation->usage_total_tokens);
-        $this->assertSame('0.008100', (string) $conversation->usage_cost_usd);
+        $this->assertSame('0.090000', (string) $conversation->usage_cost_usd);
         $this->assertNotNull($conversation->usage_synced_at);
 
         $this->assertDatabaseHas('ai_interaction_logs', [
@@ -77,6 +88,8 @@ class AiChatBotConversationServiceTest extends TestCase
             'status' => 'success',
             'input_tokens' => 1200,
             'output_tokens' => 300,
+            'input_token_price_snapshot' => '0.00005000',
+            'output_token_price_snapshot' => '0.00010000',
         ]);
     }
 
