@@ -401,7 +401,6 @@ export default function Show({
             <TargetedBuilderStatusBar
                 conversation={conversation}
                 targetedResume={targetedResume}
-                coverLetter={coverLetter}
             />
 
             <Box
@@ -600,7 +599,7 @@ export default function Show({
                                             <IconButton
                                                 size="small"
                                                 component="a"
-                                                href={`/admin/cover-letters/${coverLetter.id}/StickyNote2/docx`}
+                                                href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
                                                 title="Download cover letter DOCX"
                                                 color="secondary"
                                             >
@@ -611,7 +610,7 @@ export default function Show({
                                             <IconButton
                                                 size="small"
                                                 component="a"
-                                                href={`/admin/cover-letters/${coverLetter.id}/StickyNote2/pdf`}
+                                                href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
                                                 title="Download cover letter PDF"
                                                 color="secondary"
                                             >

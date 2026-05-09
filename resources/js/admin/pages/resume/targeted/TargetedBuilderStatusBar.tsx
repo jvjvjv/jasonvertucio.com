@@ -2,19 +2,19 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import StatusChip from "../../../components/StatusChip";
 import UsageChip from "../../../components/UsageChip";
-import type { Conversation, CoverLetter, TargetedResume } from "../../../types";
+import type { Conversation, TargetedResume } from "../../../types";
 
 interface TargetedBuilderStatusBarProps {
     conversation: Conversation;
     targetedResume: TargetedResume | null;
-    coverLetter: CoverLetter | null;
 }
 
 export default function TargetedBuilderStatusBar({
     conversation,
     targetedResume,
-    coverLetter,
 }: TargetedBuilderStatusBarProps) {
+    const fitScore =
+        targetedResume?.fit_score ?? conversation.targeted_resume?.fit_score;
     return (
         <Box
             sx={{
@@ -32,9 +32,9 @@ export default function TargetedBuilderStatusBar({
                         : conversation.status
                 }
             />
-            {targetedResume?.fit_score != null && (
+            {fitScore && (
                 <Typography variant="caption" color="text.secondary">
-                    Fit: {targetedResume.fit_score}%
+                    Fit: {fitScore}%
                 </Typography>
             )}
             {targetedResume?.applied_at && (
