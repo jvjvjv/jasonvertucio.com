@@ -65,9 +65,10 @@ class JobUrlParseService {
                 : '';
 
             $jobDescription = $parser->job_description_selector
-                ? $crawler->filter($parser->job_description_selector)->first()->text('')
+                ? $this->htmlToMarkdown($crawler->filter($parser->job_description_selector)->first()->html(''))
                 : '';
 
+            $crawler->filter($parser->job_description_selector)->first()->html();
             $jobLocation = $parser->job_location_selector
                 ? $crawler->filter($parser->job_location_selector)->first()->text('')
                 : '';
@@ -285,6 +286,60 @@ Respond with valid JSON only, no markdown formatting or code fences:
   "reasoning": "Brief explanation of how you identified each field and chose the selectors"
 }
 PROMPT;
+    }
+
+    /**
+     * Convert HTML content to Markdown format.
+     *
+     * @param string $html The HTML content to convert
+     * @return string The converted Markdown content
+     */
+    private static function htmlToMarkdown(string $html): string {
+        // Remove script and style tags
+        $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
+        $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
+
+        // Remove comments
+        $html = preg_replace('/<!--.*?-->/s', '', $html);
+
+        // Convert headings (h1-h6) to markdown headers
+        for ($level = 6; $level >= 1; $level--) {
+            $pattern = '/<h' . $level . '[^>]*>(.*?)<\/h' . $level . '>/is';
+            $replacement = str_repeat('#', $level) . ' $1' . PHP_EOL . PHP_EOL;
+            $html = preg_replace($pattern, $replacement, $html);
+        }
+
+        // Convert paragraphs
+        $html = preg_replace('/<p[^>]*>(.*?)<\/p>/is', '$1' . PHP_EOL . PHP_EOL, $html);
+
+        // Convert bold text
+        $html = preg_replace('/<strong[^>]*>(.*?)<\/strong>/i', '**$1**', $html);
+        $html = preg_replace('/<b[^>]*>(.*?)<\/b>/i', '**$1**', $html);
+
+        // Convert italic text
+        $html = preg_replace('/<em[^>]*>(.*?)<\/em>/i', '*$1*', $html);
+        $html = preg_replace('/<i[^>]*>(.*?)<\/i>/i', '*$1*', $html);
+
+        // Convert unordered lists
+        $html = preg_replace('/<ul[^>]*>/', "\n", $html);
+        $html = preg_replace('/<ol[^>]*>/', "\n", $html);
+
+        // Convert list items
+        $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', '- $1' . PHP_EOL, $html);
+
+        // Convert line breaks to newlines
+        $html = preg_replace('/<br\s*\/?>/i', PHP_EOL, $html);
+
+        // Convert anchors but keep the URL in parentheses
+        $html = preg_replace('/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/is', '$2 ($1)', $html);
+
+        // Remove all remaining HTML tags and clean up whitespace
+        $text = trim(strip_tags($html, PHP_EOL));
+
+        // Clean up multiple consecutive blank lines
+        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+
+        return $text;
     }
 
     /**
