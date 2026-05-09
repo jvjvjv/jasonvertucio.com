@@ -8,7 +8,6 @@ use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
 
-use Log;
 
 class JobUrlParseService {
     private const MAX_HTML_LENGTH = 100000;
@@ -294,7 +293,7 @@ PROMPT;
      * @param string $html The HTML content to convert
      * @return string The converted Markdown content
      */
-    private static function htmlToMarkdown(string $html): string {
+    public static function htmlToMarkdown(string $html): string {
         // Remove script and style tags
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
         $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
@@ -312,13 +311,16 @@ PROMPT;
         // Convert paragraphs
         $html = preg_replace('/<p[^>]*>(.*?)<\/p>/is', '$1' . PHP_EOL . PHP_EOL, $html);
 
+        // Convert line breaks to newlines
+        $html = preg_replace('/<br\s*\/?>/i', PHP_EOL, $html);
+
         // Convert bold text
-        $html = preg_replace('/<strong[^>]*>(.*?)<\/strong>/i', '**$1**', $html);
-        $html = preg_replace('/<b[^>]*>(.*?)<\/b>/i', '**$1**', $html);
+        $html = preg_replace('/<strong[^>]*>(.*?)([\\r\\n]*)<\/strong>/i', '**$1**$2', $html);
+        $html = preg_replace('/<b[^>]*>(.*?)([\\r\\n]*)<\/b>/i', '**$1**$2', $html);
 
         // Convert italic text
-        $html = preg_replace('/<em[^>]*>(.*?)<\/em>/i', '*$1*', $html);
-        $html = preg_replace('/<i[^>]*>(.*?)<\/i>/i', '*$1*', $html);
+        $html = preg_replace('/<em[^>]*>(.*?)([\\r\\n]*)<\/em>/i', '*$1*$2', $html);
+        $html = preg_replace('/<i[^>]*>(.*?)([\\r\\n]*)<\/i>/i', '*$1*$2', $html);
 
         // Convert unordered lists
         $html = preg_replace('/<ul[^>]*>/', "\n", $html);
@@ -327,9 +329,6 @@ PROMPT;
         // Convert list items
         $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', '- $1' . PHP_EOL, $html);
 
-        // Convert line breaks to newlines
-        $html = preg_replace('/<br\s*\/?>/i', PHP_EOL, $html);
-
         // Convert anchors but keep the URL in parentheses
         $html = preg_replace('/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/is', '$2 ($1)', $html);
 
@@ -337,7 +336,7 @@ PROMPT;
         $text = trim(strip_tags($html, PHP_EOL));
 
         // Clean up multiple consecutive blank lines
-        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+        $text = preg_replace('/[\n\s]{3,}/', "\n\n", $text);
 
         return $text;
     }
