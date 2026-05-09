@@ -550,7 +550,7 @@ export default function Show({
                                             <IconButton
                                                 size="small"
                                                 component="a"
-                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/StickyNote2/docx`}
+                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
                                                 title="Download resume DOCX"
                                                 color="success"
                                             >
@@ -561,7 +561,7 @@ export default function Show({
                                             <IconButton
                                                 size="small"
                                                 component="a"
-                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/StickyNote2/pdf`}
+                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
                                                 title="Download resume PDF"
                                                 color="success"
                                             >
