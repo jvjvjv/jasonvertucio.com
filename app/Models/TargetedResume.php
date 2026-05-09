@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property array<string, mixed>|null $tailored_data
+ */
 class TargetedResume extends Model
 {
     use HasFactory;
@@ -25,6 +28,7 @@ class TargetedResume extends Model
         'fit_summary',
         'docx_path',
         'pdf_path',
+        'base_resume',
         'status',
         'applied_at',
     ];
@@ -39,6 +43,7 @@ class TargetedResume extends Model
             'fit_score' => 'integer',
             'status' => TargetedResumeStatus::class,
             'applied_at' => 'datetime',
+            'base_resume' => 'boolean',
         ];
     }
 

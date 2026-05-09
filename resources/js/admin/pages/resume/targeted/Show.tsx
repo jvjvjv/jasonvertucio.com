@@ -248,6 +248,14 @@ export default function Show({
     const latestResumeData = getLatestTailoredResumeData(messages);
     const latestCoverLetterContent = getLatestCoverLetterContent(messages);
 
+    // Compute fit score from either targeted resume or conversation context.
+    // Fit scores are always 1-100, so we can use falsy checks to simplify logic.
+    const hasFitScore = () => {
+        if (targetedResume?.fit_score) return true;
+        if (conversation.context?.fit_score) return true;
+        return false;
+    };
+
     const hasNewerResume = (() => {
         if (!targetedResume || !latestResumeData) return false;
         const normalize = (s: string | null | undefined) =>
@@ -449,8 +457,8 @@ export default function Show({
                         variant="outlined"
                         onClick={handleApplied}
                         disabled={
-                            !targetedResume ||
-                            targetedResume.status === "applied"
+                            !hasFitScore() ||
+                            targetedResume?.status === "applied"
                         }
                     >
                         {targetedResume?.status === "applied"

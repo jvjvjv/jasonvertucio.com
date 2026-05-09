@@ -390,14 +390,25 @@ class TargetedResumeController extends Controller
         $targetedResume = $conversation->targetedResume;
 
         if (!$targetedResume) {
-            return redirect()->route('admin.resume.targeted.show', $conversation)
-                ->with('error', 'Finalize the targeted resume before marking it as applied.');
+            // Create minimal targeted resume record with base_resume=true and fit score from context
+            $targetedResume = TargetedResume::create([
+                'resume_version_id' => $conversation->context['resume_version_id'] ?? null,
+                'ai_conversation_id' => $conversation->id,
+                'job_url_id' => $conversation->context['job_url_id'] ?? null,
+                'company_name' => $conversation->context['company_name'] ?? 'Unknown Company',
+                'position' => $conversation->context['job_title'] ?? 'Unknown Position',
+                'job_description' => $conversation->context['job_description'] ?? 'Missing job description',
+                'fit_score' => $conversation->context['fit_score'] ?? null,
+                'status' => TargetedResumeStatus::Applied,
+                'applied_at' => now(),
+                'base_resume' => true,
+            ]);
+        } else {
+            $targetedResume->update([
+                'status' => TargetedResumeStatus::Applied,
+                'applied_at' => now(),
+            ]);
         }
-
-        $targetedResume->update([
-            'status' => TargetedResumeStatus::Applied,
-            'applied_at' => now(),
-        ]);
 
         return redirect()->route('admin.resume.targeted.show', $conversation)
             ->with('success', 'Job marked as applied.');
