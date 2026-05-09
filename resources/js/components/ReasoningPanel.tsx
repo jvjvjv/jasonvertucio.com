@@ -7,20 +7,6 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 
-const expandTransition = {
-    transition: (theme) =>
-        `height ${theme.transitions.duration.enteringScreen}ms ${theme.transitions.easing.easeInOut}, ` +
-        `max-height ${theme.transitions.duration.enteringScreen}ms ${theme.transitions.easing.easeInOut}, ` +
-                `opacity 0.3s ease-in-out`,
-};
-
-const collapseTransition = {
-    transition: (theme) =>
-        `height ${theme.transitions.duration.leavingScreen}ms ${theme.transitions.easing.easeOut}, ` +
-        `max-height ${theme.transitions.duration.leavingScreen}ms ${theme.transitions.easing.easeOut}, ` +
-                `opacity 0.3s ease-in-out`,
-};
-
 export interface ReasoningPanelProps {
     content: string;
     /** True while this block is actively receiving streaming tokens. */
@@ -107,7 +93,11 @@ export default function ReasoningPanel({ content, isActive }: ReasoningPanelProp
                     >
                         <Typography
                             variant="caption"
-                            sx={{ lineHeight: 1, color: "text.disabled", fontSize: "12px" }}
+                            sx={{
+                                lineHeight: 1,
+                                color: "text.disabled",
+                                fontSize: "12px",
+                            }}
                         >
                             &#9650;
                         </Typography>
@@ -116,7 +106,7 @@ export default function ReasoningPanel({ content, isActive }: ReasoningPanelProp
             </Box>
 
             {/* Content */}
-            <Collapse in={expanded} timeout={expandTransition}>
+            <Collapse in={expanded}>
                 <Box
                     sx={{
                         px: 1.5,
@@ -143,7 +133,10 @@ export default function ReasoningPanel({ content, isActive }: ReasoningPanelProp
                     </Typography>
                 </Box>
                 {isActive ? (
-                    <LinearProgress sx={{ height: 2 }} aria-label="Model is thinking" />
+                    <LinearProgress
+                        sx={{ height: 2 }}
+                        aria-label="Model is thinking"
+                    />
                 ) : null}
             </Collapse>
         </Box>

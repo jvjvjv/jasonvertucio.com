@@ -199,6 +199,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
         }
     };
 
+    const fetchModelOnFieldChange = () => {
+        if (data.provider && data.api_key) {
+            fetchModels();
+        }
+    };
+
     const apiKeyHelperText = PROVIDERS_REQUIRING_API_KEY.has(data.provider)
         ? errors.api_key || "Models will be fetched when you leave this field"
         : errors.api_key || "Optional for local/self-hosted endpoints";
@@ -287,6 +293,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                             : apiKeyHelperText
                     }
                 />
+
                 <Box>
                     <TextField
                         label="Model"
@@ -323,6 +330,10 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 </Box>
             </Box>
 
+            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                Provider Settings
+            </Typography>
+
             <Box
                 sx={{
                     display: "grid",
@@ -335,16 +346,23 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     label="Base URL"
                     size="small"
                     value={data.base_url}
-                    onChange={(e) => setData("base_url", e.target.value)}
+                    onChange={(e) => {
+                        setData("base_url", e.target.value);
+                        fetchModelOnFieldChange();
+                    }}
                     error={!!errors.base_url}
                     helperText={errors.base_url}
                     placeholder={baseUrlPlaceholder}
                 />
+
                 <TextField
                     label="API Version"
                     size="small"
                     value={data.api_version}
-                    onChange={(e) => setData("api_version", e.target.value)}
+                    onChange={(e) => {
+                        setData("api_version", e.target.value);
+                        fetchModelOnFieldChange();
+                    }}
                     error={!!errors.api_version}
                     helperText={errors.api_version}
                     placeholder={apiVersionPlaceholder}
