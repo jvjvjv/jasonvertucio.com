@@ -73,7 +73,7 @@ class GeminiService implements AiClientContract
         $payload = $this->buildPayload($messages);
 
         $response = Http::withHeaders($this->headers())
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->urlForModel($this->activeModel()) . ':generateContent', $payload + $this->authQuery());
 
         $this->reset();
@@ -108,7 +108,7 @@ class GeminiService implements AiClientContract
 
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->urlForModel($this->activeModel()) . ':streamGenerateContent', $payload + ['alt' => 'sse'] + $this->authQuery());
 
         $this->reset();

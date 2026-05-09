@@ -128,7 +128,7 @@ class ClaudeService implements AiClientContract
         $payload = $this->buildPayload($messages);
 
         $response = Http::withHeaders($this->headers())
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/messages', $payload);
 
         $this->reset();
@@ -159,7 +159,7 @@ class ClaudeService implements AiClientContract
 
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/messages', $payload);
 
         $this->reset();

@@ -73,7 +73,7 @@ class OpenAiService implements AiClientContract
         $payload = $this->buildPayload($messages, false);
 
         $response = Http::withHeaders($this->headers())
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/chat/completions', $payload);
 
         $this->reset();
@@ -115,7 +115,7 @@ class OpenAiService implements AiClientContract
 
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/chat/completions', $payload);
 
         $this->reset();
