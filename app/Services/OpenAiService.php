@@ -100,6 +100,7 @@ class OpenAiService implements AiClientContract
                     'text' => (string) $content,
                 ],
             ],
+            'reasoning_content' => $choice['message']['reasoning_content'] ?? null,
             'model' => (string) ($data['model'] ?? ($this->model ?? $this->defaultModel)),
             'stop_reason' => (string) ($choice['finish_reason'] ?? 'stop'),
             'usage' => [
@@ -172,6 +173,16 @@ class OpenAiService implements AiClientContract
                 $choice = $chunk['choices'][0] ?? [];
                 $delta = $choice['delta'] ?? [];
                 $text = $delta['content'] ?? null;
+                $reasoning = $delta['reasoning_content'] ?? null;
+
+                if (is_string($reasoning) && $reasoning !== '') {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => [
+                            'reasoning' => $reasoning,
+                        ],
+                    ];
+                }
 
                 if (is_string($text) && $text !== '') {
                     yield [

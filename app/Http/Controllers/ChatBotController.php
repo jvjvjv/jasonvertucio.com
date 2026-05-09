@@ -42,6 +42,8 @@ class ChatBotController extends Controller
                 ->map(fn ($message) => [
                     'role' => $message->role,
                     'content' => $message->content,
+                    'reasoning_content' => $message->reasoning_content,
+                    'blocks' => $message->blocks,
                 ])
                 ->all();
         }

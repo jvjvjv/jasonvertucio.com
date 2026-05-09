@@ -82,6 +82,7 @@ class GeminiService implements AiClientContract
 
         $data = $response->json();
         $candidate = $data['candidates'][0] ?? [];
+        $reasoning = $this->candidateThoughtText($candidate);
 
         return [
             'id' => (string) ($data['responseId'] ?? ''),
@@ -90,9 +91,10 @@ class GeminiService implements AiClientContract
             'content' => [
                 [
                     'type' => 'text',
-                    'text' => $this->candidateText($candidate),
+                    'text' => $this->candidateResponseText($candidate),
                 ],
             ],
+            'reasoning_content' => $reasoning !== '' ? $reasoning : null,
             'model' => $this->activeModel(),
             'stop_reason' => (string) ($candidate['finishReason'] ?? 'stop'),
             'usage' => [
@@ -150,7 +152,17 @@ class GeminiService implements AiClientContract
                 }
 
                 $candidate = $chunk['candidates'][0] ?? [];
-                $text = $this->candidateText($candidate);
+                $reasoning = $this->candidateThoughtText($candidate);
+                $text = $this->candidateResponseText($candidate);
+
+                if ($reasoning !== '') {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => [
+                            'reasoning' => $reasoning,
+                        ],
+                    ];
+                }
 
                 if ($text !== '') {
                     yield [
@@ -286,7 +298,7 @@ class GeminiService implements AiClientContract
     /**
      * @param array<string, mixed> $candidate
      */
-    private function candidateText(array $candidate): string
+    private function candidateResponseText(array $candidate): string
     {
         $parts = $candidate['content']['parts'] ?? [];
 
@@ -295,6 +307,24 @@ class GeminiService implements AiClientContract
         }
 
         return collect($parts)
+            ->filter(static fn (mixed $part): bool => is_array($part) && empty($part['thought']))
+            ->map(static fn (mixed $part): string => is_array($part) ? (string) ($part['text'] ?? '') : '')
+            ->implode('');
+    }
+
+    /**
+     * @param array<string, mixed> $candidate
+     */
+    private function candidateThoughtText(array $candidate): string
+    {
+        $parts = $candidate['content']['parts'] ?? [];
+
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        return collect($parts)
+            ->filter(static fn (mixed $part): bool => is_array($part) && !empty($part['thought']))
             ->map(static fn (mixed $part): string => is_array($part) ? (string) ($part['text'] ?? '') : '')
             ->implode('');
     }

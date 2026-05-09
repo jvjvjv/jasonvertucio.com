@@ -34,12 +34,12 @@ export default function Edit({ bot, systems, roles }: EditProps) {
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        form.put(`/admin/ai/chat-bots/${bot.id}`);
+        form.put(`/admin/ai/chat-bots/${bot.slug}`);
     };
 
     const handleDelete = () => {
         confirm(`Delete AI chat bot "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.id}`);
+            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
         });
     };
 

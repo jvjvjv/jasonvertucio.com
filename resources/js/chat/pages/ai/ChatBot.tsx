@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import AddCommentIcon from "@mui/icons-material/AddComment";
+import type { MessageBlock } from "../../../components/ChatMessageBubble";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
 import Alert from '@mui/material/Alert';
@@ -31,6 +32,8 @@ interface HistoryItem {
 interface ChatMessage {
     role: 'user' | 'assistant' | 'system';
     content: string;
+    reasoning_content?: string | null;
+    blocks?: MessageBlock[] | null;
 }
 
 interface Bot {
@@ -61,7 +64,7 @@ export default function ChatBot({
     showIdentityForm: initialShowIdentityForm,
 }: ChatBotProps) {
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-    const [streamingContent, setStreamingContent] = useState('');
+    const [streamingBlocks, setStreamingBlocks] = useState<MessageBlock[]>([]);
     const [isStreaming, setIsStreaming] = useState(false);
     const [error, setError] = useState('');
     const [showIdentityForm, setShowIdentityForm] = useState(initialShowIdentityForm);
@@ -88,7 +91,7 @@ export default function ChatBot({
         if (messagesRef.current) {
             messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
         }
-    }, [messages, streamingContent]);
+    }, [messages, streamingBlocks]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -107,7 +110,7 @@ export default function ChatBot({
         setMessages((prev) => [...prev, { role: 'user', content: message }]);
         setMessageText('');
         setIsStreaming(true);
-        setStreamingContent('');
+        setStreamingBlocks([]);
 
         const payload: Record<string, string> = { message };
         if (showIdentityForm) {
@@ -139,38 +142,45 @@ export default function ChatBot({
             }
 
             const decoder = new TextDecoder();
-            let accumulated = '';
+            // Local mutable copy — avoids stale closure; synced to state for renders
+            let liveBlocks: MessageBlock[] = [];
             let bufferedText = "";
 
-            const processDataLine = (line: string): void => {
-                if (!line.startsWith("data: ")) {
-                    return;
+            const appendToBlocks = (type: MessageBlock["type"], delta: string): void => {
+                const last = liveBlocks[liveBlocks.length - 1];
+                if (last?.type === type) {
+                    liveBlocks = [
+                        ...liveBlocks.slice(0, -1),
+                        { type, content: last.content + delta },
+                    ];
+                } else {
+                    liveBlocks = [...liveBlocks, { type, content: delta }];
                 }
+                setStreamingBlocks([...liveBlocks]);
+            };
+
+            const processDataLine = (line: string): void => {
+                if (!line.startsWith("data: ")) return;
 
                 const jsonStr = line.slice(6).trim();
-                if (!jsonStr || jsonStr === "[DONE]") {
-                    return;
-                }
+                if (!jsonStr || jsonStr === "[DONE]") return;
 
                 let event: {
                     type: string;
-                    delta?: { text?: string };
+                    delta?: { text?: string; reasoning?: string };
                     message?: string;
                 };
 
                 try {
-                    event = JSON.parse(jsonStr) as {
-                        type: string;
-                        delta?: { text?: string };
-                        message?: string;
-                    };
+                    event = JSON.parse(jsonStr) as typeof event;
                 } catch {
                     return;
                 }
 
-                if (event.type === "content_block_delta" && event.delta?.text) {
-                    accumulated += event.delta.text;
-                    setStreamingContent(accumulated);
+                if (event.type === "reasoning_block_delta" && event.delta?.reasoning) {
+                    appendToBlocks("reasoning", event.delta.reasoning);
+                } else if (event.type === "content_block_delta" && event.delta?.text) {
+                    appendToBlocks("text", event.delta.text);
                 } else if (event.type === "error") {
                     throw new Error(event.message ?? "Unknown error");
                 }
@@ -197,15 +207,27 @@ export default function ChatBot({
                 processDataLine(line);
             }
 
-            if (accumulated) {
-                setMessages((prev) => [...prev, { role: 'assistant', content: accumulated }]);
+            const finalText = liveBlocks
+                .filter((b) => b.type === "text")
+                .map((b) => b.content)
+                .join("");
+
+            if (finalText || liveBlocks.length > 0) {
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        role: "assistant",
+                        content: finalText,
+                        blocks: liveBlocks.length > 0 ? liveBlocks : null,
+                    },
+                ]);
             }
             setShowIdentityForm(false);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to send message right now.');
         } finally {
             setIsStreaming(false);
-            setStreamingContent('');
+            setStreamingBlocks([]);
         }
     };
 
@@ -350,6 +372,8 @@ export default function ChatBot({
                                                 key={index}
                                                 role={message.role}
                                                 content={message.content}
+                                                blocks={message.blocks ?? null}
+                                                reasoningContent={message.reasoning_content ?? null}
                                             />
                                         ))
                                     )}
@@ -367,8 +391,14 @@ export default function ChatBot({
                                         >
                                             <ChatMessageBubble
                                                 role="assistant"
-                                                content={streamingContent || "..."}
+                                                content=""
                                                 isStreaming
+                                                blocks={streamingBlocks.length > 0 ? streamingBlocks : null}
+                                                activeBlockType={
+                                                    streamingBlocks.length > 0
+                                                        ? streamingBlocks[streamingBlocks.length - 1].type
+                                                        : null
+                                                }
                                             />
                                         </Box>
                                     </>
