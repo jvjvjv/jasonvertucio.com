@@ -15,6 +15,7 @@ use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use Generator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 
 class TargetedResumeService
 {
@@ -132,6 +133,12 @@ class TargetedResumeService
             $stream = $client->stream($apiMessages);
 
             foreach ($stream as $event) {
+                Log::debug('Targeted resume API stream event', [
+                    'conversation_id' => $conversation->id,
+                    'ai_system_id' => $conversation->ai_system_id,
+                    'event' => $event,
+                ]);
+
                 if (isset($event['type'])) {
                     if ($event['type'] === 'content_block_delta' && isset($event['delta']['text'])) {
                         $fullResponse .= $event['delta']['text'];

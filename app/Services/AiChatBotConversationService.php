@@ -11,6 +11,7 @@ use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
 use App\Models\User;
 use Generator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AiChatBotConversationService
@@ -106,6 +107,13 @@ class AiChatBotConversationService
             $stream = $client->stream($apiMessages);
 
             foreach ($stream as $event) {
+                Log::debug('Chat bot API stream event', [
+                    'conversation_id' => $conversation->id,
+                    'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
+                    'ai_system_id' => $conversation->ai_system_id,
+                    'event' => $event,
+                ]);
+
                 if (!isset($event['type'])) {
                     continue;
                 }
