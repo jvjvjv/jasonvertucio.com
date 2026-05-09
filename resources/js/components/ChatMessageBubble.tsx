@@ -6,8 +6,9 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { marked } from "marked";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { markdownSx } from "../admin/utils/markdownSx";
+import ReasoningPanel from "./ReasoningPanel";
 
 export interface MessageBlock {
     type: "text" | "reasoning";
@@ -59,125 +60,6 @@ function getLocaleDateTime(sentAt: string | null | undefined): string | null {
     }).format(d);
 }
 
-interface ReasoningPanelProps {
-    content: string;
-    /** True while this block is actively receiving tokens. */
-    isActive: boolean;
-}
-
-function ReasoningPanel({ content, isActive }: ReasoningPanelProps) {
-    const [expanded, setExpanded] = useState(isActive);
-
-    // Auto-expand when the block becomes active; stay put when it finishes.
-    useEffect(() => {
-        if (isActive) setExpanded(true);
-    }, [isActive]);
-
-    return (
-        <Box
-            sx={{
-                mb: 1,
-                border: "1px solid",
-                borderColor: isActive ? "primary.light" : "divider",
-                borderRadius: 1,
-                overflow: "hidden",
-            }}
-        >
-            {/* Header row */}
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                    px: 1.5,
-                    py: 0.75,
-                    borderBottom: expanded ? "1px solid" : "none",
-                    borderColor: isActive ? "primary.light" : "divider",
-                    bgcolor: isActive ? "primary.50" : "grey.50",
-                    cursor: "pointer",
-                    userSelect: "none",
-                }}
-                onClick={() => setExpanded((p) => !p)}
-            >
-                <PsychologyIcon
-                    sx={{
-                        fontSize: 14,
-                        color: isActive ? "primary.main" : "text.disabled",
-                    }}
-                />
-                <Typography
-                    variant="caption"
-                    sx={{
-                        flexGrow: 1,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
-                        fontWeight: 600,
-                        color: isActive ? "primary.main" : "text.disabled",
-                    }}
-                >
-                    {isActive ? "Thinking…" : "Reasoning"}
-                </Typography>
-                <Tooltip
-                    title={expanded ? "Collapse" : "Expand"}
-                    placement="top"
-                    arrow
-                >
-                    <IconButton
-                        size="small"
-                        sx={{ p: 0.25 }}
-                        aria-label={expanded ? "Collapse reasoning" : "Expand reasoning"}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setExpanded((p) => !p);
-                        }}
-                    >
-                        <Typography
-                            variant="caption"
-                            sx={{ lineHeight: 1, color: "text.disabled" }}
-                        >
-                            {expanded ? "▲" : "▼"}
-                        </Typography>
-                    </IconButton>
-                </Tooltip>
-            </Box>
-
-            {/* Body */}
-            <Collapse in={expanded}>
-                <Box
-                    sx={{
-                        px: 1.5,
-                        py: 1,
-                        maxHeight: 240,
-                        overflowY: "auto",
-                        bgcolor: "background.paper",
-                    }}
-                >
-                    <Typography
-                        component="pre"
-                        variant="caption"
-                        sx={{
-                            display: "block",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                            fontFamily: "monospace",
-                            color: "text.secondary",
-                            m: 0,
-                            lineHeight: 1.6,
-                        }}
-                    >
-                        {content}
-                    </Typography>
-                </Box>
-                {isActive ? (
-                    <LinearProgress
-                        sx={{ height: 2 }}
-                        aria-label="Model is thinking"
-                    />
-                ) : null}
-            </Collapse>
-        </Box>
-    );
-}
 
 const userMarkdownOverrides = {
     "& a": { color: "inherit" },
