@@ -9,6 +9,7 @@ use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
+use App\Models\AiLlmMessage;
 use App\Models\User;
 use Generator;
 use Illuminate\Support\Facades\Log;
@@ -54,6 +55,7 @@ class AiChatBotConversationService
 
     /**
      * Continue a bot conversation by streaming the assistant response.
+     * Stores full LLM request/response data in ai_llm_messages table.
      *
      * @return Generator<int, string>
      */
@@ -96,27 +98,60 @@ class AiChatBotConversationService
             $client->withSystem($systemPrompt);
         }
 
-        $client->withMaxTokens($conversation->aiSystem->max_tokens);
+        // Determine the turn number for this conversation
+        $turnNumber = $this->getTurnNumberForConversation($conversation);
 
         $startTime = microtime(true);
         $fullResponse = '';
         $inputTokens = null;
         $outputTokens = null;
+        $resolvedModel = $conversation->aiSystem->model;
+        $maxTokens = $conversation->aiSystem->max_tokens;
+        
+        // Build the request payload that will be sent to LLM (before applying client overrides)
+        $requestPayload = [
+            'model' => $resolvedModel,
+            'max_tokens' => $maxTokens,
+            'messages' => $apiMessages,
+        ];
 
+        if ($systemPrompt !== null) {
+            $requestPayload['system'] = $systemPrompt;
+        }
+
+        // Store the request before sending to LLM
         try {
+            AiLlmMessage::create([
+                'ai_conversation_id' => $conversation->id,
+                'direction' => 'request',
+                'turn_number' => (string) $turnNumber,
+                'request_data' => $requestPayload,
+                'created_at' => now(),
+            ]);
+
+            // Apply max tokens override to client before streaming
+            $client->withMaxTokens($maxTokens);
+
             $stream = $client->stream($apiMessages);
+
+            // Accumulate response data during streaming
+            $responseEvents = [];
 
             foreach ($stream as $event) {
                 Log::debug('Chat bot API stream event', [
                     'conversation_id' => $conversation->id,
                     'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
                     'ai_system_id' => $conversation->ai_system_id,
+                    'turn_number' => $turnNumber,
                     'event' => $event,
                 ]);
 
                 if (!isset($event['type'])) {
                     continue;
                 }
+
+                // Collect all response events for storage
+                $responseEvents[] = $event;
 
                 if ($event['type'] === 'content_block_delta' && isset($event['delta']['text'])) {
                     $fullResponse .= $event['delta']['text'];
@@ -131,6 +166,22 @@ class AiChatBotConversationService
             }
 
             yield "data: [DONE]\n\n";
+
+            // Store the complete response after streaming finishes
+            $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+            
+            AiLlmMessage::create([
+                'ai_conversation_id' => $conversation->id,
+                'direction' => 'response',
+                'turn_number' => (string) $turnNumber,
+                'request_data' => $requestPayload, // Store request alongside response for context
+                'response_data' => [
+                    'events' => $responseEvents,
+                    'full_response' => $fullResponse,
+                ],
+                'duration_ms' => $durationMs,
+                'created_at' => now(),
+            ]);
 
             $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
                 $conversation->aiSystem,
@@ -160,22 +211,31 @@ class AiChatBotConversationService
                 'feature' => $conversation->feature,
                 'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
-                'model' => $conversation->aiSystem->model,
+                'model' => $resolvedModel,
                 'input_token_price_snapshot' => $pricingSnapshot['input_token_price_snapshot'],
                 'output_token_price_snapshot' => $pricingSnapshot['output_token_price_snapshot'],
-                'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
+                'duration_ms' => $durationMs,
                 'status' => AiInteractionStatus::Success,
             ]);
 
             $this->conversationUsageService->syncConversation($conversation->fresh());
         } catch (\Exception $exception) {
+            // Store error information in LLM messages table
+            AiLlmMessage::create([
+                'ai_conversation_id' => $conversation->id,
+                'direction' => 'request',
+                'turn_number' => (string) $turnNumber,
+                'request_data' => $requestPayload + ['error' => $exception->getMessage()],
+                'created_at' => now(),
+            ]);
+
             AiInteractionLog::create([
                 'ai_system_id' => $conversation->aiSystem->id,
                 'ai_conversation_id' => $conversation->id,
                 'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
                 'user_id' => $conversation->user_id,
                 'feature' => $conversation->feature,
-                'model' => $conversation->aiSystem->model,
+                'model' => $resolvedModel ?? $conversation->aiSystem->model,
                 'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
                 'status' => AiInteractionStatus::Error,
                 'error_message' => $exception->getMessage(),
@@ -183,6 +243,23 @@ class AiChatBotConversationService
 
             yield 'data: ' . json_encode(['type' => 'error', 'message' => $exception->getMessage()]) . "\n\n";
         }
+    }
+
+    /**
+     * Get the next turn number for a conversation.
+     */
+    private function getTurnNumberForConversation(AiConversation $conversation): int
+    {
+        $maxTurn = AiLlmMessage::query()
+            ->where('ai_conversation_id', $conversation->id)
+            ->max('turn_number');
+
+        // Handle string comparison for turn numbers (e.g., "1", "2", "10")
+        if ($maxTurn === null || !is_numeric($maxTurn)) {
+            return 1;
+        }
+
+        return (int) $maxTurn + 1;
     }
 
     private function buildSystemPrompt(AiChatBot $bot, ?string $visitorName, ?string $visitorEmail): string
