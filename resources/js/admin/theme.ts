@@ -31,6 +31,13 @@ export const theme = createTheme({
                 },
             },
         },
+        MuiInputBase: {
+            styleOverrides: {
+                inputMultiline: {
+                    resize: 'vertical',
+                },
+            },
+        },
         MuiCard: {
             styleOverrides: {
                 root: {
