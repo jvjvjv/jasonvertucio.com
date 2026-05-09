@@ -22,9 +22,6 @@
 
 import { Lexer, marked } from 'marked';
 
-const DEFAULT_FONT_SIZE_HALF_POINTS = 24;
-const DEFAULT_BODY_FONT = 'Old Standard TT';
-
 // ─── XML helpers ────────────────────────────────────────────────────────────
 
 function escapeXml(str) {
@@ -38,11 +35,7 @@ function escapeXml(str) {
 
 function wRpr(opts = {}) {
     const parts = [];
-    if (!opts.mono) {
-      parts.push(`<w:rFonts w:ascii="${DEFAULT_BODY_FONT}" w:hAnsi="${DEFAULT_BODY_FONT}"/>`);
-        parts.push(`<w:sz w:val="${DEFAULT_FONT_SIZE_HALF_POINTS}"/>`);
-        parts.push(`<w:szCs w:val="${DEFAULT_FONT_SIZE_HALF_POINTS}"/>`);
-    }
+
     if (opts.bold) { parts.push('<w:b/>'); }
     if (opts.italic) { parts.push('<w:i/>'); }
     if (opts.strike) { parts.push('<w:strike/>'); }
