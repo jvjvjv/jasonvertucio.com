@@ -24,7 +24,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 import PageHeader from '../../components/PageHeader';
 import EmptyTableRow from '../../components/EmptyTableRow';
 import ConfirmDialog from '../../components/ConfirmDialog';
-import useConfirmDialog from '../../hooks/useConfirmDialog';
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface ViewRecord {
     created_at_formatted: string;

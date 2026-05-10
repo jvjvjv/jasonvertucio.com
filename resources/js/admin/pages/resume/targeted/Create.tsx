@@ -10,9 +10,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import type { AiSystem } from "../../../types";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import PageHeader from "@/admin/components/PageHeader";
+import type { AiSystem } from "@/types";
 
 interface CreateProps {
     systems: Pick<AiSystem, "id" | "name" | "model">[];

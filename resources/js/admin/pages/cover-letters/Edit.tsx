@@ -4,10 +4,10 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../layouts/AdminLayout";
-import PageHeader from "../../components/PageHeader";
-import ConfirmDialog from "../../components/ConfirmDialog";
-import useConfirmDialog from "../../hooks/useConfirmDialog";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import PageHeader from "@/admin/components/PageHeader";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 import CoverLetterForm from "./Form";
 import type { FormData, ResumeVersion } from "./Form";
 

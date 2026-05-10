@@ -6,14 +6,14 @@ import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ChatMessageBubble from "../../../components/ChatMessageBubble";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import PageHeader from "../../../components/PageHeader";
-import StatusChip from "../../../components/StatusChip";
-import UsageChip from "../../../components/UsageChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { ConversationUsage, Message, Memory } from "../../../types";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ChatMessageBubble from "@/admin/components/ChatMessageBubble";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { ConversationUsage, Message, Memory } from "@/types";
 
 interface ShowProps {
     conversation: {

@@ -10,13 +10,13 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import PageHeader from "../../../components/PageHeader";
-import UsageChip from "../../../components/UsageChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiChatBot } from "../../../types";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import UsageChip from "@/admin/components/UsageChip";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { AiChatBot } from "@/types";
 
 interface IndexProps {
     bots: AiChatBot[];

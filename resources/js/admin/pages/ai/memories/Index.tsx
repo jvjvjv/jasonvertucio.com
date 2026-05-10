@@ -17,13 +17,13 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import Pagination from "../../../components/Pagination";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { Memory, PaginatedResponse } from "../../../types";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import PageHeader from "@/admin/components/PageHeader";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import Pagination from "@/admin/components/Pagination";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { Memory, PaginatedResponse } from "@/types";
 
 interface Filters {
     feature?: string;

@@ -2,7 +2,6 @@ import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import Chip from "@mui/material/Chip";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
@@ -18,19 +17,17 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import StatusChip from "../../../components/StatusChip";
-import UsageChip from "../../../components/UsageChip";
-import type { Conversation } from "../../../types";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import PageHeader from "@/admin/components/PageHeader";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import type { Conversation } from "@/types";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import { Tooltip } from "@mui/material";
-import React from "react";
 
 interface StatusOption {
     value: string;
@@ -293,7 +290,6 @@ export default function Index({
                                                     <IconButton
                                                         size="small"
                                                         color="error"
-                                                        variant="outlined"
                                                         title="Delete"
                                                         aria-label="Delete"
                                                         onClick={() =>

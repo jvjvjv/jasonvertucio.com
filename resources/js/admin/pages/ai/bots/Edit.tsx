@@ -3,11 +3,11 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import PageHeader from "../../../components/PageHeader";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiChatBot } from "../../../types";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { AiChatBot } from "@/types";
 import Form, { type FormData } from "./Form";
 
 interface EditProps {

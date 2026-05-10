@@ -5,8 +5,8 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import EmailIcon from "@mui/icons-material/Email";
-import AdminLayout from "../../layouts/AdminLayout";
-import PageHeader from "../../components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import PageHeader from "@/admin/components/PageHeader";
 
 interface MailableItem {
     name: string;

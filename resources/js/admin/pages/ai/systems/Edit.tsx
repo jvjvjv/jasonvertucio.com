@@ -3,13 +3,13 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import PageHeader from "@/admin/components/PageHeader";
 import AiSystemForm from "./Form";
 import type { FormData } from "./Form";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiSystem } from "../../../types";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { AiSystem } from "@/types";
 
 interface EditProps {
     aiSystem: AiSystem;

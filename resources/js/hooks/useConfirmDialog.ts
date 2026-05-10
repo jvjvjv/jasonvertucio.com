@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { ConfirmDialogProps } from '../components/ConfirmDialog';
+import type { ConfirmDialogProps } from '../admin/components/ConfirmDialog';
 
 type ConfirmOptions = Partial<Pick<ConfirmDialogProps, 'title' | 'confirmLabel' | 'confirmColor'>>;
 

@@ -17,21 +17,26 @@ import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
-import StatusChip from "../../../components/StatusChip";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import ChatMessageBubble from "../../../components/ChatMessageBubble";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import UsageChip from "../../../components/UsageChip";
+import StatusChip from "@/admin/components/StatusChip";
+import PageHeader from "@/admin/components/PageHeader";
+import ChatMessageBubble from "@/admin/components/ChatMessageBubble";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import UsageChip from "@/admin/components/UsageChip";
+import ResponsiveButton from "@/components/ResponsiveButton";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 import type {
     Conversation,
     CoverLetter,
     Message,
     TargetedResume,
-} from "../../../types";
+} from "@/types";
 import BuilderStatusCard from "./BuilderStatusCard";
 import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
+
+import DoneIcon from "@mui/icons-material/Done";
+import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 interface ShowProps {
     conversation: Conversation;
@@ -391,7 +396,7 @@ export default function Show({
     const pageTitle: string =
         conversation?.title ??
         (position ? `${companyName} - ${position}` : companyName);
-
+    const jobUrl = conversation.job_url;
     return (
         <AdminLayout>
             <Head title={`${pageTitle} | Targeted Resumes`} />
@@ -449,43 +454,56 @@ export default function Show({
                         pr: 1,
                     }}
                 >
-                    <Button
+                    <ResponsiveButton
                         size="small"
                         color="success"
-                        variant="outlined"
-                        onClick={handleApplied}
-                        disabled={
-                            !hasFitScore() ||
+                        icon={<DoneIcon />}
+                        label={targetedResume?.status === "applied" ? "Applied" : "Mark Applied"}
+                        title={
                             targetedResume?.status === "applied"
+                            ? "Already marked as applied"
+                            : "Mark as applied"
                         }
-                    >
-                        {targetedResume?.status === "applied"
-                            ? "Applied"
-                            : "Mark Applied"}
-                    </Button>
-                    {conversation.status === "active" && (
-                        <Button
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            onClick={handlePass}
-                        >
-                            Pass
-                        </Button>
-                    )}
-                    {conversation.job_url && (
-                        <Button
+                        variant="outlined"
+
+                        disabled={!hasFitScore() || targetedResume?.status === "applied"}
+                        onClick={handleApplied}
+                    />
+                    <ResponsiveButton
+                        size="small"
+                        color="warning"
+                        icon={<BackHandOutlinedIcon />}
+                        label="Pass"
+                        title={
+                            targetedResume?.status === "passed"
+                                ? "Already marked as passed"
+                                : "Mark as passed"
+                        }
+
+                        variant="outlined"
+                        disabled={
+                            conversation.status === "pass" ||
+                            targetedResume?.status !== "draft"
+                        }
+
+                        onClick={handlePass}
+                    />
+                    {jobUrl ? (
+                        <ResponsiveButton
                             size="small"
                             color="primary"
+                            icon={<OpenInNewIcon />}
                             variant="outlined"
-                            component="a"
-                            href={conversation.job_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Job URL
-                        </Button>
-                    )}
+                            label="Job URL"
+                            title="Open Job URL in new tab"
+                            onClick={() => {
+                                if (!jobUrl) {
+                                    return;
+                                }
+                                window.open(jobUrl, "_blank", "noopener,noreferrer");
+                            }}
+                        />
+                    ) : null}
                 </Box>
             </Box>
 

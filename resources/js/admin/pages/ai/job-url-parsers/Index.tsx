@@ -24,8 +24,8 @@ import PageHeader from '../../../components/PageHeader';
 import EmptyTableRow from '../../../components/EmptyTableRow';
 import Pagination from '../../../components/Pagination';
 import ConfirmDialog from '../../../components/ConfirmDialog';
-import useConfirmDialog from '../../../hooks/useConfirmDialog';
-import type { PaginatedResponse } from '../../../types';
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { PaginatedResponse } from "@/types";
 
 interface ParserRow {
     id: number;

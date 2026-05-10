@@ -13,7 +13,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import { ADMIN_NAVIGATION_ITEMS } from '../constants/navigation';
-import type { SharedProps } from '../types';
+import type { SharedProps } from "@/types";
 
 interface AdminLayoutProps {
     children: ReactNode;

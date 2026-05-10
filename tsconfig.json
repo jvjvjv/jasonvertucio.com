@@ -12,16 +12,14 @@
         "isolatedModules": true,
         "noEmit": true,
         "paths": {
-            "@admin/*": [
-                "./resources/js/admin/*"
+            "@/*": [
+                "./resources/js/*"
             ]
         }
     },
     "include": [
-        "./resources/js/admin/**/*.ts",
-        "./resources/js/admin/**/*.tsx",
-        "./resources/js/chat/**/*.ts",
-        "./resources/js/chat/**/*.tsx"
+        "./resources/js/**/*.ts",
+        "./resources/js/**/*.tsx"
     ],
     "exclude": ["node_modules"]
 }

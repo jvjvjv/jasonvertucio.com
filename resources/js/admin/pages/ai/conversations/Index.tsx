@@ -11,15 +11,15 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import PageHeader from "../../../components/PageHeader";
-import Pagination from "../../../components/Pagination";
-import StatusChip from "../../../components/StatusChip";
-import UsageChip from "../../../components/UsageChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { Conversation, PaginatedResponse } from "../../../types";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import Pagination from "@/admin/components/Pagination";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+import type { Conversation, PaginatedResponse } from "@/types";
 
 interface Filters {
     feature?: string;

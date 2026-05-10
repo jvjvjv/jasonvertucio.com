@@ -12,7 +12,7 @@ import PageHeader from '../../../components/PageHeader';
 import EmptyTableRow from '../../../components/EmptyTableRow';
 import StatusChip from '../../../components/StatusChip';
 import Pagination from '../../../components/Pagination';
-import type { AiSystem, LogEntry, PaginatedResponse } from '../../../types';
+import type { AiSystem, LogEntry, PaginatedResponse } from "@/types";
 
 interface LogsProps {
     aiSystem: Pick<AiSystem, 'id' | 'name'>;
