@@ -1,6 +1,5 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
@@ -27,7 +26,9 @@ import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import AddIcon from "@mui/icons-material/Add";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import ResponsiveButton from "@/components/ResponsiveButton";
 
 interface StatusOption {
     value: string;
@@ -142,13 +143,13 @@ export default function Index({
                     </Select>
                 </FormControl>
                 <Box sx={{ flexGrow: 1 }} />
-                <Button
-                    component={InertiaLink}
+                <ResponsiveButton
+                    icon={<AddIcon />}
+                    color="primary"
+                    label="New Session"
                     href="/admin/resume/targeted-builder/new"
                     variant="contained"
-                >
-                    New Session
-                </Button>
+                />
             </Box>
 
             <Card>
