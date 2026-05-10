@@ -341,7 +341,12 @@ class AiChatBotConversationService
                     ],
                 ]);
 
-                ProcessAiMemoryJob::dispatch($conversation->fresh());
+                // Dispatch memory processing with user identity for conversation-specific scoping
+                ProcessAiMemoryJob::dispatch(
+                    $conversation->fresh(),
+                    $conversation->user_id,
+                    $conversation->visitor_email
+                );
             }
 
             AiInteractionLog::create([
@@ -403,7 +408,18 @@ class AiChatBotConversationService
         return (int) $maxTurn + 1;
     }
 
-    private function buildSystemPrompt(AiChatBot $bot, ?string $visitorName, ?string $visitorEmail): string
+    /**
+     * Build system prompt for a chatbot.
+     */
+    private function buildSystemPrompt(AiChatBot $bot, ?string $visitorName = null, ?string $visitorEmail = null): string
+    {
+        return $this->buildSystemPromptForBot($bot, null, $visitorName, $visitorEmail);
+    }
+
+    /**
+     * Build system prompt for a chatbot with optional conversation scoping.
+     */
+    private function buildSystemPromptForBot(AiChatBot $bot, ?AiConversation $conversation = null, ?string $visitorName = null, ?string $visitorEmail = null): string
     {
         $replacements = [
             '{{bot_name}}' => $bot->name,
@@ -415,7 +431,26 @@ class AiChatBotConversationService
 
         $prompt = strtr($bot->prompt_template, $replacements);
         $systemPrompt = trim((string) $bot->aiSystem?->system_prompt);
-        $memoryPrompt = trim($this->memoryService->getMemoriesForPrompt($bot->featureKey()));
+        
+        // For chatbot conversations, scope memories to the current user (not conversation).
+        // Each individual user has their own persistent memory context across all their conversations with this chatbot.
+        // Memories are identified by: user_id for logged-in users, or visitor_email for anonymous visitors.
+        $memoryUserId = null;
+        $memoryVisitorEmail = null;
+
+        if ($conversation !== null) {
+            $memoryUserId = $conversation->user_id;
+            $memoryVisitorEmail = $conversation->visitor_email;
+        } elseif (auth()->check()) {
+            // If conversation not available but user is logged in, use their ID
+            $memoryUserId = auth()->id();
+        }
+
+        $memoryPrompt = trim($this->memoryService->getMemoriesForPrompt(
+            $bot->featureKey(),
+            $memoryUserId,
+            $memoryVisitorEmail
+        ));
 
         return collect([
             $systemPrompt !== '' ? $systemPrompt : null,

@@ -51,7 +51,10 @@ interface ChatBotProps {
     messageUrl: string;
     resetUrl: string;
     switchUrl: string;
+    chatUrl?: string | null;
+    chatUrlBase?: string | null;
     showIdentityForm: boolean;
+    chatHash?: string | null;
 }
 
 export default function ChatBot({
@@ -61,7 +64,10 @@ export default function ChatBot({
     messageUrl,
     resetUrl,
     switchUrl,
+    chatUrl,
+    chatUrlBase,
     showIdentityForm: initialShowIdentityForm,
+    chatHash,
 }: ChatBotProps) {
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [streamingBlocks, setStreamingBlocks] = useState<MessageBlock[]>([]);
@@ -86,6 +92,23 @@ export default function ChatBot({
         setMessages(initialMessages);
         setShowIdentityForm(initialShowIdentityForm);
     }, [initialMessages, initialShowIdentityForm]);
+
+    // Redirect to the hash-based URL after the first message is sent.
+    // This enables sharing the chat link from any computer.
+    useEffect(() => {
+        if (chatUrl && initialMessages.length > 0) {
+            const currentPath = window.location.pathname;
+            const currentSearch = window.location.search;
+            const queryString = currentSearch ? `?${currentSearch.slice(1)}` : '';
+            // Only redirect if we're not already on the hash-based URL.
+            if (currentPath !== chatUrl) {
+                const timer = setTimeout(() => {
+                    window.location.href = chatUrl;
+                }, 300);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [chatUrl, initialMessages]);
 
     useEffect(() => {
         if (messagesRef.current) {
@@ -222,6 +245,14 @@ export default function ChatBot({
                     },
                 ]);
             }
+
+            // Update the browser URL to the permanent hash-based URL after the
+            // first message so the conversation can be shared or bookmarked.
+            const receivedHash = response.headers.get('X-Chat-Hash');
+            if (receivedHash && chatUrlBase && window.location.pathname !== chatUrlBase + receivedHash) {
+                window.history.replaceState(null, '', chatUrlBase + receivedHash);
+            }
+
             setShowIdentityForm(false);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to send message right now.');
@@ -373,7 +404,10 @@ export default function ChatBot({
                                                 role={message.role}
                                                 content={message.content}
                                                 blocks={message.blocks ?? null}
-                                                reasoningContent={message.reasoning_content ?? null}
+                                                reasoningContent={
+                                                    message.reasoning_content ??
+                                                    null
+                                                }
                                             />
                                         ))
                                     )}
@@ -393,10 +427,17 @@ export default function ChatBot({
                                                 role="assistant"
                                                 content=""
                                                 isStreaming
-                                                blocks={streamingBlocks.length > 0 ? streamingBlocks : null}
+                                                blocks={
+                                                    streamingBlocks.length > 0
+                                                        ? streamingBlocks
+                                                        : null
+                                                }
                                                 activeBlockType={
                                                     streamingBlocks.length > 0
-                                                        ? streamingBlocks[streamingBlocks.length - 1].type
+                                                        ? streamingBlocks[
+                                                              streamingBlocks.length -
+                                                                  1
+                                                          ].type
                                                         : null
                                                 }
                                             />
@@ -476,6 +517,20 @@ export default function ChatBot({
                                                 justifyContent: "flex-end",
                                             }}
                                         >
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    mr: 2,
+                                                    alignSelf: "center",
+                                                    fontStyle: "italic",
+                                                    flexGrow: 1,
+                                                }}
+                                            >
+                                                Chatbots are experimental.
+                                                Responses may be inaccurate or
+                                                fail to generate. Use with
+                                                caution.
+                                            </Typography>
                                             <Button
                                                 type="submit"
                                                 variant="contained"

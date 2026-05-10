@@ -583,10 +583,18 @@ PROMPT;
 
     /**
      * Get the memory section for the system prompt, if any memories exist.
+     * Memories are scoped to the current authenticated user.
      */
     private function getMemorySection(): string
     {
-        $memoryBlock = $this->memoryService->getMemoriesForPrompt('targeted-resume');
+        // For targeted resume feature, always scope to logged-in user (this feature requires authentication)
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return '';
+        }
+
+        $memoryBlock = $this->memoryService->getMemoriesForPrompt('targeted-resume', $userId);
 
         if ($memoryBlock === '') {
             return '';

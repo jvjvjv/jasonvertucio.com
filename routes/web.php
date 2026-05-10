@@ -167,6 +167,9 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::delete('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'destroy'])->name('job-url-parsers.destroy');
     });
 
+// Hash-based chat access routes are registered dynamically in RouteServiceProvider
+// per active bot: /chat/{bot-slug}/{hash}
+
 // Shared route group for chat bot endpoints (used in two places)
 $chatBotRoutes = function () {
     Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');

@@ -122,7 +122,7 @@ const PROVIDER_DEFAULTS: Record<
     },
     "openai-compatible": {
         model: "",
-        baseUrl: "http://127.0.0.1:1234/v1",
+        baseUrl: "http://10.10.0.2:1234/v1",
         apiVersion: "",
         authType: "none",
         endpointType: "openai-compatible",

@@ -19,6 +19,8 @@ class AiFeatureMemory extends Model
         'content',
         'confidence',
         'source_conversation_id',
+        'user_id',
+        'visitor_email',
         'last_reinforced_at',
         'times_reinforced',
         'is_active',
@@ -42,6 +44,34 @@ class AiFeatureMemory extends Model
     public function sourceConversation(): BelongsTo
     {
         return $this->belongsTo(AiConversation::class, 'source_conversation_id');
+    }
+
+    /**
+     * Get the user who owns this memory (for logged-in users).
+     */
+    public function user(): ?\Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
+
+    /**
+     * Scope memories to a specific user by ID.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<self> $query
+     */
+    public function scopeForUser($query, int $userId): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope memories to a specific visitor by email.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<self> $query
+     */
+    public function scopeForVisitor($query, string $email): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('visitor_email', $email);
     }
 
     /**

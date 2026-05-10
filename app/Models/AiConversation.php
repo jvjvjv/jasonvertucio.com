@@ -19,6 +19,7 @@ class AiConversation extends Model
 
     protected $fillable = [
         'public_id',
+        'chat_hash',
         'user_id',
         'ai_system_id',
         'ai_chat_bot_id',
@@ -121,5 +122,27 @@ class AiConversation extends Model
     public function targetedResume(): HasOne
     {
         return $this->hasOne(TargetedResume::class);
+    }
+
+    /**
+     * Generate a URL-safe hash for this conversation that can be used
+     * to access it from any computer.
+     */
+    public function generateChatHash(): string
+    {
+        $this->chat_hash = \App\Utilities\ChatHash::generate(
+            $this->id,
+            $this->created_at->toIso8601String(),
+            $this->feature,
+        );
+
+        $this->save();
+
+        return $this->chat_hash;
+    }
+
+    public static function findByChatHash(string $hash): ?self
+    {
+        return static::query()->where('chat_hash', $hash)->first();
     }
 }
