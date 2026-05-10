@@ -26,6 +26,17 @@ interface AdminLayoutProps {
     title?: string;
 }
 
+function isPathActive(currentPath: string, item: AppBarItem): boolean {
+    return (
+        currentPath === item.href ||
+        currentPath.startsWith(`${item.href}/`) ||
+        item.children.some(
+            (c) =>
+                currentPath === c.href || currentPath.startsWith(`${c.href}/`),
+        )
+    );
+}
+
 function DesktopNavItem({
     item,
     currentPath,
@@ -35,13 +46,7 @@ function DesktopNavItem({
 }) {
     const [anchor, setAnchor] = useState<null | HTMLElement>(null);
     const hasChildren = item.children.length > 0;
-    const isActive =
-        currentPath === item.href ||
-        currentPath.startsWith(`${item.href}/`) ||
-        item.children.some(
-            (c) =>
-                currentPath === c.href || currentPath.startsWith(`${c.href}/`),
-        );
+    const isActive = isPathActive(currentPath, item);
 
     return (
         <>
@@ -145,13 +150,7 @@ function MobileNavSection({
 }) {
     const [open, setOpen] = useState(false);
     const hasChildren = item.children.length > 0;
-    const isActive =
-        currentPath === item.href ||
-        currentPath.startsWith(`${item.href}/`) ||
-        item.children.some(
-            (c) =>
-                currentPath === c.href || currentPath.startsWith(`${c.href}/`),
-        );
+    const isActive = isPathActive(currentPath, item);
 
     if (!hasChildren) {
         return (

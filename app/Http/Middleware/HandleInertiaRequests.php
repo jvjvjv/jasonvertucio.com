@@ -6,8 +6,7 @@ use App\Services\AdminNavigationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
-class HandleInertiaRequests extends Middleware
-{
+class HandleInertiaRequests extends Middleware {
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -17,15 +16,15 @@ class HandleInertiaRequests extends Middleware
      */
     protected $rootView = 'admin';
 
-    public function __construct(private AdminNavigationService $navigationService) { }
+    public function __construct(private AdminNavigationService $navigationService) {
+    }
 
     /**
      * Determines the current asset version.
      *
      * @see https://inertiajs.com/asset-versioning
      */
-    public function version(Request $request): ?string
-    {
+    public function version(Request $request): ?string {
         $base = parent::version($request);
         return 'admin:' . ($base ?? 'default');
     }
@@ -37,25 +36,24 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array<string, mixed>
      */
-    public function share(Request $request): array
-    {
+    public function share(Request $request): array {
         $config = json_decode(file_get_contents(resource_path('config/config.json')), true);
 
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user() ? [
-                    'id'          => $request->user()->id,
-                    'name'        => $request->user()->name,
-                    'email'       => $request->user()->email,
-                    'permissions' => $request->user()->getAllPermissions()->pluck('name'),
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'permissions' => fn() => $request->user()->getAllPermissions()->pluck('name'),
                 ] : null,
             ],
-            'adminNav' => fn () => $this->navigationService->getAppBarItems($request->user()),
+            'adminNav' => fn() => $this->navigationService->getAppBarItems($request->user()),
             'navLinks' => $config['links'] ?? [],
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
             ],
         ];
     }

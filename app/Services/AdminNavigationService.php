@@ -21,6 +21,11 @@ class AdminNavigationService
         return $this->config;
     }
 
+    private function canAccess(array $item, ?User $user): bool
+    {
+        return $item['can'] === null || $user?->can($item['can']);
+    }
+
     /**
      * Return filtered navigation blocks for the given admin route.
      *
@@ -30,8 +35,7 @@ class AdminNavigationService
     {
         $config = $this->load();
 
-        $entry = collect($config['navigation'])
-            ->firstWhere('route', $route);
+        $entry = collect($config['navigation'])->firstWhere('route', $route);
 
         if ($entry === null) {
             return [];
@@ -47,7 +51,7 @@ class AdminNavigationService
                 ],
                 array_filter(
                     $entry['navigationItems'],
-                    fn (array $item) => $item['can'] === null || $user?->can($item['can'])
+                    fn (array $item) => $this->canAccess($item, $user)
                 )
             )
         );
@@ -64,7 +68,7 @@ class AdminNavigationService
 
         $entries = array_filter(
             $config['navigation'],
-            fn (array $entry) => $entry['can'] === null || $user?->can($entry['can'])
+            fn (array $entry) => $this->canAccess($entry, $user)
         );
 
         return array_values(array_map(
@@ -78,7 +82,7 @@ class AdminNavigationService
                     ],
                     array_filter(
                         $entry['navigationItems'],
-                        fn (array $item) => $item['can'] === null || $user?->can($item['can'])
+                        fn (array $item) => $this->canAccess($item, $user)
                     )
                 )),
             ],

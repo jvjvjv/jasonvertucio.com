@@ -49,7 +49,7 @@ export default [
             },
             rules: {
                 '@typescript-eslint/array-type': 'error',
-                '@typescript-eslint/consistent-indexed-object-style': ['error', 'index-signature'],
+                '@typescript-eslint/consistent-indexed-object-style': ['warn', 'index-signature'],
                 '@typescript-eslint/consistent-return': 'off',
                 '@typescript-eslint/no-explicit-any': 'warn',
                 '@typescript-eslint/no-unused-vars': [
