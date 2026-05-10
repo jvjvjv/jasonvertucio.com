@@ -78,6 +78,7 @@ class AiSystemController extends Controller
     public function edit(AiSystem $aiSystem): InertiaResponse
     {
         $aiSystem->load('featureDefaults');
+        $aiSystem->loadCount('chatBots');
         $aiSystem->feature_defaults_list = $aiSystem->featureDefaults->pluck('feature')->toArray();
 
         $existingDefaults = AiSystemFeatureDefault::where('ai_system_id', '!=', $aiSystem->id)

@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
 use App\Models\AiSystem;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Spatie\Permission\Models\Role;
@@ -17,14 +18,17 @@ class AiChatBotController extends Controller
     /**
      * Display a list of AI chat bots.
      */
-    public function index(): InertiaResponse
+    public function index(Request $request): InertiaResponse
     {
+        $aiSystemId = $request->query('ai_system_id');
+
         $bots = AiChatBot::query()
             ->with('aiSystem')
             ->withCount('conversations')
             ->withSum('conversations', 'usage_input_tokens')
             ->withSum('conversations', 'usage_output_tokens')
             ->withSum('conversations', 'usage_cost_usd')
+            ->when($aiSystemId, fn ($q) => $q->where('ai_system_id', $aiSystemId))
             ->orderBy('name')
             ->get()
             ->map(fn (AiChatBot $bot) => [
@@ -40,6 +44,7 @@ class AiChatBotController extends Controller
                 'require_visitor_identity' => $bot->require_visitor_identity,
                 'conversations_count' => $bot->conversations_count,
                 'ai_system_name' => $bot->aiSystem?->name,
+                'ai_system_id' => $bot->ai_system_id,
                 'usage' => $bot->conversations_sum_usage_cost_usd !== null ? [
                     'input_tokens' => (int) ($bot->conversations_sum_usage_input_tokens ?? 0),
                     'output_tokens' => (int) ($bot->conversations_sum_usage_output_tokens ?? 0),
@@ -51,6 +56,7 @@ class AiChatBotController extends Controller
 
         return Inertia::render('ai/bots/Index', [
             'bots' => $bots,
+            'filters' => ['ai_system_id' => $aiSystemId],
         ]);
     }
 
@@ -81,6 +87,8 @@ class AiChatBotController extends Controller
      */
     public function edit(AiChatBot $aiChatBot): InertiaResponse
     {
+        $aiChatBot->loadCount('conversations');
+
         return Inertia::render('ai/bots/Edit', [
             'bot' => $aiChatBot,
             'systems' => $this->systems(),

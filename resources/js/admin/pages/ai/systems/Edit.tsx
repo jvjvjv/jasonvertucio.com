@@ -75,6 +75,33 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
                 backLabel="Back to AI Systems"
             />
 
+            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/chat-bots?ai_system_id=${aiSystem.id}`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Chat Bots ({aiSystem.chat_bots_count || 0})
+                </Button>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/conversations?ai_system_id=${aiSystem.id}`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Conversations
+                </Button>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/systems/${aiSystem.id}/logs`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Interaction Logs ({aiSystem.interaction_logs_count || 0})
+                </Button>
+            </Box>
+
             <Card>
                 <CardContent>
                     <Box component="form" onSubmit={handleSubmit}>

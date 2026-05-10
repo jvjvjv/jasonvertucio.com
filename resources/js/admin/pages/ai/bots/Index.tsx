@@ -14,6 +14,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 
 import type { AiChatBot } from "@/types";
 
@@ -26,10 +27,12 @@ import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface IndexProps {
     bots: AiChatBot[];
+    filters?: { ai_system_id?: string | null };
 }
 
-export default function Index({ bots }: IndexProps) {
+export default function Index({ bots, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
+    const aiSystemId = filters?.ai_system_id;
 
     const handleDelete = (bot: AiChatBot) => {
         confirm(`Delete AI chat bot "${bot.name}"?`, () => {
@@ -78,6 +81,30 @@ export default function Index({ bots }: IndexProps) {
                     Add Bot
                 </Button>
             </Box>
+
+            {aiSystemId ? (
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 2,
+                    }}
+                >
+                    <Typography variant="body2" color="text.secondary">
+                        Filtered by AI System
+                    </Typography>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/chat-bots"
+                        size="small"
+                        variant="outlined"
+                        color="inherit"
+                    >
+                        Clear filter
+                    </Button>
+                </Box>
+            ) : null}
 
             <Card>
                 <TableContainer>

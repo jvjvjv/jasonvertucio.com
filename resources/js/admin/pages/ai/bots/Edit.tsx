@@ -56,6 +56,17 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                 backLabel="Back to AI Chat Bots"
             />
 
+            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Sessions ({bot.conversations_count ?? 0})
+                </Button>
+            </Box>
+
             <Card>
                 <CardContent>
                     <Box component="form" onSubmit={handleSubmit}>
