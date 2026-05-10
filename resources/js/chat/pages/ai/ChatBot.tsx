@@ -169,6 +169,22 @@ export default function ChatBot({
                 throw new Error(`HTTP ${response.status}`);
             }
 
+            // Update URL as soon as the server confirms the request — headers
+            // are available before the body streams, so this is safe and ensures
+            // the hash is set even if streaming fails partway through.
+            const receivedHash = response.headers.get("X-Chat-Hash");
+            if (
+                receivedHash &&
+                chatUrlBase &&
+                window.location.pathname !== chatUrlBase + receivedHash
+            ) {
+                window.history.replaceState(
+                    null,
+                    "",
+                    chatUrlBase + receivedHash,
+                );
+            }
+
             const reader = response.body?.getReader();
             if (!reader) {
                 throw new Error("No response stream available");
@@ -267,21 +283,6 @@ export default function ChatBot({
                         blocks: liveBlocks.length > 0 ? liveBlocks : null,
                     },
                 ]);
-            }
-
-            // Update the browser URL to the permanent hash-based URL after the
-            // first message so the conversation can be shared or bookmarked.
-            const receivedHash = response.headers.get("X-Chat-Hash");
-            if (
-                receivedHash &&
-                chatUrlBase &&
-                window.location.pathname !== chatUrlBase + receivedHash
-            ) {
-                window.history.replaceState(
-                    null,
-                    "",
-                    chatUrlBase + receivedHash,
-                );
             }
 
             setShowIdentityForm(false);
