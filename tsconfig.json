@@ -11,6 +11,9 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
+        "types": [
+            "vite/client"
+        ],
         "paths": {
             "@/*": [
                 "./resources/js/*"
