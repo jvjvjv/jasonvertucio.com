@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\AiChatBot;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
@@ -33,8 +34,14 @@ class RouteServiceProvider extends ServiceProvider
                 ->name("chat-bot-{$bot->slug}.")
                 ->group(function () use ($bot) {
                     // Exclude reserved words that conflict with other routes: new, reset, switch, messages
-                    Route::get('/{hash:(?!new|reset|switch|messages$).+}', [\App\Http\Controllers\ChatBotController::class, 'showByHash'])
-                        ->name('by-hash');
+                    Route::get('/{hash}', function (string $hash, Request $request) {
+                        // Validate hash format: must be 32 hex characters and not a reserved word
+                        if (!preg_match('/^[a-f0-9]{32}$/', $hash)) {
+                            abort(404);
+                        }
+                        
+                        return resolve(\App\Http\Controllers\ChatBotController::class)->showByHash($request, $hash);
+                    })->name('by-hash');
                 });
         }
     }
