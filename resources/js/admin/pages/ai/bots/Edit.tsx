@@ -1,15 +1,18 @@
 import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
-import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "@/admin/layouts/AdminLayout";
+
+import Form, { type FormData } from "./Form";
+
+import type { AiChatBot } from "@/types";
+import type { SyntheticEvent } from "react";
+
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-import type { AiChatBot } from "@/types";
-import Form, { type FormData } from "./Form";
 
 interface EditProps {
     bot: AiChatBot;

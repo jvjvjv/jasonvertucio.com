@@ -9,9 +9,11 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import type { SyntheticEvent } from "react";
-import AdminLayout from "../../../layouts/AdminLayout";
+
 import PageHeader from "../../../components/PageHeader";
+import AdminLayout from "../../../layouts/AdminLayout";
+
+import type { SyntheticEvent } from "react";
 
 interface ParserEditModel {
     id: number;

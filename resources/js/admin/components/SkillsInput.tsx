@@ -1,7 +1,3 @@
-import type { ClipboardEvent, KeyboardEvent } from "react";
-import { useRef } from "react";
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import {
     DndContext,
     type DragEndEvent,
@@ -19,6 +15,11 @@ import {
     useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import { useRef } from "react";
+
+import type { ClipboardEvent, KeyboardEvent } from "react";
 
 interface SkillsInputProps {
     skills: string[];

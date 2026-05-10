@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { SyntheticEvent } from "react";
 import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import ChatIcon from "@mui/icons-material/Chat";
+import DoneIcon from "@mui/icons-material/Done";
+import EditIcon from "@mui/icons-material/Edit";
+import InfoIcon from "@mui/icons-material/Info";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -12,32 +19,27 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ChatIcon from "@mui/icons-material/Chat";
-import EditIcon from "@mui/icons-material/Edit";
-import InfoIcon from "@mui/icons-material/Info";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import StickyNote2Icon from "@mui/icons-material/StickyNote2";
-import StatusChip from "@/admin/components/StatusChip";
-import PageHeader from "@/admin/components/PageHeader";
-import ChatMessageBubble from "@/components/ChatMessageBubble";
-import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import UsageChip from "@/admin/components/UsageChip";
-import ResponsiveButton from "@/components/ResponsiveButton";
-import useConfirmDialog from "@/hooks/useConfirmDialog";
-import AdminLayout from "@/admin/layouts/AdminLayout";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import BuilderStatusCard from "./BuilderStatusCard";
+import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
+
 import type {
     Conversation,
     CoverLetter,
     Message,
     TargetedResume,
 } from "@/types";
-import BuilderStatusCard from "./BuilderStatusCard";
-import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
+import type { SyntheticEvent } from "react";
 
-import DoneIcon from "@mui/icons-material/Done";
-import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ChatMessageBubble from "@/components/ChatMessageBubble";
+import ResponsiveButton from "@/components/ResponsiveButton";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface StreamEvent {
     type: string;

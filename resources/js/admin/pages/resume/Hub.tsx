@@ -1,12 +1,14 @@
-import type { ReactNode } from "react";
 import { Head } from "@inertiajs/react";
+import CodeIcon from "@mui/icons-material/Code";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import CodeIcon from "@mui/icons-material/Code";
-import AdminLayout from "../../layouts/AdminLayout";
-import PageHeader from "../../components/PageHeader";
+
 import NavGrid, { type NavBlock } from "../../components/NavGrid";
+import PageHeader from "../../components/PageHeader";
+import AdminLayout from "../../layouts/AdminLayout";
+
+import type { ReactNode } from "react";
 
 interface ServerNavBlock {
     href: string;

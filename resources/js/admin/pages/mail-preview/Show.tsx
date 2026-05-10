@@ -1,10 +1,11 @@
 import { Head } from "@inertiajs/react";
-import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import AdminLayout from "../../layouts/AdminLayout";
+import Typography from "@mui/material/Typography";
+
 import PageHeader from "../../components/PageHeader";
+import AdminLayout from "../../layouts/AdminLayout";
 
 interface MailableItem {
     name: string;

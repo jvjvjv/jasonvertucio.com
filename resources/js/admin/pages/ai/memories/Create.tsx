@@ -1,13 +1,16 @@
 import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
-import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "@/admin/layouts/AdminLayout";
-import PageHeader from "@/admin/components/PageHeader";
+
 import MemoryForm from "./Form";
+
 import type { FormData } from "./Form";
+import type { SyntheticEvent } from "react";
+
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 
 export default function Create() {
     const form = useForm<FormData>({

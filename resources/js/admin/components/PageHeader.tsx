@@ -1,8 +1,8 @@
 import { Link as InertiaLink } from "@inertiajs/react";
-import Typography from "@mui/material/Typography";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Box from "@mui/material/Box";
 import MuiLink from "@mui/material/Link";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import Typography from "@mui/material/Typography";
 
 interface PageHeaderProps {
     title: string;

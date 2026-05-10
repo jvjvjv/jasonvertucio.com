@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -6,8 +5,11 @@ import CardContent from "@mui/material/CardContent";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
+
 import SkillsInput from "../../../components/SkillsInput";
 import ReorderModal from "../ReorderModal";
+
 import type { SkillCategory } from "../types";
 
 interface SkillsTabProps {

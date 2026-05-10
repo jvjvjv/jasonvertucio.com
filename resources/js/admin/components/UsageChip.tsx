@@ -1,8 +1,9 @@
 import Chip from "@mui/material/Chip";
-import type { ChipProps } from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+
 import type { ConversationUsage } from "@/types";
+import type { ChipProps } from "@mui/material/Chip";
 
 interface UsageChipProps {
     usage?: ConversationUsage | null;

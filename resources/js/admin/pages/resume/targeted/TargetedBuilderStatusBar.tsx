@@ -1,8 +1,10 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+
+import type { Conversation, TargetedResume } from "@/types";
+
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
-import type { Conversation, TargetedResume } from "@/types";
 
 interface TargetedBuilderStatusBarProps {
     conversation: Conversation;

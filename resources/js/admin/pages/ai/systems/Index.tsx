@@ -11,12 +11,14 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "@/admin/layouts/AdminLayout";
-import PageHeader from "@/admin/components/PageHeader";
-import EmptyTableRow from "@/admin/components/EmptyTableRow";
-import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import useConfirmDialog from "@/hooks/useConfirmDialog";
+
 import type { AiSystem } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface IndexProps {
     systems: AiSystem[];

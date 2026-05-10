@@ -1,6 +1,7 @@
-import type { SyntheticEvent } from "react";
-import { useState } from "react";
 import { Head, router, useForm } from "@inertiajs/react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -18,13 +19,15 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import AdminLayout from "../../layouts/AdminLayout";
-import PageHeader from "../../components/PageHeader";
-import EmptyTableRow from "../../components/EmptyTableRow";
+import { useState } from "react";
+
 import ConfirmDialog from "../../components/ConfirmDialog";
+import EmptyTableRow from "../../components/EmptyTableRow";
+import PageHeader from "../../components/PageHeader";
+import AdminLayout from "../../layouts/AdminLayout";
+
+import type { SyntheticEvent } from "react";
+
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface ViewRecord {

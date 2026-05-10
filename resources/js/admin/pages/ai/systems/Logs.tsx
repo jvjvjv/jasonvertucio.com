@@ -6,11 +6,13 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
+
 import EmptyTableRow from "../../../components/EmptyTableRow";
-import StatusChip from "../../../components/StatusChip";
+import PageHeader from "../../../components/PageHeader";
 import Pagination from "../../../components/Pagination";
+import StatusChip from "../../../components/StatusChip";
+import AdminLayout from "../../../layouts/AdminLayout";
+
 import type { AiSystem, LogEntry, PaginatedResponse } from "@/types";
 
 interface LogsProps {

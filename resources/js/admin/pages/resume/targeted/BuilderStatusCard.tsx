@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+
+import type { ReactNode } from "react";
 
 interface BuilderStatusCardProps {
     label: string;

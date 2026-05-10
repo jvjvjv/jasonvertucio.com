@@ -1,15 +1,18 @@
 import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
-import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "@/admin/layouts/AdminLayout";
-import PageHeader from "@/admin/components/PageHeader";
+
 import MemoryForm from "./Form";
+
 import type { FormData } from "./Form";
 import type { Memory } from "@/types";
+import type { SyntheticEvent } from "react";
+
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface EditMemory extends Memory, FormData {
     times_reinforced: number;

@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
-import { statusColor } from "@/admin/utils/statusColor";
+
 import type { ChipColor } from "@/admin/utils/statusColor";
+import type { ReactNode } from "react";
+
+import { statusColor } from "@/admin/utils/statusColor";
 
 interface StatusChipProps {
     status: string;

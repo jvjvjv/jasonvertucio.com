@@ -1,9 +1,3 @@
-import { useCallback, useState } from "react";
-
-interface SaveErrorResponse {
-    errors?: { [key: string]: string[] };
-    message?: string;
-}
 import { Head, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -24,15 +18,24 @@ import MenuItem from "@mui/material/MenuItem";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../layouts/AdminLayout";
+import { useCallback, useState } from "react";
+
 import PageHeader from "../../components/PageHeader";
-import type { EditorProps, Personal, ResumeData } from "./types";
-import VersionTab from "./tabs/VersionTab";
-import PersonalTab from "./tabs/PersonalTab";
-import SkillsTab from "./tabs/SkillsTab";
-import ExperienceTab from "./tabs/ExperienceTab";
-import ProjectsTab from "./tabs/ProjectsTab";
+import AdminLayout from "../../layouts/AdminLayout";
+
 import EducationTab from "./tabs/EducationTab";
+import ExperienceTab from "./tabs/ExperienceTab";
+import PersonalTab from "./tabs/PersonalTab";
+import ProjectsTab from "./tabs/ProjectsTab";
+import SkillsTab from "./tabs/SkillsTab";
+import VersionTab from "./tabs/VersionTab";
+
+import type { EditorProps, Personal, ResumeData } from "./types";
+
+interface SaveErrorResponse {
+    errors?: { [key: string]: string[] };
+    message?: string;
+}
 
 export default function Editor({
     data: initialData,

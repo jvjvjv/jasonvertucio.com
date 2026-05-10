@@ -3,10 +3,12 @@ import MemoryIcon from "@mui/icons-material/Memory";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import RuleIcon from "@mui/icons-material/Rule";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
-import type { ReactNode } from "react";
-import AdminLayout from "../../layouts/AdminLayout";
-import PageHeader from "../../components/PageHeader";
+
 import NavGrid, { type NavBlock } from "../../components/NavGrid";
+import PageHeader from "../../components/PageHeader";
+import AdminLayout from "../../layouts/AdminLayout";
+
+import type { ReactNode } from "react";
 
 interface ServerNavBlock {
     href: string;

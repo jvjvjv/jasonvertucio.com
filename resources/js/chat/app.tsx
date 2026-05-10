@@ -1,9 +1,11 @@
-import type { ComponentType } from "react";
+import { createInertiaApp } from "@inertiajs/react";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
-import { createInertiaApp } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
+
 import { theme } from "../admin/theme";
+
+import type { ComponentType } from "react";
 
 void createInertiaApp({
     title: (title) => (title ? `${title} | Jason Vertucio` : "Jason Vertucio"),

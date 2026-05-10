@@ -1,12 +1,14 @@
-import type { ReactNode } from "react";
 import { Head } from "@inertiajs/react";
 import DescriptionIcon from "@mui/icons-material/Description";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
-import SmartToyIcon from "@mui/icons-material/SmartToy";
-import PushPinIcon from "@mui/icons-material/PushPin";
 import InboxIcon from "@mui/icons-material/Inbox";
-import AdminLayout from "../layouts/AdminLayout";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+
 import NavGrid, { type NavBlock } from "../components/NavGrid";
+import AdminLayout from "../layouts/AdminLayout";
+
+import type { ReactNode } from "react";
 
 interface ServerNavBlock {
     href: string;

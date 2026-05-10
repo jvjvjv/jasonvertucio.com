@@ -1,18 +1,20 @@
-import { type ReactNode, useState } from "react";
 import { Link as InertiaLink, usePage } from "@inertiajs/react";
+import MenuIcon from "@mui/icons-material/Menu";
+import Alert from "@mui/material/Alert";
 import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
-import Alert from "@mui/material/Alert";
-import Snackbar from "@mui/material/Snackbar";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import MenuIcon from "@mui/icons-material/Menu";
+import Snackbar from "@mui/material/Snackbar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import { type ReactNode, useState } from "react";
+
 import { ADMIN_NAVIGATION_ITEMS } from "../constants/navigation";
+
 import type { SharedProps } from "@/types";
 
 interface AdminLayoutProps {

@@ -1,6 +1,3 @@
-import { useState } from "react";
-import type { SyntheticEvent } from "react";
-import { marked } from "marked";
 import { Head } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -11,9 +8,14 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "@/admin/layouts/AdminLayout";
-import PageHeader from "@/admin/components/PageHeader";
+import { marked } from "marked";
+import { useState } from "react";
+
 import type { AiSystem } from "@/types";
+import type { SyntheticEvent } from "react";
+
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface ParseJobResponse {
     message?: string;

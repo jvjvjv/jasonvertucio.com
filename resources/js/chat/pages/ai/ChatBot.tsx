@@ -1,6 +1,5 @@
 import { Head, router } from "@inertiajs/react";
 import AddCommentIcon from "@mui/icons-material/AddComment";
-import type { MessageBlock } from "@/components/ChatMessageBubble";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
 import Alert from "@mui/material/Alert";
@@ -18,8 +17,11 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import type { KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+
+import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { KeyboardEvent } from "react";
+
 import ChatMessageBubble from "@/components/ChatMessageBubble";
 
 interface HistoryItem {

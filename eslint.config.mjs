@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import eslintPluginPrettier from 'eslint-plugin-prettier';
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks';
+import eslintPluginImportX from 'eslint-plugin-import-x';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import { fileURLToPath } from 'url';
@@ -32,7 +33,8 @@ export default [
             files: ['**/*.ts', '**/*.tsx'],
             extends: [tseslint.configs.strictTypeChecked, tseslint.configs.stylisticTypeChecked],
             plugins: {
-                prettier: eslintPluginPrettier
+                prettier: eslintPluginPrettier,
+                import: eslintPluginImportX,
             },
             languageOptions: {
                 parserOptions: {
@@ -76,7 +78,26 @@ export default [
                 'prettier/prettier': 'error',
                 'react-hooks/rules-of-hooks': 'error',
                 'react-hooks/exhaustive-deps': 'warn',
-                'sort-imports': ['warn', { allowSeparatedGroups: true }],
+                'import/order': [
+                    'error',
+                    {
+                        groups: [
+                            'builtin',
+                            'external',
+                            'internal',
+                            'parent',
+                            'sibling',
+                            'index',
+                            'object',
+                            'type',
+                        ],
+                        'newlines-between': 'always',
+                        alphabetize: {
+                            order: 'asc',
+                            caseInsensitive: true,
+                        },
+                    },
+                ],
                 'no-unused-vars': 'off',
                 semi: 'off',
             }

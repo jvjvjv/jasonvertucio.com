@@ -1,4 +1,8 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -15,17 +19,16 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import ThumbDownIcon from "@mui/icons-material/ThumbDown";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import Pagination from "../../../components/Pagination";
+
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "@/hooks/useConfirmDialog";
+import EmptyTableRow from "../../../components/EmptyTableRow";
+import PageHeader from "../../../components/PageHeader";
+import Pagination from "../../../components/Pagination";
+import AdminLayout from "../../../layouts/AdminLayout";
+
 import type { PaginatedResponse } from "@/types";
+
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface ParserRow {
     id: number;

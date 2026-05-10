@@ -1,6 +1,6 @@
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Box from "@mui/material/Box";
-import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";

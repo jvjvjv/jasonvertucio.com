@@ -1,12 +1,13 @@
 import { Head, Link as InertiaLink } from "@inertiajs/react";
+import EmailIcon from "@mui/icons-material/Email";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
-import EmailIcon from "@mui/icons-material/Email";
-import AdminLayout from "@/admin/layouts/AdminLayout";
+import Typography from "@mui/material/Typography";
+
 import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface MailableItem {
     name: string;

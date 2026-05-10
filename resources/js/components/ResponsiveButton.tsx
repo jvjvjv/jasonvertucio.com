@@ -1,10 +1,11 @@
+import { Link } from "@inertiajs/react";
 import Button from "@mui/material/Button";
-import type { ButtonProps } from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+
+import type { ButtonProps } from "@mui/material/Button";
 import type { ReactNode } from "react";
 
 import useDeviceInfo from "@/hooks/useDeviceInfo";
-import { Link } from "@inertiajs/react";
 
 interface ResponsiveButtonProps {
     size?: ButtonProps["size"];
