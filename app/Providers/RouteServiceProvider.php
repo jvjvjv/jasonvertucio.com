@@ -15,7 +15,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/canvas';
+    public const HOME = '/';
 
     /**
      * Define your route model bindings, pattern filters, etc.
@@ -32,7 +32,8 @@ class RouteServiceProvider extends ServiceProvider
                 ->prefix($prefix)
                 ->name("chat-bot-{$bot->slug}.")
                 ->group(function () use ($bot) {
-                    Route::get('/{hash}', [\App\Http\Controllers\ChatBotController::class, 'showByHash'])
+                    // Exclude reserved words that conflict with other routes: new, reset, switch, messages
+                    Route::get('/{hash:(?!new|reset|switch|messages$).+}', [\App\Http\Controllers\ChatBotController::class, 'showByHash'])
                         ->name('by-hash');
                 });
         }
