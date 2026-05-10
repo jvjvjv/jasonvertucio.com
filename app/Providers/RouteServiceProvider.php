@@ -33,15 +33,9 @@ class RouteServiceProvider extends ServiceProvider
                 ->prefix($prefix)
                 ->name("chat-bot-{$bot->slug}.")
                 ->group(function () use ($bot) {
-                    // Exclude reserved words that conflict with other routes: new, reset, switch, messages
-                    Route::get('/{hash}', function (string $hash, Request $request) {
-                        // Validate hash format: must be 32 hex characters and not a reserved word
-                        if (!preg_match('/^[a-f0-9]{32}$/', $hash)) {
-                            abort(404);
-                        }
-                        
-                        return resolve(\App\Http\Controllers\ChatBotController::class)->showByHash($request, $hash);
-                    })->name('by-hash');
+                    Route::get('/{hash}', fn (string $hash, Request $request) =>
+                        resolve(\App\Http\Controllers\ChatBotController::class)->showByHash($request, $hash)
+                    )->where('hash', '[a-f0-9]{32}')->name('by-hash');
                 });
         }
     }
