@@ -1,4 +1,5 @@
-import { Head, Link as InertiaLink, useForm, router } from "@inertiajs/react";
+import type { SyntheticEvent } from "react";
+import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -20,7 +21,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
         provider: aiSystem.provider,
-        api_key: aiSystem.api_key ?? "",
+        api_key: aiSystem.api_key,
         model: aiSystem.model,
         base_url: aiSystem.base_url ?? "",
         api_version: aiSystem.api_version ?? "",
@@ -42,12 +43,12 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
             ? JSON.stringify(aiSystem.pricing_profile, null, 2)
             : "",
         is_active: aiSystem.is_active,
-        feature_defaults: aiSystem.feature_defaults_list ?? [],
+        feature_defaults: aiSystem.feature_defaults_list,
     });
 
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.put(`/admin/ai/systems/${aiSystem.id}`);
     };

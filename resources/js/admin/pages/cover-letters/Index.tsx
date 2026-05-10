@@ -9,7 +9,6 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import PageHeader from "@/admin/components/PageHeader";
 import EmptyTableRow from "@/admin/components/EmptyTableRow";
@@ -124,9 +123,9 @@ export default function Index({ coverLetters }: IndexProps) {
                                                 <Button
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(cl.id)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(cl.id);
+                                                    }}
                                                 >
                                                     Delete
                                                 </Button>

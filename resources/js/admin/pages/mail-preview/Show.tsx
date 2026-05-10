@@ -1,10 +1,10 @@
-import { Head } from '@inertiajs/react';
-import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import AdminLayout from '../../layouts/AdminLayout';
-import PageHeader from '../../components/PageHeader';
+import { Head } from "@inertiajs/react";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import AdminLayout from "../../layouts/AdminLayout";
+import PageHeader from "../../components/PageHeader";
 
 interface MailableItem {
     name: string;
@@ -19,7 +19,12 @@ interface MailPreviewShowProps {
     error?: string;
 }
 
-export default function MailPreviewShow({ mailable, subject, previewUrl, error }: MailPreviewShowProps) {
+export default function MailPreviewShow({
+    mailable,
+    subject,
+    previewUrl,
+    error,
+}: MailPreviewShowProps) {
     return (
         <AdminLayout>
             <Head title={`${mailable.name} | Mail Preview`} />
@@ -30,7 +35,11 @@ export default function MailPreviewShow({ mailable, subject, previewUrl, error }
             />
 
             {subject && (
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                >
                     Subject: {subject}
                 </Typography>
             )}
@@ -45,10 +54,10 @@ export default function MailPreviewShow({ mailable, subject, previewUrl, error }
                         component="iframe"
                         src={previewUrl}
                         sx={{
-                            width: '100%',
+                            width: "100%",
                             minHeight: 600,
-                            border: 'none',
-                            display: 'block',
+                            border: "none",
+                            display: "block",
                         }}
                         title={`Preview of ${mailable.name}`}
                     />

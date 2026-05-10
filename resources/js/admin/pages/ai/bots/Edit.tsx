@@ -1,5 +1,6 @@
 import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
+import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -12,7 +13,7 @@ import Form, { type FormData } from "./Form";
 
 interface EditProps {
     bot: AiChatBot;
-    systems: Array<{ id: number; name: string; model: string }>;
+    systems: { id: number; name: string; model: string }[];
     roles: string[];
 }
 
@@ -24,7 +25,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         description: bot.description ?? "",
         ai_system_id: bot.ai_system_id ?? "",
         prompt_template: bot.prompt_template ?? "",
-        allowed_roles: bot.allowed_roles ?? [],
+        allowed_roles: bot.allowed_roles,
         is_active: bot.is_active,
         is_public: bot.is_public,
         require_visitor_identity: bot.require_visitor_identity,
@@ -32,7 +33,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
 
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.put(`/admin/ai/chat-bots/${bot.slug}`);
     };

@@ -1,18 +1,18 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
     palette: {
         primary: {
-            main: '#1b587c',
+            main: "#1b587c",
         },
         secondary: {
-            main: '#b35e06',
+            main: "#b35e06",
         },
         text: {
-            primary: '#25292c',
+            primary: "#25292c",
         },
         background: {
-            default: '#f9fafb',
+            default: "#f9fafb",
         },
     },
     typography: {
@@ -26,37 +26,37 @@ export const theme = createTheme({
         MuiButton: {
             styleOverrides: {
                 root: {
-                    textTransform: 'none',
-                    borderRadius: '0.5rem',
+                    textTransform: "none",
+                    borderRadius: "0.5rem",
                 },
             },
         },
         MuiInputBase: {
             styleOverrides: {
                 inputMultiline: {
-                    resize: 'vertical',
+                    resize: "vertical",
                 },
             },
         },
         MuiCard: {
             styleOverrides: {
                 root: {
-                    boxShadow: 'none',
-                    border: '1px solid #e5e7eb',
+                    boxShadow: "none",
+                    border: "1px solid #e5e7eb",
                 },
             },
         },
         MuiLink: {
             styleOverrides: {
-                root: ({theme}) => ({
+                root: ({ theme }) => ({
                     color: theme.palette.primary.main,
-                })
-            }
+                }),
+            },
         },
         MuiPaper: {
             styleOverrides: {
                 root: {
-                    boxShadow: 'none',
+                    boxShadow: "none",
                 },
             },
         },

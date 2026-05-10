@@ -1,5 +1,6 @@
 import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
+import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -30,7 +31,7 @@ export default function Edit({ memory }: EditProps) {
         is_active: memory.is_active,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.put(`/admin/ai/memories/${memory.id}`);
     };

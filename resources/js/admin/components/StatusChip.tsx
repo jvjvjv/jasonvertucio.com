@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import { statusColor } from "@/admin/utils/statusColor";
@@ -7,7 +7,7 @@ import type { ChipColor } from "@/admin/utils/statusColor";
 interface StatusChipProps {
     status: string;
     label?: string;
-    colorMap?: Record<string, ChipColor>;
+    colorMap?: { [key: string]: ChipColor };
     variant?: "outlined" | "filled";
     size?: "small" | "medium";
     tip?: ReactNode;
@@ -17,7 +17,7 @@ export default function StatusChip({
     label,
     colorMap,
     size = "small",
-    tip = undefined,
+    tip,
 }: StatusChipProps) {
     const color = colorMap?.[status] ?? statusColor(status);
     const variant = ["pass", "finalized", "applied"].includes(status)

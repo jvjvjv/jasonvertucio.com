@@ -1,6 +1,5 @@
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
@@ -43,10 +42,14 @@ function getRelativeSentLabel(
     const abs = Math.abs(diffInSeconds);
     const fmt = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
     if (abs < 60) return `sent ${fmt.format(diffInSeconds, "second")}`;
-    if (abs < 3600) return `sent ${fmt.format(Math.round(diffInSeconds / 60), "minute")}`;
-    if (abs < 86400) return `sent ${fmt.format(Math.round(diffInSeconds / 3600), "hour")}`;
-    if (abs < 86400 * 30) return `sent ${fmt.format(Math.round(diffInSeconds / 86400), "day")}`;
-    if (abs < 86400 * 365) return `sent ${fmt.format(Math.round(diffInSeconds / (86400 * 30)), "month")}`;
+    if (abs < 3600)
+        return `sent ${fmt.format(Math.round(diffInSeconds / 60), "minute")}`;
+    if (abs < 86400)
+        return `sent ${fmt.format(Math.round(diffInSeconds / 3600), "hour")}`;
+    if (abs < 86400 * 30)
+        return `sent ${fmt.format(Math.round(diffInSeconds / 86400), "day")}`;
+    if (abs < 86400 * 365)
+        return `sent ${fmt.format(Math.round(diffInSeconds / (86400 * 30)), "month")}`;
     return `sent ${fmt.format(Math.round(diffInSeconds / (86400 * 365)), "year")}`;
 }
 
@@ -59,7 +62,6 @@ function getLocaleDateTime(sentAt: string | null | undefined): string | null {
         timeStyle: "short",
     }).format(d);
 }
-
 
 const userMarkdownOverrides = {
     "& a": { color: "inherit" },
@@ -89,18 +91,25 @@ export default function ChatMessageBubble({
     const localeDateTime = getLocaleDateTime(sentAt);
 
     // Legacy single-blob reasoning state (when blocks is absent)
-    const [legacyReasoningExpanded, setLegacyReasoningExpanded] = useState(false);
+    const [legacyReasoningExpanded, setLegacyReasoningExpanded] =
+        useState(false);
 
     const baseBubbleSx = {
         alignSelf: isChatVariant
-            ? isUser ? "flex-end" : "flex-start"
+            ? isUser
+                ? "flex-end"
+                : "flex-start"
             : "stretch",
         maxWidth: isChatVariant ? maxWidth : "100%",
         bgcolor: isChatVariant
-            ? isUser ? "primary.main" : "grey.100"
+            ? isUser
+                ? "primary.main"
+                : "grey.100"
             : "transparent",
         color: isChatVariant
-            ? isUser ? "primary.contrastText" : "text.primary"
+            ? isUser
+                ? "primary.contrastText"
+                : "text.primary"
             : "text.primary",
         borderRadius: isChatVariant ? 2 : 0,
         px: isChatVariant ? 2 : 0,
@@ -121,7 +130,10 @@ export default function ChatMessageBubble({
                             <ReasoningPanel
                                 key={i}
                                 content={block.content}
-                                isActive={isActiveBlock && activeBlockType === "reasoning"}
+                                isActive={
+                                    isActiveBlock &&
+                                    activeBlockType === "reasoning"
+                                }
                             />
                         );
                     }
@@ -138,7 +150,11 @@ export default function ChatMessageBubble({
                             <div
                                 style={{ wordBreak: "break-word" }}
                                 dangerouslySetInnerHTML={{
-                                    __html: marked.parse(block.content || (isActiveBlock ? "" : ""), { breaks: true }) as string,
+                                    __html: marked.parse(
+                                        block.content ||
+                                            (isActiveBlock ? "" : ""),
+                                        { breaks: true },
+                                    ) as string,
                                 }}
                             />
                             {isActiveBlock && activeBlockType === "text" ? (
@@ -183,20 +199,32 @@ export default function ChatMessageBubble({
             {/* Collapsed brain icon for legacy reasoning */}
             {hasLegacyReasoning && !isStreaming ? (
                 <Tooltip
-                    title={legacyReasoningExpanded ? "Hide reasoning" : "Show reasoning"}
+                    title={
+                        legacyReasoningExpanded
+                            ? "Hide reasoning"
+                            : "Show reasoning"
+                    }
                     placement="top"
                     arrow
                 >
                     <IconButton
                         size="small"
-                        onClick={() => setLegacyReasoningExpanded((p) => !p)}
-                        aria-label={legacyReasoningExpanded ? "Hide reasoning" : "Show reasoning"}
+                        onClick={() => {
+                            setLegacyReasoningExpanded((p) => !p);
+                        }}
+                        aria-label={
+                            legacyReasoningExpanded
+                                ? "Hide reasoning"
+                                : "Show reasoning"
+                        }
                         sx={{
                             position: "absolute",
                             top: 4,
                             right: 4,
                             p: 0.5,
-                            color: legacyReasoningExpanded ? "primary.main" : "text.disabled",
+                            color: legacyReasoningExpanded
+                                ? "primary.main"
+                                : "text.disabled",
                             "&:hover": { color: "primary.main" },
                         }}
                     >
@@ -207,7 +235,7 @@ export default function ChatMessageBubble({
 
             {hasLegacyReasoning ? (
                 <ReasoningPanel
-                    content={reasoningContent!}
+                    content={reasoningContent}
                     isActive={isStreaming && activeBlockType === "reasoning"}
                 />
             ) : null}
@@ -222,7 +250,9 @@ export default function ChatMessageBubble({
                 <div
                     style={{ wordBreak: "break-word" }}
                     dangerouslySetInnerHTML={{
-                        __html: marked.parse(content, { breaks: true }) as string,
+                        __html: marked.parse(content, {
+                            breaks: true,
+                        }) as string,
                     }}
                 />
                 {relativeSentLabel && localeDateTime ? (
@@ -233,7 +263,11 @@ export default function ChatMessageBubble({
                                 display: "inline-block",
                                 mt: "2px",
                                 lineHeight: 1,
-                                color: `${isChatVariant ? (isUser ? "primary.contrastText" : "text.secondary") : "text.primary"}`,
+                                color: isChatVariant
+                                    ? isUser
+                                        ? "primary.contrastText"
+                                        : "text.secondary"
+                                    : "text.primary",
                                 cursor: "help",
                                 opacity: 0.7,
                             }}

@@ -1,5 +1,6 @@
 import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
+import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -18,7 +19,7 @@ export default function Create() {
         is_active: true,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.post("/admin/ai/memories");
     };

@@ -1,12 +1,11 @@
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export interface ReasoningPanelProps {
     content: string;
@@ -14,12 +13,11 @@ export interface ReasoningPanelProps {
     isActive: boolean;
 }
 
-export default function ReasoningPanel({ content, isActive }: ReasoningPanelProps) {
+export default function ReasoningPanel({
+    content,
+    isActive,
+}: ReasoningPanelProps) {
     const [expanded, setExpanded] = useState(isActive);
-
-    useEffect(() => {
-        if (isActive) setExpanded(true);
-    }, [isActive]);
 
     if (!expanded) {
         return (
@@ -27,11 +25,15 @@ export default function ReasoningPanel({ content, isActive }: ReasoningPanelProp
                 <Tooltip title="Show reasoning" placement="top" arrow>
                     <IconButton
                         size="small"
-                        onClick={() => setExpanded(true)}
+                        onClick={() => {
+                            setExpanded(true);
+                        }}
                         aria-label="Show reasoning"
                         sx={{ p: 0.5 }}
                     >
-                        <PsychologyIcon sx={{ fontSize: 16, color: "text.disabled" }} />
+                        <PsychologyIcon
+                            sx={{ fontSize: 16, color: "text.disabled" }}
+                        />
                     </IconButton>
                 </Tooltip>
             </Box>

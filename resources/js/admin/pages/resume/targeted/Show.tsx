@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { SyntheticEvent } from "react";
 import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -19,7 +20,7 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import StatusChip from "@/admin/components/StatusChip";
 import PageHeader from "@/admin/components/PageHeader";
-import ChatMessageBubble from "@/admin/components/ChatMessageBubble";
+import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import UsageChip from "@/admin/components/UsageChip";
 import ResponsiveButton from "@/components/ResponsiveButton";
@@ -37,6 +38,16 @@ import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
 import DoneIcon from "@mui/icons-material/Done";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+
+interface StreamEvent {
+    type: string;
+    delta?: { text?: string };
+    message?: string;
+}
+
+interface FinalizeResponse {
+    message?: string;
+}
 
 interface ShowProps {
     conversation: Conversation;
@@ -69,14 +80,16 @@ export default function Show({
     const hasAutoStarted = useRef(false);
 
     const metadataForm = useForm({
-        title: conversation.title || "",
+        title: conversation.title ?? "",
         company_name:
-            targetedResume?.company_name ||
-            conversation.context?.company_name ||
+            targetedResume?.company_name ??
+            (conversation.context?.company_name as string | undefined) ??
             "",
         job_title:
-            targetedResume?.position || conversation.context?.job_title || "",
-        applied_at: targetedResume?.applied_at || "",
+            targetedResume?.position ??
+            (conversation.context?.job_title as string | undefined) ??
+            "",
+        applied_at: targetedResume?.applied_at ?? "",
     });
 
     const csrfToken =
@@ -135,7 +148,7 @@ export default function Show({
                 const decoder = new TextDecoder();
                 let accumulated = "";
 
-                while (true) {
+                for (;;) {
                     const { done, value } = await reader.read();
                     if (done) break;
 
@@ -148,7 +161,7 @@ export default function Show({
                         if (!jsonStr.trim()) continue;
 
                         try {
-                            const event = JSON.parse(jsonStr);
+                            const event = JSON.parse(jsonStr) as StreamEvent;
 
                             if (
                                 event.type === "content_block_delta" &&
@@ -157,7 +170,7 @@ export default function Show({
                                 accumulated += event.delta.text;
                                 setStreamingContent(accumulated);
                             } else if (event.type === "error") {
-                                accumulated += `\n\n**Error:** ${event.message || "Unknown error"}`;
+                                accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
                                 setStreamingContent(accumulated);
                             }
                         } catch {
@@ -197,7 +210,7 @@ export default function Show({
     useEffect(() => {
         if (shouldAutoStart && !hasAutoStarted.current) {
             hasAutoStarted.current = true;
-            sendMessage("");
+            void sendMessage("");
         }
     }, [shouldAutoStart, sendMessage]);
 
@@ -208,7 +221,7 @@ export default function Show({
         content: string;
     } {
         const normalized = raw.trim().replace(/\r\n/g, "\n");
-        const titleMatch = normalized.match(/^Title:\s*(.+)\n+/i);
+        const titleMatch = /^Title:\s*(.+)\n+/i.exec(normalized);
         if (!titleMatch) return { title: null, content: normalized };
         return {
             title: titleMatch[1].trim(),
@@ -220,15 +233,17 @@ export default function Show({
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
-            const contentMatch = msg.content.match(
-                /```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i,
-            );
+            const contentMatch =
+                /```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i.exec(
+                    msg.content,
+                );
             if (!contentMatch) continue;
             const parsed = parseTailoredResumeBlock(contentMatch[1]);
             let fitScore: number | null = null;
-            const scoreMatch = msg.content.match(
-                /(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i,
-            );
+            const scoreMatch =
+                /(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[/%]|\s*out of\s*100)?/i.exec(
+                    msg.content,
+                );
             if (scoreMatch) {
                 const s = parseInt(scoreMatch[1]);
                 if (s <= 100) fitScore = s;
@@ -242,8 +257,8 @@ export default function Show({
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
-            const m = msg.content.match(
-                /```cover[-\s]letter\s*\n([\s\S]*?)```/i,
+            const m = /```cover[-\s]letter\s*\n([\s\S]*?)```/i.exec(
+                msg.content,
             );
             if (m) return m[1].trim();
         }
@@ -264,7 +279,7 @@ export default function Show({
     const hasNewerResume = (() => {
         if (!targetedResume || !latestResumeData) return false;
         const normalize = (s: string | null | undefined) =>
-            (s || "").trim().replace(/\r\n/g, "\n");
+            (s ?? "").trim().replace(/\r\n/g, "\n");
         return (
             normalize(latestResumeData.title) !==
                 normalize(targetedResume.tailored_title) ||
@@ -277,7 +292,7 @@ export default function Show({
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {
-        if (!canFinalizeResume || !latestResumeData) return;
+        if (!canFinalizeResume) return;
         setIsFinalizing(true);
         setFinalizeError(null);
         try {
@@ -296,10 +311,10 @@ export default function Show({
                     }),
                 },
             );
-            const data = await response.json();
+            const data = (await response.json()) as FinalizeResponse;
             if (!response.ok) {
                 setFinalizeError(
-                    data.message || "Failed to save targeted resume.",
+                    data.message ?? "Failed to save targeted resume.",
                 );
                 return;
             }
@@ -330,10 +345,10 @@ export default function Show({
                     }),
                 },
             );
-            const data = await response.json();
+            const data = (await response.json()) as FinalizeResponse;
             if (!response.ok) {
                 setFinalizeCoverLetterError(
-                    data.message || "Failed to save cover letter.",
+                    data.message ?? "Failed to save cover letter.",
                 );
                 return;
             }
@@ -348,7 +363,7 @@ export default function Show({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
-            sendMessage();
+            void sendMessage();
         }
     };
 
@@ -378,7 +393,7 @@ export default function Show({
         );
     };
 
-    const handleMetadataSave = (e: React.FormEvent) => {
+    const handleMetadataSave = (e: SyntheticEvent) => {
         e.preventDefault();
         metadataForm.put(
             `/admin/resume/targeted-builder/${conversation.id}/metadata`,
@@ -386,15 +401,15 @@ export default function Show({
     };
 
     const companyName: string =
-        targetedResume?.company_name ||
-        (conversation.context?.company_name as string) ||
+        targetedResume?.company_name ??
+        (conversation.context?.company_name as string | undefined) ??
         "Conversation";
     const position: string =
-        targetedResume?.position ||
-        (conversation.context?.job_title as string) ||
+        targetedResume?.position ??
+        (conversation.context?.job_title as string | undefined) ??
         "";
     const pageTitle: string =
-        conversation?.title ??
+        conversation.title ??
         (position ? `${companyName} - ${position}` : companyName);
     const jobUrl = conversation.job_url;
     return (
@@ -432,7 +447,9 @@ export default function Show({
                 </IconButton>
                 <Tabs
                     value={activeTab}
-                    onChange={(_, v) => setActiveTab(v)}
+                    onChange={(_, v) => {
+                        setActiveTab(v as number);
+                    }}
                     aria-label="Targeted resume tabs"
                     sx={{
                         "& .MuiTab-root": {
@@ -458,15 +475,21 @@ export default function Show({
                         size="small"
                         color="success"
                         icon={<DoneIcon />}
-                        label={targetedResume?.status === "applied" ? "Applied" : "Mark Applied"}
+                        label={
+                            targetedResume?.status === "applied"
+                                ? "Applied"
+                                : "Mark Applied"
+                        }
                         title={
                             targetedResume?.status === "applied"
-                            ? "Already marked as applied"
-                            : "Mark as applied"
+                                ? "Already marked as applied"
+                                : "Mark as applied"
                         }
                         variant="outlined"
-
-                        disabled={!hasFitScore() || targetedResume?.status === "applied"}
+                        disabled={
+                            !hasFitScore() ||
+                            targetedResume?.status === "applied"
+                        }
                         onClick={handleApplied}
                     />
                     <ResponsiveButton
@@ -479,13 +502,11 @@ export default function Show({
                                 ? "Already marked as passed"
                                 : "Mark as passed"
                         }
-
                         variant="outlined"
                         disabled={
                             conversation.status === "pass" ||
                             targetedResume?.status !== "draft"
                         }
-
                         onClick={handlePass}
                     />
                     {jobUrl ? (
@@ -500,14 +521,18 @@ export default function Show({
                                 if (!jobUrl) {
                                     return;
                                 }
-                                window.open(jobUrl, "_blank", "noopener,noreferrer");
+                                window.open(
+                                    jobUrl,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                );
                             }}
                         />
                     ) : null}
                 </Box>
             </Box>
 
-            {(finalizeError || finalizeCoverLetterError) && (
+            {(finalizeError !== null || finalizeCoverLetterError !== null) && (
                 <Box
                     sx={{
                         mb: 2,
@@ -714,9 +739,9 @@ export default function Show({
                                     maxRows={4}
                                     placeholder="Type a message... (Ctrl+Enter to send)"
                                     value={userInput}
-                                    onChange={(e) =>
-                                        setUserInput(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setUserInput(e.target.value);
+                                    }}
                                     onKeyDown={handleKeyDown}
                                     disabled={isStreaming}
                                 />
@@ -746,12 +771,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.title}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "title",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.title}
                                 helperText={metadataForm.errors.title}
                                 sx={{ mb: 2 }}
@@ -765,7 +790,7 @@ export default function Show({
                                     AI System
                                 </Typography>
                                 <Typography variant="body2">
-                                    {conversation.ai_system_name || "Unknown"}
+                                    {conversation.ai_system_name ?? "Unknown"}
                                 </Typography>
                             </Box>
                             <TextField
@@ -773,12 +798,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.company_name}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "company_name",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.company_name}
                                 helperText={metadataForm.errors.company_name}
                                 sx={{ mb: 2 }}
@@ -788,12 +813,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.job_title}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "job_title",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.job_title}
                                 helperText={metadataForm.errors.job_title}
                                 sx={{ mb: 3 }}
@@ -824,15 +849,15 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.applied_at}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "applied_at",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.applied_at}
                                 helperText={
-                                    metadataForm.errors.applied_at ||
+                                    metadataForm.errors.applied_at ??
                                     "Leave blank if you have not applied yet."
                                 }
                                 slotProps={{ inputLabel: { shrink: true } }}

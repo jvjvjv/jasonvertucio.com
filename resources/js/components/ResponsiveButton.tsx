@@ -32,23 +32,27 @@ export default function ResponsiveButton({
     const { isMobile } = useDeviceInfo();
     const spreadHref = href ? { href, component: Link } : {};
 
-    return isMobile ? <IconButton
-        {...spreadHref}
-        color={color}
-        disabled={disabled}
-        title={title}
-        onClick={onClick}
-    >
-        {icon}
-    </IconButton> : <Button
-        {...spreadHref}
-        size={size}
-        color={color}
-        variant={variant}
-        disabled={disabled}
-        onClick={onClick}
-        startIcon={icon}
-    >
-        {label}
-    </Button>;
+    return isMobile ? (
+        <IconButton
+            {...spreadHref}
+            color={color}
+            disabled={disabled}
+            title={title}
+            onClick={onClick}
+        >
+            {icon}
+        </IconButton>
+    ) : (
+        <Button
+            {...spreadHref}
+            size={size}
+            color={color}
+            variant={variant}
+            disabled={disabled}
+            onClick={onClick}
+            startIcon={icon}
+        >
+            {label}
+        </Button>
+    );
 }

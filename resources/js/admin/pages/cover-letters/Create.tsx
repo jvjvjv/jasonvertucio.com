@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from "react";
 import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -25,7 +26,7 @@ export default function Create({ resumeVersions }: CreateProps) {
         signature: "Jason Vertucio",
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.post("/admin/cover-letters");
     };

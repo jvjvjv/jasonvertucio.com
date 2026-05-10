@@ -7,13 +7,13 @@ import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import ChatMessageBubble from "@/admin/components/ChatMessageBubble";
+import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-import type { ConversationUsage, Message, Memory } from "@/types";
+import type { ConversationUsage, Memory, Message } from "@/types";
 
 interface ShowProps {
     conversation: {
@@ -21,7 +21,7 @@ interface ShowProps {
         title: string | null;
         feature: string;
         status: string;
-        context: Record<string, unknown> | null;
+        context: { [key: string]: unknown } | null;
         visitor_name: string | null;
         visitor_email: string | null;
         user_name: string | null;
@@ -51,10 +51,10 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
     return (
         <AdminLayout>
             <Head
-                title={`${conversation.title || `Conversation #${conversation.id}`} | Conversations`}
+                title={`${conversation.title ?? `Conversation #${conversation.id}`} | Conversations`}
             />
             <PageHeader
-                title={conversation.title || `Conversation #${conversation.id}`}
+                title={conversation.title ?? `Conversation #${conversation.id}`}
                 backHref="/admin/ai/conversations"
                 backLabel="Back to AI Conversations"
             />

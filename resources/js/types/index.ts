@@ -1,4 +1,4 @@
-import type { PageProps } from '@inertiajs/core';
+import type { PageProps } from "@inertiajs/core";
 
 export interface AuthUser {
     id: number;
@@ -40,16 +40,17 @@ export interface AiSystem {
     api_version: string | null;
     max_tokens: number;
     temperature: number | null;
-    config: Record<string, unknown> | null;
-    credentials?: Record<string, unknown> | null;
+    config: { [key: string]: unknown } | null;
+    credentials?: { [key: string]: unknown } | null;
     auth_type?: string | null;
     endpoint_type?: string | null;
     stream_protocol?: string | null;
+    system_prompt?: string | null;
     system_prompt_mode?: string | null;
     supports_tools?: boolean;
     supports_json_mode?: boolean;
     is_local_endpoint?: boolean;
-    pricing_profile?: Record<string, unknown> | null;
+    pricing_profile?: { [key: string]: unknown } | null;
     is_active: boolean;
     interaction_logs_count: number;
     chat_bots_count: number;
@@ -60,7 +61,7 @@ export interface AiChatBot {
     id: number;
     name: string;
     slug: string;
-    access_path: 'chat' | 'root';
+    access_path: "chat" | "root";
     public_url?: string;
     description: string | null;
     prompt_template?: string;
@@ -147,7 +148,7 @@ export interface Conversation {
     user_name?: string | null;
     user_email?: string | null;
     ai_chat_bot_name?: string | null;
-    context: Record<string, unknown> | null;
+    context: { [key: string]: unknown } | null;
     targeted_resume?: TargetedResume | null;
     ai_system_name?: string | null;
     usage?: ConversationUsage | null;
@@ -157,7 +158,7 @@ export interface Message {
     id?: number;
     role: string;
     content: string;
-    metadata?: Record<string, unknown> | null;
+    metadata?: { [key: string]: unknown } | null;
     created_at?: string | null;
 }
 

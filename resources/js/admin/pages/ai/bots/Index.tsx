@@ -40,10 +40,29 @@ export default function Index({ bots }: IndexProps) {
                 backLabel="Back to AI Tools"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                }}
+            >
                 <Box sx={{ display: "flex", gap: 1 }}>
-                    <Button component={InertiaLink} href="/admin/ai/conversations" variant="outlined">AI Conversations</Button>
-                    <Button component={InertiaLink} href="/admin/ai/memories" variant="outlined">AI Memories</Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/conversations"
+                        variant="outlined"
+                    >
+                        AI Conversations
+                    </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/memories"
+                        variant="outlined"
+                    >
+                        AI Memories
+                    </Button>
                 </Box>
                 <Button
                     component={InertiaLink}
@@ -148,7 +167,8 @@ export default function Index({ bots }: IndexProps) {
                                             </Box>
                                         </TableCell>
                                         <TableCell>
-                                            {(bot.conversations_count ?? 0) > 0 ? (
+                                            {(bot.conversations_count ?? 0) >
+                                            0 ? (
                                                 <Link
                                                     component={InertiaLink}
                                                     href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
@@ -196,9 +216,9 @@ export default function Index({ bots }: IndexProps) {
                                                 <Button
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(bot)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(bot);
+                                                    }}
                                                 >
                                                     Delete
                                                 </Button>

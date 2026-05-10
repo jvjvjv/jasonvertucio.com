@@ -53,13 +53,17 @@ export default function BuilderStatusCard({
                     <Box>
                         <Typography
                             variant="overline"
-                            color={isFinalized ? `${color}.dark` : "text.secondary"}
+                            color={
+                                isFinalized ? `${color}.dark` : "text.secondary"
+                            }
                             sx={{ display: "block", lineHeight: 1.5 }}
                         >
                             {label}
                         </Typography>
                         <Typography variant="subtitle2">
-                            {isFinalized ? "Finalized and ready" : "Not finalized yet"}
+                            {isFinalized
+                                ? "Finalized and ready"
+                                : "Not finalized yet"}
                         </Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 0.5 }}>

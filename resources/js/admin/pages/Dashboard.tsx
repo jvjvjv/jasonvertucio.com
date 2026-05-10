@@ -1,11 +1,12 @@
-import { Head } from '@inertiajs/react';
-import DescriptionIcon from '@mui/icons-material/Description';
-import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import PushPinIcon from '@mui/icons-material/PushPin';
-import InboxIcon from '@mui/icons-material/Inbox';
-import AdminLayout from '../layouts/AdminLayout';
-import NavGrid, { type NavBlock } from '../components/NavGrid';
+import type { ReactNode } from "react";
+import { Head } from "@inertiajs/react";
+import DescriptionIcon from "@mui/icons-material/Description";
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import InboxIcon from "@mui/icons-material/Inbox";
+import AdminLayout from "../layouts/AdminLayout";
+import NavGrid, { type NavBlock } from "../components/NavGrid";
 
 interface ServerNavBlock {
     href: string;
@@ -18,7 +19,7 @@ interface DashboardProps {
     navBlocks: ServerNavBlock[];
 }
 
-const iconMap: Record<string, React.ReactNode> = {
+const iconMap: { [key: string]: ReactNode } = {
     Description: <DescriptionIcon fontSize="large" />,
     DriveFileRenameOutline: <DriveFileRenameOutlineIcon fontSize="large" />,
     SmartToy: <SmartToyIcon fontSize="large" />,

@@ -1,9 +1,9 @@
-import { Head, Link as InertiaLink, useForm, router } from "@inertiajs/react";
+import type { SyntheticEvent } from "react";
+import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import PageHeader from "@/admin/components/PageHeader";
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
@@ -26,16 +26,16 @@ export default function Edit({ coverLetter, resumeVersions }: EditProps) {
         company_name: coverLetter.company_name,
         position: coverLetter.position,
         date: coverLetter.date,
-        company_address: coverLetter.company_address ?? "",
+        company_address: coverLetter.company_address,
         greeting: coverLetter.greeting,
         message_body: coverLetter.message_body,
-        closing: coverLetter.closing ?? "",
-        signature: coverLetter.signature ?? "",
+        closing: coverLetter.closing,
+        signature: coverLetter.signature,
     });
 
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.put(`/admin/cover-letters/${coverLetter.id}`);
     };

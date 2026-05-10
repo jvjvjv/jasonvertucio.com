@@ -1,25 +1,26 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router } from "@inertiajs/react";
 import AddCommentIcon from "@mui/icons-material/AddComment";
-import type { MessageBlock } from "../../../components/ChatMessageBubble";
+import type { MessageBlock } from "@/components/ChatMessageBubble";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { useEffect, useRef, useState } from 'react';
-import ChatMessageBubble from "../../../components/ChatMessageBubble";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import type { KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import ChatMessageBubble from "@/components/ChatMessageBubble";
 
 interface HistoryItem {
     handle: string;
@@ -30,7 +31,7 @@ interface HistoryItem {
 }
 
 interface ChatMessage {
-    role: 'user' | 'assistant' | 'system';
+    role: "user" | "assistant" | "system";
     content: string;
     reasoning_content?: string | null;
     blocks?: MessageBlock[] | null;
@@ -67,18 +68,28 @@ export default function ChatBot({
     chatUrl,
     chatUrlBase,
     showIdentityForm: initialShowIdentityForm,
-    chatHash,
+    chatHash: _chatHash,
 }: ChatBotProps) {
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [streamingBlocks, setStreamingBlocks] = useState<MessageBlock[]>([]);
     const [isStreaming, setIsStreaming] = useState(false);
-    const [error, setError] = useState('');
-    const [showIdentityForm, setShowIdentityForm] = useState(initialShowIdentityForm);
-    const [visitorName, setVisitorName] = useState('');
-    const [visitorEmail, setVisitorEmail] = useState('');
-    const [messageText, setMessageText] = useState('');
+    const [error, setError] = useState("");
+    const [showIdentityForm, setShowIdentityForm] = useState(
+        initialShowIdentityForm,
+    );
+    const [visitorName, setVisitorName] = useState("");
+    const [visitorEmail, setVisitorEmail] = useState("");
+    const [messageText, setMessageText] = useState("");
     const [activeTab, setActiveTab] = useState(0);
     const messagesRef = useRef<HTMLDivElement>(null);
+
+    // Sync state when Inertia re-renders the page with new props (e.g. after
+    // a router.reload()). Using setState in an effect is intentional here since
+    // these are external prop updates driving local state.
+    useEffect(() => {
+        setMessages(initialMessages); // eslint-disable-line react-hooks/set-state-in-effect
+        setShowIdentityForm(initialShowIdentityForm);
+    }, [initialMessages, initialShowIdentityForm]);
 
     const formatCost = (value: number | null | undefined): string => {
         if (value == null) {
@@ -88,24 +99,19 @@ export default function ChatBot({
         return `$${value.toFixed(2)}`;
     };
 
-    useEffect(() => {
-        setMessages(initialMessages);
-        setShowIdentityForm(initialShowIdentityForm);
-    }, [initialMessages, initialShowIdentityForm]);
-
     // Redirect to the hash-based URL after the first message is sent.
     // This enables sharing the chat link from any computer.
     useEffect(() => {
         if (chatUrl && initialMessages.length > 0) {
             const currentPath = window.location.pathname;
-            const currentSearch = window.location.search;
-            const queryString = currentSearch ? `?${currentSearch.slice(1)}` : '';
             // Only redirect if we're not already on the hash-based URL.
             if (currentPath !== chatUrl) {
                 const timer = setTimeout(() => {
                     window.location.href = chatUrl;
                 }, 300);
-                return () => clearTimeout(timer);
+                return () => {
+                    clearTimeout(timer);
+                };
             }
         }
     }, [chatUrl, initialMessages]);
@@ -116,8 +122,8 @@ export default function ChatBot({
         }
     }, [messages, streamingBlocks]);
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             void handleSubmit();
         }
@@ -129,28 +135,30 @@ export default function ChatBot({
             return;
         }
 
-        setError('');
-        setMessages((prev) => [...prev, { role: 'user', content: message }]);
-        setMessageText('');
+        setError("");
+        setMessages((prev) => [...prev, { role: "user", content: message }]);
+        setMessageText("");
         setIsStreaming(true);
         setStreamingBlocks([]);
 
-        const payload: Record<string, string> = { message };
+        const payload: { [key: string]: string } = { message };
         if (showIdentityForm) {
             payload.name = visitorName;
             payload.email = visitorEmail;
         }
 
         const csrfToken =
-            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content") ?? "";
 
         try {
             const response = await fetch(messageUrl, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'text/event-stream',
-                    'X-CSRF-TOKEN': csrfToken,
+                    "Content-Type": "application/json",
+                    Accept: "text/event-stream",
+                    "X-CSRF-TOKEN": csrfToken,
                 },
                 body: JSON.stringify(payload),
             });
@@ -161,7 +169,7 @@ export default function ChatBot({
 
             const reader = response.body?.getReader();
             if (!reader) {
-                throw new Error('No response stream available');
+                throw new Error("No response stream available");
             }
 
             const decoder = new TextDecoder();
@@ -169,8 +177,13 @@ export default function ChatBot({
             let liveBlocks: MessageBlock[] = [];
             let bufferedText = "";
 
-            const appendToBlocks = (type: MessageBlock["type"], delta: string): void => {
-                const last = liveBlocks[liveBlocks.length - 1];
+            const appendToBlocks = (
+                type: MessageBlock["type"],
+                delta: string,
+            ): void => {
+                const last: MessageBlock | undefined =
+                    liveBlocks[liveBlocks.length - 1];
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (last?.type === type) {
                     liveBlocks = [
                         ...liveBlocks.slice(0, -1),
@@ -200,28 +213,36 @@ export default function ChatBot({
                     return;
                 }
 
-                if (event.type === "reasoning_block_delta" && event.delta?.reasoning) {
+                if (
+                    event.type === "reasoning_block_delta" &&
+                    event.delta?.reasoning
+                ) {
                     appendToBlocks("reasoning", event.delta.reasoning);
-                } else if (event.type === "content_block_delta" && event.delta?.text) {
+                } else if (
+                    event.type === "content_block_delta" &&
+                    event.delta?.text
+                ) {
                     appendToBlocks("text", event.delta.text);
                 } else if (event.type === "error") {
                     throw new Error(event.message ?? "Unknown error");
                 }
             };
 
-            while (true) {
-                const { done, value } = await reader.read();
+            let done = false;
+            while (!done) {
+                const chunk = await reader.read();
+                done = chunk.done;
 
-                if (done) {
-                    break;
-                }
+                if (!done) {
+                    bufferedText += decoder.decode(chunk.value, {
+                        stream: true,
+                    });
+                    const lines = bufferedText.split("\n");
+                    bufferedText = lines.pop() ?? "";
 
-                bufferedText += decoder.decode(value, { stream: true });
-                const lines = bufferedText.split("\n");
-                bufferedText = lines.pop() ?? "";
-
-                for (const line of lines) {
-                    processDataLine(line);
+                    for (const line of lines) {
+                        processDataLine(line);
+                    }
                 }
             }
 
@@ -248,14 +269,26 @@ export default function ChatBot({
 
             // Update the browser URL to the permanent hash-based URL after the
             // first message so the conversation can be shared or bookmarked.
-            const receivedHash = response.headers.get('X-Chat-Hash');
-            if (receivedHash && chatUrlBase && window.location.pathname !== chatUrlBase + receivedHash) {
-                window.history.replaceState(null, '', chatUrlBase + receivedHash);
+            const receivedHash = response.headers.get("X-Chat-Hash");
+            if (
+                receivedHash &&
+                chatUrlBase &&
+                window.location.pathname !== chatUrlBase + receivedHash
+            ) {
+                window.history.replaceState(
+                    null,
+                    "",
+                    chatUrlBase + receivedHash,
+                );
             }
 
             setShowIdentityForm(false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to send message right now.');
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to send message right now.",
+            );
         } finally {
             setIsStreaming(false);
             setStreamingBlocks([]);
@@ -298,7 +331,9 @@ export default function ChatBot({
                     >
                         <Tabs
                             value={activeTab}
-                            onChange={(_, v) => setActiveTab(v)}
+                            onChange={(_, v: number) => {
+                                setActiveTab(v);
+                            }}
                             aria-label="Chat page tabs"
                             sx={{
                                 "& .MuiTab-root": {
@@ -469,11 +504,11 @@ export default function ChatBot({
                                                 <TextField
                                                     label="Name"
                                                     value={visitorName}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
                                                         setVisitorName(
                                                             e.target.value,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                     required
                                                     fullWidth
                                                 />
@@ -481,11 +516,11 @@ export default function ChatBot({
                                                     label="Email"
                                                     type="email"
                                                     value={visitorEmail}
-                                                    onChange={(e) =>
+                                                    onChange={(e) => {
                                                         setVisitorEmail(
                                                             e.target.value,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                     required
                                                     fullWidth
                                                 />
@@ -497,9 +532,9 @@ export default function ChatBot({
                                             multiline
                                             minRows={5}
                                             value={messageText}
-                                            onChange={(e) =>
-                                                setMessageText(e.target.value)
-                                            }
+                                            onChange={(e) => {
+                                                setMessageText(e.target.value);
+                                            }}
                                             onKeyDown={handleKeyDown}
                                             required
                                             fullWidth
@@ -601,11 +636,11 @@ export default function ChatBot({
                                                 <ListItemButton
                                                     key={item.handle}
                                                     selected={item.is_current}
-                                                    onClick={() =>
+                                                    onClick={() => {
                                                         handleSwitch(
                                                             item.handle,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                     sx={{
                                                         border: "1px solid",
                                                         borderColor:

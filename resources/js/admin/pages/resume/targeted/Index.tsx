@@ -108,7 +108,9 @@ export default function Index({
                     label="Search"
                     size="small"
                     value={filters.search}
-                    onChange={(e) => handleSearch(e.target.value)}
+                    onChange={(e) => {
+                        handleSearch(e.target.value);
+                    }}
                     placeholder="Company, job title, or message..."
                     sx={{ minWidth: 250 }}
                 />
@@ -119,7 +121,7 @@ export default function Index({
                     <Select
                         labelId="targeted-statuses-label"
                         multiple
-                        value={filters.statuses ?? []}
+                        value={filters.statuses}
                         onChange={handleStatusChange}
                         input={<OutlinedInput label="Statuses" />}
                         renderValue={(selected) => {
@@ -178,12 +180,16 @@ export default function Index({
                                 conversations.map((conv) => {
                                     const resume = conv.targeted_resume;
                                     const companyName =
-                                        resume?.company_name ||
-                                        conv.context?.company_name ||
+                                        resume?.company_name ??
+                                        (conv.context?.company_name as
+                                            | string
+                                            | undefined) ??
                                         "—";
                                     const position =
-                                        resume?.position ||
-                                        conv.context?.job_title ||
+                                        resume?.position ??
+                                        (conv.context?.job_title as
+                                            | string
+                                            | undefined) ??
                                         "";
                                     const displayStatus =
                                         resume?.status === "finalized" ||
@@ -204,8 +210,7 @@ export default function Index({
                                                         variant="body2"
                                                         fontWeight={600}
                                                     >
-                                                        {(companyName as string) ??
-                                                            "—"}
+                                                        {companyName}
                                                     </Typography>
                                                 </Link>
                                                 {position && (
@@ -213,8 +218,7 @@ export default function Index({
                                                         variant="caption"
                                                         color="text.secondary"
                                                     >
-                                                        {(position as string) ??
-                                                            "—"}
+                                                        {position}
                                                     </Typography>
                                                 )}
                                             </TableCell>
@@ -279,11 +283,11 @@ export default function Index({
                                                             color="warning"
                                                             title="Pass"
                                                             aria-label="Pass"
-                                                            onClick={() =>
+                                                            onClick={() => {
                                                                 handlePass(
                                                                     conv.id,
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         >
                                                             <BackHandOutlinedIcon fontSize="small" />
                                                         </IconButton>
@@ -293,11 +297,11 @@ export default function Index({
                                                         color="error"
                                                         title="Delete"
                                                         aria-label="Delete"
-                                                        onClick={() =>
+                                                        onClick={() => {
                                                             handleDelete(
                                                                 conv.id,
-                                                            )
-                                                        }
+                                                            );
+                                                        }}
                                                     >
                                                         <DeleteOutlineIcon fontSize="small" />
                                                     </IconButton>

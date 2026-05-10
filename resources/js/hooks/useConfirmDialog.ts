@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
-import type { ConfirmDialogProps } from '../admin/components/ConfirmDialog';
+import { useCallback, useState } from "react";
+import type { ConfirmDialogProps } from "../admin/components/ConfirmDialog";
 
-type ConfirmOptions = Partial<Pick<ConfirmDialogProps, 'title' | 'confirmLabel' | 'confirmColor'>>;
+type ConfirmOptions = Partial<
+    Pick<ConfirmDialogProps, "title" | "confirmLabel" | "confirmColor">
+>;
 
 export default function useConfirmDialog() {
     const [state, setState] = useState<{
@@ -11,19 +13,26 @@ export default function useConfirmDialog() {
         onConfirm: () => void;
     }>({
         open: false,
-        message: '',
+        message: "",
         options: {},
-        onConfirm: () => {},
+        onConfirm: () => null,
     });
 
-    const confirm = useCallback((message: string, onConfirm: () => void, options: ConfirmOptions = {}) => {
-        setState({ open: true, message, onConfirm, options });
-    }, []);
+    const confirm = useCallback(
+        (
+            message: string,
+            onConfirm: () => void,
+            options: ConfirmOptions = {},
+        ) => {
+            setState({ open: true, message, onConfirm, options });
+        },
+        [],
+    );
 
     const handleConfirm = useCallback(() => {
         state.onConfirm();
         setState((prev) => ({ ...prev, open: false }));
-    }, [state.onConfirm]);
+    }, [state]);
 
     const handleCancel = useCallback(() => {
         setState((prev) => ({ ...prev, open: false }));

@@ -32,8 +32,8 @@ interface Filters {
 interface IndexProps {
     conversations: PaginatedResponse<Conversation>;
     features: string[];
-    systems: Array<{ id: number; name: string }>;
-    bots: Array<{ id: number; name: string }>;
+    systems: { id: number; name: string }[];
+    bots: { id: number; name: string }[];
     filters: Filters;
 }
 
@@ -47,12 +47,10 @@ export default function Index({
     const { dialogProps, confirm } = useConfirmDialog();
 
     const updateFilters = (next: Filters) => {
-        const params: Record<string, string> = { ...filters, ...next };
-        Object.keys(params).forEach((key) => {
-            if (!params[key]) {
-                delete params[key];
-            }
-        });
+        const merged: { [key: string]: string } = { ...filters, ...next };
+        const params = Object.fromEntries(
+            Object.entries(merged).filter(([, v]) => Boolean(v)),
+        );
         router.get("/admin/ai/conversations", params, { preserveState: true });
     };
 
@@ -138,18 +136,18 @@ export default function Index({
                     label="Search"
                     size="small"
                     value={filters.search ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ search: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ search: event.target.value });
+                    }}
                 />
                 <TextField
                     label="Feature"
                     select
                     size="small"
                     value={filters.feature ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ feature: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ feature: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Features</MenuItem>
                     {features.map((feature) => (
@@ -163,9 +161,9 @@ export default function Index({
                     select
                     size="small"
                     value={filters.status ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ status: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ status: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Statuses</MenuItem>
                     <MenuItem value="active">active</MenuItem>
@@ -177,9 +175,9 @@ export default function Index({
                     select
                     size="small"
                     value={filters.ai_system_id ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ ai_system_id: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ ai_system_id: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Systems</MenuItem>
                     {systems.map((system) => (
@@ -193,9 +191,9 @@ export default function Index({
                     select
                     size="small"
                     value={filters.ai_chat_bot_id ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ ai_chat_bot_id: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ ai_chat_bot_id: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Bots</MenuItem>
                     {bots.map((bot) => (
@@ -240,7 +238,7 @@ export default function Index({
                                                 }}
                                                 underline="hover"
                                             >
-                                                {conversation.title ||
+                                                {conversation.title ??
                                                     `Conversation #${conversation.id}`}
                                             </Link>
                                         </TableCell>
@@ -248,8 +246,8 @@ export default function Index({
                                             {conversation.feature}
                                         </TableCell>
                                         <TableCell>
-                                            {conversation.user_name ||
-                                                conversation.visitor_name ||
+                                            {conversation.user_name ??
+                                                conversation.visitor_name ??
                                                 "Unknown"}
                                         </TableCell>
                                         <TableCell>
@@ -303,11 +301,11 @@ export default function Index({
                                                 <Button
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
+                                                    onClick={() => {
                                                         handleDelete(
                                                             conversation,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                 >
                                                     Delete
                                                 </Button>

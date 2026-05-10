@@ -1,5 +1,6 @@
 import { Head, Link as InertiaLink, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
+import type { SyntheticEvent } from "react";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -8,7 +9,7 @@ import PageHeader from "@/admin/components/PageHeader";
 import Form, { type FormData } from "./Form";
 
 interface CreateProps {
-    systems: Array<{ id: number; name: string; model: string }>;
+    systems: { id: number; name: string; model: string }[];
     roles: string[];
 }
 
@@ -26,7 +27,7 @@ export default function Create({ systems, roles }: CreateProps) {
         require_visitor_identity: false,
     });
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.post("/admin/ai/chat-bots");
     };

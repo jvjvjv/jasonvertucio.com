@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link as InertiaLink } from "@inertiajs/react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -8,7 +9,7 @@ import Box from "@mui/material/Box";
 
 export interface NavBlock {
     href: string;
-    icon: React.ReactNode;
+    icon: ReactNode;
     label: string;
     description: string;
 }

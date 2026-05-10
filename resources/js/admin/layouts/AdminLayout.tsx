@@ -1,18 +1,18 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState } from "react";
 import { Link as InertiaLink, usePage } from "@inertiajs/react";
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import MenuIcon from '@mui/icons-material/Menu';
-import { ADMIN_NAVIGATION_ITEMS } from '../constants/navigation';
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import Box from "@mui/material/Box";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import MenuIcon from "@mui/icons-material/Menu";
+import { ADMIN_NAVIGATION_ITEMS } from "../constants/navigation";
 import type { SharedProps } from "@/types";
 
 interface AdminLayoutProps {
@@ -23,9 +23,9 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
     const page = usePage<SharedProps>();
     const { flash } = page.props;
-    const currentPath = page.url.split('?')[0];
+    const currentPath = page.url.split("?")[0];
     const [flashOpen, setFlashOpen] = useState(
-        !!(flash.success || flash.error)
+        !!(flash.success ?? flash.error),
     );
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -102,7 +102,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     <IconButton
                         color="inherit"
                         aria-label="open navigation menu"
-                        onClick={(e) => setMenuAnchor(e.currentTarget)}
+                        onClick={(e) => {
+                            setMenuAnchor(e.currentTarget);
+                        }}
                         sx={{ display: { xs: "flex", md: "none" } }}
                     >
                         <MenuIcon />
@@ -110,7 +112,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     <Menu
                         anchorEl={menuAnchor}
                         open={Boolean(menuAnchor)}
-                        onClose={() => setMenuAnchor(null)}
+                        onClose={() => {
+                            setMenuAnchor(null);
+                        }}
                     >
                         {ADMIN_NAVIGATION_ITEMS.map((item) => {
                             const isActive =
@@ -122,7 +126,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                                     key={item.slug}
                                     component={InertiaLink}
                                     href={item.slug}
-                                    onClick={() => setMenuAnchor(null)}
+                                    onClick={() => {
+                                        setMenuAnchor(null);
+                                    }}
                                     selected={isActive}
                                 >
                                     {item.label}
@@ -168,15 +174,19 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             <Snackbar
                 open={flashOpen}
                 autoHideDuration={5000}
-                onClose={() => setFlashOpen(false)}
+                onClose={() => {
+                    setFlashOpen(false);
+                }}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
                 <Alert
-                    onClose={() => setFlashOpen(false)}
+                    onClose={() => {
+                        setFlashOpen(false);
+                    }}
                     severity={flash.success ? "success" : "error"}
                     variant="filled"
                 >
-                    {flash.success || flash.error}
+                    {flash.success ?? flash.error}
                 </Alert>
             </Snackbar>
         </Box>

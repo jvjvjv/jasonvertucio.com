@@ -1,11 +1,12 @@
-import { Head } from '@inertiajs/react';
-import EditNoteIcon from '@mui/icons-material/EditNote';
-import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CodeIcon from '@mui/icons-material/Code';
-import AdminLayout from '../../layouts/AdminLayout';
-import PageHeader from '../../components/PageHeader';
-import NavGrid, { type NavBlock } from '../../components/NavGrid';
+import type { ReactNode } from "react";
+import { Head } from "@inertiajs/react";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import TrackChangesIcon from "@mui/icons-material/TrackChanges";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import CodeIcon from "@mui/icons-material/Code";
+import AdminLayout from "../../layouts/AdminLayout";
+import PageHeader from "../../components/PageHeader";
+import NavGrid, { type NavBlock } from "../../components/NavGrid";
 
 interface ServerNavBlock {
     href: string;
@@ -18,7 +19,7 @@ interface ResumeHubProps {
     navBlocks: ServerNavBlock[];
 }
 
-const iconMap: Record<string, React.ReactNode> = {
+const iconMap: { [key: string]: ReactNode } = {
     EditNote: <EditNoteIcon fontSize="large" />,
     TrackChanges: <TrackChangesIcon fontSize="large" />,
     Visibility: <VisibilityIcon fontSize="large" />,
@@ -36,7 +37,11 @@ export default function ResumeHub({ navBlocks }: ResumeHubProps) {
     return (
         <AdminLayout>
             <Head title="Resume Management" />
-            <PageHeader title="Resume Management" backHref="/admin" backLabel="Back to Admin" />
+            <PageHeader
+                title="Resume Management"
+                backHref="/admin"
+                backLabel="Back to Admin"
+            />
             <NavGrid blocks={blocks} />
         </AdminLayout>
     );

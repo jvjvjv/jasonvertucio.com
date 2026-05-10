@@ -43,11 +43,10 @@ export default function Index({ memories, features, filters }: IndexProps) {
     const [selectedFeature, setSelectedFeature] = useState<string>("");
 
     const handleFilter = (key: string, value: string) => {
-        const params: Record<string, string> = { ...filters, [key]: value };
-        // Remove empty values
-        Object.keys(params).forEach((k) => {
-            if (!params[k]) delete params[k];
-        });
+        const merged: { [key: string]: string } = { ...filters, [key]: value };
+        const params = Object.fromEntries(
+            Object.entries(merged).filter(([, v]) => Boolean(v)),
+        );
         router.get("/admin/ai/memories", params, { preserveState: true });
     };
 
@@ -55,16 +54,6 @@ export default function Index({ memories, features, filters }: IndexProps) {
         confirm("Delete this memory entry?", () => {
             router.delete(`/admin/ai/memories/${id}`);
         });
-    };
-
-    const handleRebuild = (feature: string) => {
-        confirm(
-            `Rebuild all memories for "${feature}"? Existing memories will be deactivated and regenerated.`,
-            () => {
-                router.post(`/admin/ai/memories/rebuild/${feature}`);
-            },
-            { confirmLabel: "Rebuild", confirmColor: "warning" },
-        );
     };
 
     const openRebuildDialog = () => {
@@ -83,7 +72,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
             confirm(
                 `Rebuild all memories for "${selectedFeature}"? Existing memories will be deactivated and regenerated.`,
                 () => {
-                    router.post(`/admin/ai/memories/rebuild/${selectedFeature}`);
+                    router.post(
+                        `/admin/ai/memories/rebuild/${selectedFeature}`,
+                    );
                 },
                 { confirmLabel: "Rebuild", confirmColor: "warning" },
             );
@@ -114,7 +105,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                     select
                     size="small"
                     value={filters.feature ?? ""}
-                    onChange={(e) => handleFilter("feature", e.target.value)}
+                    onChange={(e) => {
+                        handleFilter("feature", e.target.value);
+                    }}
                     sx={{ minWidth: 160 }}
                 >
                     <MenuItem value="">All Features</MenuItem>
@@ -130,7 +123,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                     select
                     size="small"
                     value={filters.category ?? ""}
-                    onChange={(e) => handleFilter("category", e.target.value)}
+                    onChange={(e) => {
+                        handleFilter("category", e.target.value);
+                    }}
                     sx={{ minWidth: 160 }}
                 >
                     <MenuItem value="">All Categories</MenuItem>
@@ -148,7 +143,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                     select
                     size="small"
                     value={filters.status ?? ""}
-                    onChange={(e) => handleFilter("status", e.target.value)}
+                    onChange={(e) => {
+                        handleFilter("status", e.target.value);
+                    }}
                     sx={{ minWidth: 120 }}
                 >
                     <MenuItem value="">All</MenuItem>
@@ -251,9 +248,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                                                 <Button
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(memory.id)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(memory.id);
+                                                    }}
                                                 >
                                                     Delete
                                                 </Button>
@@ -273,11 +270,22 @@ export default function Index({ memories, features, filters }: IndexProps) {
             </Card>
             <ConfirmDialog {...dialogProps} />
 
-            <Dialog open={rebuildDialogOpen} onClose={closeRebuildDialog} maxWidth="sm" fullWidth>
+            <Dialog
+                open={rebuildDialogOpen}
+                onClose={closeRebuildDialog}
+                maxWidth="sm"
+                fullWidth
+            >
                 <DialogTitle>Select Feature to Rebuild</DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Choose which feature's memories you want to rebuild. Existing memories for the selected feature will be deactivated and regenerated.
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2 }}
+                    >
+                        Choose which feature's memories you want to rebuild.
+                        Existing memories for the selected feature will be
+                        deactivated and regenerated.
                     </Typography>
                     <TextField
                         select
@@ -285,12 +293,18 @@ export default function Index({ memories, features, filters }: IndexProps) {
                         label="Feature"
                         size="small"
                         value={selectedFeature}
-                        onChange={(e) => setSelectedFeature(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedFeature(e.target.value);
+                        }}
                         sx={{ mt: 1 }}
                     >
-                        <MenuItem value=""><em>Select a feature...</em></MenuItem>
+                        <MenuItem value="">
+                            <em>Select a feature...</em>
+                        </MenuItem>
                         {features.map((f) => (
-                            <MenuItem key={f} value={f}>{f}</MenuItem>
+                            <MenuItem key={f} value={f}>
+                                {f}
+                            </MenuItem>
                         ))}
                     </TextField>
                 </DialogContent>

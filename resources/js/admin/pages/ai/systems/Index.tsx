@@ -26,14 +26,19 @@ export default function Index({ systems }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
     const handleDelete = (system: AiSystem) => {
-        const botCount = system.chat_bots_count ?? 0;
-        const message = botCount > 0
-            ? `"${system.name}" is used by ${botCount} chat bot(s). Deleting it will deactivate those bots. The system data will be preserved. Continue?`
-            : `Delete AI system "${system.name}"? This cannot be undone.`;
+        const botCount = system.chat_bots_count;
+        const message =
+            botCount > 0
+                ? `"${system.name}" is used by ${botCount} chat bot(s). Deleting it will deactivate those bots. The system data will be preserved. Continue?`
+                : `Delete AI system "${system.name}"? This cannot be undone.`;
 
-        confirm(message, () => {
-            router.delete(`/admin/ai/systems/${system.id}`);
-        }, { title: botCount > 0 ? 'System In Use' : 'Confirm Delete' });
+        confirm(
+            message,
+            () => {
+                router.delete(`/admin/ai/systems/${system.id}`);
+            },
+            { title: botCount > 0 ? "System In Use" : "Confirm Delete" },
+        );
     };
 
     const handleDuplicate = (id: number) => {
@@ -55,11 +60,36 @@ export default function Index({ systems }: IndexProps) {
                 backLabel="Back to AI Tools"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                }}
+            >
                 <Box sx={{ display: "flex", gap: 1 }}>
-                    <Button component={InertiaLink} href="/admin/ai/chat-bots" variant="outlined">AI Chat Bots</Button>
-                    <Button component={InertiaLink} href="/admin/ai/conversations" variant="outlined">AI Conversations</Button>
-                    <Button component={InertiaLink} href="/admin/ai/memories" variant="outlined">AI Memories</Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/chat-bots"
+                        variant="outlined"
+                    >
+                        AI Chat Bots
+                    </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/conversations"
+                        variant="outlined"
+                    >
+                        AI Conversations
+                    </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/memories"
+                        variant="outlined"
+                    >
+                        AI Memories
+                    </Button>
                 </Box>
                 <Button
                     component={InertiaLink}
@@ -175,20 +205,20 @@ export default function Index({ systems }: IndexProps) {
                                                 </Button>
                                                 <Button
                                                     size="small"
-                                                    onClick={() =>
+                                                    onClick={() => {
                                                         handleDuplicate(
                                                             system.id,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                 >
                                                     Duplicate
                                                 </Button>
                                                 <Button
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(system)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(system);
+                                                    }}
                                                 >
                                                     Delete
                                                 </Button>
