@@ -9,7 +9,7 @@ class RegenerateChatHashes extends Command
 {
     protected $signature = 'chat-hash:regenerate';
 
-    protected $description = 'Regenerate chat hashes for all conversations using the current algorithm';
+    protected $description = 'Regenerate chat hashes for all conversations using MD5(uuid)';
 
     public function handle(): int
     {

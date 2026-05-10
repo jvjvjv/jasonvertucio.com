@@ -19,6 +19,7 @@ class AiConversation extends Model
 
     protected $fillable = [
         'public_id',
+        'uuid',
         'chat_hash',
         'user_id',
         'ai_system_id',
@@ -58,6 +59,10 @@ class AiConversation extends Model
         static::creating(function (self $conversation): void {
             if (blank($conversation->public_id)) {
                 $conversation->public_id = (string) Str::ulid();
+            }
+
+            if (blank($conversation->uuid)) {
+                $conversation->uuid = (string) Str::uuid();
             }
         });
     }
@@ -125,17 +130,12 @@ class AiConversation extends Model
     }
 
     /**
-     * Generate a URL-safe hash for this conversation that can be used
-     * to access it from any computer.
+     * Generate a deterministic URL-safe hash for this conversation based on
+     * its UUID. This is stable across renames, feature changes, and timestamps.
      */
     public function generateChatHash(): string
     {
-        $this->chat_hash = \App\Utilities\ChatHash::generate(
-            $this->id,
-            $this->created_at->toIso8601String(),
-            $this->feature,
-        );
-
+        $this->chat_hash = \App\Utilities\ChatHash::generate($this->uuid);
         $this->save();
 
         return $this->chat_hash;
@@ -144,5 +144,15 @@ class AiConversation extends Model
     public static function findByChatHash(string $hash): ?self
     {
         return static::query()->where('chat_hash', $hash)->first();
+    }
+
+    /**
+     * Find a conversation by either its MD5 chat hash or its raw UUID.
+     * The UUID fallback supports direct linking and backward compatibility.
+     */
+    public static function findByChatHashOrUuid(string $identifier): ?self
+    {
+        return static::query()->where('chat_hash', $identifier)->first()
+            ?? static::query()->where('uuid', $identifier)->first();
     }
 }
