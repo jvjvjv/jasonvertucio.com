@@ -7,9 +7,15 @@ export interface AuthUser {
     permissions: string[];
 }
 
+export interface AppBarNavChild {
+    href: string;
+    label: string;
+}
+
 export interface AppBarItem {
     href: string;
     label: string;
+    children: AppBarNavChild[];
 }
 
 export interface NavLink {

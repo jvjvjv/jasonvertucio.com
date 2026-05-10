@@ -54,25 +54,35 @@ class AdminNavigationService
     }
 
     /**
-     * Return AppBar-visible navigation entries filtered by user permissions.
+     * Return AppBar navigation entries (with filtered children) for the given user.
      *
-     * @return array<int, array{href: string, label: string}>
+     * @return array<int, array{href: string, label: string, children: array<int, array{href: string, label: string}>}>
      */
     public function getAppBarItems(?User $user): array
     {
         $config = $this->load();
 
-        return array_values(
-            array_map(
-                fn (array $entry) => [
-                    'href'  => $entry['route'],
-                    'label' => $entry['name'],
-                ],
-                array_filter(
-                    $config['navigation'],
-                    fn (array $entry) => $entry['can'] === null || $user?->can($entry['can'])
-                )
-            )
+        $entries = array_filter(
+            $config['navigation'],
+            fn (array $entry) => $entry['can'] === null || $user?->can($entry['can'])
         );
+
+        return array_values(array_map(
+            fn (array $entry) => [
+                'href'     => $entry['route'],
+                'label'    => $entry['name'],
+                'children' => array_values(array_map(
+                    fn (array $item) => [
+                        'href'  => $item['href'],
+                        'label' => $item['label'],
+                    ],
+                    array_filter(
+                        $entry['navigationItems'],
+                        fn (array $item) => $item['can'] === null || $user?->can($item['can'])
+                    )
+                )),
+            ],
+            $entries
+        ));
     }
 }
