@@ -5,17 +5,11 @@ import { createRoot } from "react-dom/client";
 
 import { theme } from "../admin/theme";
 
-import type { ComponentType } from "react";
-
 void createInertiaApp({
     title: (title) => (title ? `${title} | Jason Vertucio` : "Jason Vertucio"),
     resolve: (name) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        const pages = import.meta.glob("./pages/**/*.tsx", {
-            eager: true,
-        }) as {
-            [key: string]: { default: ComponentType } | undefined;
-        };
+        const pages = import.meta.glob("./pages/**/*.tsx", { eager: true });
+
         const page = pages[`./pages/${name}.tsx`];
         if (!page) {
             throw new Error(`Page not found: ${name}`);
