@@ -28,7 +28,7 @@ class RouteServiceProvider extends ServiceProvider
         $activeBots = AiChatBot::active()->get(['id', 'slug']);
         foreach ($activeBots as $bot) {
             $prefix = 'chat/' . $bot->slug;
-            Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+            Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
                 ->prefix($prefix)
                 ->name("chat-bot-{$bot->slug}.")
                 ->group(function () use ($bot) {
