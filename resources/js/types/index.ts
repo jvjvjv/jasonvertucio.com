@@ -4,6 +4,12 @@ export interface AuthUser {
     id: number;
     name: string;
     email: string;
+    permissions: string[];
+}
+
+export interface AppBarItem {
+    href: string;
+    label: string;
 }
 
 export interface NavLink {
@@ -24,6 +30,7 @@ export interface SharedProps extends PageProps {
     auth: {
         user: AuthUser | null;
     };
+    adminNav: AppBarItem[];
     navLinks: NavLink[];
     flash: FlashMessages;
 }

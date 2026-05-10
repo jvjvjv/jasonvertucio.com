@@ -1,14 +1,9 @@
 import { Head } from "@inertiajs/react";
-import CodeIcon from "@mui/icons-material/Code";
-import EditNoteIcon from "@mui/icons-material/EditNote";
-import TrackChangesIcon from "@mui/icons-material/TrackChanges";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import NavGrid, { type NavBlock } from "../../components/NavGrid";
 import PageHeader from "../../components/PageHeader";
 import AdminLayout from "../../layouts/AdminLayout";
-
-import type { ReactNode } from "react";
+import { getIcon } from "../../utils/iconRegistry";
 
 interface ServerNavBlock {
     href: string;
@@ -21,19 +16,10 @@ interface ResumeHubProps {
     navBlocks: ServerNavBlock[];
 }
 
-const iconMap: { [key: string]: ReactNode } = {
-    EditNote: <EditNoteIcon fontSize="large" />,
-    TrackChanges: <TrackChangesIcon fontSize="large" />,
-    Visibility: <VisibilityIcon fontSize="large" />,
-    Code: <CodeIcon fontSize="large" />,
-};
-
 export default function ResumeHub({ navBlocks }: ResumeHubProps) {
     const blocks: NavBlock[] = navBlocks.map((b) => ({
-        href: b.href,
-        icon: iconMap[b.icon] ?? <EditNoteIcon fontSize="large" />,
-        label: b.label,
-        description: b.description,
+        ...b,
+        icon: getIcon(b.icon),
     }));
 
     return (

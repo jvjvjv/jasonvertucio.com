@@ -13,8 +13,6 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { type ReactNode, useState } from "react";
 
-import { ADMIN_NAVIGATION_ITEMS } from "../constants/navigation";
-
 import type { SharedProps } from "@/types";
 
 interface AdminLayoutProps {
@@ -24,13 +22,14 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
     const page = usePage<SharedProps>();
-    const { flash } = page.props;
+    const { flash, adminNav } = page.props;
     const currentPath = page.url.split("?")[0];
     const [flashOpen, setFlashOpen] = useState(
         !!(flash.success ?? flash.error),
     );
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
+    console.log(adminNav);
     return (
         <Box
             sx={{
@@ -72,17 +71,17 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                             gap: 1,
                         }}
                     >
-                        {ADMIN_NAVIGATION_ITEMS.map((item) => {
+                        {adminNav.map((item) => {
                             const isActive =
-                                currentPath === item.slug ||
-                                currentPath.startsWith(`${item.slug}/`);
+                                currentPath === item.href ||
+                                currentPath.startsWith(`${item.href}/`);
 
                             return (
                                 <Button
-                                    key={item.slug}
+                                    key={item.href}
                                     color="inherit"
                                     component={InertiaLink}
-                                    href={item.slug}
+                                    href={item.href}
                                     variant={isActive ? "outlined" : "text"}
                                     sx={{
                                         borderColor: isActive
@@ -118,16 +117,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                             setMenuAnchor(null);
                         }}
                     >
-                        {ADMIN_NAVIGATION_ITEMS.map((item) => {
+                        {adminNav.map((item) => {
                             const isActive =
-                                currentPath === item.slug ||
-                                currentPath.startsWith(`${item.slug}/`);
+                                currentPath === item.href ||
+                                currentPath.startsWith(`${item.href}/`);
 
                             return (
                                 <MenuItem
-                                    key={item.slug}
+                                    key={item.href}
                                     component={InertiaLink}
-                                    href={item.slug}
+                                    href={item.href}
                                     onClick={() => {
                                         setMenuAnchor(null);
                                     }}
