@@ -1,8 +1,12 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import AddCommentIcon from "@mui/icons-material/AddComment";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -193,37 +197,43 @@ export default function Index({ bots }: IndexProps) {
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={
-                                                        bot.public_url ??
-                                                        (bot.access_path ===
+                                                        bot.access_path ===
                                                         "root"
-                                                            ? `/${bot.slug}`
-                                                            : `/chat/${bot.slug}`)
+                                                            ? `/${bot.slug}/new`
+                                                            : `/chat/${bot.slug}/new`
                                                     }
                                                     size="small"
+                                                    color="primary"
+                                                    title="Start New Chat"
+                                                    aria-label="Start New Chat"
                                                     target="_blank"
                                                 >
-                                                    Open
-                                                </Button>
-                                                <Button
+                                                    <AddCommentIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/chat-bots/${bot.slug}`}
-                                                    target="_blank"
                                                     size="small"
+                                                    color="primary"
+                                                    title="Edit"
+                                                    aria-label="Edit"
                                                 >
-                                                    Edit
-                                                </Button>
-                                                <Button
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
                                                     onClick={() => {
                                                         handleDelete(bot);
                                                     }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>

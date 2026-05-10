@@ -1,4 +1,6 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -7,6 +9,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -240,22 +243,27 @@ export default function Index({ memories, features, filters }: IndexProps) {
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/memories/${memory.id}`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="Edit"
+                                                    aria-label="Edit"
                                                 >
-                                                    Edit
-                                                </Button>
-                                                <Button
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
                                                     onClick={() => {
                                                         handleDelete(memory.id);
                                                     }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>
@@ -285,9 +293,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                         color="text.secondary"
                         sx={{ mb: 2 }}
                     >
-                        Choose which feature's memories you want to rebuild.
-                        Existing memories for the selected feature will be
-                        deactivated and regenerated.
+                        Choose which feature&apos;s memories you want to
+                        rebuild. Existing memories for the selected feature will
+                        be deactivated and regenerated.
                     </Typography>
                     <TextField
                         select

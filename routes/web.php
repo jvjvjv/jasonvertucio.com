@@ -173,6 +173,7 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
 // Shared route group for chat bot endpoints (used in two places)
 $chatBotRoutes = function () {
     Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');
+    Route::get('/{aiChatBot:slug}/new', [ChatBotController::class, 'newChat'])->name('new');
     Route::post('/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('message');
     Route::post('/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('reset');
     Route::post('/{aiChatBot:slug}/switch', [ChatBotController::class, 'switch'])->name('switch');

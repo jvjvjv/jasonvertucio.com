@@ -1,7 +1,11 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import ChatIcon from "@mui/icons-material/Chat";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Table from "@mui/material/Table";
@@ -293,14 +297,30 @@ export default function Index({
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                {conversation.ai_chat_bot_slug && (
+                                                    <IconButton
+                                                        component={InertiaLink}
+                                                        href={`/chat/${conversation.ai_chat_bot_slug}`}
+                                                        size="small"
+                                                        color="success"
+                                                        title="Continue Chat"
+                                                        aria-label="Continue Chat"
+                                                        target="_blank"
+                                                    >
+                                                        <ChatIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/conversations/${conversation.id}`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="View Details"
+                                                    aria-label="View Details"
                                                 >
-                                                    View
-                                                </Button>
-                                                <Button
+                                                    <OpenInNewIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
                                                     onClick={() => {
@@ -308,9 +328,11 @@ export default function Index({
                                                             conversation,
                                                         );
                                                     }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>

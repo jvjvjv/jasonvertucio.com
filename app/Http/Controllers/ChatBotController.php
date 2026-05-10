@@ -165,6 +165,20 @@ class ChatBotController extends Controller
     }
 
     /**
+     * Start a new chat conversation (resets session and redirects to show).
+     */
+    public function newChat(Request $request, AiChatBot $aiChatBot): RedirectResponse
+    {
+        $this->abortIfInaccessible($request, $aiChatBot);
+
+        $state = $this->storedState($request, $aiChatBot);
+        $state['current'] = null;
+        $this->putStoredState($request, $aiChatBot, $state);
+
+        return redirect($this->routeUrlFor($aiChatBot, 'show'));
+    }
+
+    /**
      * Load a conversation by its hash or UUID (UUID is the fallback for direct linking).
      * This allows accessing a specific chat from any computer.
      */

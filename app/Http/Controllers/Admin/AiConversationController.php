@@ -77,6 +77,7 @@ class AiConversationController extends Controller
             'user_email' => $conversation->user?->email,
             'ai_system_name' => $conversation->aiSystem?->name,
             'ai_chat_bot_name' => $conversation->aiChatBot?->name,
+            'ai_chat_bot_slug' => $conversation->aiChatBot?->slug,
             'usage' => [
                 'input_tokens' => $conversation->usage_input_tokens,
                 'output_tokens' => $conversation->usage_output_tokens,

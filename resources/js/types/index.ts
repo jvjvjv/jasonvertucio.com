@@ -148,6 +148,7 @@ export interface Conversation {
     user_name?: string | null;
     user_email?: string | null;
     ai_chat_bot_name?: string | null;
+    ai_chat_bot_slug?: string | null;
     context: { [key: string]: unknown } | null;
     targeted_resume?: TargetedResume | null;
     ai_system_name?: string | null;

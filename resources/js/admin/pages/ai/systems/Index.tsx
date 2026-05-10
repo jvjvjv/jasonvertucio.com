@@ -1,8 +1,13 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
+import FileCopyIcon from "@mui/icons-material/FileCopy";
+import HistoryIcon from "@mui/icons-material/History";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -191,39 +196,50 @@ export default function Index({ systems }: IndexProps) {
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/systems/${system.id}`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="Edit"
+                                                    aria-label="Edit"
                                                 >
-                                                    Edit
-                                                </Button>
-                                                <Button
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/systems/${system.id}/logs`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="View Logs"
+                                                    aria-label="View Logs"
                                                 >
-                                                    Logs
-                                                </Button>
-                                                <Button
+                                                    <HistoryIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
+                                                    color="primary"
                                                     onClick={() => {
                                                         handleDuplicate(
                                                             system.id,
                                                         );
                                                     }}
+                                                    title="Duplicate"
+                                                    aria-label="Duplicate"
                                                 >
-                                                    Duplicate
-                                                </Button>
-                                                <Button
+                                                    <FileCopyIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
                                                     onClick={() => {
                                                         handleDelete(system);
                                                     }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>
