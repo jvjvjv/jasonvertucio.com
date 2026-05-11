@@ -70,6 +70,7 @@ class ChatBotController extends Controller
                             'updated_at_human' => $conversation->last_message_at?->diffForHumans()
                                 ?? $conversation->updated_at?->diffForHumans()
                                 ?? 'just now',
+                            'is_stale' => $conversation->is_stale,
                         ];
                     })->values()->all(),
                 ];
@@ -440,6 +441,7 @@ class ChatBotController extends Controller
                     'handle' => $item['handle'],
                     'label' => $label,
                     'is_current' => ($state['current'] ?? null) === $conversation->public_id,
+                    'is_stale' => $conversation->is_stale,
                     'updated_at' => $conversation->last_message_at?->diffForHumans()
                         ?? $conversation->updated_at?->diffForHumans()
                         ?? 'just now',

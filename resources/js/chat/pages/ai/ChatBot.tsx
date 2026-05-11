@@ -3,11 +3,13 @@ import AddCommentIcon from "@mui/icons-material/AddComment";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
 import SendIcon from "@mui/icons-material/Send";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
@@ -30,6 +32,7 @@ interface HistoryItem {
     handle: string;
     label: string;
     is_current: boolean;
+    is_stale: boolean;
     updated_at: string;
     cost_usd: number | null;
 }
@@ -939,53 +942,81 @@ export default function ChatBot({
                                                         mb: 1,
                                                     }}
                                                 >
-                                                    <ListItemText
-                                                        primary={item.label}
-                                                        secondary={
-                                                            <Box
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 1,
+                                                            minWidth: 0,
+                                                            flexGrow: 1,
+                                                        }}
+                                                    >
+                                                        <ListItemText
+                                                            primary={item.label}
+                                                            secondary={
+                                                                <Box
+                                                                    sx={{
+                                                                        display:
+                                                                            "flex",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        justifyContent:
+                                                                            "space-between",
+                                                                        mt: 0.5,
+                                                                    }}
+                                                                >
+                                                                    <Typography
+                                                                        component="span"
+                                                                        sx={{
+                                                                            textTransform:
+                                                                                "uppercase",
+                                                                            letterSpacing:
+                                                                                "0.08em",
+                                                                            fontSize:
+                                                                                "0.7rem",
+                                                                            color: "text.secondary",
+                                                                        }}
+                                                                    >
+                                                                        {
+                                                                            item.updated_at
+                                                                        }
+                                                                    </Typography>
+                                                                    <Typography
+                                                                        component="span"
+                                                                        sx={{
+                                                                            fontSize:
+                                                                                "0.72rem",
+                                                                            color: "text.secondary",
+                                                                            fontWeight: 600,
+                                                                        }}
+                                                                    >
+                                                                        Cost:{" "}
+                                                                        {formatCost(
+                                                                            item.cost_usd,
+                                                                        )}
+                                                                    </Typography>
+                                                                </Box>
+                                                            }
+                                                        />
+                                                        {item.is_stale &&
+                                                        !item.is_current ? (
+                                                            <Chip
+                                                                icon={
+                                                                    <WarningAmberIcon fontSize="small" />
+                                                                }
+                                                                size="small"
+                                                                label="Stale"
                                                                 sx={{
-                                                                    display:
-                                                                        "flex",
-                                                                    alignItems:
-                                                                        "center",
-                                                                    justifyContent:
-                                                                        "space-between",
-                                                                    mt: 0.5,
+                                                                    flexShrink: 0,
+                                                                    "& .MuiChip-label":
+                                                                        {
+                                                                            pl: 0.5,
+                                                                        },
                                                                 }}
-                                                            >
-                                                                <Typography
-                                                                    component="span"
-                                                                    sx={{
-                                                                        textTransform:
-                                                                            "uppercase",
-                                                                        letterSpacing:
-                                                                            "0.08em",
-                                                                        fontSize:
-                                                                            "0.7rem",
-                                                                        color: "text.secondary",
-                                                                    }}
-                                                                >
-                                                                    {
-                                                                        item.updated_at
-                                                                    }
-                                                                </Typography>
-                                                                <Typography
-                                                                    component="span"
-                                                                    sx={{
-                                                                        fontSize:
-                                                                            "0.72rem",
-                                                                        color: "text.secondary",
-                                                                        fontWeight: 600,
-                                                                    }}
-                                                                >
-                                                                    Cost:{" "}
-                                                                    {formatCost(
-                                                                        item.cost_usd,
-                                                                    )}
-                                                                </Typography>
-                                                            </Box>
-                                                        }
-                                                    />
+                                                            />
+                                                        ) : null}
+                                                    </Box>
                                                     {item.is_current ? (
                                                         <Typography
                                                             variant="caption"

@@ -1,8 +1,10 @@
 import ChatIcon from "@mui/icons-material/Chat";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -93,15 +95,48 @@ export default function ChatBotCard({
                                                         gap: 2,
                                                     }}
                                                 >
-                                                    <Typography
-                                                        variant="body2"
-                                                        component="p"
+                                                    <Box
                                                         sx={{
-                                                            fontWeight: 500,
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 1,
+                                                            minWidth: 0,
+                                                            flexGrow: 1,
                                                         }}
                                                     >
-                                                        {conversation.title}
-                                                    </Typography>
+                                                        {conversation.is_stale ? (
+                                                            <Chip
+                                                                icon={
+                                                                    <WarningAmberIcon fontSize="small" />
+                                                                }
+                                                                size="small"
+                                                                label="Stale"
+                                                                sx={{
+                                                                    flexShrink: 0,
+                                                                    "& .MuiChip-label":
+                                                                        {
+                                                                            pl: 0.5,
+                                                                        },
+                                                                }}
+                                                            />
+                                                        ) : null}
+                                                        <Typography
+                                                            variant="body2"
+                                                            component="p"
+                                                            sx={{
+                                                                fontWeight: 500,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {conversation.title}
+                                                        </Typography>
+                                                    </Box>
                                                     <Typography
                                                         variant="caption"
                                                         color="text.secondary"
@@ -110,6 +145,7 @@ export default function ChatBotCard({
                                                                 "uppercase",
                                                             letterSpacing:
                                                                 "0.08em",
+                                                            flexShrink: 0,
                                                         }}
                                                     >
                                                         {

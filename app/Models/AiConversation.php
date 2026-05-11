@@ -17,6 +17,13 @@ class AiConversation extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /**
+     * The attributes that should be appended to the model's JSON form.
+     */
+    protected $appends = [
+        'is_stale',
+    ];
+
     protected $fillable = [
         'public_id',
         'uuid',
@@ -122,6 +129,16 @@ class AiConversation extends Model
     public function interactionLogs(): HasMany
     {
         return $this->hasMany(AiInteractionLog::class);
+    }
+
+    /**
+     * Check if the conversation is stale (no activity for 7+ days).
+     */
+    public function getIsStaleAttribute(): bool
+    {
+        $lastActivity = $this->last_message_at ?? $this->created_at;
+
+        return $lastActivity !== null && $lastActivity->lt(now()->subDays(7));
     }
 
     public function targetedResume(): HasOne
