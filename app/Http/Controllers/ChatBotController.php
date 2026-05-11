@@ -74,7 +74,6 @@ class ChatBotController extends Controller
                     })->values()->all(),
                 ];
             })->all(),
-            'statusesUrl' => route('chat-bots.statuses'),
         ]);
     }
 

@@ -13,7 +13,6 @@ import ChatBotCard from "@/components/ChatBotCard";
 
 interface ChatBotsIndexProps {
     bots: BotItem[];
-    statusesUrl: string;
 }
 
 interface SharedPageProps {
@@ -27,55 +26,54 @@ interface SharedPageProps {
     };
 }
 
-interface StatusesResponse {
-    statuses?: { [key: string]: ModelStatusItem };
+interface StatusResponse {
+    status?: ModelStatusItem;
 }
 
 interface StatusesBySlug {
     [key: string]: ModelStatusItem;
 }
 
-export default function ChatBotsIndex({
-    bots,
-    statusesUrl,
-}: ChatBotsIndexProps) {
+export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
     const page = usePage<SharedPageProps>();
     const isAuthenticated = Boolean(page.props.auth?.user);
     const [statuses, setStatuses] = useState<StatusesBySlug>({});
 
     useEffect(() => {
-        let mounted = true;
+        const abortController = new AbortController();
 
-        const loadStatuses = async (): Promise<void> => {
-            try {
-                const response = await fetch(statusesUrl, {
-                    headers: { Accept: "application/json" },
-                });
+        for (const bot of bots) {
+            void (async () => {
+                try {
+                    const response = await fetch(bot.status_url, {
+                        headers: { Accept: "application/json" },
+                        signal: abortController.signal,
+                    });
 
-                if (!response.ok) {
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const payload = (await response.json()) as StatusResponse;
+
+                    if (payload.status == null) {
+                        return;
+                    }
+
+                    setStatuses((current) => ({
+                        ...current,
+                        [bot.slug]: payload.status,
+                    }));
+                } catch {
                     return;
                 }
-
-                const payload = (await response.json()) as StatusesResponse;
-
-                if (!mounted) {
-                    return;
-                }
-
-                setStatuses(payload.statuses ?? {});
-            } catch {
-                if (mounted) {
-                    setStatuses({});
-                }
-            }
-        };
-
-        void loadStatuses();
+            })();
+        }
 
         return () => {
-            mounted = false;
+            abortController.abort();
         };
-    }, [statusesUrl]);
+    }, [bots]);
 
     return (
         <>
