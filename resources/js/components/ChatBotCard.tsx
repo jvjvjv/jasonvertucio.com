@@ -33,7 +33,7 @@ export default function ChatBotCard({
               ? "warning"
               : modelStatus?.state === "unavailable"
                 ? "error"
-                : "error";
+                : "info";
 
     return (
         <Badge variant="dot" color={statusColor} overlap="rectangular">
