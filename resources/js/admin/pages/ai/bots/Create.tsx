@@ -3,13 +3,25 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import { useEffect } from "react";
 
-import Form, { type FormData } from "./Form";
+import Form from "./Form";
 
+import type { FormData } from "./Form";
 import type { SyntheticEvent } from "react";
 
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+
+function slugify(text: string): string {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
 
 interface CreateProps {
     systems: { id: number; name: string; model: string }[];
@@ -29,6 +41,12 @@ export default function Create({ systems, roles }: CreateProps) {
         is_public: false,
         require_visitor_identity: false,
     });
+
+    useEffect(() => {
+        if (form.data.name && !form.data.slug) {
+            form.setData("slug", slugify(form.data.name));
+        }
+    }, [form.data.name]);
 
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
