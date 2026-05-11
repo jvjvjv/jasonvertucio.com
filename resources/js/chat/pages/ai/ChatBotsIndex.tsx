@@ -60,9 +60,11 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
                         return;
                     }
 
+                    const status = payload.status;
+
                     setStatuses((current) => ({
                         ...current,
-                        [bot.slug]: payload.status,
+                        [bot.slug]: status,
                     }));
                 } catch {
                     return;
