@@ -132,6 +132,18 @@ export default function ChatBot({
                 ? "error"
                 : "info";
 
+    const setUnavailableStatus = (message: string): void => {
+        setModelStatus((current) => ({
+            state: "unavailable",
+            provider: current?.provider ?? "unknown",
+            model: current?.model ?? "",
+            message,
+            checked_at: new Date().toISOString(),
+        }));
+    };
+
+    const isUnavailable = modelStatus?.state === "unavailable";
+
     // Redirect to the hash-based URL after the first message is sent.
     // This enables sharing the chat link from any computer.
     useEffect(() => {
@@ -170,11 +182,15 @@ export default function ChatBot({
             });
 
             if (!response.ok) {
+                setUnavailableStatus(
+                    `Provider is unavailable (HTTP ${response.status}).`,
+                );
                 return null;
             }
 
             const payload = (await response.json()) as ModelStatusResponse;
             if (!payload.status) {
+                setUnavailableStatus("Provider status is unavailable.");
                 return null;
             }
 
@@ -182,6 +198,8 @@ export default function ChatBot({
 
             return payload.status;
         } catch {
+            setUnavailableStatus("Provider is down.");
+            setError("Provider is down");
             return null;
         } finally {
             setIsCheckingModelStatus(false);
@@ -202,11 +220,18 @@ export default function ChatBot({
             });
 
             if (!response.ok) {
+                setUnavailableStatus(
+                    `Provider is unavailable (HTTP ${response.status}).`,
+                );
                 return null;
             }
 
             const payload = (await response.json()) as ModelStatusResponse;
-            if (!payload.status) {
+            if (!payload.status || payload.status.state === "unavailable") {
+                setUnavailableStatus(
+                    payload.status?.message ?? "Provider is down.",
+                );
+                setError("Provider is down");
                 return null;
             }
 
@@ -214,6 +239,7 @@ export default function ChatBot({
 
             return payload.status;
         } catch {
+            setUnavailableStatus("Provider is down.");
             return null;
         } finally {
             setIsWarmingModel(false);
@@ -243,6 +269,10 @@ export default function ChatBot({
                     if (status) {
                         setModelStatus(status);
                     }
+                } else {
+                    setUnavailableStatus(
+                        `Provider is unavailable (HTTP ${statusResponse.status}).`,
+                    );
                 }
             } finally {
                 setIsCheckingModelStatus(false);
@@ -331,7 +361,8 @@ export default function ChatBot({
             !message ||
             isStreaming ||
             isCheckingModelStatus ||
-            isWarmingModel
+            isWarmingModel ||
+            isUnavailable
         ) {
             return;
         }
@@ -826,7 +857,8 @@ export default function ChatBot({
                                                 disabled={
                                                     isStreaming ||
                                                     isCheckingModelStatus ||
-                                                    isWarmingModel
+                                                    isWarmingModel ||
+                                                    isUnavailable
                                                 }
                                                 label="Send Message"
                                             />
