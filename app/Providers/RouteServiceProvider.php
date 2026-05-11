@@ -2,9 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\AiChatBot;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
@@ -17,26 +14,4 @@ class RouteServiceProvider extends ServiceProvider
      * @var string
      */
     public const HOME = '/';
-
-    /**
-     * Define your route model bindings, pattern filters, etc.
-     */
-    public function boot(): void
-    {
-        // Register hash-based access routes for each active chat bot.
-        // These allow accessing a specific conversation from any computer.
-        // Format: /chat/{bot-slug}/{hash}
-        $activeBots = AiChatBot::active()->get(['id', 'slug']);
-        foreach ($activeBots as $bot) {
-            $prefix = 'chat/' . $bot->slug;
-            Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
-                ->prefix($prefix)
-                ->name("chat-bot-{$bot->slug}.")
-                ->group(function () use ($bot) {
-                    Route::get('/{hash}', fn (string $hash, Request $request) =>
-                        resolve(\App\Http\Controllers\ChatBotController::class)->showByHash($request, $hash)
-                    )->where('hash', '[a-f0-9]{32}')->name('by-hash');
-                });
-        }
-    }
 }
