@@ -170,6 +170,10 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
 // Hash-based chat access routes are registered dynamically in RouteServiceProvider
 // per active bot: /chat/{bot-slug}/{hash}
 
+Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+    ->get('/chats', [ChatBotController::class, 'index'])
+    ->name('chat-bots.index');
+
 // Shared route group for chat bot endpoints (used in two places)
 $chatBotRoutes = function () {
     Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');

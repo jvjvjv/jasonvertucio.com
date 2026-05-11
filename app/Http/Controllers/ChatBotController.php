@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SendAiChatBotMessageRequest;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
+use App\Models\User;
 use App\Services\AiChatBotConversationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,54 @@ class ChatBotController extends Controller
     public function __construct(
         private AiChatBotConversationService $conversationService,
     ) {
+    }
+
+    /**
+     * Display the list of available chat bots.
+     */
+    public function index(Request $request): InertiaResponse
+    {
+        $user = $request->user();
+
+        $bots = AiChatBot::query()
+            ->active()
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (AiChatBot $bot) => $bot->is_public || $this->canAccessPrivateBot($bot, $user))
+            ->values();
+
+        $conversationsByBotId = collect();
+
+        if ($user !== null && $bots->isNotEmpty()) {
+            $conversationsByBotId = AiConversation::query()
+                ->where('user_id', $user->id)
+                ->whereIn('ai_chat_bot_id', $bots->pluck('id')->all())
+                ->orderByLastMessageAtDesc()
+                ->get()
+                ->groupBy('ai_chat_bot_id');
+        }
+
+        return Inertia::render('ai/ChatBotsIndex', [
+            'bots' => $bots->map(function (AiChatBot $bot) use ($conversationsByBotId): array {
+                $conversations = collect($conversationsByBotId->get($bot->id, []));
+
+                return [
+                    'name' => $bot->name,
+                    'description' => $bot->description,
+                    'new_chat_url' => $this->routeUrlFor($bot, 'new'),
+                    'conversations' => $conversations->map(function (AiConversation $conversation): array {
+                        return [
+                            'title' => trim((string) ($conversation->title ?: 'New chat')),
+                            'updated_at' => $conversation->last_message_at?->toIso8601String()
+                                ?? $conversation->updated_at?->toIso8601String(),
+                            'updated_at_human' => $conversation->last_message_at?->diffForHumans()
+                                ?? $conversation->updated_at?->diffForHumans()
+                                ?? 'just now',
+                        ];
+                    })->values()->all(),
+                ];
+            })->all(),
+        ]);
     }
 
     /**
@@ -420,5 +469,14 @@ class ChatBotController extends Controller
         $prefix = $aiChatBot->usesRootAccessPath() ? 'chat-bots.root.' : 'chat-bots.chat.';
 
         return route($prefix . $action, $aiChatBot);
+    }
+
+    private function canAccessPrivateBot(AiChatBot $aiChatBot, ?User $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        return $aiChatBot->allowsRole($user);
     }
 }

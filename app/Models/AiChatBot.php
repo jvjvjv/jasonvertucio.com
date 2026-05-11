@@ -62,6 +62,7 @@ class AiChatBot extends Model
             'blog',
             'canvas',
             'chat',
+            'chats',
             'forgot-password',
             'login',
             'logout',

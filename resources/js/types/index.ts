@@ -86,6 +86,7 @@ export interface AiChatBot {
     ai_system_id?: number;
     ai_system_name?: string | null;
     usage?: ConversationUsage | null;
+    conversations?: Conversation[];
 }
 
 export interface LogEntry {
