@@ -2,9 +2,10 @@ import { Head, router } from "@inertiajs/react";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
+import SendIcon from "@mui/icons-material/Send";
 import Alert from "@mui/material/Alert";
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
@@ -23,6 +24,7 @@ import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { KeyboardEvent } from "react";
 
 import ChatMessageBubble from "@/components/ChatMessageBubble";
+import ResponsiveButton from "@/components/ResponsiveButton";
 
 interface HistoryItem {
     handle: string;
@@ -47,11 +49,25 @@ interface Bot {
     total_cost_usd: number;
 }
 
+interface ModelStatus {
+    state: "loaded" | "not_loaded" | "unavailable";
+    provider: string;
+    model: string;
+    message: string;
+    checked_at: string;
+}
+
+interface ModelStatusResponse {
+    status?: ModelStatus;
+}
+
 interface ChatBotProps {
     bot: Bot;
     messages: ChatMessage[];
     history: HistoryItem[];
     messageUrl: string;
+    statusUrl: string;
+    warmupUrl: string;
     resetUrl: string;
     switchUrl: string;
     chatUrl?: string | null;
@@ -65,6 +81,8 @@ export default function ChatBot({
     messages: initialMessages,
     history,
     messageUrl,
+    statusUrl,
+    warmupUrl,
     resetUrl,
     switchUrl,
     chatUrl,
@@ -79,6 +97,10 @@ export default function ChatBot({
     const [showIdentityForm, setShowIdentityForm] = useState(
         initialShowIdentityForm,
     );
+    const [modelStatus, setModelStatus] = useState<ModelStatus | null>(null);
+    const [isCheckingModelStatus, setIsCheckingModelStatus] = useState(false);
+    const [isWarmingModel, setIsWarmingModel] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("");
     const [visitorName, setVisitorName] = useState("");
     const [visitorEmail, setVisitorEmail] = useState("");
     const [messageText, setMessageText] = useState("");
@@ -100,6 +122,15 @@ export default function ChatBot({
 
         return `$${value.toFixed(2)}`;
     };
+
+    const tabBadgeColor =
+        modelStatus?.state === "loaded"
+            ? "success"
+            : modelStatus?.state === "not_loaded"
+              ? "warning"
+              : modelStatus?.state === "unavailable"
+                ? "error"
+                : "info";
 
     // Redirect to the hash-based URL after the first message is sent.
     // This enables sharing the chat link from any computer.
@@ -124,6 +155,169 @@ export default function ChatBot({
         }
     }, [messages, streamingBlocks]);
 
+    const csrfToken =
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") ?? "";
+
+    const fetchModelStatus = async (): Promise<ModelStatus | null> => {
+        try {
+            setIsCheckingModelStatus(true);
+            const response = await fetch(statusUrl, {
+                headers: {
+                    Accept: "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+
+            const payload = (await response.json()) as ModelStatusResponse;
+            if (!payload.status) {
+                return null;
+            }
+
+            setModelStatus(payload.status);
+
+            return payload.status;
+        } catch {
+            return null;
+        } finally {
+            setIsCheckingModelStatus(false);
+        }
+    };
+
+    const warmModel = async (): Promise<ModelStatus | null> => {
+        try {
+            setIsWarmingModel(true);
+            setLoadingMessage("Loading model. This can take a little while...");
+
+            const response = await fetch(warmupUrl, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                },
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+
+            const payload = (await response.json()) as ModelStatusResponse;
+            if (!payload.status) {
+                return null;
+            }
+
+            setModelStatus(payload.status);
+
+            return payload.status;
+        } catch {
+            return null;
+        } finally {
+            setIsWarmingModel(false);
+            setLoadingMessage("");
+        }
+    };
+
+    useEffect(() => {
+        let mounted = true;
+
+        const prepareModel = async (): Promise<void> => {
+            setIsCheckingModelStatus(true);
+
+            let status: ModelStatus | null = null;
+            try {
+                const statusResponse = await fetch(statusUrl, {
+                    headers: {
+                        Accept: "application/json",
+                    },
+                });
+
+                if (statusResponse.ok) {
+                    const payload =
+                        (await statusResponse.json()) as ModelStatusResponse;
+                    status = payload.status ?? null;
+
+                    if (status) {
+                        setModelStatus(status);
+                    }
+                }
+            } finally {
+                setIsCheckingModelStatus(false);
+            }
+
+            if (!mounted || !status) {
+                return;
+            }
+
+            if (status.state === "not_loaded") {
+                setIsWarmingModel(true);
+                setLoadingMessage(
+                    "Loading model. This can take a little while...",
+                );
+
+                try {
+                    const warmupResponse = await fetch(warmupUrl, {
+                        method: "POST",
+                        headers: {
+                            Accept: "application/json",
+                            "X-CSRF-TOKEN": csrfToken,
+                        },
+                    });
+
+                    if (warmupResponse.ok) {
+                        const warmupPayload =
+                            (await warmupResponse.json()) as ModelStatusResponse;
+                        const warmStatus = warmupPayload.status;
+                        if (warmStatus != null) {
+                            setModelStatus(warmStatus);
+                        }
+                    }
+                } finally {
+                    setIsWarmingModel(false);
+                    setLoadingMessage("");
+                }
+            }
+        };
+
+        void prepareModel();
+
+        return () => {
+            mounted = false;
+        };
+    }, [csrfToken, statusUrl, warmupUrl]);
+
+    const ensureModelReady = async (): Promise<boolean> => {
+        const currentStatus = modelStatus ?? (await fetchModelStatus());
+
+        if (!currentStatus) {
+            return true;
+        }
+
+        if (currentStatus.state === "unavailable") {
+            setError(currentStatus.message);
+            return false;
+        }
+
+        if (currentStatus.state === "not_loaded") {
+            const warmedStatus = await warmModel();
+
+            if (warmedStatus?.state === "loaded") {
+                return true;
+            }
+
+            if (warmedStatus?.message) {
+                setError(warmedStatus.message);
+            }
+
+            return false;
+        }
+
+        return true;
+    };
+
     const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
@@ -133,11 +327,22 @@ export default function ChatBot({
 
     const handleSubmit = async () => {
         const message = messageText.trim();
-        if (!message || isStreaming) {
+        if (
+            !message ||
+            isStreaming ||
+            isCheckingModelStatus ||
+            isWarmingModel
+        ) {
             return;
         }
 
         setError("");
+        const modelReady = await ensureModelReady();
+
+        if (!modelReady) {
+            return;
+        }
+
         setMessages((prev) => [...prev, { role: "user", content: message }]);
         setMessageText("");
         setIsStreaming(true);
@@ -148,11 +353,6 @@ export default function ChatBot({
             payload.name = visitorName;
             payload.email = visitorEmail;
         }
-
-        const csrfToken =
-            document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content") ?? "";
 
         try {
             const response = await fetch(messageUrl, {
@@ -223,6 +423,7 @@ export default function ChatBot({
                     type: string;
                     delta?: { text?: string; reasoning?: string };
                     message?: string;
+                    phase?: string;
                 };
 
                 try {
@@ -235,12 +436,18 @@ export default function ChatBot({
                     event.type === "reasoning_block_delta" &&
                     event.delta?.reasoning
                 ) {
+                    setLoadingMessage("");
                     appendToBlocks("reasoning", event.delta.reasoning);
                 } else if (
                     event.type === "content_block_delta" &&
                     event.delta?.text
                 ) {
+                    setLoadingMessage("");
                     appendToBlocks("text", event.delta.text);
+                } else if (event.type === "status") {
+                    setLoadingMessage(
+                        event.message ?? "Waiting for model response...",
+                    );
                 } else if (event.type === "error") {
                     throw new Error(event.message ?? "Unknown error");
                 }
@@ -295,6 +502,7 @@ export default function ChatBot({
         } finally {
             setIsStreaming(false);
             setStreamingBlocks([]);
+            setLoadingMessage("");
         }
     };
 
@@ -346,7 +554,21 @@ export default function ChatBot({
                                 },
                             }}
                         >
-                            <Tab icon={<ChatIcon />} />
+                            <Tab
+                                icon={
+                                    <Badge
+                                        variant="dot"
+                                        color={tabBadgeColor}
+                                        overlap="circular"
+                                        title={
+                                            modelStatus?.message ??
+                                            "Checking model status"
+                                        }
+                                    >
+                                        <ChatIcon />
+                                    </Badge>
+                                }
+                            />
                             <Tab icon={<InfoIcon />} />
                         </Tabs>
                         <Box sx={{ flexGrow: 1 }} />
@@ -541,7 +763,34 @@ export default function ChatBot({
                                             onKeyDown={handleKeyDown}
                                             required
                                             fullWidth
+                                            disabled={isStreaming}
                                         />
+
+                                        {isCheckingModelStatus ? (
+                                            <Alert severity="info">
+                                                Checking model status...
+                                            </Alert>
+                                        ) : null}
+
+                                        {isWarmingModel || loadingMessage ? (
+                                            <Alert severity="info">
+                                                {loadingMessage ||
+                                                    "Loading model. This can take a little while..."}
+                                            </Alert>
+                                        ) : null}
+
+                                        {modelStatus?.state === "loaded" ? (
+                                            <Alert severity="success">
+                                                Model is ready.
+                                            </Alert>
+                                        ) : null}
+
+                                        {modelStatus?.state === "not_loaded" &&
+                                        !isWarmingModel ? (
+                                            <Alert severity="warning">
+                                                {modelStatus.message}
+                                            </Alert>
+                                        ) : null}
 
                                         {error ? (
                                             <Alert severity="error">
@@ -569,13 +818,18 @@ export default function ChatBot({
                                                 fail to generate. Use with
                                                 caution.
                                             </Typography>
-                                            <Button
+                                            <ResponsiveButton
                                                 type="submit"
+                                                icon={<SendIcon />}
+                                                color="primary"
                                                 variant="contained"
-                                                disabled={isStreaming}
-                                            >
-                                                Send Message
-                                            </Button>
+                                                disabled={
+                                                    isStreaming ||
+                                                    isCheckingModelStatus ||
+                                                    isWarmingModel
+                                                }
+                                                label="Send Message"
+                                            />
                                         </Box>
                                     </Stack>
                                 </Box>

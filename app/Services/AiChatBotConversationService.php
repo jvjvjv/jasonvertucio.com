@@ -107,7 +107,7 @@ class AiChatBotConversationService
         $outputTokens = null;
         $resolvedModel = $conversation->aiSystem->model;
         $maxTokens = $conversation->aiSystem->max_tokens;
-        
+
         // Build the request payload that will be sent to LLM (before applying client overrides)
         $requestPayload = [
             'model' => $resolvedModel,
@@ -131,6 +131,12 @@ class AiChatBotConversationService
 
             // Apply max tokens override to client before streaming
             $client->withMaxTokens($maxTokens);
+
+            yield 'data: ' . json_encode([
+                'type' => 'status',
+                'phase' => 'model_loading',
+                'message' => 'Waiting for model response...',
+            ]) . "\n\n";
 
             $stream = $client->stream($apiMessages);
 
@@ -169,14 +175,14 @@ class AiChatBotConversationService
                     case 'content_block_start':
                         // New content block starting (text, thinking, tool_use, etc.)
                         yield 'data: ' . json_encode($event) . "\n\n";
-                        
+
                         // Track if this is a thinking/reasoning or tool_use block
                         if (isset($event['block']['type'])) {
                             Log::debug('Content block started', [
                                 'type' => $event['block']['type'],
                                 'block_id' => $event['block']['id'] ?? null,
                             ]);
-                            
+
                             // Track tool use blocks for function calling
                             if ($event['block']['type'] === 'tool_use') {
                                 Log::debug('Detected tool_use block', [
@@ -186,7 +192,7 @@ class AiChatBotConversationService
                             }
                         }
                         break;
-                        
+
                     case 'reasoning_block_delta':
                         // OpenAI-compatible reasoning models (e.g. DeepSeek R1 via LM Studio)
                         if (isset($event['delta']['reasoning'])) {
@@ -209,18 +215,18 @@ class AiChatBotConversationService
                                 'has_signature' => isset($event['delta']['signature']),
                             ]);
                         }
-                        
+
                         // Track tool_use deltas (arguments being built)
                         if (isset($event['delta']['input'])) {
                             Log::debug('Received tool_use input delta', [
                                 'partial_input' => is_string($event['delta']['input']) ? substr($event['delta']['input'], 0, 100) : 'object',
                             ]);
                         }
-                        
+
                         // Also include non-text deltas (tool_use, etc.) for complete storage
                         yield 'data: ' . json_encode($event) . "\n\n";
                         break;
-                        
+
                     case 'content_block_stop':
                         // Content block has finished
                         if (isset($event['block']['type'])) {
@@ -228,7 +234,7 @@ class AiChatBotConversationService
                                 'type' => $event['block']['type'],
                                 'id' => $event['block']['id'] ?? null,
                             ]);
-                            
+
                             // Track when tool_use blocks complete
                             if ($event['block']['type'] === 'tool_use') {
                                 Log::debug('Tool_use block completed');
@@ -236,14 +242,14 @@ class AiChatBotConversationService
                         }
                         yield 'data: ' . json_encode($event) . "\n\n";
                         break;
-                        
+
                     case 'message_start':
                         if (isset($event['message']['usage'])) {
                             $inputTokens = $event['message']['usage']['input_tokens'] ?? null;
                         }
                         yield 'data: ' . json_encode($event) . "\n\n";
                         break;
-                        
+
                     case 'message_delta':
                         if (isset($event['usage'])) {
                             $outputTokens = $event['usage']['output_tokens'] ?? null;
@@ -251,16 +257,16 @@ class AiChatBotConversationService
                         // Store stop_reason for debugging (e.g., "end_turn", "max_tokens", "stop_sequence")
                         yield 'data: ' . json_encode($event) . "\n\n";
                         break;
-                        
+
                     case 'message_stop':
                         yield 'data: ' . json_encode($event) . "\n\n";
                         break;
-                        
+
                     case 'ping':
                         // Keep-alive ping from Anthropic
                         Log::debug('Received ping event in stream');
                         break;
-                        
+
                     default:
                         // Capture any other event types for completeness
                         yield 'data: ' . json_encode($event) . "\n\n";
@@ -275,7 +281,7 @@ class AiChatBotConversationService
 
             // Store the complete response after streaming finishes
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
-            
+
             // Build comprehensive response data with usage info and stop reason if available
             $lastMessageDelta = collect($responseEvents)
                 ->where('type', 'message_delta')
@@ -431,7 +437,7 @@ class AiChatBotConversationService
 
         $prompt = strtr($bot->prompt_template, $replacements);
         $systemPrompt = trim((string) $bot->aiSystem?->system_prompt);
-        
+
         // For chatbot conversations, scope memories to the current user (not conversation).
         // Each individual user has their own persistent memory context across all their conversations with this chatbot.
         // Memories are identified by: user_id for logged-in users, or visitor_email for anonymous visitors.

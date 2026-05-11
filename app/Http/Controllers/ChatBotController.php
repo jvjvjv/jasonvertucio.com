@@ -7,6 +7,8 @@ use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\User;
 use App\Services\AiChatBotConversationService;
+use App\Services\AiModelReadinessService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
@@ -21,6 +23,7 @@ class ChatBotController extends Controller
 
     public function __construct(
         private AiChatBotConversationService $conversationService,
+        private AiModelReadinessService $modelReadinessService,
     ) {
     }
 
@@ -54,9 +57,11 @@ class ChatBotController extends Controller
                 $conversations = collect($conversationsByBotId->get($bot->id, []));
 
                 return [
+                    'slug' => $bot->slug,
                     'name' => $bot->name,
                     'description' => $bot->description,
                     'new_chat_url' => $this->routeUrlFor($bot, 'new'),
+                    'status_url' => $this->routeUrlFor($bot, 'status'),
                     'conversations' => $conversations->map(function (AiConversation $conversation): array {
                         return [
                             'title' => trim((string) ($conversation->title ?: 'New chat')),
@@ -69,7 +74,34 @@ class ChatBotController extends Controller
                     })->values()->all(),
                 ];
             })->all(),
+            'statusesUrl' => route('chat-bots.statuses'),
         ]);
+    }
+
+    public function statuses(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $bots = AiChatBot::query()
+            ->active()
+            ->with('aiSystem')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (AiChatBot $bot) => $bot->is_public || $this->canAccessPrivateBot($bot, $user))
+            ->values();
+
+        $statusesBySystemId = [];
+        $statusesByBotSlug = [];
+
+        foreach ($bots as $bot) {
+            if (!array_key_exists($bot->ai_system_id, $statusesBySystemId)) {
+                $statusesBySystemId[$bot->ai_system_id] = $this->modelReadinessService->statusForSystem($bot->aiSystem);
+            }
+
+            $statusesByBotSlug[$bot->slug] = $statusesBySystemId[$bot->ai_system_id];
+        }
+
+        return response()->json(['statuses' => $statusesByBotSlug]);
     }
 
     /**
@@ -118,11 +150,31 @@ class ChatBotController extends Controller
             'messageUrl' => $this->routeUrlFor($aiChatBot, 'message'),
             'resetUrl' => $this->routeUrlFor($aiChatBot, 'reset'),
             'switchUrl' => $this->routeUrlFor($aiChatBot, 'switch'),
+            'statusUrl' => $this->routeUrlFor($aiChatBot, 'status'),
+            'warmupUrl' => $this->routeUrlFor($aiChatBot, 'warmup'),
             'chatUrl' => $chatUrl,
             'chatUrlBase' => '/chat/' . $aiChatBot->slug . '/',
             'showIdentityForm' => !$request->user()
                 && $aiChatBot->require_visitor_identity
                 && $conversation === null,
+        ]);
+    }
+
+    public function status(Request $request, AiChatBot $aiChatBot): JsonResponse
+    {
+        $this->abortIfInaccessible($request, $aiChatBot);
+
+        return response()->json([
+            'status' => $this->modelReadinessService->statusForSystem($aiChatBot->aiSystem),
+        ]);
+    }
+
+    public function warmup(Request $request, AiChatBot $aiChatBot): JsonResponse
+    {
+        $this->abortIfInaccessible($request, $aiChatBot);
+
+        return response()->json([
+            'status' => $this->modelReadinessService->warmUpSystem($aiChatBot->aiSystem),
         ]);
     }
 
@@ -159,6 +211,16 @@ class ChatBotController extends Controller
         $chatHash = $conversation->generateChatHash();
 
         return response()->stream(function () use ($request, $conversation) {
+            echo 'data: ' . json_encode([
+                'type' => 'status',
+                'phase' => 'request_received',
+                'message' => 'Preparing your request.',
+            ]) . "\n\n";
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
+            flush();
+
             $generator = $this->conversationService->continueConversation(
                 $conversation,
                 $request->validated('message'),
@@ -291,6 +353,8 @@ class ChatBotController extends Controller
             'messageUrl' => $this->routeUrlFor($bot, 'message'),
             'resetUrl' => $this->routeUrlFor($bot, 'reset'),
             'switchUrl' => $this->routeUrlFor($bot, 'switch'),
+            'statusUrl' => $this->routeUrlFor($bot, 'status'),
+            'warmupUrl' => $this->routeUrlFor($bot, 'warmup'),
             'showIdentityForm' => !$request->user()
                 && $bot->require_visitor_identity
                 && $conversation->messages()->where('role', '!=', 'system')->count() === 0,

@@ -76,6 +76,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                             errors={form.errors}
                             systems={systems}
                             roles={roles}
+                            originalName={bot.name}
                         />
 
                         <Box

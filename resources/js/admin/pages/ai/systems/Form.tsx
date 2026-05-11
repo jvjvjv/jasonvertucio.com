@@ -59,8 +59,12 @@ const PROVIDERS = [
     { value: "gemini", label: "Google Gemini" },
     { value: "grok", label: "xAI Grok" },
     {
+        value: "lm-studio",
+        label: "LM Studio (Native API)",
+    },
+    {
         value: "openai-compatible",
-        label: "OpenAI-Compatible (LM Studio, OpenRouter, Together, Groq)",
+        label: "OpenAI-Compatible (OpenRouter, Together, Groq, etc.)",
     },
 ];
 
@@ -133,6 +137,16 @@ const PROVIDER_DEFAULTS: {
         apiVersion: "",
         authType: "none",
         endpointType: "openai-compatible",
+        streamProtocol: "chunked-json",
+        systemPromptMode: "messages",
+        isLocalEndpoint: true,
+    },
+    "lm-studio": {
+        model: "",
+        baseUrl: "http://10.10.0.2:1234",
+        apiVersion: "",
+        authType: "none",
+        endpointType: "local",
         streamProtocol: "chunked-json",
         systemPromptMode: "messages",
         isLocalEndpoint: true,

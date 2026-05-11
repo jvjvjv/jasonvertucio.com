@@ -1,0 +1,413 @@
+<?php
+
+namespace App\Services;
+
+use App\Contracts\AiClientContract;
+use App\Contracts\CanLoadModels;
+use Generator;
+use Illuminate\Support\Facades\Http;
+
+class LmStudioService implements AiClientContract, CanLoadModels
+{
+    private string $defaultModel;
+    private int $defaultMaxTokens;
+
+    /** The root URL, e.g. http://localhost:1234 */
+    private string $serverUrl;
+
+    private ?string $apiKey;
+    private ?string $system = null;
+    private ?string $model = null;
+    private ?int $maxTokens = null;
+    private ?float $temperature = null;
+
+    /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> */
+    private array $tools = [];
+
+    public function __construct(
+        ?string $serverUrl = null,
+        ?string $model = null,
+        ?int $maxTokens = null,
+        ?string $apiKey = null,
+    ) {
+        $this->serverUrl = $this->normalizeServerUrl(
+            $serverUrl ?? config('lmstudio.server_url', 'http://localhost:1234'),
+        );
+        $this->defaultModel = $model ?? config('lmstudio.model', '');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('lmstudio.max_tokens', 1024);
+        $this->apiKey = $apiKey;
+    }
+
+    public function withSystem(string $system): self
+    {
+        $this->system = $system;
+
+        return $this;
+    }
+
+    public function withModel(string $model): self
+    {
+        $this->model = $model;
+
+        return $this;
+    }
+
+    public function withMaxTokens(int $maxTokens): self
+    {
+        $this->maxTokens = $maxTokens;
+
+        return $this;
+    }
+
+    public function withTemperature(float $temperature): self
+    {
+        $this->temperature = $temperature;
+
+        return $this;
+    }
+
+    public function withTools(array $tools): self
+    {
+        $this->tools = $tools;
+
+        return $this;
+    }
+
+    public function message(array $messages): array
+    {
+        $payload = $this->buildOpenAiPayload($messages, false);
+
+        $response = Http::withHeaders($this->headers())
+            ->timeout(600)
+            ->post($this->serverUrl . '/v1/chat/completions', $payload);
+
+        $this->reset();
+
+        $response->throw();
+
+        $data = $response->json();
+        $choice = $data['choices'][0] ?? [];
+        $content = $choice['message']['content'] ?? '';
+
+        if (is_array($content)) {
+            $content = collect($content)
+                ->map(static fn (array $part): string => (string) ($part['text'] ?? ''))
+                ->implode('');
+        }
+
+        return [
+            'id' => (string) ($data['id'] ?? ''),
+            'type' => 'message',
+            'role' => 'assistant',
+            'content' => [
+                [
+                    'type' => 'text',
+                    'text' => (string) $content,
+                ],
+            ],
+            'reasoning_content' => $choice['message']['reasoning_content'] ?? null,
+            'model' => (string) ($data['model'] ?? ($this->model ?? $this->defaultModel)),
+            'stop_reason' => (string) ($choice['finish_reason'] ?? 'stop'),
+            'usage' => [
+                'input_tokens' => (int) ($data['usage']['prompt_tokens'] ?? 0),
+                'output_tokens' => (int) ($data['usage']['completion_tokens'] ?? 0),
+            ],
+        ];
+    }
+
+    public function stream(array $messages): Generator
+    {
+        $payload = $this->buildOpenAiPayload($messages, true);
+
+        $response = Http::withHeaders($this->headers())
+            ->withOptions(['stream' => true])
+            ->timeout(600)
+            ->post($this->serverUrl . '/v1/chat/completions', $payload);
+
+        $this->reset();
+
+        $response->throw();
+
+        $body = $response->toPsrResponse()->getBody();
+        $buffer = '';
+        $inputTokens = null;
+        $outputTokens = null;
+        $started = false;
+
+        while (!$body->eof()) {
+            $buffer .= $body->read(1024);
+
+            while (($pos = strpos($buffer, "\n")) !== false) {
+                $line = trim(substr($buffer, 0, $pos));
+                $buffer = substr($buffer, $pos + 1);
+
+                if ($line === '' || !str_starts_with($line, 'data: ')) {
+                    continue;
+                }
+
+                $rawData = substr($line, 6);
+
+                if ($rawData === '[DONE]') {
+                    break 2;
+                }
+
+                $chunk = json_decode($rawData, true);
+
+                if (!is_array($chunk)) {
+                    continue;
+                }
+
+                if (isset($chunk['usage'])) {
+                    $inputTokens = isset($chunk['usage']['prompt_tokens']) ? (int) $chunk['usage']['prompt_tokens'] : $inputTokens;
+                    $outputTokens = isset($chunk['usage']['completion_tokens']) ? (int) $chunk['usage']['completion_tokens'] : $outputTokens;
+                }
+
+                if (!$started) {
+                    $started = true;
+
+                    yield [
+                        'type' => 'message_start',
+                        'message' => [
+                            'usage' => [
+                                'input_tokens' => $inputTokens,
+                            ],
+                        ],
+                    ];
+                }
+
+                $choice = $chunk['choices'][0] ?? [];
+                $delta = $choice['delta'] ?? [];
+                $text = $delta['content'] ?? null;
+                $reasoning = $delta['reasoning_content'] ?? null;
+
+                if (is_string($reasoning) && $reasoning !== '') {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => [
+                            'reasoning' => $reasoning,
+                        ],
+                    ];
+                }
+
+                if (is_string($text) && $text !== '') {
+                    yield [
+                        'type' => 'content_block_delta',
+                        'delta' => [
+                            'text' => $text,
+                        ],
+                    ];
+                }
+
+                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
+                    yield [
+                        'type' => 'message_delta',
+                        'usage' => [
+                            'output_tokens' => $outputTokens,
+                        ],
+                    ];
+
+                    yield [
+                        'type' => 'message_stop',
+                    ];
+                }
+            }
+        }
+
+        if ($started === false) {
+            yield [
+                'type' => 'message_start',
+                'message' => [
+                    'usage' => [
+                        'input_tokens' => $inputTokens,
+                    ],
+                ],
+            ];
+        }
+
+        yield [
+            'type' => 'message_delta',
+            'usage' => [
+                'output_tokens' => $outputTokens,
+            ],
+        ];
+
+        yield [
+            'type' => 'message_stop',
+        ];
+    }
+
+    /**
+     * Lists all models available on disk (loaded and unloaded).
+     * Uses the native LM Studio /api/v1/models endpoint.
+     *
+     * {@inheritDoc}
+     */
+    public function listModels(): array
+    {
+        $response = Http::withHeaders($this->headers())
+            ->timeout(15)
+            ->get($this->serverUrl . '/api/v1/models');
+
+        $response->throw();
+
+        $models = $response->json('models', []);
+
+        if (!is_array($models)) {
+            return [];
+        }
+
+        return collect($models)
+            ->filter(static fn (mixed $m): bool => is_array($m) && isset($m['key']) && ($m['type'] ?? '') === 'llm')
+            ->map(static fn (array $m): array => [
+                'id' => (string) $m['key'],
+                'display_name' => (string) ($m['display_name'] ?? $m['key']),
+                'loaded' => !empty($m['loaded_instances']),
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Returns true if the model currently has at least one active loaded instance.
+     */
+    public function isModelLoaded(string $model): bool
+    {
+        $response = Http::withHeaders($this->headers())
+            ->timeout(15)
+            ->get($this->serverUrl . '/api/v1/models');
+
+        if ($response->failed()) {
+            return false;
+        }
+
+        $models = $response->json('models', []);
+
+        if (!is_array($models)) {
+            return false;
+        }
+
+        return collect($models)
+            ->contains(static function (mixed $m) use ($model): bool {
+                if (!is_array($m)) {
+                    return false;
+                }
+
+                return strcasecmp((string) ($m['key'] ?? ''), $model) === 0
+                    && !empty($m['loaded_instances']);
+            });
+    }
+
+    /**
+     * Explicitly loads the model into memory via the LM Studio native API.
+     *
+     * @return array{status: string, instance_id: string, load_time_seconds: float}
+     */
+    public function loadModel(string $model): array
+    {
+        $response = Http::withHeaders($this->headers())
+            ->timeout(300)
+            ->post($this->serverUrl . '/api/v1/models/load', [
+                'model' => $model,
+            ]);
+
+        $response->throw();
+
+        $data = $response->json();
+
+        return [
+            'status' => (string) ($data['status'] ?? 'loaded'),
+            'instance_id' => (string) ($data['instance_id'] ?? $model),
+            'load_time_seconds' => (float) ($data['load_time_seconds'] ?? 0.0),
+        ];
+    }
+
+    /**
+     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     */
+    private function buildOpenAiPayload(array $messages, bool $streaming): array
+    {
+        $payload = [
+            'model' => $this->model ?? $this->defaultModel,
+            'max_tokens' => $this->maxTokens ?? $this->defaultMaxTokens,
+            'messages' => $this->buildMessages($messages),
+        ];
+
+        if ($this->temperature !== null) {
+            $payload['temperature'] = $this->temperature;
+        }
+
+        if ($streaming) {
+            $payload['stream'] = true;
+            $payload['stream_options'] = ['include_usage' => true];
+        }
+
+        if ($this->tools !== []) {
+            $payload['tools'] = collect($this->tools)
+                ->map(static fn (array $tool): array => [
+                    'type' => 'function',
+                    'function' => [
+                        'name' => $tool['name'],
+                        'description' => $tool['description'],
+                        'parameters' => $tool['input_schema'],
+                    ],
+                ])
+                ->values()
+                ->toArray();
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @return array<int, array{role: string, content: string|array<int, mixed>}>
+     */
+    private function buildMessages(array $messages): array
+    {
+        if ($this->system === null || $this->system === '') {
+            return $messages;
+        }
+
+        return [
+            ['role' => 'system', 'content' => $this->system],
+            ...$messages,
+        ];
+    }
+
+    private function reset(): void
+    {
+        $this->system = null;
+        $this->model = null;
+        $this->maxTokens = null;
+        $this->temperature = null;
+        $this->tools = [];
+    }
+
+    private function normalizeServerUrl(string $serverUrl): string {
+        $normalized = rtrim($serverUrl, '/');
+
+        if (str_ends_with($normalized, '/api/v1')) {
+            $normalized = substr($normalized, 0, -7);
+        } elseif (str_ends_with($normalized, '/api')) {
+            $normalized = substr($normalized, 0, -4);
+        } elseif (str_ends_with($normalized, '/v1')) {
+            $normalized = substr($normalized, 0, -3);
+        }
+
+        return rtrim($normalized, '/');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function headers(): array
+    {
+        $headers = ['content-type' => 'application/json'];
+
+        if ($this->apiKey !== null && $this->apiKey !== '') {
+            $headers['Authorization'] = 'Bearer ' . $this->apiKey;
+        }
+
+        return $headers;
+    }
+}

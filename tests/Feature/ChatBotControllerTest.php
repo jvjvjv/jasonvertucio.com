@@ -7,6 +7,7 @@ use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\User;
 use App\Services\AiChatBotConversationService;
+use App\Services\AiModelReadinessService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -141,6 +142,74 @@ class ChatBotControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('Guest Bot');
+    }
+
+    public function test_chats_statuses_endpoint_returns_statuses_for_accessible_bots(): void
+    {
+        $publicBot = AiChatBot::factory()->create([
+            'name' => 'Public Bot',
+            'is_public' => true,
+        ]);
+
+        AiChatBot::factory()->create([
+            'name' => 'Private Bot',
+            'is_public' => false,
+        ]);
+
+        $readiness = Mockery::mock(AiModelReadinessService::class);
+        $readiness->shouldReceive('statusForSystem')
+            ->once()
+            ->andReturnUsing(fn (): array => $this->loadedStatus('anthropic', 'claude-sonnet-4-6'));
+
+        $this->app->instance(AiModelReadinessService::class, $readiness);
+
+        $response = $this->get(route('chat-bots.statuses'));
+
+        $response->assertOk();
+        $response->assertJsonPath('statuses.' . $publicBot->slug . '.state', 'loaded');
+    }
+
+    public function test_guest_can_request_public_bot_status_endpoint(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $readiness = Mockery::mock(AiModelReadinessService::class);
+        $readiness->shouldReceive('statusForSystem')
+            ->once()
+            ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill'));
+
+        $this->app->instance(AiModelReadinessService::class, $readiness);
+
+        $response = $this->get(route('chat-bots.chat.status', $bot));
+
+        $response->assertOk();
+        $response->assertJsonPath('status.state', 'loaded');
+    }
+
+    public function test_guest_can_request_public_bot_warmup_endpoint(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $readiness = Mockery::mock(AiModelReadinessService::class);
+        $readiness->shouldReceive('warmUpSystem')
+            ->once()
+            ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill') + [
+                'warmup_attempted' => true,
+            ]);
+
+        $this->app->instance(AiModelReadinessService::class, $readiness);
+
+        $response = $this->post(route('chat-bots.chat.warmup', $bot));
+
+        $response->assertOk();
+        $response->assertJsonPath('status.state', 'loaded');
+        $response->assertJsonPath('status.warmup_attempted', true);
     }
 
     public function test_guest_can_view_public_root_bot(): void
@@ -321,6 +390,20 @@ class ChatBotControllerTest extends TestCase
     private function fakeStream(): Generator
     {
         yield "data: [DONE]\n\n";
+    }
+
+    /**
+     * @return array{state: string, provider: string, model: string, message: string, checked_at: string}
+     */
+    private function loadedStatus(string $provider, string $model): array
+    {
+        return [
+            'state' => 'loaded',
+            'provider' => $provider,
+            'model' => $model,
+            'message' => 'Model is available.',
+            'checked_at' => now()->toIso8601String(),
+        ];
     }
 
     protected function tearDown(): void

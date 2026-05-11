@@ -5,13 +5,15 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useEffect, useState } from "react";
 
-import type { BotItem } from "./types";
+import type { BotItem, ModelStatusItem } from "./types";
 
 import ChatBotCard from "@/components/ChatBotCard";
 
 interface ChatBotsIndexProps {
     bots: BotItem[];
+    statusesUrl: string;
 }
 
 interface SharedPageProps {
@@ -25,9 +27,55 @@ interface SharedPageProps {
     };
 }
 
-export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
+interface StatusesResponse {
+    statuses?: { [key: string]: ModelStatusItem };
+}
+
+interface StatusesBySlug {
+    [key: string]: ModelStatusItem;
+}
+
+export default function ChatBotsIndex({
+    bots,
+    statusesUrl,
+}: ChatBotsIndexProps) {
     const page = usePage<SharedPageProps>();
     const isAuthenticated = Boolean(page.props.auth?.user);
+    const [statuses, setStatuses] = useState<StatusesBySlug>({});
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadStatuses = async (): Promise<void> => {
+            try {
+                const response = await fetch(statusesUrl, {
+                    headers: { Accept: "application/json" },
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const payload = (await response.json()) as StatusesResponse;
+
+                if (!mounted) {
+                    return;
+                }
+
+                setStatuses(payload.statuses ?? {});
+            } catch {
+                if (mounted) {
+                    setStatuses({});
+                }
+            }
+        };
+
+        void loadStatuses();
+
+        return () => {
+            mounted = false;
+        };
+    }, [statusesUrl]);
 
     return (
         <>
@@ -58,6 +106,7 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
                                 key={bot.name}
                                 bot={bot}
                                 isAuthenticated={isAuthenticated}
+                                modelStatus={statuses[bot.slug] ?? null}
                             />
                         ))}
                     </Stack>

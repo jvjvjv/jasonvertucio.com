@@ -6,6 +6,16 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
+function slugify(text: string): string {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
 export interface FormData {
     name: string;
     slug: string;
@@ -34,6 +44,7 @@ interface AiChatBotFormProps {
     errors: Partial<{ [K in keyof FormData]: string }>;
     systems: SystemOption[];
     roles: string[];
+    originalName: string;
 }
 
 export default function Form({
@@ -42,6 +53,7 @@ export default function Form({
     errors,
     systems,
     roles,
+    originalName,
 }: AiChatBotFormProps) {
     return (
         <>
@@ -60,6 +72,15 @@ export default function Form({
                     value={data.name}
                     onChange={(event) => {
                         setData("name", event.target.value);
+                    }}
+                    onBlur={() => {
+                        if (
+                            data.name !== originalName &&
+                            (data.slug === "" ||
+                                data.slug === slugify(originalName))
+                        ) {
+                            setData("slug", slugify(data.name));
+                        }
                     }}
                     error={!!errors.name}
                     helperText={errors.name}

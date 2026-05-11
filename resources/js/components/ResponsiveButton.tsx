@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import useDeviceInfo from "@/hooks/useDeviceInfo";
 
 interface ResponsiveButtonProps {
+    type?: ButtonProps["type"];
     size?: ButtonProps["size"];
     href?: ButtonProps["href"];
     color?: ButtonProps["color"];
@@ -27,7 +28,7 @@ export default function ResponsiveButton({
     onClick,
     variant = "outlined",
     icon,
-    size = "small",
+    size,
     label,
 }: ResponsiveButtonProps) {
     const { isMobile } = useDeviceInfo();
@@ -38,6 +39,9 @@ export default function ResponsiveButton({
             {...spreadHref}
             color={color}
             disabled={disabled}
+            aria-label={
+                title ?? (typeof label === "string" ? label : undefined)
+            }
             title={title}
             onClick={onClick}
         >
