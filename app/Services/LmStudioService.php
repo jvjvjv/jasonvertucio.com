@@ -322,6 +322,45 @@ class LmStudioService implements AiClientContract, CanLoadModels
     }
 
     /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, content: string|null, tool_calls: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $formattedCalls = [];
+
+        foreach ($toolCalls as $toolCall) {
+            $formattedCalls[] = [
+                'id' => $toolCall['id'],
+                'type' => 'function',
+                'function' => [
+                    'name' => $toolCall['name'],
+                    'arguments' => json_encode($toolCall['input']),
+                ],
+            ];
+        }
+
+        return [
+            'role' => 'assistant',
+            'content' => $textContent !== '' ? $textContent : null,
+            'tool_calls' => $formattedCalls,
+        ];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, tool_call_id: string, content: string}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        return array_map(static fn (array $result): array => [
+            'role' => 'tool',
+            'tool_call_id' => $result['id'],
+            'content' => json_encode($result['result']),
+        ], $toolResults);
+    }
+
+    /**
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
      */
     private function buildOpenAiPayload(array $messages, bool $streaming): array

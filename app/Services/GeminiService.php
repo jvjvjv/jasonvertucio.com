@@ -245,6 +245,46 @@ class GeminiService implements AiClientContract
     }
 
     /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, parts: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $parts = [];
+
+        if ($textContent !== '') {
+            $parts[] = ['text' => $textContent];
+        }
+
+        foreach ($toolCalls as $toolCall) {
+            $parts[] = [
+                'functionCall' => [
+                    'name' => $toolCall['name'],
+                    'args' => $toolCall['input'],
+                ],
+            ];
+        }
+
+        return ['role' => 'model', 'parts' => $parts];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, parts: array<int, mixed>}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        $parts = array_map(static fn (array $result): array => [
+            'functionResponse' => [
+                'name' => $result['name'] ?? $result['id'],
+                'response' => $result['result'],
+            ],
+        ], $toolResults);
+
+        return [['role' => 'user', 'parts' => $parts]];
+    }
+
+    /**
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
      * @return array<string, mixed>
      */
@@ -282,7 +322,7 @@ class GeminiService implements AiClientContract
             ->map(function (array $message): array {
                 $role = $message['role'] === 'assistant' ? 'model' : 'user';
                 $content = $message['content'];
-                $text = is_string($content) ? $content : json_encode($content, JSON_UNESCAPED_SLASHES) ?: '';
+                $text = is_string($content) ? $content : (json_encode($content, JSON_UNESCAPED_SLASHES) ?: '');
 
                 return [
                     'role' => $role,

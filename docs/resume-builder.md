@@ -10,8 +10,8 @@ Create a config/resume.php with the following configuration properties
 
 ```yaml
 resume:
-  template: "/resources/resume/2026 resume template.docx"
-  saved_documents: "/storage/app/resumes"
+    template: "/resources/resume/2026 resume template.docx"
+    saved_documents: "/storage/app/resumes"
 ```
 
 Then create the Resume Controller and add the web routes as defined below under [Routes](#Routes). all routes under `/resume` will require authentication and the "read-resume" permission. When an unauthenticated visitor accepts responses in text/html, redirect. For the other unauthenticated visitors, indicate they must go to /login page.
@@ -52,7 +52,6 @@ This will load /resources/resume/\*.json and display each in a very structured m
 1. **\<h2>Experience\</h2>** - and then experience.json
 1. **\<h2>Selected Projects\</h2>** - and then selected-projects.json
 
-
 _(Note that education is not displayed on this page.)_
 
 Affixed to the bottom-right side of the page will be a FAB-style button with a download icon sourced from fontawesome, but this button only is shown when the user has the "save-resume" permission. Clicking it will send a POST to /resume/docx.
@@ -60,7 +59,6 @@ Affixed to the bottom-right side of the page will be a FAB-style button with a d
 This page will do something insidious. If the user tries to print, the print CSS will hide the entire document except for name and summary, and underneath it will display the words "Please visit https://www.jasonvertucio.com/resume" to download the resume.
 
 ### POST /resume/docx
-
 
 However, if the user does not have the "save-resume" permission, they will receive a 403 error.
 This will generate a short-lived cookie (5 minutes, maybe) called 'hyperbole' with a value equal to the unix timestamp of the server and then redirect to GET /resume/docx.
@@ -73,9 +71,9 @@ If request accepts application/json then the response will be formatted as json
 
 ```json
 {
-  "code": 403,
-  "status": "failed",
-  "message": "Direct download forbidden."
+    "code": 403,
+    "status": "failed",
+    "message": "Direct download forbidden."
 }
 ```
 
@@ -91,19 +89,19 @@ The blade template will utilize Docxtemplater, file-saver, and pizzip to create 
 // sample
 
 const generateDocument = () => {
-  const zip = new PizZip(content);
-  const doc = new Docxtemplater(zip, {
-    paragraphLoop: true,
-    linebreaks: true,
-    parser: expressionParser,
-  });
-  doc.render({});
-  const out = doc.getZip().generate({
-    type: "blob",
-    mimeType:
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  }); //Output the document using Data-URI
-  saveAs(out, "output.docx");
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        parser: expressionParser,
+    });
+    doc.render({});
+    const out = doc.getZip().generate({
+        type: "blob",
+        mimeType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }); //Output the document using Data-URI
+    saveAs(out, "output.docx");
 };
 ```
 
@@ -126,49 +124,50 @@ This will accept a file upload and store the file in the directory specified by 
 ```typescript
 type Dates = Array<Date | string | number>;
 type PersonalInformation = {
-  name: string;
-  title: string;
-  email: string;
-  phone: string;
-  linkedin: string;
-  summary: string;
+    name: string;
+    title: string;
+    email: string;
+    phone: string;
+    linkedin: string;
+    summary: string;
 };
 
 type Education = {
-  institution: string;
-  degree: string;
-  dates: Dates;
-  description: string;
+    institution: string;
+    degree: string;
+    dates: Dates;
+    description: string;
 }[];
 
 type Experience = {
-  jobTitle: string;
-  company: string;
-  dates: Dates;
-  location: string;
-  bullets: string[];
+    jobTitle: string;
+    company: string;
+    dates: Dates;
+    location: string;
+    bullets: string[];
 }[];
 
 type SelectedProjects = {
-  projectName: string;
-  description?: string;
-  bullets: string[];
+    projectName: string;
+    description?: string;
+    bullets: string[];
 }[];
 
 type TechnicalSkillCategory = {
-    title: string
-list: string[]
-}
+    title: string;
+    list: string[];
+};
 
 type TechnicalSkills = {
     top: TechnicalSkillCategory[];
     other: TechnicalSkillCategory[];
-}
+};
 ```
 
 # Phase 2
 
 Create another migration to create
+
 - the permissions 'admin' and 'manage-unauthenticated-viewers' and add to the admin and super-admin roles
 - a new table (and matching model) for providing and storing share codes called resume_share_codes
     - id varchar(6)
@@ -183,13 +182,13 @@ Create another migration to create
 
 Users who have access to manage unauthenticated-viewers can
 
-- view all codes as well every time the code was used to view the resume. 
+- view all codes as well every time the code was used to view the resume.
 - create new codes
 - invalidate existing codes (functionally soft-deleting them)
 - all of this functionality will be housed under the /admin/resume route.
     - if /admin route has to be created, create a basic admin page that looks like the normal app layout
     - only has one link to /admin/resume
-    - user must have 
+    - user must have
 
 These codes will be implemented into the /resume routes and any visitor with that code will effectively have read-resume and save-resume permissions.
 
@@ -204,5 +203,4 @@ We will no longer generate a resume with a timestamp each time someone downloads
 5. On the editor page, the VERSION is at the very top.
 6. All of the JSON files will be editable on a single page, with tabs across the top for sectionsm, and a single save button on the bottom right (like a FAB or something).
 7. Once all of the JSON is validated and saved, the admin will be brought to a page similar to GET /resume, but this one will have a button stating "Generate DOCX" which will then store this version to config('resume.saved_documents').
-8. Then when a visitor navigates to GET /resume - they will see what they see onscreen with the option to download it; clicking on the download will track the download and send the latest version (derived from /resources/resume/version.json) of the resume to the visitor. 
-
+8. Then when a visitor navigates to GET /resume - they will see what they see onscreen with the option to download it; clicking on the download will track the download and send the latest version (derived from /resources/resume/version.json) of the resume to the visitor.

@@ -136,23 +136,20 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         $client = Mockery::mock(ClaudeService::class);
         $client->shouldReceive('withSystem')->once()->andReturnSelf();
         $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
+        $client->shouldReceive('withTools')->once()->andReturnSelf();
         $client->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
+        $client->shouldReceive('formatAssistantToolCallTurn')->never();
+        $client->shouldReceive('formatToolResultTurn')->never();
 
         $clientFactory = Mockery::mock(AiClientFactory::class);
         $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
 
-        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
-        $resumeDataService->shouldReceive('getAllEditableData')->once()->andReturn([]);
-
-        $memoryService = Mockery::mock(AiMemoryService::class);
-        $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
-
         $service = new TargetedResumeService(
             $clientFactory,
-            $resumeDataService,
+            $this->createMock(ResumeDataServiceContract::class),
             $this->createMock(TargetedResumeDocumentService::class),
             $this->createMock(CoverLetterDocumentService::class),
-            $memoryService,
+            $this->createMock(AiMemoryService::class),
             new ConversationUsageService(),
         );
 
