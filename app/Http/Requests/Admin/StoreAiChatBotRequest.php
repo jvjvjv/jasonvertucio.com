@@ -48,6 +48,7 @@ class StoreAiChatBotRequest extends FormRequest
             'is_active' => ['boolean'],
             'is_public' => ['boolean'],
             'require_visitor_identity' => ['boolean'],
+            'tools_enabled' => ['boolean'],
         ];
     }
 }

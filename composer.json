@@ -11,7 +11,7 @@
     ],
     "license": "proprietary",
     "require": {
-        "php": "^8.2.0",
+        "php": "^8.4.0",
         "austintoddj/canvas": "^6.0.55",
         "bspdx/keystone": "^0.6.0",
         "fakerphp/faker": "^1.24.1",

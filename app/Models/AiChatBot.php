@@ -29,6 +29,7 @@ class AiChatBot extends Model
         'is_active',
         'is_public',
         'require_visitor_identity',
+        'tools_enabled',
     ];
 
     /**
@@ -41,6 +42,7 @@ class AiChatBot extends Model
             'is_active' => 'boolean',
             'is_public' => 'boolean',
             'require_visitor_identity' => 'boolean',
+            'tools_enabled' => 'boolean',
         ];
     }
 

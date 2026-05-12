@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\ResumeDataServiceContract;
 use App\Enums\AiConversationStatus;
 use App\Enums\AiInteractionStatus;
 use App\Jobs\ProcessAiMemoryJob;
@@ -11,6 +12,7 @@ use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
 use App\Models\AiLlmMessage;
 use App\Models\User;
+use App\Services\Mcp\ChatBotToolRegistry;
 use Generator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -21,6 +23,7 @@ class AiChatBotConversationService
         private AiClientFactory $clientFactory,
         private AiMemoryService $memoryService,
         private ConversationUsageService $conversationUsageService,
+        private ResumeDataServiceContract $resumeDataService,
     ) {
     }
 
@@ -94,21 +97,14 @@ class AiChatBotConversationService
 
         $client = $this->clientFactory->forSystem($conversation->aiSystem);
 
-        if ($systemPrompt !== null) {
-            $client->withSystem($systemPrompt);
-        }
-
         // Determine the turn number for this conversation
         $turnNumber = $this->getTurnNumberForConversation($conversation);
 
         $startTime = microtime(true);
-        $fullResponse = '';
-        $inputTokens = null;
-        $outputTokens = null;
         $resolvedModel = $conversation->aiSystem->model;
         $maxTokens = $conversation->aiSystem->max_tokens;
 
-        // Build the request payload that will be sent to LLM (before applying client overrides)
+        // Base request payload shape — kept in sync each iteration, used in catch block for error logging
         $requestPayload = [
             'model' => $resolvedModel,
             'max_tokens' => $maxTokens,
@@ -119,214 +115,225 @@ class AiChatBotConversationService
             $requestPayload['system'] = $systemPrompt;
         }
 
-        // Store the request before sending to LLM
+        // Build tool registry if tools are enabled for this bot
+        $toolRegistry = $conversation->aiChatBot?->tools_enabled
+            ? new ChatBotToolRegistry($this->resumeDataService)
+            : null;
+
+        // Accumulated state across all tool-loop iterations
+        $iterationMessages = $apiMessages;
+        $totalInputTokens = 0;
+        $totalOutputTokens = 0;
+        $blocks = [];
+        $durationMs = 0;
+
+        $appendToBlocks = static function (string $type, string $delta) use (&$blocks): void {
+            if ($blocks !== [] && $blocks[\count($blocks) - 1]['type'] === $type) {
+                $blocks[\count($blocks) - 1]['content'] .= $delta;
+            } else {
+                $blocks[] = ['type' => $type, 'content' => $delta];
+            }
+        };
+
         try {
-            AiLlmMessage::create([
-                'ai_conversation_id' => $conversation->id,
-                'direction' => 'request',
-                'turn_number' => (string) $turnNumber,
-                'request_data' => $requestPayload,
-                'created_at' => now(),
-            ]);
-
-            // Apply max tokens override to client before streaming
-            $client->withMaxTokens($maxTokens);
-
             yield 'data: ' . json_encode([
                 'type' => 'status',
                 'phase' => 'model_loading',
                 'message' => 'Waiting for model response...',
             ]) . "\n\n";
 
-            $stream = $client->stream($apiMessages);
-
-            // Accumulate response data during streaming
-            $responseEvents = [];
-
-            // Ordered sequence of interleaved text and reasoning blocks.
-            // Each entry: ['type' => 'text'|'reasoning', 'content' => string]
-            $blocks = [];
-
-            $appendToBlocks = function (string $type, string $delta) use (&$blocks): void {
-                if ($blocks !== [] && $blocks[count($blocks) - 1]['type'] === $type) {
-                    $blocks[count($blocks) - 1]['content'] .= $delta;
-                } else {
-                    $blocks[] = ['type' => $type, 'content' => $delta];
+            for ($iteration = 0; $iteration < 6; $iteration++) {
+                // Re-apply client settings every iteration — clients reset state after each stream() call
+                if ($systemPrompt !== null) {
+                    $client->withSystem($systemPrompt);
                 }
-            };
 
-            foreach ($stream as $event) {
-                Log::debug('Chat bot API stream event', [
-                    'conversation_id' => $conversation->id,
-                    'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
-                    'ai_system_id' => $conversation->ai_system_id,
-                    'turn_number' => $turnNumber,
-                    'event_type' => $event['type'] ?? null,
+                $client->withMaxTokens($maxTokens);
+
+                if ($toolRegistry !== null) {
+                    $client->withTools($toolRegistry->toApiTools());
+                }
+
+                $iterationRequestPayload = [
+                    'model' => $resolvedModel,
+                    'max_tokens' => $maxTokens,
+                    'messages' => $iterationMessages,
+                ];
+
+                if ($systemPrompt !== null) {
+                    $iterationRequestPayload['system'] = $systemPrompt;
+                }
+
+                // Keep base payload in sync so catch block logs the most recent request
+                $requestPayload = $iterationRequestPayload;
+
+                $iterationTurnNumber = $iteration === 0 ? (string) $turnNumber : "{$turnNumber}.{$iteration}";
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'request',
+                    'turn_number' => $iterationTurnNumber,
+                    'request_data' => $iterationRequestPayload,
+                    'created_at' => now(),
                 ]);
 
-                if (!isset($event['type'])) {
+                // Per-iteration stream accumulators
+                $iterationResponseEvents = [];
+                $pendingToolCalls = [];
+                $currentToolBlockIndex = null;
+                $iterationStopReason = null;
+                $iterationInputTokens = null;
+                $iterationOutputTokens = null;
+
+                foreach ($client->stream($iterationMessages) as $event) {
+                    Log::debug('Chat bot API stream event', [
+                        'conversation_id' => $conversation->id,
+                        'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
+                        'ai_system_id' => $conversation->ai_system_id,
+                        'turn_number' => $turnNumber,
+                        'iteration' => $iteration,
+                        'event_type' => $event['type'] ?? null,
+                    ]);
+
+                    if (!isset($event['type'])) {
+                        continue;
+                    }
+
+                    $iterationResponseEvents[] = $event;
+
+                    switch ($event['type']) {
+                        case 'content_block_start':
+                            if (isset($event['block']['type']) && $event['block']['type'] === 'tool_use') {
+                                $currentToolBlockIndex = $event['index'] ?? count($pendingToolCalls);
+                                $pendingToolCalls[$currentToolBlockIndex] = [
+                                    'id' => $event['block']['id'] ?? Str::uuid()->toString(),
+                                    'name' => $event['block']['name'] ?? '',
+                                    'inputJson' => '',
+                                ];
+                            } else {
+                                yield 'data: ' . json_encode($event) . "\n\n";
+                            }
+                            break;
+
+                        case 'reasoning_block_delta':
+                            if (isset($event['delta']['reasoning'])) {
+                                $appendToBlocks('reasoning', $event['delta']['reasoning']);
+                            }
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'content_block_delta':
+                            if (isset($event['delta']['text'])) {
+                                $appendToBlocks('text', $event['delta']['text']);
+                            }
+
+                            if (isset($event['delta']['thinking']) || isset($event['delta']['signature'])) {
+                                $appendToBlocks('reasoning', $event['delta']['thinking'] ?? '');
+                            }
+
+                            if (
+                                isset($event['delta']['type'], $event['delta']['partial_json'])
+                                && $event['delta']['type'] === 'input_json_delta'
+                                && $currentToolBlockIndex !== null
+                                && isset($pendingToolCalls[$currentToolBlockIndex])
+                            ) {
+                                $pendingToolCalls[$currentToolBlockIndex]['inputJson'] .= $event['delta']['partial_json'];
+                            } else {
+                                yield 'data: ' . json_encode($event) . "\n\n";
+                            }
+                            break;
+
+                        case 'content_block_stop':
+                            if ($currentToolBlockIndex !== null && ($event['index'] ?? null) === $currentToolBlockIndex) {
+                                $currentToolBlockIndex = null;
+                            } else {
+                                yield 'data: ' . json_encode($event) . "\n\n";
+                            }
+                            break;
+
+                        case 'message_start':
+                            if (isset($event['message']['usage'])) {
+                                $iterationInputTokens = $event['message']['usage']['input_tokens'] ?? null;
+                            }
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'message_delta':
+                            if (isset($event['usage'])) {
+                                $iterationOutputTokens = $event['usage']['output_tokens'] ?? null;
+                            }
+                            $iterationStopReason = $event['stop_reason'] ?? null;
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'message_stop':
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'ping':
+                            Log::debug('Received ping event in stream');
+                            break;
+
+                        default:
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                    }
+                }
+
+                // Accumulate token counts across iterations
+                $totalInputTokens += (int) ($iterationInputTokens ?? 0);
+                $totalOutputTokens += (int) ($iterationOutputTokens ?? 0);
+                $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'response',
+                    'turn_number' => $iterationTurnNumber,
+                    'request_data' => $iterationRequestPayload,
+                    'response_data' => [
+                        'events' => $iterationResponseEvents,
+                        'stop_reason' => $iterationStopReason,
+                        'input_tokens' => $iterationInputTokens,
+                        'output_tokens' => $iterationOutputTokens,
+                        'model' => $resolvedModel,
+                        'tool_calls' => array_values(array_map(
+                            static fn (array $tc): array => ['id' => $tc['id'], 'name' => $tc['name']],
+                            $pendingToolCalls,
+                        )),
+                    ],
+                    'duration_ms' => $durationMs,
+                    'created_at' => now(),
+                ]);
+
+                // If the model requested tool calls, execute them and loop
+                if ($iterationStopReason === 'tool_use' && $toolRegistry !== null && $pendingToolCalls !== []) {
+                    $iterationText = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
+
+                    $formattedToolCalls = [];
+                    $toolResults = [];
+
+                    foreach ($pendingToolCalls as $tc) {
+                        $toolInput = json_decode($tc['inputJson'], true) ?? [];
+                        $formattedToolCalls[] = ['id' => $tc['id'], 'name' => $tc['name'], 'input' => $toolInput];
+                        $toolResults[] = ['tool_use_id' => $tc['id'], 'result' => $toolRegistry->dispatch($tc['name'], $toolInput)];
+                    }
+
+                    $assistantTurn = $client->formatAssistantToolCallTurn($iterationText, $formattedToolCalls);
+                    $resultTurns = $client->formatToolResultTurn($toolResults);
+
+                    $iterationMessages = array_merge($iterationMessages, [$assistantTurn], $resultTurns);
+
                     continue;
                 }
 
-                // Collect all response events for storage
-                $responseEvents[] = $event;
-
-                switch ($event['type']) {
-                    case 'content_block_start':
-                        // New content block starting (text, thinking, tool_use, etc.)
-                        yield 'data: ' . json_encode($event) . "\n\n";
-
-                        // Track if this is a thinking/reasoning or tool_use block
-                        if (isset($event['block']['type'])) {
-                            Log::debug('Content block started', [
-                                'type' => $event['block']['type'],
-                                'block_id' => $event['block']['id'] ?? null,
-                            ]);
-
-                            // Track tool use blocks for function calling
-                            if ($event['block']['type'] === 'tool_use') {
-                                Log::debug('Detected tool_use block', [
-                                    'name' => $event['block']['name'] ?? null,
-                                    'id' => $event['block']['id'] ?? null,
-                                ]);
-                            }
-                        }
-                        break;
-
-                    case 'reasoning_block_delta':
-                        // OpenAI-compatible reasoning models (e.g. DeepSeek R1 via LM Studio)
-                        if (isset($event['delta']['reasoning'])) {
-                            $appendToBlocks('reasoning', $event['delta']['reasoning']);
-                        }
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                        break;
-
-                    case 'content_block_delta':
-                        // Handle text deltas for normal response
-                        if (isset($event['delta']['text'])) {
-                            $appendToBlocks('text', $event['delta']['text']);
-                        }
-
-                        // Anthropic extended thinking format
-                        if (isset($event['delta']['thinking']) || isset($event['delta']['signature'])) {
-                            $appendToBlocks('reasoning', $event['delta']['thinking'] ?? '');
-                            Log::debug('Received thinking/reasoning delta', [
-                                'has_thinking' => isset($event['delta']['thinking']),
-                                'has_signature' => isset($event['delta']['signature']),
-                            ]);
-                        }
-
-                        // Track tool_use deltas (arguments being built)
-                        if (isset($event['delta']['input'])) {
-                            Log::debug('Received tool_use input delta', [
-                                'partial_input' => is_string($event['delta']['input']) ? substr($event['delta']['input'], 0, 100) : 'object',
-                            ]);
-                        }
-
-                        // Also include non-text deltas (tool_use, etc.) for complete storage
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                        break;
-
-                    case 'content_block_stop':
-                        // Content block has finished
-                        if (isset($event['block']['type'])) {
-                            Log::debug('Content block stopped', [
-                                'type' => $event['block']['type'],
-                                'id' => $event['block']['id'] ?? null,
-                            ]);
-
-                            // Track when tool_use blocks complete
-                            if ($event['block']['type'] === 'tool_use') {
-                                Log::debug('Tool_use block completed');
-                            }
-                        }
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                        break;
-
-                    case 'message_start':
-                        if (isset($event['message']['usage'])) {
-                            $inputTokens = $event['message']['usage']['input_tokens'] ?? null;
-                        }
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                        break;
-
-                    case 'message_delta':
-                        if (isset($event['usage'])) {
-                            $outputTokens = $event['usage']['output_tokens'] ?? null;
-                        }
-                        // Store stop_reason for debugging (e.g., "end_turn", "max_tokens", "stop_sequence")
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                        break;
-
-                    case 'message_stop':
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                        break;
-
-                    case 'ping':
-                        // Keep-alive ping from Anthropic
-                        Log::debug('Received ping event in stream');
-                        break;
-
-                    default:
-                        // Capture any other event types for completeness
-                        yield 'data: ' . json_encode($event) . "\n\n";
-                }
+                // Normal completion — exit the tool loop
+                break;
             }
 
             yield "data: [DONE]\n\n";
 
-            // Derive flat strings from blocks for backwards-compat columns and LLM context
+            // Derive flat strings from accumulated blocks
             $fullResponse = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
             $thinkingContent = collect($blocks)->where('type', 'reasoning')->pluck('content')->implode("\n\n");
-
-            // Store the complete response after streaming finishes
-            $durationMs = (int) ((microtime(true) - $startTime) * 1000);
-
-            // Build comprehensive response data with usage info and stop reason if available
-            $lastMessageDelta = collect($responseEvents)
-                ->where('type', 'message_delta')
-                ->last();
-
-            // Extract tool_use details for structured storage
-            $toolUseEvents = collect($responseEvents)
-                ->filter(fn($e) => isset($e['block']['type']) && $e['block']['type'] === 'tool_use')
-                ->map(function ($event) {
-                    return [
-                        'id' => $event['block']['id'] ?? null,
-                        'name' => $event['block']['name'] ?? null,
-                        'type' => 'tool_use',
-                    ];
-                })
-                ->values()
-                ->toArray();
-
-            // Extract content block types for overview
-            $contentBlockTypes = collect($responseEvents)
-                ->filter(fn($e) => isset($e['block']['type']))
-                ->pluck('block.type')
-                ->unique()
-                ->values()
-                ->toArray();
-
-            AiLlmMessage::create([
-                'ai_conversation_id' => $conversation->id,
-                'direction' => 'response',
-                'turn_number' => (string) $turnNumber,
-                'request_data' => $requestPayload, // Store request alongside response for context
-                'response_data' => [
-                    'events' => $responseEvents, // All SSE events captured during streaming
-                    'full_response' => $fullResponse, // Reconstructed complete text response (user-facing)
-                    'thinking_content' => $thinkingContent, // Reasoning/thinking content if model outputs it
-                    'tool_use_events' => $toolUseEvents, // Tool/function calls made by the model
-                    'content_block_types' => $contentBlockTypes, // Types of blocks returned (text, thinking, tool_use, etc.)
-                    'input_tokens' => $inputTokens,
-                    'output_tokens' => $outputTokens,
-                    'stop_reason' => $lastMessageDelta['stop_reason'] ?? null,
-                    'model' => $resolvedModel,
-                ],
-                'duration_ms' => $durationMs,
-                'created_at' => now(),
-            ]);
 
             $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
                 $conversation->aiSystem,
@@ -341,13 +348,12 @@ class AiChatBotConversationService
                     'reasoning_content' => $thinkingContent !== '' ? $thinkingContent : null,
                     'blocks' => $blocks !== [] ? $blocks : null,
                     'metadata' => [
-                        'input_tokens' => $inputTokens,
-                        'output_tokens' => $outputTokens,
+                        'input_tokens' => $totalInputTokens ?: null,
+                        'output_tokens' => $totalOutputTokens ?: null,
                         'model' => $conversation->aiSystem->model,
                     ],
                 ]);
 
-                // Dispatch memory processing with user identity for conversation-specific scoping
                 ProcessAiMemoryJob::dispatch(
                     $conversation->fresh(),
                     $conversation->user_id,
@@ -361,8 +367,8 @@ class AiChatBotConversationService
                 'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
                 'user_id' => $conversation->user_id,
                 'feature' => $conversation->feature,
-                'input_tokens' => $inputTokens,
-                'output_tokens' => $outputTokens,
+                'input_tokens' => $totalInputTokens ?: null,
+                'output_tokens' => $totalOutputTokens ?: null,
                 'model' => $resolvedModel,
                 'input_token_price_snapshot' => $pricingSnapshot['input_token_price_snapshot'],
                 'output_token_price_snapshot' => $pricingSnapshot['output_token_price_snapshot'],
