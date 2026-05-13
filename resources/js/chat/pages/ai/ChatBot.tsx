@@ -870,6 +870,7 @@ export default function ChatBot({
                                                     isUnavailable
                                                 }
                                                 label="Send Message"
+                                                onClick={handleSubmit}
                                             />
                                         </Box>
                                     </Stack>
