@@ -1,4 +1,10 @@
-import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
+import {
+    Head,
+    Link as InertiaLink,
+    router,
+    useForm,
+    usePage,
+} from "@inertiajs/react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
@@ -28,6 +34,7 @@ import type {
     Conversation,
     CoverLetter,
     Message,
+    SharedProps,
     TargetedResume,
 } from "@/types";
 import type { SyntheticEvent } from "react";
@@ -66,6 +73,9 @@ export default function Show({
     coverLetter,
     shouldAutoStart,
 }: ShowProps) {
+    const page = usePage<SharedProps>();
+    const authUser = page.props.auth.user;
+
     const [activeTab, setActiveTab] = useState(0);
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [userInput, setUserInput] = useState("");
@@ -705,6 +715,7 @@ export default function Show({
                                         content={msg.content}
                                         variant="chat"
                                         sentAt={msg.created_at ?? null}
+                                        isAuthenticated={!!authUser}
                                     />
                                 ))}
                                 {isStreaming && streamingContent && (
@@ -713,6 +724,7 @@ export default function Show({
                                         content={streamingContent}
                                         variant="chat"
                                         isStreaming
+                                        isAuthenticated={!!authUser}
                                     />
                                 )}
                                 {isStreaming && !streamingContent && (

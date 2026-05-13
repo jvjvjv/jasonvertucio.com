@@ -25,7 +25,7 @@ Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
 // Hash/UUID-based conversation links — a single static route replaces the old
 // per-bot dynamic routes registered in RouteServiceProvider.
 // The bot is resolved from the conversation; the slug is informational only.
-Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
     ->prefix('chat')
     ->group(function () {
         Route::get('/{slug}/{hash}', [ChatBotController::class, 'showByHash'])

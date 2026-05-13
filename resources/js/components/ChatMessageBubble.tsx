@@ -23,6 +23,8 @@ interface ChatMessageBubbleProps {
     variant?: "chat" | "history";
     sentAt?: string | null;
     isStreaming?: boolean;
+    /** Whether the current user is authenticated. If false, reasoning/thinking boxes are hidden. */
+    isAuthenticated?: boolean;
     /** Full interleaved block sequence. When present, renders instead of `content`. */
     blocks?: MessageBlock[] | null;
     /** Which block type is currently being streamed (only meaningful when isStreaming). */
@@ -83,6 +85,7 @@ export default function ChatMessageBubble({
     variant = "chat",
     sentAt = null,
     isStreaming = false,
+    isAuthenticated = false,
     blocks = null,
     activeBlockType = null,
     reasoningContent = null,
@@ -129,14 +132,16 @@ export default function ChatMessageBubble({
 
                     if (block.type === "reasoning") {
                         return (
-                            <ReasoningPanel
-                                key={i}
-                                content={block.content}
-                                isActive={
-                                    isActiveBlock &&
-                                    activeBlockType === "reasoning"
-                                }
-                            />
+                            isAuthenticated && (
+                                <ReasoningPanel
+                                    key={i}
+                                    content={block.content}
+                                    isActive={
+                                        isActiveBlock &&
+                                        activeBlockType === "reasoning"
+                                    }
+                                />
+                            )
                         );
                     }
 
@@ -194,7 +199,7 @@ export default function ChatMessageBubble({
     }
 
     // ── Legacy single-content rendering (no blocks) ────────────────────────
-    const hasLegacyReasoning = !isUser && !!reasoningContent;
+    const hasLegacyReasoning = !isUser && !!reasoningContent && isAuthenticated;
 
     return (
         <Box sx={{ ...baseBubbleSx, position: "relative" }}>

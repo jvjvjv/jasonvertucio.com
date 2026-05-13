@@ -161,6 +161,7 @@ export interface Conversation {
     visitor_email?: string | null;
     user_name?: string | null;
     user_email?: string | null;
+    chat_hash?: string | null;
     ai_chat_bot_name?: string | null;
     ai_chat_bot_slug?: string | null;
     context: { [key: string]: unknown } | null;

@@ -293,7 +293,7 @@ class ChatBotController extends Controller
      * Load a conversation by its hash or UUID (UUID is the fallback for direct linking).
      * This allows accessing a specific chat from any computer.
      */
-    public function showByHash(Request $request, string $hash): InertiaResponse
+    public function showByHash(Request $request, string $slug, string $hash): InertiaResponse
     {
         $conversation = AiConversation::findByChatHashOrUuid($hash);
 

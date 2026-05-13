@@ -78,6 +78,7 @@ class AiConversationController extends Controller
             'ai_system_name' => $conversation->aiSystem?->name,
             'ai_chat_bot_name' => $conversation->aiChatBot?->name,
             'ai_chat_bot_slug' => $conversation->aiChatBot?->slug,
+            'chat_hash' => $conversation->chat_hash,
             'usage' => [
                 'input_tokens' => $conversation->usage_input_tokens,
                 'output_tokens' => $conversation->usage_output_tokens,
@@ -116,6 +117,7 @@ class AiConversationController extends Controller
         return Inertia::render('ai/conversations/Show', [
             'conversation' => [
                 'id' => $conversation->id,
+                'chat_hash' => $conversation->chat_hash,
                 'title' => $conversation->title,
                 'feature' => $conversation->feature,
                 'status' => $conversation->status->value,

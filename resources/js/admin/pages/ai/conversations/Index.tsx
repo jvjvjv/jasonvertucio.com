@@ -297,10 +297,10 @@ export default function Index({
                                                     gap: 1,
                                                 }}
                                             >
-                                                {conversation.ai_chat_bot_slug && (
+                                                {conversation.chat_hash && (
                                                     <IconButton
                                                         component={InertiaLink}
-                                                        href={`/chat/${conversation.ai_chat_bot_slug}`}
+                                                        href={`/chat/${conversation.ai_chat_bot_slug}/${conversation.chat_hash}`}
                                                         size="small"
                                                         color="success"
                                                         title="Continue Chat"

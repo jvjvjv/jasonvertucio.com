@@ -1,4 +1,4 @@
-import { Head, router } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
@@ -23,6 +23,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { SharedProps } from "@/types";
 import type { KeyboardEvent } from "react";
 
 import ChatMessageBubble from "@/components/ChatMessageBubble";
@@ -117,6 +118,9 @@ export default function ChatBot({
         setMessages(initialMessages); // eslint-disable-line react-hooks/set-state-in-effect
         setShowIdentityForm(initialShowIdentityForm);
     }, [initialMessages, initialShowIdentityForm]);
+
+    const page = usePage<SharedProps>();
+    const authUser = page.props.auth.user;
 
     const formatCost = (value: number | null | undefined): string => {
         if (value == null) {
@@ -702,6 +706,7 @@ export default function ChatBot({
                                                     message.reasoning_content ??
                                                     null
                                                 }
+                                                isAuthenticated={!!authUser}
                                             />
                                         ))
                                     )}
@@ -734,6 +739,7 @@ export default function ChatBot({
                                                           ].type
                                                         : null
                                                 }
+                                                isAuthenticated={!!authUser}
                                             />
                                         </Box>
                                     </>
