@@ -1,15 +1,20 @@
-import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
-import CircularProgress from '@mui/material/CircularProgress';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import CircularProgress from "@mui/material/CircularProgress";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { useState } from "react";
 
 interface ModelOption {
     id: string;
     name: string;
+}
+
+interface FetchModelsResponse {
+    error?: string;
+    models?: ModelOption[];
 }
 
 interface FormData {
@@ -38,21 +43,28 @@ interface FormData {
 
 interface AiSystemFormProps {
     data: FormData;
-    setData: (key: keyof FormData, value: string | number | boolean | string[]) => void;
-    errors: Partial<Record<keyof FormData, string>>;
+    setData: (
+        _key: keyof FormData,
+        _value: string | number | boolean | string[],
+    ) => void;
+    errors: Partial<{ [key: string]: string }>;
     existingDefaults: string[];
     isEdit?: boolean;
 }
 
-const ALL_FEATURES = ['targeted-resume', 'cover-letter'];
+const ALL_FEATURES = ["targeted-resume", "cover-letter"];
 const PROVIDERS = [
     { value: "anthropic", label: "Anthropic" },
     { value: "openai", label: "OpenAI" },
     { value: "gemini", label: "Google Gemini" },
     { value: "grok", label: "xAI Grok" },
     {
+        value: "lm-studio",
+        label: "LM Studio (Native API)",
+    },
+    {
         value: "openai-compatible",
-        label: "OpenAI-Compatible (LM Studio, OpenRouter, Together, Groq)",
+        label: "OpenAI-Compatible (OpenRouter, Together, Groq, etc.)",
     },
 ];
 
@@ -67,9 +79,8 @@ const ENDPOINT_TYPES = ["managed", "openai-compatible", "local"];
 const STREAM_PROTOCOLS = ["sse", "chunked-json", "json-lines"];
 const SYSTEM_PROMPT_MODES = ["top-level", "messages"];
 
-const PROVIDER_DEFAULTS: Record<
-    string,
-    {
+const PROVIDER_DEFAULTS: {
+    [key: string]: {
         model: string;
         baseUrl: string;
         apiVersion: string;
@@ -78,8 +89,8 @@ const PROVIDER_DEFAULTS: Record<
         streamProtocol: string;
         systemPromptMode: string;
         isLocalEndpoint: boolean;
-    }
-> = {
+    };
+} = {
     anthropic: {
         model: "claude-sonnet-4-6",
         baseUrl: "https://api.anthropic.com/v1",
@@ -122,7 +133,7 @@ const PROVIDER_DEFAULTS: Record<
     },
     "openai-compatible": {
         model: "",
-        baseUrl: "http://127.0.0.1:1234/v1",
+        baseUrl: "http://10.10.0.2:1234/v1",
         apiVersion: "",
         authType: "none",
         endpointType: "openai-compatible",
@@ -130,12 +141,28 @@ const PROVIDER_DEFAULTS: Record<
         systemPromptMode: "messages",
         isLocalEndpoint: true,
     },
+    "lm-studio": {
+        model: "",
+        baseUrl: "http://10.10.0.2:1234",
+        apiVersion: "",
+        authType: "none",
+        endpointType: "local",
+        streamProtocol: "chunked-json",
+        systemPromptMode: "messages",
+        isLocalEndpoint: true,
+    },
 };
 
-export default function AiSystemForm({ data, setData, errors, existingDefaults, isEdit = false }: AiSystemFormProps) {
+export default function AiSystemForm({
+    data,
+    setData,
+    errors,
+    existingDefaults,
+    isEdit = false,
+}: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [fetchingModels, setFetchingModels] = useState(false);
-    const [fetchError, setFetchError] = useState('');
+    const [fetchError, setFetchError] = useState("");
 
     const fetchModels = async () => {
         if (!data.provider) return;
@@ -145,7 +172,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
         }
 
         setFetchingModels(true);
-        setFetchError('');
+        setFetchError("");
 
         try {
             const response = await fetch("/admin/ai/systems/fetch-models", {
@@ -164,7 +191,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 }),
             });
 
-            const result = await response.json();
+            const result = (await response.json()) as FetchModelsResponse;
 
             if (result.error) {
                 setFetchError(result.error);
@@ -173,7 +200,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 setAvailableModels(result.models ?? []);
             }
         } catch {
-            setFetchError('Failed to fetch models. Check your API key.');
+            setFetchError("Failed to fetch models. Check your API key.");
             setAvailableModels([]);
         } finally {
             setFetchingModels(false);
@@ -183,25 +210,29 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
     const handleProviderChange = (value: string) => {
         const defaults = PROVIDER_DEFAULTS[value];
 
-        setData('provider', value);
+        setData("provider", value);
         setData("model", "");
         setAvailableModels([]);
-        setFetchError('');
+        setFetchError("");
 
-        if (defaults !== undefined) {
-            setData("base_url", defaults.baseUrl);
-            setData("api_version", defaults.apiVersion);
-            setData("auth_type", defaults.authType);
-            setData("endpoint_type", defaults.endpointType);
-            setData("stream_protocol", defaults.streamProtocol);
-            setData("system_prompt_mode", defaults.systemPromptMode);
-            setData("is_local_endpoint", defaults.isLocalEndpoint);
+        setData("base_url", defaults.baseUrl);
+        setData("api_version", defaults.apiVersion);
+        setData("auth_type", defaults.authType);
+        setData("endpoint_type", defaults.endpointType);
+        setData("stream_protocol", defaults.streamProtocol);
+        setData("system_prompt_mode", defaults.systemPromptMode);
+        setData("is_local_endpoint", defaults.isLocalEndpoint);
+    };
+
+    const fetchModelOnFieldChange = () => {
+        if (data.provider && data.api_key) {
+            void fetchModels();
         }
     };
 
     const apiKeyHelperText = PROVIDERS_REQUIRING_API_KEY.has(data.provider)
-        ? errors.api_key || "Models will be fetched when you leave this field"
-        : errors.api_key || "Optional for local/self-hosted endpoints";
+        ? (errors.api_key ?? "Models will be fetched when you leave this field")
+        : (errors.api_key ?? "Optional for local/self-hosted endpoints");
 
     const providerDefaults =
         PROVIDER_DEFAULTS[data.provider] ?? PROVIDER_DEFAULTS.anthropic;
@@ -213,9 +244,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
         if (current.includes(feature)) {
-            setData('feature_defaults', current.filter((f) => f !== feature));
+            setData(
+                "feature_defaults",
+                current.filter((f) => f !== feature),
+            );
         } else {
-            setData('feature_defaults', [...current, feature]);
+            setData("feature_defaults", [...current, feature]);
         }
     };
 
@@ -234,7 +268,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     required
                     size="small"
                     value={data.name}
-                    onChange={(e) => setData("name", e.target.value)}
+                    onChange={(e) => {
+                        setData("name", e.target.value);
+                    }}
                     error={!!errors.name}
                     helperText={errors.name}
                     placeholder="My Claude System"
@@ -245,11 +281,13 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     required
                     size="small"
                     value={data.provider}
-                    onChange={(e) => handleProviderChange(e.target.value)}
+                    onChange={(e) => {
+                        handleProviderChange(e.target.value);
+                    }}
                     disabled={isEdit}
                     error={!!errors.provider}
                     helperText={
-                        errors.provider ||
+                        errors.provider ??
                         (isEdit
                             ? "Provider cannot be changed after creation."
                             : undefined)
@@ -277,7 +315,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     required={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
                     size="small"
                     value={data.api_key}
-                    onChange={(e) => setData("api_key", e.target.value)}
+                    onChange={(e) => {
+                        setData("api_key", e.target.value);
+                    }}
                     disabled={isEdit}
                     onBlur={fetchModels}
                     error={!!errors.api_key}
@@ -287,6 +327,7 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                             : apiKeyHelperText
                     }
                 />
+
                 <Box>
                     <TextField
                         label="Model"
@@ -295,13 +336,14 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                         size="small"
                         fullWidth
                         value={data.model}
-                        onChange={(e) => setData("model", e.target.value)}
+                        onChange={(e) => {
+                            setData("model", e.target.value);
+                        }}
                         disabled={isEdit}
                         error={!!errors.model}
                         placeholder={modelPlaceholder}
                         helperText={
-                            errors.model ||
-                            fetchError ||
+                            (errors.model ?? fetchError) ||
                             (isEdit
                                 ? "Model cannot be changed after creation."
                                 : undefined)
@@ -323,6 +365,10 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 </Box>
             </Box>
 
+            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                Provider Settings
+            </Typography>
+
             <Box
                 sx={{
                     display: "grid",
@@ -335,16 +381,23 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     label="Base URL"
                     size="small"
                     value={data.base_url}
-                    onChange={(e) => setData("base_url", e.target.value)}
+                    onChange={(e) => {
+                        setData("base_url", e.target.value);
+                        fetchModelOnFieldChange();
+                    }}
                     error={!!errors.base_url}
                     helperText={errors.base_url}
                     placeholder={baseUrlPlaceholder}
                 />
+
                 <TextField
                     label="API Version"
                     size="small"
                     value={data.api_version}
-                    onChange={(e) => setData("api_version", e.target.value)}
+                    onChange={(e) => {
+                        setData("api_version", e.target.value);
+                        fetchModelOnFieldChange();
+                    }}
                     error={!!errors.api_version}
                     helperText={errors.api_version}
                     placeholder={apiVersionPlaceholder}
@@ -365,9 +418,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     required
                     size="small"
                     value={data.max_tokens}
-                    onChange={(e) =>
-                        setData("max_tokens", parseInt(e.target.value) || 0)
-                    }
+                    onChange={(e) => {
+                        setData("max_tokens", parseInt(e.target.value) || 0);
+                    }}
                     error={!!errors.max_tokens}
                     helperText={errors.max_tokens}
                     slotProps={{ htmlInput: { min: 1, max: 200000 } }}
@@ -377,7 +430,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     type="number"
                     size="small"
                     value={data.temperature}
-                    onChange={(e) => setData("temperature", e.target.value)}
+                    onChange={(e) => {
+                        setData("temperature", e.target.value);
+                    }}
                     error={!!errors.temperature}
                     helperText={errors.temperature}
                     slotProps={{ htmlInput: { min: 0, max: 1, step: 0.01 } }}
@@ -391,10 +446,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 multiline
                 rows={4}
                 value={data.system_prompt}
-                onChange={(e) => setData("system_prompt", e.target.value)}
+                onChange={(e) => {
+                    setData("system_prompt", e.target.value);
+                }}
                 error={!!errors.system_prompt}
                 helperText={
-                    errors.system_prompt ||
+                    errors.system_prompt ??
                     "Optional default system prompt for this AI system"
                 }
                 sx={{ mb: 2 }}
@@ -407,9 +464,11 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 multiline
                 rows={4}
                 value={data.config}
-                onChange={(e) => setData("config", e.target.value)}
+                onChange={(e) => {
+                    setData("config", e.target.value);
+                }}
                 error={!!errors.config}
-                helperText={errors.config || "Optional JSON configuration"}
+                helperText={errors.config ?? "Optional JSON configuration"}
                 slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
                 sx={{ mb: 2 }}
             />
@@ -427,10 +486,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     select
                     size="small"
                     value={data.auth_type}
-                    onChange={(e) => setData("auth_type", e.target.value)}
+                    onChange={(e) => {
+                        setData("auth_type", e.target.value);
+                    }}
                     error={!!errors.auth_type}
                     helperText={
-                        errors.auth_type || "Optional provider auth mode"
+                        errors.auth_type ?? "Optional provider auth mode"
                     }
                 >
                     <MenuItem value="">Default</MenuItem>
@@ -446,10 +507,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     select
                     size="small"
                     value={data.endpoint_type}
-                    onChange={(e) => setData("endpoint_type", e.target.value)}
+                    onChange={(e) => {
+                        setData("endpoint_type", e.target.value);
+                    }}
                     error={!!errors.endpoint_type}
                     helperText={
-                        errors.endpoint_type ||
+                        errors.endpoint_type ??
                         "Optional endpoint classification"
                     }
                 >
@@ -475,10 +538,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     select
                     size="small"
                     value={data.stream_protocol}
-                    onChange={(e) => setData("stream_protocol", e.target.value)}
+                    onChange={(e) => {
+                        setData("stream_protocol", e.target.value);
+                    }}
                     error={!!errors.stream_protocol}
                     helperText={
-                        errors.stream_protocol || "Optional stream parser hint"
+                        errors.stream_protocol ?? "Optional stream parser hint"
                     }
                 >
                     <MenuItem value="">Default</MenuItem>
@@ -494,12 +559,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     select
                     size="small"
                     value={data.system_prompt_mode}
-                    onChange={(e) =>
-                        setData("system_prompt_mode", e.target.value)
-                    }
+                    onChange={(e) => {
+                        setData("system_prompt_mode", e.target.value);
+                    }}
                     error={!!errors.system_prompt_mode}
                     helperText={
-                        errors.system_prompt_mode ||
+                        errors.system_prompt_mode ??
                         "How provider expects system prompts"
                     }
                 >
@@ -519,10 +584,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 multiline
                 rows={4}
                 value={data.credentials}
-                onChange={(e) => setData("credentials", e.target.value)}
+                onChange={(e) => {
+                    setData("credentials", e.target.value);
+                }}
                 error={!!errors.credentials}
                 helperText={
-                    errors.credentials ||
+                    errors.credentials ??
                     "Optional encrypted credential payload for provider-specific keys"
                 }
                 slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
@@ -536,10 +603,12 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 multiline
                 rows={4}
                 value={data.pricing_profile}
-                onChange={(e) => setData("pricing_profile", e.target.value)}
+                onChange={(e) => {
+                    setData("pricing_profile", e.target.value);
+                }}
                 error={!!errors.pricing_profile}
                 helperText={
-                    errors.pricing_profile ||
+                    errors.pricing_profile ??
                     "Optional per-system pricing override"
                 }
                 slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
@@ -558,9 +627,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     control={
                         <Checkbox
                             checked={data.supports_tools}
-                            onChange={(e) =>
-                                setData("supports_tools", e.target.checked)
-                            }
+                            onChange={(e) => {
+                                setData("supports_tools", e.target.checked);
+                            }}
                         />
                     }
                     label="Supports Tools"
@@ -570,9 +639,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     control={
                         <Checkbox
                             checked={data.supports_json_mode}
-                            onChange={(e) =>
-                                setData("supports_json_mode", e.target.checked)
-                            }
+                            onChange={(e) => {
+                                setData("supports_json_mode", e.target.checked);
+                            }}
                         />
                     }
                     label="Supports JSON Mode"
@@ -582,9 +651,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                     control={
                         <Checkbox
                             checked={data.is_local_endpoint}
-                            onChange={(e) =>
-                                setData("is_local_endpoint", e.target.checked)
-                            }
+                            onChange={(e) => {
+                                setData("is_local_endpoint", e.target.checked);
+                            }}
                         />
                     }
                     label="Local Endpoint"
@@ -595,7 +664,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                 control={
                     <Checkbox
                         checked={data.is_active}
-                        onChange={(e) => setData("is_active", e.target.checked)}
+                        onChange={(e) => {
+                            setData("is_active", e.target.checked);
+                        }}
                     />
                 }
                 label="Active"
@@ -625,9 +696,9 @@ export default function AiSystemForm({ data, setData, errors, existingDefaults, 
                                     checked={data.feature_defaults.includes(
                                         feature,
                                     )}
-                                    onChange={() =>
-                                        handleFeatureToggle(feature)
-                                    }
+                                    onChange={() => {
+                                        handleFeatureToggle(feature);
+                                    }}
                                     disabled={takenByOther}
                                 />
                             }

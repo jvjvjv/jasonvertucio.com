@@ -82,6 +82,7 @@ class GeminiService implements AiClientContract
 
         $data = $response->json();
         $candidate = $data['candidates'][0] ?? [];
+        $reasoning = $this->candidateThoughtText($candidate);
 
         return [
             'id' => (string) ($data['responseId'] ?? ''),
@@ -90,9 +91,10 @@ class GeminiService implements AiClientContract
             'content' => [
                 [
                     'type' => 'text',
-                    'text' => $this->candidateText($candidate),
+                    'text' => $this->candidateResponseText($candidate),
                 ],
             ],
+            'reasoning_content' => $reasoning !== '' ? $reasoning : null,
             'model' => $this->activeModel(),
             'stop_reason' => (string) ($candidate['finishReason'] ?? 'stop'),
             'usage' => [
@@ -150,7 +152,17 @@ class GeminiService implements AiClientContract
                 }
 
                 $candidate = $chunk['candidates'][0] ?? [];
-                $text = $this->candidateText($candidate);
+                $reasoning = $this->candidateThoughtText($candidate);
+                $text = $this->candidateResponseText($candidate);
+
+                if ($reasoning !== '') {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => [
+                            'reasoning' => $reasoning,
+                        ],
+                    ];
+                }
 
                 if ($text !== '') {
                     yield [
@@ -233,6 +245,46 @@ class GeminiService implements AiClientContract
     }
 
     /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, parts: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $parts = [];
+
+        if ($textContent !== '') {
+            $parts[] = ['text' => $textContent];
+        }
+
+        foreach ($toolCalls as $toolCall) {
+            $parts[] = [
+                'functionCall' => [
+                    'name' => $toolCall['name'],
+                    'args' => $toolCall['input'],
+                ],
+            ];
+        }
+
+        return ['role' => 'model', 'parts' => $parts];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, parts: array<int, mixed>}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        $parts = array_map(static fn (array $result): array => [
+            'functionResponse' => [
+                'name' => $result['name'] ?? $result['id'],
+                'response' => $result['result'],
+            ],
+        ], $toolResults);
+
+        return [['role' => 'user', 'parts' => $parts]];
+    }
+
+    /**
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
      * @return array<string, mixed>
      */
@@ -270,7 +322,7 @@ class GeminiService implements AiClientContract
             ->map(function (array $message): array {
                 $role = $message['role'] === 'assistant' ? 'model' : 'user';
                 $content = $message['content'];
-                $text = is_string($content) ? $content : json_encode($content, JSON_UNESCAPED_SLASHES) ?: '';
+                $text = is_string($content) ? $content : (json_encode($content, JSON_UNESCAPED_SLASHES) ?: '');
 
                 return [
                     'role' => $role,
@@ -286,7 +338,7 @@ class GeminiService implements AiClientContract
     /**
      * @param array<string, mixed> $candidate
      */
-    private function candidateText(array $candidate): string
+    private function candidateResponseText(array $candidate): string
     {
         $parts = $candidate['content']['parts'] ?? [];
 
@@ -295,6 +347,24 @@ class GeminiService implements AiClientContract
         }
 
         return collect($parts)
+            ->filter(static fn (mixed $part): bool => is_array($part) && empty($part['thought']))
+            ->map(static fn (mixed $part): string => is_array($part) ? (string) ($part['text'] ?? '') : '')
+            ->implode('');
+    }
+
+    /**
+     * @param array<string, mixed> $candidate
+     */
+    private function candidateThoughtText(array $candidate): string
+    {
+        $parts = $candidate['content']['parts'] ?? [];
+
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        return collect($parts)
+            ->filter(static fn (mixed $part): bool => is_array($part) && !empty($part['thought']))
             ->map(static fn (mixed $part): string => is_array($part) ? (string) ($part['text'] ?? '') : '')
             ->implode('');
     }

@@ -1,8 +1,12 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import AddCommentIcon from "@mui/icons-material/AddComment";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,20 +14,25 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import PageHeader from "../../../components/PageHeader";
-import UsageChip from "../../../components/UsageChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiChatBot } from "../../../types";
+import Typography from "@mui/material/Typography";
+
+import type { AiChatBot } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import UsageChip from "@/admin/components/UsageChip";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface IndexProps {
     bots: AiChatBot[];
+    filters?: { ai_system_id?: string | null };
 }
 
-export default function Index({ bots }: IndexProps) {
+export default function Index({ bots, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
+    const aiSystemId = filters?.ai_system_id;
 
     const handleDelete = (bot: AiChatBot) => {
         confirm(`Delete AI chat bot "${bot.name}"?`, () => {
@@ -40,7 +49,30 @@ export default function Index({ bots }: IndexProps) {
                 backLabel="Back to AI Tools"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                }}
+            >
+                <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/conversations"
+                        variant="outlined"
+                    >
+                        AI Conversations
+                    </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/memories"
+                        variant="outlined"
+                    >
+                        AI Memories
+                    </Button>
+                </Box>
                 <Button
                     component={InertiaLink}
                     href="/admin/ai/chat-bots/new"
@@ -49,6 +81,30 @@ export default function Index({ bots }: IndexProps) {
                     Add Bot
                 </Button>
             </Box>
+
+            {aiSystemId ? (
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 2,
+                    }}
+                >
+                    <Typography variant="body2" color="text.secondary">
+                        Filtered by AI System
+                    </Typography>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/chat-bots"
+                        size="small"
+                        variant="outlined"
+                        color="inherit"
+                    >
+                        Clear filter
+                    </Button>
+                </Box>
+            ) : null}
 
             <Card>
                 <TableContainer>
@@ -144,7 +200,8 @@ export default function Index({ bots }: IndexProps) {
                                             </Box>
                                         </TableCell>
                                         <TableCell>
-                                            {(bot.conversations_count ?? 0) > 0 ? (
+                                            {(bot.conversations_count ?? 0) >
+                                            0 ? (
                                                 <Link
                                                     component={InertiaLink}
                                                     href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
@@ -167,37 +224,43 @@ export default function Index({ bots }: IndexProps) {
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={
-                                                        bot.public_url ??
-                                                        (bot.access_path ===
+                                                        bot.access_path ===
                                                         "root"
-                                                            ? `/${bot.slug}`
-                                                            : `/chat/${bot.slug}`)
+                                                            ? `/${bot.slug}/new`
+                                                            : `/chat/${bot.slug}/new`
                                                     }
                                                     size="small"
+                                                    color="primary"
+                                                    title="Start New Chat"
+                                                    aria-label="Start New Chat"
                                                     target="_blank"
                                                 >
-                                                    Open
-                                                </Button>
-                                                <Button
+                                                    <AddCommentIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/chat-bots/${bot.slug}`}
-                                                    target="_blank"
                                                     size="small"
+                                                    color="primary"
+                                                    title="Edit"
+                                                    aria-label="Edit"
                                                 >
-                                                    Edit
-                                                </Button>
-                                                <Button
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(bot)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(bot);
+                                                    }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>

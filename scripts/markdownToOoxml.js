@@ -20,7 +20,7 @@
  * Inject into a docx template using {@fieldName} in the template.
  */
 
-import { Lexer, marked } from 'marked';
+import { Lexer } from 'marked';
 
 // ─── XML helpers ────────────────────────────────────────────────────────────
 
@@ -140,7 +140,6 @@ function inlineTokensToOoxml(tokens, opts = {}) {
 function listItemToOoxml(item, numId, ilvl) {
     let xml = '';
     let inlineXml = '';
-    let hasBlock = false;
 
     for (const token of item.tokens) {
         if (token.type === 'text') {
@@ -156,7 +155,6 @@ function listItemToOoxml(item, numId, ilvl) {
             // Recurse for nested list items, bumping the numId by 10 for ordered vs unordered
             const nestedNumId = token.ordered ? numId + 10 : numId + 1;
             xml += blockTokensToOoxml(token.items.map(i => ({ ...i, _numId: nestedNumId, _ilvl: ilvl + 1 })), { nestedList: true, numId: nestedNumId, ilvl: ilvl + 1 });
-            hasBlock = true;
         } else if (token.type === 'paragraph') {
             if (inlineXml) {
                 xml += wParagraph(inlineXml, wListPPr(numId, ilvl));
@@ -164,7 +162,6 @@ function listItemToOoxml(item, numId, ilvl) {
             }
             const runs = inlineTokensToOoxml(token.tokens ?? []);
             xml += wParagraph(runs, wListPPr(numId, ilvl));
-            hasBlock = true;
         }
     }
 

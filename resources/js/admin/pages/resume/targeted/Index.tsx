@@ -1,13 +1,15 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import AddIcon from "@mui/icons-material/Add";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import Chip from "@mui/material/Chip";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
 import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Table from "@mui/material/Table";
@@ -18,19 +20,17 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import StatusChip from "../../../components/StatusChip";
-import UsageChip from "../../../components/UsageChip";
-import type { Conversation } from "../../../types";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import { Tooltip } from "@mui/material";
-import React from "react";
+
+import type { Conversation } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ResponsiveButton from "@/components/ResponsiveButton";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface StatusOption {
     value: string;
@@ -110,7 +110,9 @@ export default function Index({
                     label="Search"
                     size="small"
                     value={filters.search}
-                    onChange={(e) => handleSearch(e.target.value)}
+                    onChange={(e) => {
+                        handleSearch(e.target.value);
+                    }}
                     placeholder="Company, job title, or message..."
                     sx={{ minWidth: 250 }}
                 />
@@ -121,7 +123,7 @@ export default function Index({
                     <Select
                         labelId="targeted-statuses-label"
                         multiple
-                        value={filters.statuses ?? []}
+                        value={filters.statuses}
                         onChange={handleStatusChange}
                         input={<OutlinedInput label="Statuses" />}
                         renderValue={(selected) => {
@@ -145,13 +147,13 @@ export default function Index({
                     </Select>
                 </FormControl>
                 <Box sx={{ flexGrow: 1 }} />
-                <Button
-                    component={InertiaLink}
+                <ResponsiveButton
+                    icon={<AddIcon />}
+                    color="primary"
+                    label="New Session"
                     href="/admin/resume/targeted-builder/new"
                     variant="contained"
-                >
-                    New Session
-                </Button>
+                />
             </Box>
 
             <Card>
@@ -180,12 +182,16 @@ export default function Index({
                                 conversations.map((conv) => {
                                     const resume = conv.targeted_resume;
                                     const companyName =
-                                        resume?.company_name ||
-                                        conv.context?.company_name ||
+                                        resume?.company_name ??
+                                        (conv.context?.company_name as
+                                            | string
+                                            | undefined) ??
                                         "—";
                                     const position =
-                                        resume?.position ||
-                                        conv.context?.job_title ||
+                                        resume?.position ??
+                                        (conv.context?.job_title as
+                                            | string
+                                            | undefined) ??
                                         "";
                                     const displayStatus =
                                         resume?.status === "finalized" ||
@@ -206,8 +212,7 @@ export default function Index({
                                                         variant="body2"
                                                         fontWeight={600}
                                                     >
-                                                        {(companyName as string) ??
-                                                            "—"}
+                                                        {companyName}
                                                     </Typography>
                                                 </Link>
                                                 {position && (
@@ -215,8 +220,7 @@ export default function Index({
                                                         variant="caption"
                                                         color="text.secondary"
                                                     >
-                                                        {(position as string) ??
-                                                            "—"}
+                                                        {position}
                                                     </Typography>
                                                 )}
                                             </TableCell>
@@ -281,11 +285,11 @@ export default function Index({
                                                             color="warning"
                                                             title="Pass"
                                                             aria-label="Pass"
-                                                            onClick={() =>
+                                                            onClick={() => {
                                                                 handlePass(
                                                                     conv.id,
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         >
                                                             <BackHandOutlinedIcon fontSize="small" />
                                                         </IconButton>
@@ -293,14 +297,13 @@ export default function Index({
                                                     <IconButton
                                                         size="small"
                                                         color="error"
-                                                        variant="outlined"
                                                         title="Delete"
                                                         aria-label="Delete"
-                                                        onClick={() =>
+                                                        onClick={() => {
                                                             handleDelete(
                                                                 conv.id,
-                                                            )
-                                                        }
+                                                            );
+                                                        }}
                                                     >
                                                         <DeleteOutlineIcon fontSize="small" />
                                                     </IconButton>

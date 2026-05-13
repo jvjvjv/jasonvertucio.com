@@ -25,6 +25,8 @@ class AiConversationMessage extends Model
         'ai_conversation_id',
         'role',
         'content',
+        'reasoning_content',
+        'blocks',
         'metadata',
         'created_at',
     ];
@@ -35,6 +37,7 @@ class AiConversationMessage extends Model
     protected function casts(): array
     {
         return [
+            'blocks' => 'array',
             'metadata' => 'array',
             'created_at' => 'datetime',
         ];

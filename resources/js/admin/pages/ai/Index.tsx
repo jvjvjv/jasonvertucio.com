@@ -1,11 +1,9 @@
-import { Head } from '@inertiajs/react';
-import MemoryIcon from '@mui/icons-material/Memory';
-import PsychologyIcon from '@mui/icons-material/Psychology';
-import RuleIcon from "@mui/icons-material/Rule";
-import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import AdminLayout from '../../layouts/AdminLayout';
-import PageHeader from '../../components/PageHeader';
-import NavGrid, { type NavBlock } from '../../components/NavGrid';
+import { Head } from "@inertiajs/react";
+
+import NavGrid, { type NavBlock } from "../../components/NavGrid";
+import PageHeader from "../../components/PageHeader";
+import AdminLayout from "../../layouts/AdminLayout";
+import { getIcon } from "../../utils/iconRegistry";
 
 interface ServerNavBlock {
     href: string;
@@ -18,25 +16,20 @@ interface AiIndexProps {
     navBlocks: ServerNavBlock[];
 }
 
-const iconMap: Record<string, React.ReactNode> = {
-    Memory: <MemoryIcon fontSize="large" />,
-    Psychology: <PsychologyIcon fontSize="large" />,
-    Rule: <RuleIcon fontSize="large" />,
-    TrackChanges: <TrackChangesIcon fontSize="large" />,
-};
-
 export default function AiIndex({ navBlocks }: AiIndexProps) {
     const blocks: NavBlock[] = navBlocks.map((b) => ({
-        href: b.href,
-        icon: iconMap[b.icon] ?? <MemoryIcon fontSize="large" />,
-        label: b.label,
-        description: b.description,
+        ...b,
+        icon: getIcon(b.icon),
     }));
 
     return (
         <AdminLayout>
             <Head title="AI Tools" />
-            <PageHeader title="AI Tools" backHref="/admin" backLabel="Back to Admin" />
+            <PageHeader
+                title="AI Tools"
+                backHref="/admin"
+                backLabel="Back to Admin"
+            />
             <NavGrid blocks={blocks} />
         </AdminLayout>
     );

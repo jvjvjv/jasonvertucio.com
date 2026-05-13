@@ -1,33 +1,41 @@
-import { useState, useCallback } from 'react';
-import { Head, router } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Checkbox from '@mui/material/Checkbox';
+import { Head, router } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Checkbox from "@mui/material/Checkbox";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Fab from '@mui/material/Fab';
-import FormControlLabel from '@mui/material/FormControlLabel';
+import Fab from "@mui/material/Fab";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import Typography from '@mui/material/Typography';
-import AdminLayout from '../../layouts/AdminLayout';
-import PageHeader from '../../components/PageHeader';
-import type { ResumeData, Personal, EditorProps } from './types';
-import VersionTab from './tabs/VersionTab';
-import PersonalTab from './tabs/PersonalTab';
-import SkillsTab from './tabs/SkillsTab';
-import ExperienceTab from './tabs/ExperienceTab';
-import ProjectsTab from './tabs/ProjectsTab';
-import EducationTab from './tabs/EducationTab';
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+import { useCallback, useState } from "react";
+
+import PageHeader from "../../components/PageHeader";
+import AdminLayout from "../../layouts/AdminLayout";
+
+import EducationTab from "./tabs/EducationTab";
+import ExperienceTab from "./tabs/ExperienceTab";
+import PersonalTab from "./tabs/PersonalTab";
+import ProjectsTab from "./tabs/ProjectsTab";
+import SkillsTab from "./tabs/SkillsTab";
+import VersionTab from "./tabs/VersionTab";
+
+import type { EditorProps, Personal, ResumeData } from "./types";
+
+interface SaveErrorResponse {
+    errors?: { [key: string]: string[] };
+    message?: string;
+}
 
 export default function Editor({
     data: initialData,
@@ -39,39 +47,13 @@ export default function Editor({
 }: EditorProps) {
     const [activeTab, setActiveTab] = useState(0);
     const [version, setVersion] = useState(initialVersion);
-    const [data, setData] = useState<ResumeData>(() => {
-        const d = { ...initialData };
-        if (!d.skills || typeof d.skills !== 'object') {
-            d.skills = { top: [], other: [] };
-        } else {
-            if (!Array.isArray(d.skills.top)) d.skills.top = [];
-            if (!Array.isArray(d.skills.other)) d.skills.other = [];
-        }
-        if (!Array.isArray(d.experience)) d.experience = [];
-        if (!Array.isArray(d.education)) d.education = [];
-        if (!Array.isArray(d.projects)) d.projects = [];
-        d.experience = d.experience.map((job) => ({
-            ...job,
-            dates: job.dates || ['', ''],
-            bullets: job.bullets || [],
-            salaryStart: job.salaryStart || { amount: null, period: '' },
-            salaryEnd: job.salaryEnd || { amount: null, period: '' },
-            isFreelance: job.isFreelance ?? false,
-        }));
-        d.education = d.education.map((edu) => ({
-            ...edu,
-            dates: edu.dates || ['', ''],
-        }));
-        d.projects = d.projects.map((proj) => ({
-            ...proj,
-            bullets: proj.bullets || [],
-        }));
-        return d as ResumeData;
-    });
+    const [data, setData] = useState<ResumeData>({ ...initialData });
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [notifyRecipients, setNotifyRecipients] = useState(false);
-    const [optionsAnchor, setOptionsAnchor] = useState<null | HTMLElement>(null);
+    const [optionsAnchor, setOptionsAnchor] = useState<null | HTMLElement>(
+        null,
+    );
     const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
     const [changedContent, setChangedContent] = useState<string[]>([]);
 
@@ -85,7 +67,7 @@ export default function Editor({
     }, []);
 
     const updateSkillCategories = useCallback(
-        (type: 'top' | 'other', categories: typeof data.skills.top) => {
+        (type: "top" | "other", categories: ResumeData["skills"]["top"]) => {
             setData((prev) => ({
                 ...prev,
                 skills: { ...prev.skills, [type]: categories },
@@ -94,15 +76,21 @@ export default function Editor({
         [],
     );
 
-    const updateExperience = useCallback((experience: ResumeData['experience']) => {
-        setData((prev) => ({ ...prev, experience }));
-    }, []);
+    const updateExperience = useCallback(
+        (experience: ResumeData["experience"]) => {
+            setData((prev) => ({ ...prev, experience }));
+        },
+        [],
+    );
 
-    const updateEducation = useCallback((education: ResumeData['education']) => {
-        setData((prev) => ({ ...prev, education }));
-    }, []);
+    const updateEducation = useCallback(
+        (education: ResumeData["education"]) => {
+            setData((prev) => ({ ...prev, education }));
+        },
+        [],
+    );
 
-    const updateProjects = useCallback((projects: ResumeData['projects']) => {
+    const updateProjects = useCallback((projects: ResumeData["projects"]) => {
         setData((prev) => ({ ...prev, projects }));
     }, []);
 
@@ -146,7 +134,7 @@ export default function Editor({
         }
 
         return changes;
-    }, [data, initialData, initialVersion, version]);
+    }, [data, initialData]);
 
     const submitSave = async () => {
         setSaving(true);
@@ -170,13 +158,13 @@ export default function Editor({
                 }),
             });
 
-            const result = await response.json();
+            const result = (await response.json()) as SaveErrorResponse;
 
             if (!response.ok) {
                 if (result.errors) {
-                    setErrors(Object.values(result.errors).flat() as string[]);
+                    setErrors(Object.values(result.errors).flat());
                 } else {
-                    setErrors([result.message || "Failed to save"]);
+                    setErrors([result.message ?? "Failed to save"]);
                 }
                 return;
             }
@@ -206,7 +194,14 @@ export default function Editor({
         void submitSave();
     };
 
-    const tabLabels = ['Version', 'Personal', 'Skills', 'Experience', 'Projects', 'Education'];
+    const tabLabels = [
+        "Version",
+        "Personal",
+        "Skills",
+        "Experience",
+        "Projects",
+        "Education",
+    ];
 
     return (
         <AdminLayout>
@@ -237,7 +232,9 @@ export default function Editor({
 
             <Tabs
                 value={activeTab}
-                onChange={(_, v) => setActiveTab(v)}
+                onChange={(_, v: number) => {
+                    setActiveTab(v);
+                }}
                 sx={{ mb: 2 }}
             >
                 {tabLabels.map((label) => (
@@ -299,7 +296,9 @@ export default function Editor({
                 <Button
                     variant="outlined"
                     size="small"
-                    onClick={(e) => setOptionsAnchor(e.currentTarget)}
+                    onClick={(e) => {
+                        setOptionsAnchor(e.currentTarget);
+                    }}
                     sx={{ bgcolor: "background.paper" }}
                 >
                     Options
@@ -307,7 +306,9 @@ export default function Editor({
                 <Menu
                     anchorEl={optionsAnchor}
                     open={Boolean(optionsAnchor)}
-                    onClose={() => setOptionsAnchor(null)}
+                    onClose={() => {
+                        setOptionsAnchor(null);
+                    }}
                     anchorOrigin={{ vertical: "top", horizontal: "right" }}
                     transformOrigin={{
                         vertical: "bottom",
@@ -322,9 +323,9 @@ export default function Editor({
                             control={
                                 <Checkbox
                                     checked={notifyRecipients}
-                                    onChange={(e) =>
-                                        setNotifyRecipients(e.target.checked)
-                                    }
+                                    onChange={(e) => {
+                                        setNotifyRecipients(e.target.checked);
+                                    }}
                                     disabled={!mailConfigured}
                                     size="small"
                                 />
@@ -370,7 +371,9 @@ export default function Editor({
 
             <Dialog
                 open={confirmSaveOpen}
-                onClose={() => setConfirmSaveOpen(false)}
+                onClose={() => {
+                    setConfirmSaveOpen(false);
+                }}
                 maxWidth="sm"
                 fullWidth
             >
@@ -389,7 +392,11 @@ export default function Editor({
                     </Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfirmSaveOpen(false)}>
+                    <Button
+                        onClick={() => {
+                            setConfirmSaveOpen(false);
+                        }}
+                    >
                         Cancel
                     </Button>
                     <Button

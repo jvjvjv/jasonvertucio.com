@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { marked } from "marked";
 import { Head } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -10,9 +8,27 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import type { AiSystem } from "../../../types";
+import { marked } from "marked";
+import { useState } from "react";
+
+import type { AiSystem } from "@/types";
+import type { SyntheticEvent } from "react";
+
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+
+interface ParseJobResponse {
+    message?: string;
+    job_title?: string;
+    company_name?: string;
+    job_location?: string;
+    job_description?: string;
+    job_url_id?: string | null;
+    reasoning?: string;
+    parser_id?: number | null;
+    used_existing_parser?: boolean;
+    redirect?: string;
+}
 
 interface CreateProps {
     systems: Pick<AiSystem, "id" | "name" | "model">[];
@@ -67,10 +83,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                 },
             );
 
-            const result = await response.json();
+            const result = (await response.json()) as ParseJobResponse;
 
             if (!response.ok) {
-                setParseError(result.message || "Failed to parse URL");
+                setParseError(result.message ?? "Failed to parse URL");
                 return;
             }
 
@@ -80,7 +96,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_description)
                 setJobDescription(result.job_description);
             setJobUrlId(result.job_url_id ?? null);
-            setParseReasoning(result.reasoning || "");
+            setParseReasoning(result.reasoning ?? "");
             if (result.parser_id) setParserId(result.parser_id);
             if (result.used_existing_parser) setUsedExistingParser(true);
         } catch (err) {
@@ -112,10 +128,10 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                 },
             );
 
-            const result = await response.json();
+            const result = (await response.json()) as ParseJobResponse;
 
             if (!response.ok) {
-                setParseError(result.message || "Failed to re-parse URL");
+                setParseError(result.message ?? "Failed to re-parse URL");
                 return;
             }
 
@@ -125,7 +141,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
             if (result.job_description)
                 setJobDescription(result.job_description);
             setJobUrlId(result.job_url_id ?? null);
-            setParseReasoning(result.reasoning || "");
+            setParseReasoning(result.reasoning ?? "");
             if (result.parser_id) setParserId(result.parser_id);
             setReparseFeedback("");
         } catch (err) {
@@ -135,7 +151,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: SyntheticEvent) => {
         e.preventDefault();
         if (!aiSystemId) {
             setError("Please select an AI system.");
@@ -170,14 +186,14 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                 },
             );
 
-            const result = await response.json();
+            const result = (await response.json()) as ParseJobResponse;
 
             if (!response.ok) {
-                setError(result.message || "Failed to start session");
+                setError(result.message ?? "Failed to start session");
                 return;
             }
 
-            window.location.href = result.redirect;
+            window.location.href = result.redirect ?? "";
         } catch (err) {
             setError("Network error: " + (err as Error).message);
         } finally {
@@ -210,9 +226,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             size="small"
                             fullWidth
                             value={aiSystemId}
-                            onChange={(e) =>
-                                setAiSystemId(Number(e.target.value))
-                            }
+                            onChange={(e) => {
+                                setAiSystemId(Number(e.target.value));
+                            }}
                             sx={{ mb: 3 }}
                         >
                             {systems.map((s) => (
@@ -236,7 +252,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                                 size="small"
                                 fullWidth
                                 value={jobUrl}
-                                onChange={(e) => setJobUrl(e.target.value)}
+                                onChange={(e) => {
+                                    setJobUrl(e.target.value);
+                                }}
                                 placeholder="https://..."
                             />
                             <Button
@@ -309,9 +327,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                                     size="small"
                                     fullWidth
                                     value={reparseFeedback}
-                                    onChange={(e) =>
-                                        setReparseFeedback(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setReparseFeedback(e.target.value);
+                                    }}
                                     placeholder="Describe what was extracted incorrectly..."
                                 />
                                 <Button

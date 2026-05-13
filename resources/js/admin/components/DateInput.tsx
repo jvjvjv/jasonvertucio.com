@@ -1,31 +1,32 @@
-import { useState, useEffect } from 'react';
 import {
     Box,
     Checkbox,
     FormControlLabel,
     MenuItem,
     TextField,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
+} from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import dayjs from "dayjs";
 
-type DateMode = 'year' | 'full';
+import type { Dayjs } from "dayjs";
+
+type DateMode = "year" | "full";
 
 interface DateInputProps {
     label: string;
-    value: string;
+    value: string | null | undefined;
     onChange: (value: string) => void;
     allowPresent?: boolean;
-    size?: 'small' | 'medium';
+    size?: "small" | "medium";
 }
 
-function detectMode(value: string): DateMode {
-    if (value && value.includes('-')) {
-        return 'full';
+function detectMode(value: string | null | undefined): DateMode {
+    if (value?.includes("-")) {
+        return "full";
     }
-    return 'year';
+    return "year";
 }
 
 export default function DateInput({
@@ -33,28 +34,22 @@ export default function DateInput({
     value,
     onChange,
     allowPresent = false,
-    size = 'small',
+    size = "small",
 }: DateInputProps) {
-    const isPresent = value === 'Present';
-    const [mode, setMode] = useState<DateMode>(() =>
-        isPresent ? 'year' : detectMode(value),
-    );
-
-    // Sync mode when value changes externally
-    useEffect(() => {
-        if (!isPresent && value) {
-            setMode(detectMode(value));
-        }
-    }, [value, isPresent]);
+    const isPresent = value === "Present";
+    // Derive mode from the current value rather than storing it separately.
+    // When the user switches format via handleModeChange, that also transforms
+    // the value (e.g. strips day/month or appends -01-01), so the derived mode
+    // stays consistent without a separate useEffect sync.
+    const mode: DateMode = isPresent ? "year" : detectMode(value);
 
     const handleModeChange = (newMode: DateMode) => {
-        setMode(newMode);
         if (isPresent) return;
 
-        if (newMode === 'year' && mode === 'full' && value) {
+        if (newMode === "year" && mode === "full" && value) {
             // Keep only the year portion
-            onChange(value.split('-')[0]);
-        } else if (newMode === 'full' && mode === 'year' && value) {
+            onChange(value.split("-")[0]);
+        } else if (newMode === "full" && mode === "year" && value) {
             // Default month/day to 01
             onChange(`${value}-01-01`);
         }
@@ -62,35 +57,40 @@ export default function DateInput({
 
     const handlePresentChange = (checked: boolean) => {
         if (checked) {
-            onChange('Present');
+            onChange("Present");
         } else {
-            onChange('');
+            onChange("");
         }
     };
 
     const handleYearChange = (yearValue: string) => {
         // Only allow digits, max 4 chars
-        const cleaned = yearValue.replace(/\D/g, '').slice(0, 4);
+        const cleaned = yearValue.replace(/\D/g, "").slice(0, 4);
         onChange(cleaned);
     };
 
     const handleDatePickerChange = (date: Dayjs | null) => {
-        if (date && date.isValid()) {
-            onChange(date.format('YYYY-MM-DD'));
+        if (date?.isValid()) {
+            onChange(date.format("YYYY-MM-DD"));
         }
     };
 
-    const datePickerValue = mode === 'full' && value && !isPresent
-        ? dayjs(value, 'YYYY-MM-DD')
-        : null;
+    const datePickerValue =
+        mode === "full" && value && !isPresent
+            ? dayjs(value, "YYYY-MM-DD")
+            : null;
 
     return (
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', flex: 1 }}>
+        <Box
+            sx={{ display: "flex", gap: 1, alignItems: "flex-start", flex: 1 }}
+        >
             <TextField
                 select
                 size={size}
                 value={mode}
-                onChange={(e) => handleModeChange(e.target.value as DateMode)}
+                onChange={(e) => {
+                    handleModeChange(e.target.value as DateMode);
+                }}
                 disabled={isPresent}
                 sx={{ minWidth: 105 }}
                 label="Format"
@@ -99,15 +99,19 @@ export default function DateInput({
                 <MenuItem value="full">Full Date</MenuItem>
             </TextField>
 
-            {mode === 'year' ? (
+            {mode === "year" ? (
                 <TextField
                     label={label}
                     size={size}
                     placeholder="YYYY"
-                    value={isPresent ? '' : value}
-                    onChange={(e) => handleYearChange(e.target.value)}
+                    value={isPresent ? "" : value}
+                    onChange={(e) => {
+                        handleYearChange(e.target.value);
+                    }}
                     disabled={isPresent}
-                    slotProps={{ htmlInput: { maxLength: 4, inputMode: 'numeric' } }}
+                    slotProps={{
+                        htmlInput: { maxLength: 4, inputMode: "numeric" },
+                    }}
                     sx={{ flex: 1 }}
                 />
             ) : (
@@ -133,12 +137,14 @@ export default function DateInput({
                     control={
                         <Checkbox
                             checked={isPresent}
-                            onChange={(e) => handlePresentChange(e.target.checked)}
+                            onChange={(e) => {
+                                handlePresentChange(e.target.checked);
+                            }}
                             size={size}
                         />
                     }
                     label="Present"
-                    sx={{ ml: 0, whiteSpace: 'nowrap' }}
+                    sx={{ ml: 0, whiteSpace: "nowrap" }}
                 />
             )}
         </Box>

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\ResumeDataServiceContract;
 use App\Models\AiChatBot;
 use App\Services\AiChatBotConversationService;
 use App\Services\AiClientFactory;
@@ -32,7 +33,9 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
+        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService);
 
         $conversation = $service->startConversation($bot);
 
@@ -69,7 +72,9 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
+        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService);
 
         $conversation = $service->startConversation($bot->fresh());
 

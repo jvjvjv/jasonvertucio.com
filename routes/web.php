@@ -1,30 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\BlogController;
 use App\Http\Controllers\FacebookCallbackController;
-use App\Http\Controllers\WordpressController;
-use App\Http\Controllers\Auth\LoginMethodsController;
-use App\Http\Controllers\ResumeController;
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\ResumeShareCodeController;
-use App\Http\Controllers\Admin\ResumeEditorController;
-use App\Http\Controllers\Admin\AiToolsController;
-use App\Http\Controllers\Admin\AiChatBotController as AdminAiChatBotController;
-use App\Http\Controllers\Admin\AiConversationController;
-use App\Http\Controllers\Admin\AiSystemController;
-use App\Http\Controllers\Admin\AiMemoryController;
-use App\Http\Controllers\Admin\JobUrlParserController;
-use App\Http\Controllers\ChatBotController;
-use App\Http\Controllers\Admin\CoverLetterController;
-use App\Http\Controllers\Admin\TargetedResumeController;
-use App\Http\Controllers\Admin\JobUrlParseController;
-use App\Http\Controllers\Admin\MailPreviewController;
-use App\Http\Controllers\Admin\SiteSettingsController;
-use App\Http\Middleware\ResumeShareCodeMiddleware;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,204 +16,24 @@ use App\Http\Middleware\ResumeShareCodeMiddleware;
 |
 */
 
-// Keystone/Fortify authentication routes
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login')->middleware('guest');
-
-Route::post('/login/check-email', [LoginMethodsController::class, 'check'])
-    ->middleware(['web', 'guest'])
-    ->name('login.check-email');
-
-Route::get('/logout', function () {
-    Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-    return redirect('/');
-})->name('logout.get');
-
-// Fortify auto-registers these routes:
-// POST /login - Login handler
-// POST /logout - Logout handler
-// GET/POST /password/reset - Password reset
-// POST /two-factor-challenge - 2FA challenge
-
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Legacy redirects
 Route::get('/about/{any?}', function () {
     return redirect('/');
 });
 
-Route::view('paper', 'paper')->name('paper');
-
-Route::group(['prefix' => 'blog'], function ($route) {
-    $route->get('/', [BlogController::class, 'index'])->name('blog');
-
-    $route->get('/topics', [BlogController::class, 'topics'])->name('topics');
-    $route->get('/tags', [BlogController::class, 'tags'])->name('tags');
-
-    $route->get('/topics/{slug}', [BlogController::class, 'topicList'])->name('topicList');
-    $route->get('/tags/{slug}', [BlogController::class, 'tagList'])->name('tagList');
-
-    $route->get("/{slug}", [BlogController::class, 'post'])->name('post');
-});
-
+// Facebook callback route -- I don't think I use this anymore
 Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
 
-// Admin routes - requires auth + manage-unauthenticated-viewers permission
-Route::middleware(['auth', 'can:manage-unauthenticated-viewers', \App\Http\Middleware\HandleInertiaRequests::class])
-    ->prefix('admin')
-    ->name('admin.')
-    ->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('index');
 
-        // Resume management hub
-        Route::get('/resume', [AdminController::class, 'resumeHub'])->name('resume.index');
+// Chatbot routes must be at the end so they don't swallow other valid routes
+require base_path('routes/auth.php');
+require base_path('routes/admin.php');
+require base_path('routes/admin-ai.php');
+require base_path('routes/admin-resume.php');
+require base_path('routes/resume.php');
+require base_path('routes/blog.php');
+require base_path('routes/honeypots.php');
 
-        // Share codes management
-        Route::get('/resume/codes', [ResumeShareCodeController::class, 'index'])->name('resume.codes.index');
-        Route::post('/resume/codes', [ResumeShareCodeController::class, 'store'])->name('resume.codes.store');
-        Route::delete('/resume/codes/{code}', [ResumeShareCodeController::class, 'destroy'])->name('resume.codes.destroy');
-
-        // Cover letter management
-        Route::get('/cover-letters', [CoverLetterController::class, 'index'])->name('cover-letters.index');
-        Route::get('/cover-letters/new', [CoverLetterController::class, 'create'])->name('cover-letters.create');
-        Route::post('/cover-letters', [CoverLetterController::class, 'store'])->name('cover-letters.store');
-        Route::get('/cover-letters/{coverLetter}', [CoverLetterController::class, 'edit'])->name('cover-letters.edit');
-        Route::put('/cover-letters/{coverLetter}', [CoverLetterController::class, 'update'])->name('cover-letters.update');
-        Route::delete('/cover-letters/{coverLetter}', [CoverLetterController::class, 'destroy'])->name('cover-letters.destroy');
-        Route::get('/cover-letters/{coverLetter}/preview', [CoverLetterController::class, 'preview'])->name('cover-letters.preview');
-        Route::get('/cover-letters/{coverLetter}/download/docx', [CoverLetterController::class, 'downloadDocx'])->name('cover-letters.download.docx');
-        Route::get('/cover-letters/{coverLetter}/download/pdf', [CoverLetterController::class, 'downloadPdf'])->name('cover-letters.download.pdf');
-
-        // Mail preview routes
-        Route::get('/mail-preview', [MailPreviewController::class, 'index'])->name('mail-preview.index');
-        Route::get('/mail-preview/{mailable}', [MailPreviewController::class, 'show'])->name('mail-preview.show');
-        Route::get('/mail-preview/{mailable}/preview', [MailPreviewController::class, 'preview'])->name('mail-preview.preview');
-
-        // Site settings (navigation links)
-        Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
-        Route::post('/site-settings', [SiteSettingsController::class, 'update'])->name('site-settings.update');
-    });
-
-// AI Tools routes - requires auth + manage-ai-tools permission
-Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleInertiaRequests::class])
-    ->prefix('admin/ai')
-    ->name('admin.ai.')
-    ->group(function () {
-        Route::get('/', [AiToolsController::class, 'index'])->name('index');
-
-        // AI Systems CRUD
-        Route::get('/systems', [AiSystemController::class, 'index'])->name('systems.index');
-        Route::get('/systems/new', [AiSystemController::class, 'create'])->name('systems.create');
-        Route::post('/systems', [AiSystemController::class, 'store'])->name('systems.store');
-        Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels'])->name('systems.fetch-models');
-        Route::get('/systems/{aiSystem}', [AiSystemController::class, 'edit'])->name('systems.edit');
-        Route::put('/systems/{aiSystem}', [AiSystemController::class, 'update'])->name('systems.update');
-        Route::post('/systems/{aiSystem}/duplicate', [AiSystemController::class, 'duplicate'])->name('systems.duplicate');
-        Route::delete('/systems/{aiSystem}', [AiSystemController::class, 'destroy'])->name('systems.destroy');
-        Route::get('/systems/{aiSystem}/logs', [AiSystemController::class, 'logs'])->name('systems.logs');
-
-        // AI Memories CRUD
-        Route::get('/memories', [AiMemoryController::class, 'index'])->name('memories.index');
-        Route::get('/memories/new', [AiMemoryController::class, 'create'])->name('memories.create');
-        Route::post('/memories', [AiMemoryController::class, 'store'])->name('memories.store');
-        Route::get('/memories/{memory}', [AiMemoryController::class, 'edit'])->name('memories.edit');
-        Route::put('/memories/{memory}', [AiMemoryController::class, 'update'])->name('memories.update');
-        Route::delete('/memories/{memory}', [AiMemoryController::class, 'destroy'])->name('memories.destroy');
-        Route::post('/memories/rebuild/{feature}', [AiMemoryController::class, 'rebuild'])->name('memories.rebuild');
-
-        // AI Conversations
-        Route::get('/conversations', [AiConversationController::class, 'index'])->name('conversations.index');
-        Route::post('/conversations/backfill-usage', [AiConversationController::class, 'queueUsageBackfill'])->name('conversations.backfill-usage');
-        Route::get('/conversations/{conversation}', [AiConversationController::class, 'show'])->name('conversations.show');
-        Route::delete('/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
-
-        // AI Chat Bots CRUD
-        Route::get('/chat-bots', [AdminAiChatBotController::class, 'index'])->name('bots.index');
-        Route::get('/chat-bots/new', [AdminAiChatBotController::class, 'create'])->name('bots.create');
-        Route::post('/chat-bots', [AdminAiChatBotController::class, 'store'])->name('bots.store');
-        Route::get('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'edit'])->name('bots.edit');
-        Route::put('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'update'])->name('bots.update');
-        Route::delete('/chat-bots/{aiChatBot}', [AdminAiChatBotController::class, 'destroy'])->name('bots.destroy');
-
-        // Job URL Parsers
-        Route::get('/job-url-parsers', [JobUrlParserController::class, 'index'])->name('job-url-parsers.index');
-        Route::get('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'edit'])->name('job-url-parsers.edit');
-        Route::put('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'update'])->name('job-url-parsers.update');
-        Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview'])->name('job-url-parsers.preview');
-        Route::post('/job-url-parsers/{jobUrlParser}/approve', [JobUrlParserController::class, 'approve'])->name('job-url-parsers.approve');
-        Route::post('/job-url-parsers/{jobUrlParser}/reject', [JobUrlParserController::class, 'reject'])->name('job-url-parsers.reject');
-        Route::delete('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'destroy'])->name('job-url-parsers.destroy');
-    });
-
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
-    ->prefix('chat')
-    ->name('chat-bots.chat.')
-    ->group(function () {
-        Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');
-        Route::post('/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('message');
-        Route::post('/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('reset');
-        Route::post('/{aiChatBot:slug}/switch', [ChatBotController::class, 'switch'])->name('switch');
-    });
-
-// Resume editor routes - requires auth + edit-resume permission
-Route::middleware(['auth', 'can:edit-resume', \App\Http\Middleware\HandleInertiaRequests::class])
-    ->prefix('admin/resume')
-    ->name('admin.resume.')
-    ->group(function () {
-        Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
-        Route::post('/editor', [ResumeEditorController::class, 'update'])->name('editor.save');
-
-        // Targeted Resume Builder
-        Route::get('/targeted-builder', [TargetedResumeController::class, 'index'])->name('targeted.index');
-        Route::get('/targeted-builder/new', [TargetedResumeController::class, 'create'])->name('targeted.create');
-        Route::post('/targeted-builder/start', [TargetedResumeController::class, 'start'])->name('targeted.start');
-        Route::get('/targeted-builder/{conversation}', [TargetedResumeController::class, 'show'])->name('targeted.show');
-        Route::put('/targeted-builder/{conversation}/metadata', [TargetedResumeController::class, 'updateMetadata'])->name('targeted.update-metadata');
-        Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat'])->name('targeted.chat');
-        Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize'])->name('targeted.finalize');
-        Route::post('/targeted-builder/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter'])->name('targeted.finalize-cover-letter');
-        Route::post('/targeted-builder/{conversation}/pass', [TargetedResumeController::class, 'pass'])->name('targeted.pass');
-        Route::post('/targeted-builder/{conversation}/applied', [TargetedResumeController::class, 'applied'])->name('targeted.applied');
-        Route::delete('/targeted-builder/{conversation}', [TargetedResumeController::class, 'destroy'])->name('targeted.destroy');
-
-        // Job URL Parsing
-        Route::post('/targeted-builder/parse-url', [JobUrlParseController::class, 'parse'])->name('targeted.parse-url');
-        Route::post('/targeted-builder/parser/{parser}/confirm', [JobUrlParseController::class, 'confirmParser'])->name('targeted.parser.confirm');
-        Route::post('/targeted-builder/parser/{parser}/reject', [JobUrlParseController::class, 'rejectParser'])->name('targeted.parser.reject');
-        Route::post('/targeted-builder/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse'])->name('targeted.parser.reparse');
-        Route::get('/targeted-resume/{targetedResume}/download/{format}', [TargetedResumeController::class, 'download'])->name('targeted.download');
-        Route::post('/targeted-resume/{targetedResume}/regenerate', [TargetedResumeController::class, 'regenerate'])->name('targeted.regenerate');
-    });
-
-// Manual code entry page for unauthenticated users
-Route::get('/resume/enter-code', [ResumeController::class, 'enterCode'])->name('resume.enter-code');
-
-// Resume routes - supports both authenticated users and share codes
-Route::middleware([ResumeShareCodeMiddleware::class])->prefix('resume')->group(function () {
-    Route::get('/', [ResumeController::class, 'index'])->name('resume.index');
-
-    // Direct download of pre-generated DOCX
-    Route::prefix('/download')->name('resume.download.')->group(function () {
-        Route::get('/', [ResumeController::class, 'download'])->name('index');
-        Route::get('/docx', [ResumeController::class, 'downloadDocx'])->name('docx');
-        Route::get('/pdf', [ResumeController::class, 'downloadPdf'])->name('pdf');
-    });
-});
-
-// Honeypots
-Route::get('/wp-admin/load-styles.php', function () {
-    return response()->view('wp-load_styles')->header('Content-Type', 'text/css');
-});
-Route::get('/wp-login.php', [WordpressController::class, 'index']);
-Route::post('/wp-login.php', [WordpressController::class, 'ban']);
-Route::redirect('/wp-admin', '/wp-login.php');
-
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
-    ->name('chat-bots.root.')
-    ->group(function () {
-        Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');
-        Route::post('/{aiChatBot:slug}/messages', [ChatBotController::class, 'message'])->name('message');
-        Route::post('/{aiChatBot:slug}/reset', [ChatBotController::class, 'reset'])->name('reset');
-        Route::post('/{aiChatBot:slug}/switch', [ChatBotController::class, 'switch'])->name('switch');
-    });
+require base_path('routes/chatbots.php');

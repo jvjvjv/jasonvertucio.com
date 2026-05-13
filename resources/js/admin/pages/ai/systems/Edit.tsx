@@ -1,15 +1,19 @@
-import { Head, Link as InertiaLink, useForm, router } from "@inertiajs/react";
+import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
+
 import AiSystemForm from "./Form";
+
 import type { FormData } from "./Form";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiSystem } from "../../../types";
+import type { AiSystem } from "@/types";
+import type { SyntheticEvent } from "react";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface EditProps {
     aiSystem: AiSystem;
@@ -20,7 +24,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
         provider: aiSystem.provider,
-        api_key: aiSystem.api_key ?? "",
+        api_key: aiSystem.api_key,
         model: aiSystem.model,
         base_url: aiSystem.base_url ?? "",
         api_version: aiSystem.api_version ?? "",
@@ -42,12 +46,12 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
             ? JSON.stringify(aiSystem.pricing_profile, null, 2)
             : "",
         is_active: aiSystem.is_active,
-        feature_defaults: aiSystem.feature_defaults_list ?? [],
+        feature_defaults: aiSystem.feature_defaults_list,
     });
 
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.put(`/admin/ai/systems/${aiSystem.id}`);
     };
@@ -70,6 +74,33 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
                 backHref="/admin/ai/systems"
                 backLabel="Back to AI Systems"
             />
+
+            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/chat-bots?ai_system_id=${aiSystem.id}`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Chat Bots ({aiSystem.chat_bots_count || 0})
+                </Button>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/conversations?ai_system_id=${aiSystem.id}`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Conversations
+                </Button>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/systems/${aiSystem.id}/logs`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Interaction Logs ({aiSystem.interaction_logs_count || 0})
+                </Button>
+            </Box>
 
             <Card>
                 <CardContent>

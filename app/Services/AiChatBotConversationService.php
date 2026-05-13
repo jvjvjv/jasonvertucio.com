@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\ResumeDataServiceContract;
 use App\Enums\AiConversationStatus;
 use App\Enums\AiInteractionStatus;
 use App\Jobs\ProcessAiMemoryJob;
@@ -9,7 +10,9 @@ use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
+use App\Models\AiLlmMessage;
 use App\Models\User;
+use App\Services\Mcp\ChatBotToolRegistry;
 use Generator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -20,6 +23,7 @@ class AiChatBotConversationService
         private AiClientFactory $clientFactory,
         private AiMemoryService $memoryService,
         private ConversationUsageService $conversationUsageService,
+        private ResumeDataServiceContract $resumeDataService,
     ) {
     }
 
@@ -54,6 +58,7 @@ class AiChatBotConversationService
 
     /**
      * Continue a bot conversation by streaming the assistant response.
+     * Stores full LLM request/response data in ai_llm_messages table.
      *
      * @return Generator<int, string>
      */
@@ -92,45 +97,243 @@ class AiChatBotConversationService
 
         $client = $this->clientFactory->forSystem($conversation->aiSystem);
 
-        if ($systemPrompt !== null) {
-            $client->withSystem($systemPrompt);
-        }
-
-        $client->withMaxTokens($conversation->aiSystem->max_tokens);
+        // Determine the turn number for this conversation
+        $turnNumber = $this->getTurnNumberForConversation($conversation);
 
         $startTime = microtime(true);
-        $fullResponse = '';
-        $inputTokens = null;
-        $outputTokens = null;
+        $resolvedModel = $conversation->aiSystem->model;
+        $maxTokens = $conversation->aiSystem->max_tokens;
+
+        // Base request payload shape — kept in sync each iteration, used in catch block for error logging
+        $requestPayload = [
+            'model' => $resolvedModel,
+            'max_tokens' => $maxTokens,
+            'messages' => $apiMessages,
+        ];
+
+        if ($systemPrompt !== null) {
+            $requestPayload['system'] = $systemPrompt;
+        }
+
+        // Build tool registry if tools are enabled for this bot
+        $toolRegistry = $conversation->aiChatBot?->tools_enabled
+            ? new ChatBotToolRegistry($this->resumeDataService)
+            : null;
+
+        // Accumulated state across all tool-loop iterations
+        $iterationMessages = $apiMessages;
+        $totalInputTokens = 0;
+        $totalOutputTokens = 0;
+        $blocks = [];
+        $durationMs = 0;
+
+        $appendToBlocks = static function (string $type, string $delta) use (&$blocks): void {
+            if ($blocks !== [] && $blocks[\count($blocks) - 1]['type'] === $type) {
+                $blocks[\count($blocks) - 1]['content'] .= $delta;
+            } else {
+                $blocks[] = ['type' => $type, 'content' => $delta];
+            }
+        };
 
         try {
-            $stream = $client->stream($apiMessages);
+            yield 'data: ' . json_encode([
+                'type' => 'status',
+                'phase' => 'model_loading',
+                'message' => 'Waiting for model response...',
+            ]) . "\n\n";
 
-            foreach ($stream as $event) {
-                Log::debug('Chat bot API stream event', [
-                    'conversation_id' => $conversation->id,
-                    'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
-                    'ai_system_id' => $conversation->ai_system_id,
-                    'event' => $event,
+            for ($iteration = 0; $iteration < 6; $iteration++) {
+                // Re-apply client settings every iteration — clients reset state after each stream() call
+                if ($systemPrompt !== null) {
+                    $client->withSystem($systemPrompt);
+                }
+
+                $client->withMaxTokens($maxTokens);
+
+                if ($toolRegistry !== null) {
+                    $client->withTools($toolRegistry->toApiTools());
+                }
+
+                $iterationRequestPayload = [
+                    'model' => $resolvedModel,
+                    'max_tokens' => $maxTokens,
+                    'messages' => $iterationMessages,
+                ];
+
+                if ($systemPrompt !== null) {
+                    $iterationRequestPayload['system'] = $systemPrompt;
+                }
+
+                // Keep base payload in sync so catch block logs the most recent request
+                $requestPayload = $iterationRequestPayload;
+
+                $iterationTurnNumber = $iteration === 0 ? (string) $turnNumber : "{$turnNumber}.{$iteration}";
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'request',
+                    'turn_number' => $iterationTurnNumber,
+                    'request_data' => $iterationRequestPayload,
+                    'created_at' => now(),
                 ]);
 
-                if (!isset($event['type'])) {
+                // Per-iteration stream accumulators
+                $iterationResponseEvents = [];
+                $pendingToolCalls = [];
+                $currentToolBlockIndex = null;
+                $iterationStopReason = null;
+                $iterationInputTokens = null;
+                $iterationOutputTokens = null;
+
+                foreach ($client->stream($iterationMessages) as $event) {
+                    Log::debug('Chat bot API stream event', [
+                        'conversation_id' => $conversation->id,
+                        'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
+                        'ai_system_id' => $conversation->ai_system_id,
+                        'turn_number' => $turnNumber,
+                        'iteration' => $iteration,
+                        'event_type' => $event['type'] ?? null,
+                    ]);
+
+                    if (!isset($event['type'])) {
+                        continue;
+                    }
+
+                    $iterationResponseEvents[] = $event;
+
+                    switch ($event['type']) {
+                        case 'content_block_start':
+                            if (isset($event['block']['type']) && $event['block']['type'] === 'tool_use') {
+                                $currentToolBlockIndex = $event['index'] ?? count($pendingToolCalls);
+                                $pendingToolCalls[$currentToolBlockIndex] = [
+                                    'id' => $event['block']['id'] ?? Str::uuid()->toString(),
+                                    'name' => $event['block']['name'] ?? '',
+                                    'inputJson' => '',
+                                ];
+                            } else {
+                                yield 'data: ' . json_encode($event) . "\n\n";
+                            }
+                            break;
+
+                        case 'reasoning_block_delta':
+                            if (isset($event['delta']['reasoning'])) {
+                                $appendToBlocks('reasoning', $event['delta']['reasoning']);
+                            }
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'content_block_delta':
+                            if (isset($event['delta']['text'])) {
+                                $appendToBlocks('text', $event['delta']['text']);
+                            }
+
+                            if (isset($event['delta']['thinking']) || isset($event['delta']['signature'])) {
+                                $appendToBlocks('reasoning', $event['delta']['thinking'] ?? '');
+                            }
+
+                            if (
+                                isset($event['delta']['type'], $event['delta']['partial_json'])
+                                && $event['delta']['type'] === 'input_json_delta'
+                                && $currentToolBlockIndex !== null
+                                && isset($pendingToolCalls[$currentToolBlockIndex])
+                            ) {
+                                $pendingToolCalls[$currentToolBlockIndex]['inputJson'] .= $event['delta']['partial_json'];
+                            } else {
+                                yield 'data: ' . json_encode($event) . "\n\n";
+                            }
+                            break;
+
+                        case 'content_block_stop':
+                            if ($currentToolBlockIndex !== null && ($event['index'] ?? null) === $currentToolBlockIndex) {
+                                $currentToolBlockIndex = null;
+                            } else {
+                                yield 'data: ' . json_encode($event) . "\n\n";
+                            }
+                            break;
+
+                        case 'message_start':
+                            if (isset($event['message']['usage'])) {
+                                $iterationInputTokens = $event['message']['usage']['input_tokens'] ?? null;
+                            }
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'message_delta':
+                            if (isset($event['usage'])) {
+                                $iterationOutputTokens = $event['usage']['output_tokens'] ?? null;
+                            }
+                            $iterationStopReason = $event['stop_reason'] ?? null;
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'message_stop':
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                            break;
+
+                        case 'ping':
+                            Log::debug('Received ping event in stream');
+                            break;
+
+                        default:
+                            yield 'data: ' . json_encode($event) . "\n\n";
+                    }
+                }
+
+                // Accumulate token counts across iterations
+                $totalInputTokens += (int) ($iterationInputTokens ?? 0);
+                $totalOutputTokens += (int) ($iterationOutputTokens ?? 0);
+                $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'response',
+                    'turn_number' => $iterationTurnNumber,
+                    'request_data' => $iterationRequestPayload,
+                    'response_data' => [
+                        'events' => $iterationResponseEvents,
+                        'stop_reason' => $iterationStopReason,
+                        'input_tokens' => $iterationInputTokens,
+                        'output_tokens' => $iterationOutputTokens,
+                        'model' => $resolvedModel,
+                        'tool_calls' => array_values(array_map(
+                            static fn (array $tc): array => ['id' => $tc['id'], 'name' => $tc['name']],
+                            $pendingToolCalls,
+                        )),
+                    ],
+                    'duration_ms' => $durationMs,
+                    'created_at' => now(),
+                ]);
+
+                // If the model requested tool calls, execute them and loop
+                if ($iterationStopReason === 'tool_use' && $toolRegistry !== null && $pendingToolCalls !== []) {
+                    $iterationText = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
+
+                    $formattedToolCalls = [];
+                    $toolResults = [];
+
+                    foreach ($pendingToolCalls as $tc) {
+                        $toolInput = json_decode($tc['inputJson'], true) ?? [];
+                        $formattedToolCalls[] = ['id' => $tc['id'], 'name' => $tc['name'], 'input' => $toolInput];
+                        $toolResults[] = ['tool_use_id' => $tc['id'], 'result' => $toolRegistry->dispatch($tc['name'], $toolInput)];
+                    }
+
+                    $assistantTurn = $client->formatAssistantToolCallTurn($iterationText, $formattedToolCalls);
+                    $resultTurns = $client->formatToolResultTurn($toolResults);
+
+                    $iterationMessages = array_merge($iterationMessages, [$assistantTurn], $resultTurns);
+
                     continue;
                 }
 
-                if ($event['type'] === 'content_block_delta' && isset($event['delta']['text'])) {
-                    $fullResponse .= $event['delta']['text'];
-                    yield 'data: ' . json_encode($event) . "\n\n";
-                } elseif ($event['type'] === 'message_start' && isset($event['message']['usage'])) {
-                    $inputTokens = $event['message']['usage']['input_tokens'] ?? null;
-                } elseif ($event['type'] === 'message_delta' && isset($event['usage'])) {
-                    $outputTokens = $event['usage']['output_tokens'] ?? null;
-                } elseif ($event['type'] === 'message_stop') {
-                    yield 'data: ' . json_encode($event) . "\n\n";
-                }
+                // Normal completion — exit the tool loop
+                break;
             }
 
             yield "data: [DONE]\n\n";
+
+            // Derive flat strings from accumulated blocks
+            $fullResponse = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
+            $thinkingContent = collect($blocks)->where('type', 'reasoning')->pluck('content')->implode("\n\n");
 
             $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
                 $conversation->aiSystem,
@@ -142,14 +345,20 @@ class AiChatBotConversationService
                     'ai_conversation_id' => $conversation->id,
                     'role' => 'assistant',
                     'content' => $fullResponse,
+                    'reasoning_content' => $thinkingContent !== '' ? $thinkingContent : null,
+                    'blocks' => $blocks !== [] ? $blocks : null,
                     'metadata' => [
-                        'input_tokens' => $inputTokens,
-                        'output_tokens' => $outputTokens,
+                        'input_tokens' => $totalInputTokens ?: null,
+                        'output_tokens' => $totalOutputTokens ?: null,
                         'model' => $conversation->aiSystem->model,
                     ],
                 ]);
 
-                ProcessAiMemoryJob::dispatch($conversation->fresh());
+                ProcessAiMemoryJob::dispatch(
+                    $conversation->fresh(),
+                    $conversation->user_id,
+                    $conversation->visitor_email
+                );
             }
 
             AiInteractionLog::create([
@@ -158,24 +367,33 @@ class AiChatBotConversationService
                 'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
                 'user_id' => $conversation->user_id,
                 'feature' => $conversation->feature,
-                'input_tokens' => $inputTokens,
-                'output_tokens' => $outputTokens,
-                'model' => $conversation->aiSystem->model,
+                'input_tokens' => $totalInputTokens ?: null,
+                'output_tokens' => $totalOutputTokens ?: null,
+                'model' => $resolvedModel,
                 'input_token_price_snapshot' => $pricingSnapshot['input_token_price_snapshot'],
                 'output_token_price_snapshot' => $pricingSnapshot['output_token_price_snapshot'],
-                'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
+                'duration_ms' => $durationMs,
                 'status' => AiInteractionStatus::Success,
             ]);
 
             $this->conversationUsageService->syncConversation($conversation->fresh());
         } catch (\Exception $exception) {
+            // Store error information in LLM messages table
+            AiLlmMessage::create([
+                'ai_conversation_id' => $conversation->id,
+                'direction' => 'request',
+                'turn_number' => (string) $turnNumber,
+                'request_data' => $requestPayload + ['error' => $exception->getMessage()],
+                'created_at' => now(),
+            ]);
+
             AiInteractionLog::create([
                 'ai_system_id' => $conversation->aiSystem->id,
                 'ai_conversation_id' => $conversation->id,
                 'ai_chat_bot_id' => $conversation->ai_chat_bot_id,
                 'user_id' => $conversation->user_id,
                 'feature' => $conversation->feature,
-                'model' => $conversation->aiSystem->model,
+                'model' => $resolvedModel ?? $conversation->aiSystem->model,
                 'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
                 'status' => AiInteractionStatus::Error,
                 'error_message' => $exception->getMessage(),
@@ -185,7 +403,35 @@ class AiChatBotConversationService
         }
     }
 
-    private function buildSystemPrompt(AiChatBot $bot, ?string $visitorName, ?string $visitorEmail): string
+    /**
+     * Get the next turn number for a conversation.
+     */
+    private function getTurnNumberForConversation(AiConversation $conversation): int
+    {
+        $maxTurn = AiLlmMessage::query()
+            ->where('ai_conversation_id', $conversation->id)
+            ->max('turn_number');
+
+        // Handle string comparison for turn numbers (e.g., "1", "2", "10")
+        if ($maxTurn === null || !is_numeric($maxTurn)) {
+            return 1;
+        }
+
+        return (int) $maxTurn + 1;
+    }
+
+    /**
+     * Build system prompt for a chatbot.
+     */
+    private function buildSystemPrompt(AiChatBot $bot, ?string $visitorName = null, ?string $visitorEmail = null): string
+    {
+        return $this->buildSystemPromptForBot($bot, null, $visitorName, $visitorEmail);
+    }
+
+    /**
+     * Build system prompt for a chatbot with optional conversation scoping.
+     */
+    private function buildSystemPromptForBot(AiChatBot $bot, ?AiConversation $conversation = null, ?string $visitorName = null, ?string $visitorEmail = null): string
     {
         $replacements = [
             '{{bot_name}}' => $bot->name,
@@ -197,7 +443,26 @@ class AiChatBotConversationService
 
         $prompt = strtr($bot->prompt_template, $replacements);
         $systemPrompt = trim((string) $bot->aiSystem?->system_prompt);
-        $memoryPrompt = trim($this->memoryService->getMemoriesForPrompt($bot->featureKey()));
+
+        // For chatbot conversations, scope memories to the current user (not conversation).
+        // Each individual user has their own persistent memory context across all their conversations with this chatbot.
+        // Memories are identified by: user_id for logged-in users, or visitor_email for anonymous visitors.
+        $memoryUserId = null;
+        $memoryVisitorEmail = null;
+
+        if ($conversation !== null) {
+            $memoryUserId = $conversation->user_id;
+            $memoryVisitorEmail = $conversation->visitor_email;
+        } elseif (auth()->check()) {
+            // If conversation not available but user is logged in, use their ID
+            $memoryUserId = auth()->id();
+        }
+
+        $memoryPrompt = trim($this->memoryService->getMemoriesForPrompt(
+            $bot->featureKey(),
+            $memoryUserId,
+            $memoryVisitorEmail
+        ));
 
         return collect([
             $systemPrompt !== '' ? $systemPrompt : null,

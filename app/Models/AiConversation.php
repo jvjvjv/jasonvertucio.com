@@ -17,8 +17,17 @@ class AiConversation extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /**
+     * The attributes that should be appended to the model's JSON form.
+     */
+    protected $appends = [
+        'is_stale',
+    ];
+
     protected $fillable = [
         'public_id',
+        'uuid',
+        'chat_hash',
         'user_id',
         'ai_system_id',
         'ai_chat_bot_id',
@@ -57,6 +66,10 @@ class AiConversation extends Model
         static::creating(function (self $conversation): void {
             if (blank($conversation->public_id)) {
                 $conversation->public_id = (string) Str::ulid();
+            }
+
+            if (blank($conversation->uuid)) {
+                $conversation->uuid = (string) Str::uuid();
             }
         });
     }
@@ -118,8 +131,45 @@ class AiConversation extends Model
         return $this->hasMany(AiInteractionLog::class);
     }
 
+    /**
+     * Check if the conversation is stale (no activity for 7+ days).
+     */
+    public function getIsStaleAttribute(): bool
+    {
+        $lastActivity = $this->last_message_at ?? $this->created_at;
+
+        return $lastActivity !== null && $lastActivity->lt(now()->subDays(7));
+    }
+
     public function targetedResume(): HasOne
     {
         return $this->hasOne(TargetedResume::class);
+    }
+
+    /**
+     * Generate a deterministic URL-safe hash for this conversation based on
+     * its UUID. This is stable across renames, feature changes, and timestamps.
+     */
+    public function generateChatHash(): string
+    {
+        $this->chat_hash = \App\Utilities\ChatHash::generate($this->uuid);
+        $this->save();
+
+        return $this->chat_hash;
+    }
+
+    public static function findByChatHash(string $hash): ?self
+    {
+        return static::query()->where('chat_hash', $hash)->first();
+    }
+
+    /**
+     * Find a conversation by either its MD5 chat hash or its raw UUID.
+     * The UUID fallback supports direct linking and backward compatibility.
+     */
+    public static function findByChatHashOrUuid(string $identifier): ?self
+    {
+        return static::query()->where('chat_hash', $identifier)->first()
+            ?? static::query()->where('uuid', $identifier)->first();
     }
 }

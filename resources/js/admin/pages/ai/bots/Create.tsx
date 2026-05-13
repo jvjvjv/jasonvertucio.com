@@ -3,12 +3,17 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import Form, { type FormData } from "./Form";
+
+import Form from "./Form";
+
+import type { FormData } from "./Form";
+import type { SyntheticEvent } from "react";
+
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface CreateProps {
-    systems: Array<{ id: number; name: string; model: string }>;
+    systems: { id: number; name: string; model: string }[];
     roles: string[];
 }
 
@@ -26,7 +31,7 @@ export default function Create({ systems, roles }: CreateProps) {
         require_visitor_identity: false,
     });
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.post("/admin/ai/chat-bots");
     };
@@ -49,6 +54,7 @@ export default function Create({ systems, roles }: CreateProps) {
                             errors={form.errors}
                             systems={systems}
                             roles={roles}
+                            originalName=""
                         />
 
                         <Box

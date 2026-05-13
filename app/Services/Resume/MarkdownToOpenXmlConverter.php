@@ -35,6 +35,11 @@ class MarkdownToOpenXmlConverter {
      */
     public function convert(string $markdown): string {
         $markdown = $this->stripCodeFences($markdown);
+
+        // Remove any leading newlines that could cause blank first paragraph
+        $markdown = ltrim($markdown, "\r");
+        $markdown = ltrim($markdown, "\n");
+
         $lines = $this->parseLines($markdown);
 
         if (empty($lines)) {
@@ -127,7 +132,8 @@ class MarkdownToOpenXmlConverter {
         foreach ($lines as $line) {
             $trimmed = trim($line);
 
-            if ($trimmed === '') {
+            // Skip empty lines and whitespace-only lines
+            if ($trimmed === '' || preg_match('/^\s*$/', $line)) {
                 continue;
             }
 

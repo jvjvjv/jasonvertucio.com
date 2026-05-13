@@ -100,6 +100,7 @@ class OpenAiService implements AiClientContract
                     'text' => (string) $content,
                 ],
             ],
+            'reasoning_content' => $choice['message']['reasoning_content'] ?? null,
             'model' => (string) ($data['model'] ?? ($this->model ?? $this->defaultModel)),
             'stop_reason' => (string) ($choice['finish_reason'] ?? 'stop'),
             'usage' => [
@@ -127,6 +128,11 @@ class OpenAiService implements AiClientContract
         $inputTokens = null;
         $outputTokens = null;
         $started = false;
+
+        // Track in-flight tool calls: index → {id, name, arguments}
+        /** @var array<int, array{id: string, name: string, arguments: string}> $pendingToolCalls */
+        $pendingToolCalls = [];
+        $finishReason = null;
 
         while (!$body->eof()) {
             $buffer .= $body->read(1024);
@@ -172,6 +178,16 @@ class OpenAiService implements AiClientContract
                 $choice = $chunk['choices'][0] ?? [];
                 $delta = $choice['delta'] ?? [];
                 $text = $delta['content'] ?? null;
+                $reasoning = $delta['reasoning_content'] ?? null;
+
+                if (is_string($reasoning) && $reasoning !== '') {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => [
+                            'reasoning' => $reasoning,
+                        ],
+                    ];
+                }
 
                 if (is_string($text) && $text !== '') {
                     yield [
@@ -182,19 +198,55 @@ class OpenAiService implements AiClientContract
                     ];
                 }
 
-                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
-                    yield [
-                        'type' => 'message_delta',
-                        'usage' => [
-                            'output_tokens' => $outputTokens,
-                        ],
-                    ];
+                // Accumulate streaming tool_calls fragments
+                if (!empty($delta['tool_calls'])) {
+                    foreach ($delta['tool_calls'] as $tcDelta) {
+                        $idx = (int) ($tcDelta['index'] ?? 0);
 
-                    yield [
-                        'type' => 'message_stop',
-                    ];
+                        if (!isset($pendingToolCalls[$idx])) {
+                            $pendingToolCalls[$idx] = ['id' => '', 'name' => '', 'arguments' => ''];
+                        }
+
+                        if (isset($tcDelta['id']) && $tcDelta['id'] !== '') {
+                            $pendingToolCalls[$idx]['id'] = $tcDelta['id'];
+                        }
+
+                        if (isset($tcDelta['function']['name']) && $tcDelta['function']['name'] !== '') {
+                            $pendingToolCalls[$idx]['name'] = $tcDelta['function']['name'];
+                        }
+
+                        if (isset($tcDelta['function']['arguments'])) {
+                            $pendingToolCalls[$idx]['arguments'] .= $tcDelta['function']['arguments'];
+                        }
+                    }
+                }
+
+                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
+                    $finishReason = $choice['finish_reason'];
                 }
             }
+        }
+
+        // Emit accumulated tool calls as normalized Anthropic-style events
+        foreach ($pendingToolCalls as $toolCall) {
+            yield [
+                'type' => 'content_block_start',
+                'content_block' => [
+                    'type' => 'tool_use',
+                    'id' => $toolCall['id'],
+                    'name' => $toolCall['name'],
+                ],
+            ];
+
+            yield [
+                'type' => 'content_block_delta',
+                'delta' => [
+                    'type' => 'input_json_delta',
+                    'partial_json' => $toolCall['arguments'],
+                ],
+            ];
+
+            yield ['type' => 'content_block_stop'];
         }
 
         if ($started === false) {
@@ -208,8 +260,11 @@ class OpenAiService implements AiClientContract
             ];
         }
 
+        $stopReason = $finishReason === 'tool_calls' ? 'tool_use' : 'end_turn';
+
         yield [
             'type' => 'message_delta',
+            'delta' => ['stop_reason' => $stopReason],
             'usage' => [
                 'output_tokens' => $outputTokens,
             ],
@@ -242,6 +297,45 @@ class OpenAiService implements AiClientContract
             ])
             ->values()
             ->toArray();
+    }
+
+    /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, content: string|null, tool_calls: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $formattedCalls = [];
+
+        foreach ($toolCalls as $toolCall) {
+            $formattedCalls[] = [
+                'id' => $toolCall['id'],
+                'type' => 'function',
+                'function' => [
+                    'name' => $toolCall['name'],
+                    'arguments' => json_encode($toolCall['input']),
+                ],
+            ];
+        }
+
+        return [
+            'role' => 'assistant',
+            'content' => $textContent !== '' ? $textContent : null,
+            'tool_calls' => $formattedCalls,
+        ];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, tool_call_id: string, content: string}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        return array_map(static fn (array $result): array => [
+            'role' => 'tool',
+            'tool_call_id' => $result['id'],
+            'content' => json_encode($result['result']),
+        ], $toolResults);
     }
 
     /**

@@ -61,7 +61,9 @@ class TargetedResumeDocumentService
             }
 
             $xml = $this->replaceSimplePlaceholders($xml, $data);
-            $xml = $this->replaceResumeContent($xml, $data['resume']);
+            $xml = $this->appendResumeContent($xml, $data['resume']);
+
+            Log::debug('Final generated XML', ['xml' => $xml]);
 
             $zip->addFromString('word/document.xml', $xml);
             $zip->close();
@@ -174,9 +176,10 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * Find the {resume} placeholder, remove its <w:r>, and insert styled paragraphs.
+     * Insert styled paragraphs.
+     * This function is mis-named.
      */
-    protected function replaceResumeContent(string $xml, string $resumeMarkdown): string
+    protected function appendResumeContent(string $xml, string $resumeMarkdown): string
     {
         $dom = new DOMDocument();
         $dom->preserveWhiteSpace = true;
@@ -186,18 +189,7 @@ class TargetedResumeDocumentService
         $xpath = new DOMXPath($dom);
         $xpath->registerNamespace('w', self::NAMESPACE_W);
 
-        $textNodes = $xpath->query('//w:t[contains(., "{resume}")]');
-
-        if ($textNodes === false || $textNodes->length === 0) {
-            return $dom->saveXML();
-        }
-
-        $resumeTextNode = $textNodes->item(0);
-        $resumeRun = $resumeTextNode->parentNode;
-        $resumeParagraph = $resumeRun->parentNode;
         $body = $xpath->query('//w:body')->item(0);
-
-        $resumeRun->parentNode->removeChild($resumeRun);
 
         $openXmlFragment = $this->converter->convert($resumeMarkdown);
 
@@ -217,12 +209,7 @@ class TargetedResumeDocumentService
         $fragmentDom->loadXML($wrapperXml);
 
         $paragraphs = $fragmentDom->getElementsByTagNameNS(self::NAMESPACE_W, 'p');
-        $nodesToImport = [];
         foreach ($paragraphs as $p) {
-            $nodesToImport[] = $p;
-        }
-
-        foreach ($nodesToImport as $p) {
             $imported = $dom->importNode($p, true);
             if ($insertBefore) {
                 $body->insertBefore($imported, $insertBefore);
