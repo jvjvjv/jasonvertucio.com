@@ -32,7 +32,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         slug: bot.slug,
         access_path: bot.access_path,
         description: bot.description ?? "",
-        ai_system_id: bot.ai_system_id ?? "",
+        ai_system_id: bot.ai_system.id,
         prompt_template: bot.prompt_template ?? "",
         allowed_roles: bot.allowed_roles,
         is_active: bot.is_active,

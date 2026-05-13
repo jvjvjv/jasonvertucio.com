@@ -81,11 +81,11 @@ export interface AiChatBot {
     allowed_roles: string[];
     is_active: boolean;
     is_public: boolean;
+    tools_enabled: boolean;
     require_visitor_identity: boolean;
     tools_enabled?: boolean;
     conversations_count?: number;
-    ai_system_id?: number;
-    ai_system_name?: string | null;
+    ai_system: AiSystem;
     usage?: ConversationUsage | null;
     conversations?: Conversation[];
 }

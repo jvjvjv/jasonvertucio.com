@@ -84,8 +84,8 @@ export default function Index({ coverLetters }: IndexProps) {
                                                 component={InertiaLink}
                                                 href={`/admin/cover-letters/${cl.id}/preview`}
                                                 underline="hover"
-                                                color="inherit"
-                                                sx={{ fontWeight: 500 }}
+                                                color="primary"
+                                                sx={{ fontWeight: 600 }}
                                             >
                                                 {cl.company_name}
                                             </Link>
