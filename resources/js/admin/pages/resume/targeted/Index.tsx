@@ -211,6 +211,7 @@ export default function Index({
                                                     <Typography
                                                         variant="body2"
                                                         fontWeight={600}
+                                                        color="primary"
                                                     >
                                                         {companyName}
                                                     </Typography>

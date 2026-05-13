@@ -1,7 +1,10 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import ChairIcon from "@mui/icons-material/Chair";
+import DataObjectIcon from "@mui/icons-material/DataObject";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
+import HandymanIcon from "@mui/icons-material/Handyman";
 import HistoryIcon from "@mui/icons-material/History";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -116,6 +119,7 @@ export default function Index({ systems }: IndexProps) {
                                 <TableCell>Provider</TableCell>
                                 <TableCell>Model</TableCell>
                                 <TableCell>Default For</TableCell>
+                                <TableCell>Features</TableCell>
                                 <TableCell>API Calls</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
@@ -123,7 +127,7 @@ export default function Index({ systems }: IndexProps) {
                         <TableBody>
                             {systems.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={6}
+                                    colSpan={7}
                                     message="No AI systems configured yet."
                                     actionLabel="Add your first one"
                                     actionHref="/admin/ai/systems/new"
@@ -142,8 +146,8 @@ export default function Index({ systems }: IndexProps) {
                                                 component={InertiaLink}
                                                 href={`/admin/ai/systems/${system.id}`}
                                                 underline="hover"
-                                                color="inherit"
-                                                sx={{ fontWeight: 500 }}
+                                                color="primary"
+                                                sx={{ fontWeight: 600 }}
                                             >
                                                 {system.name}
                                             </Link>
@@ -171,6 +175,27 @@ export default function Index({ systems }: IndexProps) {
                                                       ),
                                                   )
                                                 : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                {system.supports_tools && (
+                                                    <HandymanIcon fontSize="small" />
+                                                )}
+                                                {system.supports_json_mode && (
+                                                    <DataObjectIcon fontSize="small" />
+                                                )}
+                                                {system.is_local_endpoint && (
+                                                    <ChairIcon
+                                                        fontSize="small"
+                                                        color="primary"
+                                                    />
+                                                )}
+                                            </Box>
                                         </TableCell>
                                         <TableCell>
                                             {system.interaction_logs_count >

@@ -43,8 +43,8 @@ class AiChatBotController extends Controller
                 'is_public' => $bot->is_public,
                 'require_visitor_identity' => $bot->require_visitor_identity,
                 'conversations_count' => $bot->conversations_count,
-                'ai_system_name' => $bot->aiSystem?->name,
-                'ai_system_id' => $bot->ai_system_id,
+                'ai_system' => $bot->aiSystem,
+                'tools_enabled' => $bot->tools_enabled,
                 'usage' => $bot->conversations_sum_usage_cost_usd !== null ? [
                     'input_tokens' => (int) ($bot->conversations_sum_usage_input_tokens ?? 0),
                     'output_tokens' => (int) ($bot->conversations_sum_usage_output_tokens ?? 0),

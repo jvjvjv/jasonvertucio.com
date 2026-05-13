@@ -1,7 +1,10 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import AddCommentIcon from "@mui/icons-material/AddComment";
+import ChairIcon from "@mui/icons-material/Chair";
+import DataObjectIcon from "@mui/icons-material/DataObject";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
+import HandymanIcon from "@mui/icons-material/Handyman";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -14,6 +17,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import type { AiChatBot } from "@/types";
@@ -114,6 +118,8 @@ export default function Index({ bots, filters }: IndexProps) {
                                 <TableCell>Name</TableCell>
                                 <TableCell>Slug</TableCell>
                                 <TableCell>AI System</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Features</TableCell>
                                 <TableCell>Access</TableCell>
                                 <TableCell>Sessions</TableCell>
                                 <TableCell>Usage</TableCell>
@@ -123,148 +129,212 @@ export default function Index({ bots, filters }: IndexProps) {
                         <TableBody>
                             {bots.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={7}
+                                    colSpan={8}
                                     message="No AI chat bots configured yet."
                                     actionLabel="Add your first one"
                                     actionHref="/admin/ai/chat-bots/new"
                                 />
                             ) : (
-                                bots.map((bot) => (
-                                    <TableRow
-                                        key={bot.id}
-                                        hover
-                                        sx={{
-                                            opacity: bot.is_active ? 1 : 0.5,
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Link
-                                                component={InertiaLink}
-                                                href={`/admin/ai/chat-bots/${bot.slug}`}
-                                                underline="hover"
-                                                color="inherit"
-                                                sx={{ fontWeight: 500 }}
-                                            >
-                                                {bot.name}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            {bot.public_url ??
-                                                (bot.access_path === "root"
-                                                    ? `/${bot.slug}`
-                                                    : `/chat/${bot.slug}`)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {bot.ai_system_name ?? "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    gap: 0.5,
-                                                    flexWrap: "wrap",
-                                                }}
-                                            >
-                                                <Chip
-                                                    label={
-                                                        bot.access_path ===
-                                                        "root"
-                                                            ? "Root Path"
-                                                            : "Chat Path"
-                                                    }
-                                                    size="small"
-                                                    variant="outlined"
-                                                />
-                                                <Chip
-                                                    label={
-                                                        bot.is_public
-                                                            ? "Public"
-                                                            : "Role-based"
-                                                    }
-                                                    size="small"
-                                                    color={
-                                                        bot.is_public
-                                                            ? "success"
-                                                            : "default"
-                                                    }
-                                                    variant="outlined"
-                                                />
-                                                {bot.require_visitor_identity ? (
-                                                    <Chip
-                                                        label="Identity Required"
-                                                        size="small"
-                                                        color="warning"
-                                                        variant="outlined"
-                                                    />
-                                                ) : null}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            {(bot.conversations_count ?? 0) >
-                                            0 ? (
+                                bots.map((bot) => {
+                                    const botStatusOpacity =
+                                        bot.ai_system.is_active && bot.is_active
+                                            ? 1
+                                            : bot.ai_system.is_active
+                                              ? 0.75
+                                              : 0.4;
+                                    const toolsEnabled =
+                                        bot.tools_enabled ||
+                                        bot.ai_system.supports_tools;
+                                    return (
+                                        <TableRow
+                                            key={bot.id}
+                                            hover
+                                            sx={{
+                                                opacity: botStatusOpacity,
+                                            }}
+                                        >
+                                            <TableCell>
                                                 <Link
                                                     component={InertiaLink}
-                                                    href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
-                                                    underline="hover"
-                                                >
-                                                    {bot.conversations_count}
-                                                </Link>
-                                            ) : (
-                                                "0"
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <UsageChip usage={bot.usage} />
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    justifyContent: "flex-end",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <IconButton
-                                                    component={InertiaLink}
-                                                    href={
-                                                        bot.access_path ===
-                                                        "root"
-                                                            ? `/${bot.slug}/new`
-                                                            : `/chat/${bot.slug}/new`
-                                                    }
-                                                    size="small"
-                                                    color="primary"
-                                                    title="Start New Chat"
-                                                    aria-label="Start New Chat"
-                                                    target="_blank"
-                                                >
-                                                    <AddCommentIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton
-                                                    component={InertiaLink}
                                                     href={`/admin/ai/chat-bots/${bot.slug}`}
-                                                    size="small"
+                                                    underline="hover"
                                                     color="primary"
-                                                    title="Edit"
-                                                    aria-label="Edit"
+                                                    sx={{ fontWeight: 600 }}
                                                 >
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => {
-                                                        handleDelete(bot);
+                                                    {bot.name}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>
+                                                {bot.public_url ??
+                                                    (bot.access_path === "root"
+                                                        ? `/${bot.slug}`
+                                                        : `/chat/${bot.slug}`)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {bot.ai_system.name}
+                                            </TableCell>
+                                            <TableCell>Status</TableCell>
+                                            <TableCell>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        gap: 1,
+                                                        flexWrap: "wrap",
                                                     }}
-                                                    title="Delete"
-                                                    aria-label="Delete"
                                                 >
-                                                    <DeleteOutlineIcon fontSize="small" />
-                                                </IconButton>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                                    {toolsEnabled && (
+                                                        <HandymanIcon
+                                                            fontSize="small"
+                                                            sx={
+                                                                bot.ai_system
+                                                                    .supports_tools
+                                                                    ? {
+                                                                          opacity: 0.75,
+                                                                      }
+                                                                    : {
+                                                                          color: "primary",
+                                                                      }
+                                                            }
+                                                        />
+                                                    )}
+
+                                                    {bot.ai_system
+                                                        .supports_json_mode && (
+                                                        <DataObjectIcon
+                                                            fontSize="small"
+                                                            sx={{
+                                                                opacity: 0.75,
+                                                            }}
+                                                        />
+                                                    )}
+
+                                                    {bot.ai_system
+                                                        .is_local_endpoint && (
+                                                        <ChairIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    )}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        gap: 0.5,
+                                                        flexWrap: "wrap",
+                                                    }}
+                                                >
+                                                    {bot.is_public && (
+                                                        <Chip
+                                                            label="Public"
+                                                            size="small"
+                                                            color="success"
+                                                            variant="outlined"
+                                                        />
+                                                    )}
+                                                    {bot.allowed_roles
+                                                        .length && (
+                                                        <Tooltip
+                                                            title={
+                                                                bot
+                                                                    .allowed_roles
+                                                                    .length > 0
+                                                                    ? "Roles: " +
+                                                                      bot.allowed_roles.join(
+                                                                          ", ",
+                                                                      )
+                                                                    : "Any role"
+                                                            }
+                                                        >
+                                                            <Chip
+                                                                label="Role-based"
+                                                                size="small"
+                                                                color="info"
+                                                                variant="outlined"
+                                                                sx={{
+                                                                    cursor: "pointer",
+                                                                }}
+                                                            />
+                                                        </Tooltip>
+                                                    )}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                {(bot.conversations_count ??
+                                                    0) > 0 ? (
+                                                    <Link
+                                                        component={InertiaLink}
+                                                        href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
+                                                        underline="hover"
+                                                    >
+                                                        {
+                                                            bot.conversations_count
+                                                        }
+                                                    </Link>
+                                                ) : (
+                                                    "0"
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <UsageChip usage={bot.usage} />
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "flex-end",
+                                                        gap: 1,
+                                                    }}
+                                                >
+                                                    <IconButton
+                                                        component={InertiaLink}
+                                                        href={
+                                                            bot.access_path ===
+                                                            "root"
+                                                                ? `/${bot.slug}/new`
+                                                                : `/chat/${bot.slug}/new`
+                                                        }
+                                                        size="small"
+                                                        color="primary"
+                                                        title="Start New Chat"
+                                                        aria-label="Start New Chat"
+                                                        disabled={
+                                                            !bot.is_active ||
+                                                            !bot.ai_system
+                                                                .is_active
+                                                        }
+                                                        target="_blank"
+                                                    >
+                                                        <AddCommentIcon />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        component={InertiaLink}
+                                                        href={`/admin/ai/chat-bots/${bot.slug}`}
+                                                        size="small"
+                                                        color="primary"
+                                                        title="Edit"
+                                                        aria-label="Edit"
+                                                    >
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => {
+                                                            handleDelete(bot);
+                                                        }}
+                                                        title="Delete"
+                                                        aria-label="Delete"
+                                                    >
+                                                        <DeleteOutlineIcon />
+                                                    </IconButton>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>
