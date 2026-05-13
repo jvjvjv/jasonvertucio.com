@@ -47,6 +47,7 @@ class SaveCoverLetterTool implements AiToolHandlerContract
         return [
             'success' => true,
             'cover_letter_id' => $coverLetter->id,
+            '_page_reload' => true,
         ];
     }
 }

@@ -108,6 +108,14 @@ trait ExecutesAiTools
                 return;
             }
 
+            // Notify the frontend that tool calls are happening so it can display a panel.
+            // Include any preamble text the model wrote before calling tools.
+            yield "data: " . json_encode([
+                'type' => 'tool_use_progress',
+                'text' => $fullText,
+                'tools' => array_column($toolCalls, 'name'),
+            ]) . "\n\n";
+
             // Execute tool calls and splice results back into the message history
             $toolResults = [];
 
@@ -127,10 +135,18 @@ trait ExecutesAiTools
                     $toolResult = ['error' => $e->getMessage()];
                 }
 
+                if (!empty($toolResult['_page_reload'])) {
+                    yield "data: " . json_encode(['type' => 'page_reload']) . "\n\n";
+                }
+
                 $toolResults[] = [
                     'id' => $toolCall['id'],
                     'name' => $toolCall['name'],
-                    'result' => $toolResult,
+                    'result' => array_filter(
+                        $toolResult,
+                        static fn (string $key): bool => $key !== '_page_reload',
+                        ARRAY_FILTER_USE_KEY,
+                    ),
                 ];
             }
 

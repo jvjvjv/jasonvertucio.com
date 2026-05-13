@@ -10,6 +10,7 @@ use App\Services\AiMemoryService;
 use App\Services\Mcp\Tools\TargetedResume\GetJobDescriptionTool;
 use App\Services\Mcp\Tools\TargetedResume\GetResumeDataTool;
 use App\Services\Mcp\Tools\TargetedResume\GetResumeMemoriesTool;
+use App\Services\Mcp\Tools\TargetedResume\MarkAppliedTool;
 use App\Services\Mcp\Tools\TargetedResume\SaveCoverLetterTool;
 use App\Services\Mcp\Tools\TargetedResume\SaveTailoredResumeTool;
 use App\Services\Mcp\Tools\TargetedResume\UpdateFitAssessmentTool;
@@ -33,6 +34,7 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
             new UpdateFitAssessmentTool($conversation),
             new SaveTailoredResumeTool($conversation, $targetedResumeService),
             new SaveCoverLetterTool($conversation, $targetedResumeService),
+            new MarkAppliedTool($conversation),
         ];
 
         foreach ($handlers as $handler) {

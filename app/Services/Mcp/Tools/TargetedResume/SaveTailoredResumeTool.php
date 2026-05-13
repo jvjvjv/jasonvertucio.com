@@ -55,6 +55,7 @@ class SaveTailoredResumeTool implements AiToolHandlerContract
             'success' => true,
             'targeted_resume_id' => $targetedResume->id,
             'status' => $targetedResume->status->value,
+            '_page_reload' => true,
         ];
     }
 }

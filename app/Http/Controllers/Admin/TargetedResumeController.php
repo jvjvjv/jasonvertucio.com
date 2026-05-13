@@ -6,7 +6,6 @@ use App\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
-use App\Http\Requests\UpdateTargetedResumeConversationRequest;
 use App\Models\AiConversation;
 use App\Models\AiSystem;
 use App\Models\CoverLetter;
