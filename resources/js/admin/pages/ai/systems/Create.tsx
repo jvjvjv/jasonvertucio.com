@@ -9,6 +9,7 @@ import AiSystemForm from "./Form";
 import type { FormData } from "./Form";
 import type { SyntheticEvent } from "react";
 
+import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 
@@ -91,6 +92,10 @@ export default function Create({ existingDefaults }: CreateProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            <Box sx={{ mt: 2 }}>
+                <AvailableMcpTools enabled={form.data.supports_tools} />
+            </Box>
         </AdminLayout>
     );
 }

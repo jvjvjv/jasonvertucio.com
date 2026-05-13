@@ -82,11 +82,17 @@ export interface AiChatBot {
     is_active: boolean;
     is_public: boolean;
     require_visitor_identity: boolean;
+    tools_enabled?: boolean;
     conversations_count?: number;
     ai_system_id?: number;
     ai_system_name?: string | null;
     usage?: ConversationUsage | null;
     conversations?: Conversation[];
+}
+
+export interface McpToolSummary {
+    name: string;
+    description: string;
 }
 
 export interface LogEntry {

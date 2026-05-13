@@ -106,4 +106,26 @@ class AiChatBotControllerTest extends TestCase
         $response->assertRedirect(route('admin.ai.bots.create'));
         $response->assertSessionHasErrors(['slug']);
     }
+
+    public function test_mcp_tools_returns_available_tool_summaries(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools'));
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'tools' => [
+                '*' => ['name', 'description'],
+            ],
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'get_recent_blog_posts',
+            'description' => 'Load recent blog posts with titles, summaries, and URLs.',
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'get_resume_data',
+            'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
+        ]);
+    }
 }

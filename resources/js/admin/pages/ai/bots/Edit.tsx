@@ -9,6 +9,7 @@ import Form, { type FormData } from "./Form";
 import type { AiChatBot } from "@/types";
 import type { SyntheticEvent } from "react";
 
+import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
@@ -16,7 +17,12 @@ import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface EditProps {
     bot: AiChatBot;
-    systems: { id: number; name: string; model: string }[];
+    systems: {
+        id: number;
+        name: string;
+        model: string;
+        supports_tools: boolean;
+    }[];
     roles: string[];
 }
 
@@ -32,8 +38,14 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         is_active: bot.is_active,
         is_public: bot.is_public,
         require_visitor_identity: bot.require_visitor_identity,
+        tools_enabled: bot.tools_enabled === true,
     });
 
+    const selectedSystem = systems.find(
+        (system) => system.id === form.data.ai_system_id,
+    );
+    const shouldShowMcpTools =
+        selectedSystem?.supports_tools === true || form.data.tools_enabled;
     const { dialogProps, confirm } = useConfirmDialog();
 
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
@@ -111,6 +123,10 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            <Box sx={{ mt: 2 }}>
+                <AvailableMcpTools enabled={shouldShowMcpTools} />
+            </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

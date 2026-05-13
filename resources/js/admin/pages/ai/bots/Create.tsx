@@ -9,11 +9,17 @@ import Form from "./Form";
 import type { FormData } from "./Form";
 import type { SyntheticEvent } from "react";
 
+import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface CreateProps {
-    systems: { id: number; name: string; model: string }[];
+    systems: {
+        id: number;
+        name: string;
+        model: string;
+        supports_tools: boolean;
+    }[];
     roles: string[];
 }
 
@@ -29,8 +35,14 @@ export default function Create({ systems, roles }: CreateProps) {
         is_active: true,
         is_public: false,
         require_visitor_identity: false,
+        tools_enabled: false,
     });
 
+    const selectedSystem = systems.find(
+        (system) => system.id === form.data.ai_system_id,
+    );
+    const shouldShowMcpTools =
+        selectedSystem?.supports_tools === true || form.data.tools_enabled;
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.post("/admin/ai/chat-bots");
@@ -83,6 +95,10 @@ export default function Create({ systems, roles }: CreateProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            <Box sx={{ mt: 2 }}>
+                <AvailableMcpTools enabled={shouldShowMcpTools} />
+            </Box>
         </AdminLayout>
     );
 }

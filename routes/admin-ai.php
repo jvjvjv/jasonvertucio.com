@@ -43,6 +43,7 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         // AI Chat Bots CRUD
         Route::get('/chat-bots', [AiChatBotController::class, 'index'])->name('bots.index');
         Route::get('/chat-bots/new', [AiChatBotController::class, 'create'])->name('bots.create');
+        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools'])->name('bots.mcp-tools');
         Route::post('/chat-bots', [AiChatBotController::class, 'store'])->name('bots.store');
         Route::get('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'edit'])->name('bots.edit');
         Route::put('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'update'])->name('bots.update');
