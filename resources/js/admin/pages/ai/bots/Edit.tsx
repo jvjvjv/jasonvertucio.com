@@ -38,7 +38,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         is_active: bot.is_active,
         is_public: bot.is_public,
         require_visitor_identity: bot.require_visitor_identity,
-        tools_enabled: bot.tools_enabled === true,
+        tools_enabled: bot.tools_enabled,
     });
 
     const selectedSystem = systems.find(
