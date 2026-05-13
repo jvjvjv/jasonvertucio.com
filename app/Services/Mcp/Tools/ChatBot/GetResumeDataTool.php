@@ -14,6 +14,11 @@ class GetResumeDataTool implements AiToolHandlerContract
         return 'get_resume_data';
     }
 
+    public function description(): string
+    {
+        return "Load Jason's full resume data — experience, skills, education, and projects.";
+    }
+
     public function schema(): array
     {
         return ['type' => 'object', 'properties' => (object) [], 'required' => []];

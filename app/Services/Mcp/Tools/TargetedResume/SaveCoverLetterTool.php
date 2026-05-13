@@ -18,6 +18,11 @@ class SaveCoverLetterTool implements AiToolHandlerContract
         return 'save_cover_letter';
     }
 
+    public function description(): string
+    {
+        return 'Save the finalized cover letter and generate DOCX and PDF. Call this when the user approves the cover letter.';
+    }
+
     public function schema(): array
     {
         return [
@@ -32,6 +37,10 @@ class SaveCoverLetterTool implements AiToolHandlerContract
     public function handle(array $input): array
     {
         $content = (string) ($input['cover_letter_content'] ?? '');
+
+        if ($content === '') {
+            return ['error' => 'cover_letter_content must not be empty.'];
+        }
 
         $coverLetter = $this->targetedResumeService->saveCoverLetter($this->conversation, $content);
 

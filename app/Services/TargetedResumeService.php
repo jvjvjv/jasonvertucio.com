@@ -247,6 +247,7 @@ class TargetedResumeService
 
         $conversation->update(['status' => AiConversationStatus::Completed]);
 
+
         return $targetedResume->fresh();
     }
 

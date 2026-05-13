@@ -9,12 +9,17 @@ class GetResumeMemoriesTool implements AiToolHandlerContract
 {
     public function __construct(
         private AiMemoryService $memoryService,
-        private ?int $userId,
+        private string|int|null $userId,
     ) {}
 
     public function name(): string
     {
         return 'get_resume_memories';
+    }
+
+    public function description(): string
+    {
+        return 'Load learned preferences and insights from previous sessions with this user.';
     }
 
     public function schema(): array

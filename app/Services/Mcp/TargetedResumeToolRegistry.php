@@ -45,19 +45,10 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
      */
     public function toApiTools(): array
     {
-        $descriptions = [
-            'get_resume_data' => 'Load the candidate\'s full resume data (experience, skills, education, projects) before tailoring.',
-            'get_job_description' => 'Load the job description and any known job title or company name from the conversation context.',
-            'get_resume_memories' => 'Load learned preferences and insights from previous sessions with this user.',
-            'update_fit_assessment' => 'Persist the fit score, fit summary, company name, and job title to the conversation. Call this after Step 4.',
-            'save_tailored_resume' => 'Save the finalized tailored resume, generate DOCX and PDF, and mark the conversation completed. Call this when the user approves the resume.',
-            'save_cover_letter' => 'Save the finalized cover letter and generate DOCX and PDF. Call this when the user approves the cover letter.',
-        ];
-
         return array_values(array_map(
             static fn (AiToolHandlerContract $handler): array => [
                 'name' => $handler->name(),
-                'description' => $descriptions[$handler->name()] ?? $handler->name(),
+                'description' => $handler->description(),
                 'input_schema' => $handler->schema(),
             ],
             $this->handlers,

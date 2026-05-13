@@ -273,7 +273,7 @@ class ClaudeService implements AiClientContract
                 'type' => 'tool_use',
                 'id' => $toolCall['id'],
                 'name' => $toolCall['name'],
-                'input' => $toolCall['input'],
+                'input' => (object) $toolCall['input'],
             ];
         }
 

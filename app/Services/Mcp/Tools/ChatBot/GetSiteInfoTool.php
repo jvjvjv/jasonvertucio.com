@@ -12,6 +12,11 @@ class GetSiteInfoTool implements AiToolHandlerContract
         return 'get_site_info';
     }
 
+    public function description(): string
+    {
+        return 'Load site configuration — projects, skills overview, social links, and interests.';
+    }
+
     public function schema(): array
     {
         return ['type' => 'object', 'properties' => (object) [], 'required' => []];

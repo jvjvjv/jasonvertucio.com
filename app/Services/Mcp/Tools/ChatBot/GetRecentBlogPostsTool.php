@@ -12,6 +12,11 @@ class GetRecentBlogPostsTool implements AiToolHandlerContract
         return 'get_recent_blog_posts';
     }
 
+    public function description(): string
+    {
+        return 'Load recent blog posts with titles, summaries, and URLs.';
+    }
+
     public function schema(): array
     {
         return [

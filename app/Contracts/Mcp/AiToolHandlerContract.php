@@ -6,6 +6,8 @@ interface AiToolHandlerContract
 {
     public function name(): string;
 
+    public function description(): string;
+
     /**
      * @return array<string, mixed>
      */

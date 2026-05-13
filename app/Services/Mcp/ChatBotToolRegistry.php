@@ -32,16 +32,10 @@ class ChatBotToolRegistry implements AiToolRegistryContract
      */
     public function toApiTools(): array
     {
-        $descriptions = [
-            'get_resume_data' => "Load Jason's full resume data — experience, skills, education, and projects.",
-            'get_recent_blog_posts' => 'Load recent blog posts with titles, summaries, and URLs.',
-            'get_site_info' => "Load site configuration — projects, skills overview, social links, and interests.",
-        ];
-
         return array_values(array_map(
             static fn (AiToolHandlerContract $handler): array => [
                 'name' => $handler->name(),
-                'description' => $descriptions[$handler->name()] ?? $handler->name(),
+                'description' => $handler->description(),
                 'input_schema' => $handler->schema(),
             ],
             $this->handlers,
