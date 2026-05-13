@@ -14,6 +14,11 @@ class UpdateFitAssessmentTool implements AiToolHandlerContract
         return 'update_fit_assessment';
     }
 
+    public function description(): string
+    {
+        return 'Persist the fit score, fit summary, company name, and job title to the conversation. Call this after Step 4.';
+    }
+
     public function schema(): array
     {
         return [

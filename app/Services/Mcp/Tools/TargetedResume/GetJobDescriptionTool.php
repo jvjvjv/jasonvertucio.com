@@ -14,6 +14,11 @@ class GetJobDescriptionTool implements AiToolHandlerContract
         return 'get_job_description';
     }
 
+    public function description(): string
+    {
+        return 'Load the job description and any known job title or company name from the conversation context.';
+    }
+
     public function schema(): array
     {
         return ['type' => 'object', 'properties' => (object) [], 'required' => []];

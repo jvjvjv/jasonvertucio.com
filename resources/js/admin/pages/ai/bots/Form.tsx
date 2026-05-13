@@ -5,6 +5,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useEffect } from "react";
 
 function slugify(text: string): string {
     return text
@@ -27,12 +28,14 @@ export interface FormData {
     is_active: boolean;
     is_public: boolean;
     require_visitor_identity: boolean;
+    tools_enabled: boolean;
 }
 
 interface SystemOption {
     id: number;
     name: string;
     model: string;
+    supports_tools: boolean;
 }
 
 interface AiChatBotFormProps {
@@ -55,6 +58,17 @@ export default function Form({
     roles,
     originalName,
 }: AiChatBotFormProps) {
+    const selectedSystem = systems.find(
+        (system) => system.id === data.ai_system_id,
+    );
+    const toolsEnabledBySystem = selectedSystem?.supports_tools === true;
+
+    useEffect(() => {
+        if (toolsEnabledBySystem && !data.tools_enabled) {
+            setData("tools_enabled", true);
+        }
+    }, [data.tools_enabled, setData, toolsEnabledBySystem]);
+
     return (
         <>
             <Box
@@ -263,6 +277,22 @@ export default function Form({
                         />
                     }
                     label="Require visitor name and email before the first message"
+                />
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={data.tools_enabled}
+                            disabled={toolsEnabledBySystem}
+                            onChange={(event) => {
+                                setData("tools_enabled", event.target.checked);
+                            }}
+                        />
+                    }
+                    label={
+                        toolsEnabledBySystem
+                            ? "Enable MCP tools for this bot (provided by the selected system)"
+                            : "Enable MCP tools for this bot"
+                    }
                 />
             </Box>
         </>

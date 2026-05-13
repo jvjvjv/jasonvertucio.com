@@ -18,6 +18,11 @@ class SaveTailoredResumeTool implements AiToolHandlerContract
         return 'save_tailored_resume';
     }
 
+    public function description(): string
+    {
+        return 'Save the finalized tailored resume, generate DOCX and PDF, and mark the conversation completed. Call this when the user approves the resume.';
+    }
+
     public function schema(): array
     {
         return [
@@ -33,6 +38,11 @@ class SaveTailoredResumeTool implements AiToolHandlerContract
     public function handle(array $input): array
     {
         $tailoredContent = (string) ($input['tailored_content'] ?? '');
+
+        if ($tailoredContent === '') {
+            return ['error' => 'tailored_content must not be empty.'];
+        }
+
         $fitScore = isset($input['fit_score']) ? (int) $input['fit_score'] : null;
 
         $targetedResume = $this->targetedResumeService->saveTailoredResume(
@@ -45,6 +55,7 @@ class SaveTailoredResumeTool implements AiToolHandlerContract
             'success' => true,
             'targeted_resume_id' => $targetedResume->id,
             'status' => $targetedResume->status->value,
+            '_page_reload' => true,
         ];
     }
 }

@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\ResumeDataServiceContract;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
+use App\Models\AiConversation;
 use App\Models\AiSystem;
+use App\Services\AiMemoryService;
+use App\Services\Mcp\ChatBotToolRegistry;
+use App\Services\TargetedResumeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -97,6 +103,38 @@ class AiChatBotController extends Controller
     }
 
     /**
+     * Return the currently available MCP tools for admin UI display.
+     */
+    public function mcpTools(
+        Request $request,
+        ResumeDataServiceContract $resumeDataService,
+        AiMemoryService $memoryService,
+        TargetedResumeService $targetedResumeService,
+    ): JsonResponse {
+        $conversation = new AiConversation([
+            'user_id' => $request->user()?->getKey(),
+            'context' => [],
+        ]);
+
+        $registry = new ChatBotToolRegistry(
+            $conversation,
+            $resumeDataService,
+            $memoryService,
+            $targetedResumeService,
+        );
+
+        return response()->json([
+            'tools' => array_map(
+                static fn (array $tool): array => [
+                    'name' => $tool['name'],
+                    'description' => $tool['description'],
+                ],
+                $registry->toApiTools(),
+            ),
+        ]);
+    }
+
+    /**
      * Update the specified bot.
      */
     public function update(UpdateAiChatBotRequest $request, AiChatBot $aiChatBot): RedirectResponse
@@ -120,7 +158,7 @@ class AiChatBotController extends Controller
     }
 
     /**
-     * @return array<int, array{id: int, name: string, model: string}>
+     * @return array<int, array{id: int, name: string, model: string, supports_tools: bool}>
      */
     private function systems(): array
     {
@@ -132,6 +170,7 @@ class AiChatBotController extends Controller
                 'id' => $system->id,
                 'name' => $system->name,
                 'model' => $system->model,
+                'supports_tools' => (bool) $system->supports_tools,
             ])
             ->all();
     }

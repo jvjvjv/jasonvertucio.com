@@ -10,6 +10,7 @@ import type { FormData } from "./Form";
 import type { AiSystem } from "@/types";
 import type { SyntheticEvent } from "react";
 
+import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
@@ -143,6 +144,10 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            <Box sx={{ mt: 2 }}>
+                <AvailableMcpTools enabled={form.data.supports_tools} />
+            </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

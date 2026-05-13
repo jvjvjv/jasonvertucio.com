@@ -46,12 +46,20 @@ import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ResponsiveButton from "@/components/ResponsiveButton";
+import ToolsPanel from "@/components/ToolsPanel";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface StreamEvent {
     type: string;
     delta?: { text?: string };
     message?: string;
+    text?: string;
+    tools?: string[];
+}
+
+interface ToolPanel {
+    pretext: string;
+    tools: string[];
 }
 
 interface FinalizeResponse {
@@ -88,6 +96,9 @@ export default function Show({
     const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<
         string | null
     >(null);
+    const [streamingToolPanels, setStreamingToolPanels] = useState<ToolPanel[]>(
+        [],
+    );
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasAutoStarted = useRef(false);
 
@@ -181,6 +192,26 @@ export default function Show({
                             ) {
                                 accumulated += event.delta.text;
                                 setStreamingContent(accumulated);
+                            } else if (event.type === "tool_use_progress") {
+                                // Move preamble text into a tool panel; reset main stream
+                                setStreamingToolPanels((prev) => [
+                                    ...prev,
+                                    {
+                                        pretext: event.text ?? "",
+                                        tools: event.tools ?? [],
+                                    },
+                                ]);
+                                accumulated = "";
+                                setStreamingContent("");
+                            } else if (event.type === "page_reload") {
+                                router.reload({
+                                    only: [
+                                        "targetedResume",
+                                        "coverLetter",
+                                        "conversation",
+                                    ],
+                                    preserveState: true,
+                                });
                             } else if (event.type === "error") {
                                 accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
                                 setStreamingContent(accumulated);
@@ -213,6 +244,7 @@ export default function Show({
             } finally {
                 setIsStreaming(false);
                 setStreamingContent("");
+                setStreamingToolPanels([]);
             }
         },
         [userInput, conversation.id, csrfToken, shouldAutoStart],
@@ -304,6 +336,13 @@ export default function Show({
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {
+        // If already finalized and no new resume block in conversation, just regenerate docs
+        if (!canFinalizeResume && targetedResume) {
+            router.post(
+                `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
+            );
+            return;
+        }
         if (!canFinalizeResume) return;
         setIsFinalizing(true);
         setFinalizeError(null);
@@ -578,17 +617,17 @@ export default function Show({
                             label="Resume"
                             isFinalized={!!targetedResume}
                             color="success"
-                            canFinalize={canFinalizeResume}
+                            canFinalize={canFinalizeResume || !!targetedResume}
                             isFinalizing={isFinalizing}
                             hasUpdate={hasNewerResume}
                             finalizeTitle={
-                                !latestResumeData
-                                    ? "Finalize is available after the assistant returns a tailored resume block"
-                                    : !canFinalizeResume
-                                      ? "Resume already finalized with the latest content"
-                                      : hasNewerResume
-                                        ? "Update resume and regenerate documents"
-                                        : "Save the tailored resume and generate documents"
+                                hasNewerResume
+                                    ? "Update resume and regenerate documents"
+                                    : canFinalizeResume
+                                      ? "Save the tailored resume and generate documents"
+                                      : targetedResume
+                                        ? "Regenerate DOCX and PDF from saved content"
+                                        : "Finalize is available after the assistant returns a tailored resume block"
                             }
                             onFinalize={handleFinalizeResume}
                             caption={
@@ -718,6 +757,21 @@ export default function Show({
                                         isAuthenticated={!!authUser}
                                     />
                                 ))}
+                                {streamingToolPanels.map((panel, idx) => (
+                                    <ToolsPanel
+                                        key={idx}
+                                        pretext={panel.pretext}
+                                        tools={panel.tools}
+                                        isActive={false}
+                                    />
+                                ))}
+                                {isStreaming && !streamingContent && (
+                                    <ToolsPanel
+                                        pretext=""
+                                        tools={[]}
+                                        isActive
+                                    />
+                                )}
                                 {isStreaming && streamingContent && (
                                     <ChatMessageBubble
                                         role="assistant"
@@ -726,14 +780,6 @@ export default function Show({
                                         isStreaming
                                         isAuthenticated={!!authUser}
                                     />
-                                )}
-                                {isStreaming && !streamingContent && (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        AI is thinking...
-                                    </Typography>
                                 )}
                                 <div ref={messagesEndRef} />
                             </Box>

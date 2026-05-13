@@ -15,8 +15,9 @@ export default function TargetedBuilderStatusBar({
     conversation,
     targetedResume,
 }: TargetedBuilderStatusBarProps) {
-    const fitScore =
-        targetedResume?.fit_score ?? conversation.targeted_resume?.fit_score;
+    const fitScore: number | null = (targetedResume?.fit_score ??
+        conversation.context?.fit_score) as number | null;
+    console.log({ conversation, fitScore, targetedResume });
     return (
         <Box
             sx={{
@@ -34,6 +35,7 @@ export default function TargetedBuilderStatusBar({
                         : conversation.status
                 }
             />
+            <UsageChip usage={conversation.usage} />
             {fitScore && (
                 <Typography variant="caption" color="text.secondary">
                     Fit: {fitScore}%
@@ -44,7 +46,6 @@ export default function TargetedBuilderStatusBar({
                     Applied: {targetedResume.applied_at}
                 </Typography>
             )}
-            <UsageChip usage={conversation.usage} />
         </Box>
     );
 }
