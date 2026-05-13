@@ -24,6 +24,7 @@ class AiChatBotConversationService
         private AiMemoryService $memoryService,
         private ConversationUsageService $conversationUsageService,
         private ResumeDataServiceContract $resumeDataService,
+        private TargetedResumeService $targetedResumeService,
     ) {
     }
 
@@ -117,7 +118,12 @@ class AiChatBotConversationService
 
         // Build tool registry if tools are enabled for this bot
         $toolRegistry = $conversation->aiChatBot?->tools_enabled
-            ? new ChatBotToolRegistry($this->resumeDataService)
+            ? new ChatBotToolRegistry(
+                $conversation,
+                $this->resumeDataService,
+                $this->memoryService,
+                $this->targetedResumeService,
+            )
             : null;
 
         // Accumulated state across all tool-loop iterations

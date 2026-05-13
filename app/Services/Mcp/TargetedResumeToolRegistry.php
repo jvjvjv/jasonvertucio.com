@@ -7,19 +7,14 @@ use App\Contracts\Mcp\AiToolRegistryContract;
 use App\Contracts\ResumeDataServiceContract;
 use App\Models\AiConversation;
 use App\Services\AiMemoryService;
-use App\Services\Mcp\Tools\TargetedResume\GetJobDescriptionTool;
-use App\Services\Mcp\Tools\TargetedResume\GetResumeDataTool;
-use App\Services\Mcp\Tools\TargetedResume\GetResumeMemoriesTool;
-use App\Services\Mcp\Tools\TargetedResume\MarkAppliedTool;
-use App\Services\Mcp\Tools\TargetedResume\SaveCoverLetterTool;
-use App\Services\Mcp\Tools\TargetedResume\SaveTailoredResumeTool;
-use App\Services\Mcp\Tools\TargetedResume\UpdateFitAssessmentTool;
 use App\Services\TargetedResumeService;
 
 class TargetedResumeToolRegistry implements AiToolRegistryContract
 {
+    use DiscoversAiToolHandlers;
+
     /** @var array<string, AiToolHandlerContract> */
-    private array $handlers;
+    private array $handlers = [];
 
     public function __construct(
         AiConversation $conversation,
@@ -27,19 +22,15 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
         AiMemoryService $memoryService,
         TargetedResumeService $targetedResumeService,
     ) {
-        $handlers = [
-            new GetResumeDataTool($resumeDataService),
-            new GetJobDescriptionTool($conversation),
-            new GetResumeMemoriesTool($memoryService, $conversation->user_id),
-            new UpdateFitAssessmentTool($conversation),
-            new SaveTailoredResumeTool($conversation, $targetedResumeService),
-            new SaveCoverLetterTool($conversation, $targetedResumeService),
-            new MarkAppliedTool($conversation),
-        ];
-
-        foreach ($handlers as $handler) {
-            $this->handlers[$handler->name()] = $handler;
-        }
+        $this->handlers = $this->discoverHandlers([
+            app_path('Services/Mcp/Tools/TargetedResume'),
+        ], [
+            'conversation' => $conversation,
+            'resumeDataService' => $resumeDataService,
+            'memoryService' => $memoryService,
+            'targetedResumeService' => $targetedResumeService,
+            'userId' => $conversation->user_id,
+        ]);
     }
 
     /**

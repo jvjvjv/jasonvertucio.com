@@ -5,26 +5,35 @@ namespace App\Services\Mcp;
 use App\Contracts\Mcp\AiToolHandlerContract;
 use App\Contracts\Mcp\AiToolRegistryContract;
 use App\Contracts\ResumeDataServiceContract;
-use App\Services\Mcp\Tools\ChatBot\GetRecentBlogPostsTool;
-use App\Services\Mcp\Tools\ChatBot\GetResumeDataTool;
-use App\Services\Mcp\Tools\ChatBot\GetSiteInfoTool;
+use App\Models\AiConversation;
+use App\Services\AiMemoryService;
+use App\Services\TargetedResumeService;
 
 class ChatBotToolRegistry implements AiToolRegistryContract
 {
+    use DiscoversAiToolHandlers;
+
     /** @var array<string, AiToolHandlerContract> */
-    private array $handlers;
+    private array $handlers = [];
 
-    public function __construct(ResumeDataServiceContract $resumeDataService)
+    public function __construct(
+        AiConversation $conversation,
+        ResumeDataServiceContract $resumeDataService,
+        AiMemoryService $memoryService,
+        TargetedResumeService $targetedResumeService,
+    )
     {
-        $handlers = [
-            new GetResumeDataTool($resumeDataService),
-            new GetRecentBlogPostsTool(),
-            new GetSiteInfoTool(),
-        ];
-
-        foreach ($handlers as $handler) {
-            $this->handlers[$handler->name()] = $handler;
-        }
+        $this->handlers = $this->discoverHandlers(
+            [app_path('Services/Mcp/Tools')],
+            [
+                'conversation' => $conversation,
+                'resumeDataService' => $resumeDataService,
+                'memoryService' => $memoryService,
+                'targetedResumeService' => $targetedResumeService,
+                'userId' => $conversation->user_id,
+            ],
+            ['Services/Mcp/Tools/ChatBot'],
+        );
     }
 
     /**
