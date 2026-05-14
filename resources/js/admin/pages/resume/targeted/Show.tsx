@@ -170,6 +170,7 @@ export default function Show({
 
                 const decoder = new TextDecoder();
                 let accumulated = "";
+                let preambleText = "";
 
                 for (;;) {
                     const { done, value } = await reader.read();
@@ -193,7 +194,15 @@ export default function Show({
                                 accumulated += event.delta.text;
                                 setStreamingContent(accumulated);
                             } else if (event.type === "tool_use_progress") {
-                                // Move preamble text into a tool panel; reset main stream
+                                // Move preamble text into a tool panel; reset main stream.
+                                // Save accumulated text so it survives the reset and ends
+                                // up in the final message even if the follow-up iteration
+                                // produces no additional text.
+                                if (accumulated) {
+                                    preambleText +=
+                                        (preambleText ? "\n\n" : "") +
+                                        accumulated;
+                                }
                                 setStreamingToolPanels((prev) => [
                                     ...prev,
                                     {
@@ -210,7 +219,6 @@ export default function Show({
                                         "coverLetter",
                                         "conversation",
                                     ],
-                                    preserveState: true,
                                 });
                             } else if (event.type === "error") {
                                 accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
@@ -222,12 +230,16 @@ export default function Show({
                     }
                 }
 
-                if (accumulated) {
+                const finalContent = preambleText
+                    ? preambleText + (accumulated ? "\n\n" + accumulated : "")
+                    : accumulated;
+
+                if (finalContent) {
                     setMessages((prev) => [
                         ...prev,
                         {
                             role: "assistant",
-                            content: accumulated,
+                            content: finalContent,
                             created_at: new Date().toISOString(),
                         },
                     ]);

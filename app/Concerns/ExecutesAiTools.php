@@ -27,6 +27,10 @@ trait ExecutesAiTools
         int $maxIterations = 6,
         ?array &$result = null,
     ): Generator {
+        $preambleText = '';
+        $totalInputTokens = 0;
+        $totalOutputTokens = 0;
+
         for ($iteration = 0; $iteration < $maxIterations; $iteration++) {
             $stream = $client->withTools($toolRegistry->toApiTools())->stream($messages);
 
@@ -95,17 +99,31 @@ trait ExecutesAiTools
                 ];
             }
 
+            $totalInputTokens += (int) ($inputTokens ?? 0);
+            $totalOutputTokens += (int) ($outputTokens ?? 0);
+
             // No tool calls — this is the final response
             if ($stopReason !== 'tool_use' || $toolCalls === []) {
+                $combinedText = $preambleText !== ''
+                    ? $preambleText . ($fullText !== '' ? "\n\n" . $fullText : '')
+                    : $fullText;
+
                 $result = [
-                    'text' => $fullText,
-                    'inputTokens' => $inputTokens,
-                    'outputTokens' => $outputTokens,
+                    'text' => $combinedText,
+                    'inputTokens' => $totalInputTokens ?: null,
+                    'outputTokens' => $totalOutputTokens ?: null,
                 ];
 
                 yield "data: " . json_encode(['type' => 'message_stop']) . "\n\n";
 
                 return;
+            }
+
+            // Accumulate preamble text from this tool-calling iteration so it
+            // is included in the final saved message even if the follow-up
+            // iteration produces no additional text.
+            if ($fullText !== '') {
+                $preambleText .= ($preambleText !== '' ? "\n\n" : '') . $fullText;
             }
 
             // Notify the frontend that tool calls are happening so it can display a panel.
@@ -160,7 +178,11 @@ trait ExecutesAiTools
         // Safety cap reached
         Log::warning('AI tool loop reached max iterations', ['maxIterations' => $maxIterations]);
 
-        $result = ['text' => '', 'inputTokens' => null, 'outputTokens' => null];
+        $result = [
+            'text' => $preambleText,
+            'inputTokens' => $totalInputTokens ?: null,
+            'outputTokens' => $totalOutputTokens ?: null,
+        ];
 
         yield "data: " . json_encode(['type' => 'message_stop']) . "\n\n";
     }
