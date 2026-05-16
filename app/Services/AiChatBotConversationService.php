@@ -104,6 +104,7 @@ class AiChatBotConversationService
         $startTime = microtime(true);
         $resolvedModel = $conversation->aiSystem->model;
         $maxTokens = $conversation->aiSystem->max_tokens;
+        $resolvedTemperature = $conversation->aiChatBot?->resolvedTemperature();
 
         // Base request payload shape — kept in sync each iteration, used in catch block for error logging
         $requestPayload = [
@@ -111,6 +112,10 @@ class AiChatBotConversationService
             'max_tokens' => $maxTokens,
             'messages' => $apiMessages,
         ];
+
+        if ($resolvedTemperature !== null) {
+            $requestPayload['temperature'] = $resolvedTemperature;
+        }
 
         if ($systemPrompt !== null) {
             $requestPayload['system'] = $systemPrompt;
@@ -156,6 +161,10 @@ class AiChatBotConversationService
 
                 $client->withMaxTokens($maxTokens);
 
+                if ($resolvedTemperature !== null) {
+                    $client->withTemperature($resolvedTemperature);
+                }
+
                 if ($toolRegistry !== null) {
                     $client->withTools($toolRegistry->toApiTools());
                 }
@@ -165,6 +174,10 @@ class AiChatBotConversationService
                     'max_tokens' => $maxTokens,
                     'messages' => $iterationMessages,
                 ];
+
+                if ($resolvedTemperature !== null) {
+                    $iterationRequestPayload['temperature'] = $resolvedTemperature;
+                }
 
                 if ($systemPrompt !== null) {
                     $iterationRequestPayload['system'] = $systemPrompt;

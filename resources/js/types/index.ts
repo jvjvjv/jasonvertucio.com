@@ -78,6 +78,8 @@ export interface AiChatBot {
     access_path: "chat" | "root";
     public_url?: string;
     description: string | null;
+    context_length?: number | null;
+    temperature?: number | null;
     prompt_template?: string;
     allowed_roles: string[];
     is_active: boolean;

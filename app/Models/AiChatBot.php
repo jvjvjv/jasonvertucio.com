@@ -20,6 +20,8 @@ class AiChatBot extends Model
 
     protected $fillable = [
         'ai_system_id',
+        'context_length',
+        'temperature',
         'name',
         'slug',
         'access_path',
@@ -39,6 +41,8 @@ class AiChatBot extends Model
     {
         return [
             'allowed_roles' => 'array',
+            'context_length' => 'integer',
+            'temperature' => 'decimal:2',
             'is_active' => 'boolean',
             'is_public' => 'boolean',
             'require_visitor_identity' => 'boolean',
@@ -124,6 +128,24 @@ class AiChatBot extends Model
     public function featureKey(): string
     {
         return 'chat-bot:' . $this->slug;
+    }
+
+    public function resolvedTemperature(): ?float
+    {
+        if ($this->temperature !== null) {
+            return (float) $this->temperature;
+        }
+
+        if ($this->aiSystem?->temperature !== null) {
+            return (float) $this->aiSystem->temperature;
+        }
+
+        return null;
+    }
+
+    public function resolvedContextLength(): ?int
+    {
+        return $this->context_length ?? $this->aiSystem?->context_length;
     }
 
     public function usesRootAccessPath(): bool

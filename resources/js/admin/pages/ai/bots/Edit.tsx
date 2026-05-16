@@ -4,8 +4,9 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 
-import Form, { type FormData } from "./Form";
+import Form from "./Form";
 
+import type { FormData } from "./Form";
 import type { AiChatBot } from "@/types";
 import type { SyntheticEvent } from "react";
 
@@ -16,11 +17,13 @@ import AdminLayout from "@/admin/layouts/AdminLayout";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface EditProps {
-    bot: AiChatBot;
+    bot: Omit<AiChatBot, "ai_system"> & { ai_system_id: number };
     systems: {
         id: number;
         name: string;
         model: string;
+        context_length: number | null;
+        temperature: number | null;
         supports_tools: boolean;
     }[];
     roles: string[];
@@ -32,7 +35,9 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         slug: bot.slug,
         access_path: bot.access_path,
         description: bot.description ?? "",
-        ai_system_id: bot.ai_system.id,
+        ai_system_id: bot.ai_system_id,
+        context_length: bot.context_length ?? null,
+        temperature: bot.temperature?.toString() ?? "",
         prompt_template: bot.prompt_template ?? "",
         allowed_roles: bot.allowed_roles,
         is_active: bot.is_active,

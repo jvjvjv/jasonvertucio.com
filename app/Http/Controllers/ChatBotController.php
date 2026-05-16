@@ -165,7 +165,7 @@ class ChatBotController extends Controller
         $this->abortIfInaccessible($request, $aiChatBot);
 
         return response()->json([
-            'status' => $this->modelReadinessService->statusForSystem($aiChatBot->aiSystem),
+            'status' => $this->modelReadinessService->statusForChatBot($aiChatBot),
         ]);
     }
 
@@ -174,7 +174,7 @@ class ChatBotController extends Controller
         $this->abortIfInaccessible($request, $aiChatBot);
 
         return response()->json([
-            'status' => $this->modelReadinessService->warmUpSystem($aiChatBot->aiSystem),
+            'status' => $this->modelReadinessService->warmUpChatBot($aiChatBot),
         ]);
     }
 

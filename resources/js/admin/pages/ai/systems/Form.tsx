@@ -444,12 +444,6 @@ export default function AiSystemForm({
                     }}
                     disabled={!supportsContextLength}
                     error={!!errors.context_length}
-                    helperText={
-                        errors.context_length ??
-                        (supportsContextLength
-                            ? "Optional LM Studio model load override"
-                            : "This provider does not expose context length here")
-                    }
                     slotProps={{ htmlInput: { min: 1, max: 200000 } }}
                 />
             </Box>

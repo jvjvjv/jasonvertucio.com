@@ -67,6 +67,8 @@ class AiChatBotControllerTest extends TestCase
             'access_path' => 'root',
             'description' => 'Qualify inbound prospects.',
             'ai_system_id' => $system->id,
+            'context_length' => 8192,
+            'temperature' => 0.45,
             'prompt_template' => 'You are {{bot_name}}.',
             'allowed_roles' => ['admin'],
             'is_active' => true,
@@ -80,6 +82,8 @@ class AiChatBotControllerTest extends TestCase
             'slug' => 'lead-intake',
             'access_path' => 'root',
             'ai_system_id' => $system->id,
+            'context_length' => 8192,
+            'temperature' => '0.45',
             'is_public' => false,
             'require_visitor_identity' => true,
         ]);

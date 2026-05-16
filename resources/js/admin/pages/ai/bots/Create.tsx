@@ -18,6 +18,8 @@ interface CreateProps {
         id: number;
         name: string;
         model: string;
+        context_length: number | null;
+        temperature: number | null;
         supports_tools: boolean;
     }[];
     roles: string[];
@@ -30,6 +32,8 @@ export default function Create({ systems, roles }: CreateProps) {
         access_path: "chat",
         description: "",
         ai_system_id: "",
+        context_length: null,
+        temperature: "",
         prompt_template: "You are {{bot_name}}. {{bot_description}}",
         allowed_roles: [],
         is_active: true,
