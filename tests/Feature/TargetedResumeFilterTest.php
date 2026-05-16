@@ -9,6 +9,7 @@ use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
+use App\Models\TargetedResumeStatusUpdate;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -141,7 +142,7 @@ class TargetedResumeFilterTest extends TestCase
         );
     }
 
-    public function test_filter_by_applied_resume_status_and_exposes_applied_date(): void {
+    public function test_filter_by_applied_resume_status_and_exposes_latest_status_update(): void {
         Carbon::setTestNow('2026-05-03 09:30:00');
 
         $finalized = AiConversation::factory()->completed()->create();
@@ -151,10 +152,14 @@ class TargetedResumeFilterTest extends TestCase
         ]);
 
         $applied = AiConversation::factory()->completed()->create();
-        TargetedResume::factory()->applied()->create([
+        $appliedResume = TargetedResume::factory()->applied()->create([
             'ai_conversation_id' => $applied->id,
             'company_name' => 'AppliedCo',
-            'applied_at' => now(),
+        ]);
+        \App\Models\TargetedResumeStatusUpdate::create([
+            'targeted_resume_id' => $appliedResume->id,
+            'status' => 'applied',
+            'occurred_at' => now(),
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -166,35 +171,41 @@ class TargetedResumeFilterTest extends TestCase
                 ->component('resume/targeted/Index', false)
                 ->where('conversations', fn($conversations) => collect($conversations)->count() === 1
                     && data_get(collect($conversations)->first(), 'targeted_resume.company_name') === 'AppliedCo'
-                    && data_get(collect($conversations)->first(), 'targeted_resume.applied_at') === '2026-05-03')
+                    && data_get(collect($conversations)->first(), 'targeted_resume.latest_status_update.occurred_at') === '2026-05-03')
         );
 
         Carbon::setTestNow();
     }
 
-    public function test_marking_a_targeted_resume_as_applied_sets_status_and_date(): void {
+    public function test_logging_applied_status_update_sets_status_and_creates_history(): void {
         Carbon::setTestNow('2026-05-03 14:15:00');
 
         $conversation = AiConversation::factory()->completed()->create();
         $targetedResume = TargetedResume::factory()->finalized()->create([
             'ai_conversation_id' => $conversation->id,
-            'applied_at' => null,
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->post(route('admin.resume.targeted.applied', $conversation));
+            ->postJson(route('admin.resume.targeted.status-update', $conversation), [
+                'status' => 'applied',
+                'occurred_at' => '2026-05-03',
+            ]);
 
-        $response->assertRedirect(route('admin.resume.targeted.show', $conversation));
+        $response->assertOk();
+        $response->assertJsonPath('status', 'applied');
 
         $targetedResume->refresh();
 
         $this->assertSame(TargetedResumeStatus::Applied, $targetedResume->status);
-        $this->assertSame('2026-05-03 14:15:00', $targetedResume->applied_at?->format('Y-m-d H:i:s'));
+        $this->assertDatabaseHas('targeted_resume_status_updates', [
+            'targeted_resume_id' => $targetedResume->id,
+            'status' => 'applied',
+        ]);
 
         Carbon::setTestNow();
     }
 
-    public function test_updating_metadata_can_set_applied_date(): void
+    public function test_updating_metadata_updates_title_company_and_job_title(): void
     {
         $conversation = AiConversation::factory()->completed()->create([
             'title' => 'Original Title',
@@ -208,7 +219,6 @@ class TargetedResumeFilterTest extends TestCase
             'ai_conversation_id' => $conversation->id,
             'company_name' => 'Old Company',
             'position' => 'Old Title',
-            'applied_at' => null,
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -216,7 +226,6 @@ class TargetedResumeFilterTest extends TestCase
                 'title' => 'Updated Title',
                 'company_name' => 'New Company',
                 'job_title' => 'New Title',
-                'applied_at' => '2026-05-01',
             ]);
 
         $response->assertRedirect(route('admin.resume.targeted.show', $conversation));
@@ -227,8 +236,9 @@ class TargetedResumeFilterTest extends TestCase
         $this->assertSame('Updated Title', $conversation->title);
         $this->assertSame('New Company', data_get($conversation->context, 'company_name'));
         $this->assertSame('New Title', data_get($conversation->context, 'job_title'));
-        $this->assertSame(TargetedResumeStatus::Applied, $targetedResume->status);
-        $this->assertSame('2026-05-01', $targetedResume->applied_at?->toDateString());
+        $this->assertSame('New Company', $targetedResume->company_name);
+        $this->assertSame('New Title', $targetedResume->position);
+        $this->assertSame(TargetedResumeStatus::Finalized, $targetedResume->status);
     }
 
     public function test_filter_by_single_status(): void

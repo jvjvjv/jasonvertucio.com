@@ -226,10 +226,9 @@ class TargetedResumeService
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
-                'status' => $existingTargetedResume?->status === TargetedResumeStatus::Applied
-                    ? TargetedResumeStatus::Applied
+                'status' => ($existingTargetedResume?->status !== null && $existingTargetedResume->status !== TargetedResumeStatus::Draft)
+                    ? $existingTargetedResume->status
                     : TargetedResumeStatus::Finalized,
-                'applied_at' => $existingTargetedResume?->applied_at,
             ]
         );
 
@@ -462,7 +461,7 @@ Use these tools to load data and take actions at the appropriate steps:
 - `update_fit_assessment` — Call this after Step 4 to persist the fit score, fit summary, company name, and job title. Do NOT write "Fit Score: N" in your text response; use this tool instead so the data is saved.
 - `save_tailored_resume` — Call this when the user approves the tailored resume. It generates DOCX and PDF automatically.
 - `save_cover_letter` — Call this when the user approves the cover letter. It generates DOCX and PDF automatically.
-- `mark_applied` - Call this when the user asks to mark this job as applied. It saves today's date as the applied date and updates the resume status to "Applied". Only call this when the candidate confirms they have submitted an application. Does nothing if an applied date is already recorded.
+- `update_status` - Call this when the user reports a status change in their job application (e.g. "I applied", "I have an interview on June 12th", "I got rejected"). Accepts status (applied, interviewing, interviewed, offered, accepted, hired, rejected), an optional date, and optional notes. For `interviewing`, the date should be the scheduled interview date.
 
 ## Your Role
 
@@ -609,7 +608,6 @@ PROMPT;
         $title = trim((string) ($data['title'] ?? ''));
         $companyName = trim((string) ($data['company_name'] ?? ''));
         $jobTitle = trim((string) ($data['job_title'] ?? ''));
-        $appliedAt = $data['applied_at'] ?? null;
 
         $conversation->title = $title !== '' ? $title : null;
 
@@ -633,21 +631,12 @@ PROMPT;
         $conversation->save();
 
         if ($conversation->targetedResume) {
-            $targetedResumeData = [
+            $conversation->targetedResume->update([
                 'company_name' => $context['company_name'] ?? $conversation->targetedResume->company_name,
                 'position' => $context['job_title'] ?? $conversation->targetedResume->position,
                 'fit_score' => $context['fit_score'] ?? $conversation->targetedResume->fit_score,
                 'fit_summary' => $context['fit_summary'] ?? $conversation->targetedResume->fit_summary,
-                'applied_at' => $appliedAt,
-            ];
-
-            if ($appliedAt !== null && $appliedAt !== '') {
-                $targetedResumeData['status'] = TargetedResumeStatus::Applied;
-            } elseif ($conversation->targetedResume->status === TargetedResumeStatus::Applied) {
-                $targetedResumeData['status'] = TargetedResumeStatus::Finalized;
-            }
-
-            $conversation->targetedResume->update($targetedResumeData);
+            ]);
         }
 
         return $conversation->fresh(['targetedResume']);

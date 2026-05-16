@@ -131,6 +131,13 @@ export interface PaginatedResponse<T> {
 
 // Resume / Targeted
 
+export interface StatusUpdate {
+    id: number;
+    status: string;
+    notes?: string | null;
+    occurred_at: string;
+}
+
 export interface TargetedResume {
     id: number;
     company_name: string;
@@ -138,11 +145,13 @@ export interface TargetedResume {
     fit_score: number | null;
     status: string;
     resume_version?: string | null;
-    applied_at?: string | null;
+    latest_status_update?: { status: string; occurred_at: string } | null;
     docx_path?: boolean;
     pdf_path?: boolean;
     tailored_content?: string | null;
     tailored_title?: string | null;
+    status_updates?: StatusUpdate[];
+    allowed_next_statuses?: string[];
 }
 
 export interface ConversationUsage {

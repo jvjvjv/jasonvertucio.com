@@ -10,14 +10,22 @@ export type ChipColor =
 export function statusColor(status: string): ChipColor {
     switch (status) {
         case "finalized":
+        case "offered":
             return "primary";
         case "applied":
         case "completed":
+        case "accepted":
+        case "hired":
             return "success";
+        case "interviewing":
+            return "warning";
         case "active":
+        case "interviewed":
             return "info";
         case "pass":
             return "secondary";
+        case "rejected":
+            return "error";
         default:
             return "default";
     }

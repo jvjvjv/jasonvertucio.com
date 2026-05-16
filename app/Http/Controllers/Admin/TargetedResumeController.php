@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AiConversationStatus;
+use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
@@ -12,6 +13,7 @@ use App\Models\CoverLetter;
 use App\Models\JobUrl;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
+use App\Models\TargetedResumeStatusUpdate;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
@@ -38,7 +40,7 @@ class TargetedResumeController extends Controller
         $statuses = is_array($statuses) ? $statuses : [$statuses];
         $search = $request->input('search', '');
 
-        $query = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion'])
+        $query = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion', 'targetedResume.latestStatusUpdate'])
             ->withCount(['messages' => fn($q) => $q->where('role', '!=', 'system')])
             ->where('feature', 'targeted-resume');
 
@@ -95,7 +97,10 @@ class TargetedResumeController extends Controller
                 'fit_score' => $conv->targetedResume->fit_score,
                 'status' => $conv->targetedResume->status->value ?? $conv->targetedResume->status,
                 'resume_version' => $conv->targetedResume->resumeVersion?->version,
-                'applied_at' => $conv->targetedResume->applied_at?->toDateString(),
+                'latest_status_update' => $conv->targetedResume->latestStatusUpdate ? [
+                    'status' => $conv->targetedResume->latestStatusUpdate->status->value,
+                    'occurred_at' => $conv->targetedResume->latestStatusUpdate->occurred_at?->toDateString(),
+                ] : null,
             ] : null,
         ]);
 
@@ -160,7 +165,7 @@ class TargetedResumeController extends Controller
      */
     public function show(AiConversation $conversation): InertiaResponse
     {
-        $conversation->load('messages', 'aiSystem');
+        $conversation->load('messages', 'aiSystem', 'targetedResume.statusUpdates');
 
         // Get displayable messages (exclude system messages)
         $messages = $conversation->messages
@@ -212,10 +217,16 @@ class TargetedResumeController extends Controller
                 'status' => $targetedResume->status->value ?? $targetedResume->status,
                 'docx_path' => $targetedResume->docx_path ? true : false,
                 'pdf_path' => $targetedResume->pdf_path ? true : false,
-                'applied_at' => $targetedResume->applied_at?->toDateString(),
                 'tailored_content' => data_get($targetedResume->tailored_data, 'markdown')
                     ?? data_get($targetedResume->tailored_data, 'content'),
                 'tailored_title' => $targetedResume->title,
+                'status_updates' => $targetedResume->statusUpdates->map(fn ($u) => [
+                    'id' => $u->id,
+                    'status' => $u->status->value,
+                    'notes' => $u->notes,
+                    'occurred_at' => $u->occurred_at?->toIso8601String(),
+                ])->values()->toArray(),
+                'allowed_next_statuses' => $this->getAllowedNextStatuses($targetedResume->status),
             ] : null,
             'coverLetter' => $coverLetter ? [
                 'id' => $coverLetter->id,
@@ -383,34 +394,67 @@ class TargetedResumeController extends Controller
     }
 
     /**
-     * Mark a targeted resume as applied.
+     * Add a status update to a targeted resume's application history.
      */
-    public function applied(AiConversation $conversation): RedirectResponse {
+    public function addStatusUpdate(Request $request, AiConversation $conversation): JsonResponse
+    {
+        $request->validate([
+            'status' => ['required', 'string', 'in:' . implode(',', array_column(TargetedResumeApplicationStatus::cases(), 'value'))],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'occurred_at' => ['nullable', 'date'],
+        ]);
+
         $targetedResume = $conversation->targetedResume;
 
-        if (!$targetedResume) {
-            // Create minimal targeted resume record with base_resume=true and fit score from context
-            $targetedResume = TargetedResume::create([
-                'resume_version_id' => $conversation->context['resume_version_id'] ?? null,
-                'ai_conversation_id' => $conversation->id,
-                'job_url_id' => $conversation->context['job_url_id'] ?? null,
-                'company_name' => $conversation->context['company_name'] ?? 'Unknown Company',
-                'position' => $conversation->context['job_title'] ?? 'Unknown Position',
-                'job_description' => $conversation->context['job_description'] ?? 'Missing job description',
-                'fit_score' => $conversation->context['fit_score'] ?? null,
-                'status' => TargetedResumeStatus::Applied,
-                'applied_at' => now(),
-                'base_resume' => true,
-            ]);
-        } else {
-            $targetedResume->update([
-                'status' => TargetedResumeStatus::Applied,
-                'applied_at' => now(),
-            ]);
+        if (! $targetedResume) {
+            return response()->json(['message' => 'No finalized resume found. Save the tailored resume first.'], 422);
         }
 
-        return redirect()->route('admin.resume.targeted.show', $conversation)
-            ->with('success', 'Job marked as applied.');
+        $newStatus = TargetedResumeApplicationStatus::from($request->input('status'));
+        $currentStatus = TargetedResumeApplicationStatus::tryFrom($targetedResume->status->value);
+
+        if ($currentStatus?->isTerminal()) {
+            return response()->json(['message' => 'Cannot add a status update to a terminal application.'], 422);
+        }
+
+        $occurredAt = $request->input('occurred_at') ? now()->parse($request->input('occurred_at')) : now();
+
+        TargetedResumeStatusUpdate::create([
+            'targeted_resume_id' => $targetedResume->id,
+            'status' => $newStatus->value,
+            'notes' => $request->input('notes'),
+            'occurred_at' => $occurredAt,
+        ]);
+
+        $targetedResume->update(['status' => TargetedResumeStatus::from($newStatus->value)]);
+
+        $targetedResume->load('statusUpdates');
+
+        return response()->json([
+            'success' => true,
+            'status' => $newStatus->value,
+            'status_updates' => $targetedResume->statusUpdates->map(fn ($u) => [
+                'id' => $u->id,
+                'status' => $u->status->value,
+                'notes' => $u->notes,
+                'occurred_at' => $u->occurred_at?->toIso8601String(),
+            ])->values()->toArray(),
+            'allowed_next_statuses' => $this->getAllowedNextStatuses(TargetedResumeStatus::from($newStatus->value)),
+        ]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getAllowedNextStatuses(TargetedResumeStatus $status): array
+    {
+        $appStatus = TargetedResumeApplicationStatus::tryFrom($status->value);
+
+        if ($appStatus === null || $appStatus->isTerminal()) {
+            return [];
+        }
+
+        return array_map(fn ($s) => $s->value, $appStatus->allowedNext());
     }
 
     /**

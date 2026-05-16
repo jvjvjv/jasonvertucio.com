@@ -8,19 +8,24 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
-import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
+import UpdateIcon from "@mui/icons-material/Update";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
@@ -35,6 +40,7 @@ import type {
     CoverLetter,
     Message,
     SharedProps,
+    StatusUpdate,
     TargetedResume,
 } from "@/types";
 import type { SyntheticEvent } from "react";
@@ -112,8 +118,19 @@ export default function Show({
             targetedResume?.position ??
             (conversation.context?.job_title as string | undefined) ??
             "",
-        applied_at: targetedResume?.applied_at ?? "",
     });
+
+    const [statusUpdates, setStatusUpdates] = useState<StatusUpdate[]>(
+        targetedResume?.status_updates ?? [],
+    );
+    const [allowedNextStatuses, setAllowedNextStatuses] = useState<string[]>(
+        targetedResume?.allowed_next_statuses ?? [],
+    );
+    const [selectedNextStatus, setSelectedNextStatus] = useState("");
+    const [statusNotes, setStatusNotes] = useState("");
+    const [statusOccurredAt, setStatusOccurredAt] = useState("");
+    const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
+    const [statusError, setStatusError] = useState<string | null>(null);
 
     const csrfToken =
         document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
@@ -326,7 +343,7 @@ export default function Show({
 
     // Compute fit score from either targeted resume or conversation context.
     // Fit scores are always 1-100, so we can use falsy checks to simplify logic.
-    const hasFitScore = () => {
+    const _hasFitScore = () => {
         if (targetedResume?.fit_score) return true;
         if (conversation.context?.fit_score) return true;
         return false;
@@ -444,16 +461,50 @@ export default function Show({
         );
     };
 
-    const handleApplied = () => {
-        confirm(
-            "Mark this job as applied?",
-            () => {
-                router.post(
-                    `/admin/resume/targeted-builder/${conversation.id}/applied`,
-                );
-            },
-            { confirmLabel: "Applied", confirmColor: "success" },
-        );
+    const handleAddStatusUpdate = async (e: SyntheticEvent) => {
+        e.preventDefault();
+        if (!selectedNextStatus || !targetedResume) {
+            return;
+        }
+        setIsSubmittingStatus(true);
+        setStatusError(null);
+        try {
+            const res = await fetch(
+                `/admin/resume/targeted-builder/${conversation.id}/status-update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        status: selectedNextStatus,
+                        notes: statusNotes || null,
+                        occurred_at: statusOccurredAt || null,
+                    }),
+                },
+            );
+            const data = (await res.json()) as {
+                success?: boolean;
+                message?: string;
+                status_updates?: StatusUpdate[];
+                allowed_next_statuses?: string[];
+            };
+            if (!res.ok || !data.success) {
+                setStatusError(data.message ?? "Failed to update status.");
+                return;
+            }
+            setStatusUpdates(data.status_updates ?? []);
+            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            setSelectedNextStatus("");
+            setStatusNotes("");
+            setStatusOccurredAt("");
+        } catch {
+            setStatusError("Failed to update status.");
+        } finally {
+            setIsSubmittingStatus(false);
+        }
     };
 
     const handleMetadataSave = (e: SyntheticEvent) => {
@@ -483,6 +534,7 @@ export default function Show({
             <TargetedBuilderStatusBar
                 conversation={conversation}
                 targetedResume={targetedResume}
+                statusUpdates={statusUpdates}
             />
 
             <Box
@@ -534,27 +586,6 @@ export default function Show({
                         pr: 1,
                     }}
                 >
-                    <ResponsiveButton
-                        size="small"
-                        color="success"
-                        icon={<DoneIcon />}
-                        label={
-                            targetedResume?.status === "applied"
-                                ? "Applied"
-                                : "Mark Applied"
-                        }
-                        title={
-                            targetedResume?.status === "applied"
-                                ? "Already marked as applied"
-                                : "Mark as applied"
-                        }
-                        variant="outlined"
-                        disabled={
-                            !hasFitScore() ||
-                            targetedResume?.status === "applied"
-                        }
-                        onClick={handleApplied}
-                    />
                     <ResponsiveButton
                         size="small"
                         color="warning"
@@ -915,26 +946,6 @@ export default function Show({
                                     </Link>
                                 </Box>
                             )}
-                            <TextField
-                                label="Applied Date"
-                                type="date"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.applied_at}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "applied_at",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.applied_at}
-                                helperText={
-                                    metadataForm.errors.applied_at ??
-                                    "Leave blank if you have not applied yet."
-                                }
-                                slotProps={{ inputLabel: { shrink: true } }}
-                                sx={{ mb: 3 }}
-                            />
                             <Box
                                 sx={{
                                     display: "flex",
@@ -978,6 +989,186 @@ export default function Show({
                                         {targetedResume.position}
                                     </Typography>
                                 </Box>
+                            </Box>
+                        )}
+                        {targetedResume && (
+                            <Box
+                                sx={{
+                                    mt: 3,
+                                    pt: 3,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Application Status History
+                                </Typography>
+                                {statusUpdates.length === 0 ? (
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        No status updates yet.
+                                    </Typography>
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 1,
+                                        }}
+                                    >
+                                        {statusUpdates.map((u, i) => (
+                                            <Box key={u.id}>
+                                                {i > 0 && (
+                                                    <Divider sx={{ mb: 1 }} />
+                                                )}
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        gap: 1,
+                                                        alignItems:
+                                                            "flex-start",
+                                                    }}
+                                                >
+                                                    <StatusChip
+                                                        status={u.status}
+                                                    />
+                                                    <Box>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
+                                                            {new Date(
+                                                                u.occurred_at,
+                                                            ).toLocaleDateString(
+                                                                undefined,
+                                                                {
+                                                                    year: "numeric",
+                                                                    month: "short",
+                                                                    day: "numeric",
+                                                                },
+                                                            )}
+                                                        </Typography>
+                                                        {u.notes && (
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
+                                                                    mt: 0.25,
+                                                                }}
+                                                            >
+                                                                {u.notes}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                                {allowedNextStatuses.length > 0 && (
+                                    <Box
+                                        component="form"
+                                        onSubmit={(e) => {
+                                            void handleAddStatusUpdate(e);
+                                        }}
+                                        sx={{ mt: 2 }}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ display: "block", mb: 1 }}
+                                        >
+                                            Log Status Update
+                                        </Typography>
+                                        <FormControl
+                                            size="small"
+                                            fullWidth
+                                            sx={{ mb: 1 }}
+                                        >
+                                            <InputLabel id="next-status-label">
+                                                Status
+                                            </InputLabel>
+                                            <Select
+                                                labelId="next-status-label"
+                                                label="Status"
+                                                value={selectedNextStatus}
+                                                onChange={(e) => {
+                                                    setSelectedNextStatus(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            >
+                                                {allowedNextStatuses.map(
+                                                    (s) => (
+                                                        <MenuItem
+                                                            key={s}
+                                                            value={s}
+                                                        >
+                                                            {s
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                s.slice(1)}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                        <TextField
+                                            label={
+                                                selectedNextStatus ===
+                                                "interviewing"
+                                                    ? "Scheduled date"
+                                                    : "Date (optional)"
+                                            }
+                                            type="date"
+                                            size="small"
+                                            fullWidth
+                                            value={statusOccurredAt}
+                                            onChange={(e) => {
+                                                setStatusOccurredAt(
+                                                    e.target.value,
+                                                );
+                                            }}
+                                            slotProps={{
+                                                inputLabel: { shrink: true },
+                                            }}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        <TextField
+                                            label="Notes (optional)"
+                                            size="small"
+                                            fullWidth
+                                            multiline
+                                            rows={2}
+                                            value={statusNotes}
+                                            onChange={(e) => {
+                                                setStatusNotes(e.target.value);
+                                            }}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        {statusError && (
+                                            <Alert
+                                                severity="error"
+                                                sx={{ mb: 1 }}
+                                            >
+                                                {statusError}
+                                            </Alert>
+                                        )}
+                                        <Button
+                                            type="submit"
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<UpdateIcon />}
+                                            disabled={
+                                                !selectedNextStatus ||
+                                                isSubmittingStatus
+                                            }
+                                        >
+                                            Log Status
+                                        </Button>
+                                    </Box>
+                                )}
                             </Box>
                         )}
                         <Box
