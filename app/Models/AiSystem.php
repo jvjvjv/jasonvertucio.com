@@ -19,6 +19,7 @@ class AiSystem extends Model
         'base_url',
         'api_version',
         'max_tokens',
+        'context_length',
         'temperature',
         'is_active',
         'config',
@@ -50,6 +51,7 @@ class AiSystem extends Model
             'is_local_endpoint' => 'boolean',
             'temperature' => 'decimal:2',
             'max_tokens' => 'integer',
+            'context_length' => 'integer',
         ];
     }
 

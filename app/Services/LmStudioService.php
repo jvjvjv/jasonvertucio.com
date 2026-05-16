@@ -11,6 +11,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
 {
     private string $defaultModel;
     private int $defaultMaxTokens;
+    private ?int $defaultContextLength;
 
     /** The root URL, e.g. http://localhost:1234 */
     private string $serverUrl;
@@ -19,6 +20,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     private ?string $system = null;
     private ?string $model = null;
     private ?int $maxTokens = null;
+    private ?int $contextLength = null;
     private ?float $temperature = null;
 
     /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> */
@@ -28,6 +30,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         ?string $serverUrl = null,
         ?string $model = null,
         ?int $maxTokens = null,
+        ?int $contextLength = null,
         ?string $apiKey = null,
     ) {
         $this->serverUrl = $this->normalizeServerUrl(
@@ -35,6 +38,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         );
         $this->defaultModel = $model ?? config('lmstudio.model', '');
         $this->defaultMaxTokens = $maxTokens ?? (int) config('lmstudio.max_tokens', 1024);
+        $this->defaultContextLength = $contextLength;
         $this->apiKey = $apiKey;
     }
 
@@ -302,13 +306,21 @@ class LmStudioService implements AiClientContract, CanLoadModels
      *
      * @return array{status: string, instance_id: string, load_time_seconds: float}
      */
-    public function loadModel(string $model): array
+    public function loadModel(string $model, ?int $contextLength = null): array
     {
+        $payload = [
+            'model' => $model,
+        ];
+
+        $resolvedContextLength = $contextLength ?? $this->contextLength ?? $this->defaultContextLength;
+
+        if ($resolvedContextLength !== null) {
+            $payload['context_length'] = $resolvedContextLength;
+        }
+
         $response = Http::withHeaders($this->headers())
             ->timeout(300)
-            ->post($this->serverUrl . '/api/v1/models/load', [
-                'model' => $model,
-            ]);
+            ->post($this->serverUrl . '/api/v1/models/load', $payload);
 
         $response->throw();
 
@@ -418,6 +430,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $this->system = null;
         $this->model = null;
         $this->maxTokens = null;
+        $this->contextLength = null;
         $this->temperature = null;
         $this->tools = [];
     }

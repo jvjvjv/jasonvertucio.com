@@ -52,6 +52,7 @@ export interface AiSystem {
     base_url: string | null;
     api_version: string | null;
     max_tokens: number;
+    context_length: number | null;
     temperature: number | null;
     config: { [key: string]: unknown } | null;
     credentials?: { [key: string]: unknown } | null;

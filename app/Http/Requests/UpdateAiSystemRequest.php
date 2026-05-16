@@ -26,6 +26,7 @@ class UpdateAiSystemRequest extends FormRequest
             'base_url'    => ['nullable', 'string', 'url', 'max:255'],
             'api_version' => ['nullable', 'string', 'max:50'],
             'max_tokens'  => ['required', 'integer', 'min:1', 'max:200000'],
+            'context_length' => ['nullable', 'integer', 'min:1', 'max:200000'],
             'temperature' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'is_active'   => ['boolean'],
             'system_prompt' => ['nullable', 'string'],

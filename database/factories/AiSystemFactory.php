@@ -22,6 +22,7 @@ class AiSystemFactory extends Factory
             'api_key' => fake()->sha256(),
             'model' => 'claude-sonnet-4-6',
             'max_tokens' => 4096,
+            'context_length' => null,
             'temperature' => 0.7,
             'is_active' => true,
             'config' => [],

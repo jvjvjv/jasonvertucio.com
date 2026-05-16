@@ -25,6 +25,7 @@ interface FormData {
     base_url: string;
     api_version: string;
     max_tokens: number;
+    context_length: number | null;
     temperature: string;
     system_prompt: string;
     config: string;
@@ -45,7 +46,7 @@ interface AiSystemFormProps {
     data: FormData;
     setData: (
         _key: keyof FormData,
-        _value: string | number | boolean | string[],
+        _value: string | number | boolean | string[] | null,
     ) => void;
     errors: Partial<{ [key: string]: string }>;
     existingDefaults: string[];
@@ -78,6 +79,7 @@ const AUTH_TYPES = ["bearer", "x-api-key", "none", "custom"];
 const ENDPOINT_TYPES = ["managed", "openai-compatible", "local"];
 const STREAM_PROTOCOLS = ["sse", "chunked-json", "json-lines"];
 const SYSTEM_PROMPT_MODES = ["top-level", "messages"];
+const PROVIDERS_SUPPORTING_CONTEXT_LENGTH = new Set(["lm-studio"]);
 
 const PROVIDER_DEFAULTS: {
     [key: string]: {
@@ -240,6 +242,9 @@ export default function AiSystemForm({
     const apiVersionPlaceholder = providerDefaults.apiVersion || "Optional";
     const modelPlaceholder =
         providerDefaults.model || "Fetch models or enter model id";
+    const supportsContextLength = PROVIDERS_SUPPORTING_CONTEXT_LENGTH.has(
+        data.provider,
+    );
 
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
@@ -425,6 +430,38 @@ export default function AiSystemForm({
                     helperText={errors.max_tokens}
                     slotProps={{ htmlInput: { min: 1, max: 200000 } }}
                 />
+                <TextField
+                    label="Context Length"
+                    type="number"
+                    size="small"
+                    value={data.context_length ?? ""}
+                    onChange={(e) => {
+                        const value = e.target.value.trim();
+                        setData(
+                            "context_length",
+                            value === "" ? null : parseInt(value) || null,
+                        );
+                    }}
+                    disabled={!supportsContextLength}
+                    error={!!errors.context_length}
+                    helperText={
+                        errors.context_length ??
+                        (supportsContextLength
+                            ? "Optional LM Studio model load override"
+                            : "This provider does not expose context length here")
+                    }
+                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
+                />
+            </Box>
+
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
                 <TextField
                     label="Temperature"
                     type="number"

@@ -26,6 +26,7 @@ export default function Create({ existingDefaults }: CreateProps) {
         base_url: "",
         api_version: "",
         max_tokens: 4096,
+        context_length: null,
         temperature: "",
         system_prompt: "",
         config: "",

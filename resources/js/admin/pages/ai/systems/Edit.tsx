@@ -30,6 +30,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         base_url: aiSystem.base_url ?? "",
         api_version: aiSystem.api_version ?? "",
         max_tokens: aiSystem.max_tokens,
+        context_length: aiSystem.context_length,
         temperature: aiSystem.temperature?.toString() ?? "",
         system_prompt: aiSystem.system_prompt ?? "",
         config: aiSystem.config ? JSON.stringify(aiSystem.config, null, 2) : "",

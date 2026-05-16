@@ -95,7 +95,7 @@ class AiModelReadinessService
 
         if ($client instanceof CanLoadModels) {
             try {
-                $client->loadModel(trim((string) $system->model));
+                $client->loadModel(trim((string) $system->model), $system->context_length);
 
                 // LM Studio may take a short moment to reflect the loaded instance.
                 for ($attempt = 0; $attempt < 5; $attempt++) {

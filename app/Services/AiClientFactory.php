@@ -37,6 +37,7 @@ class AiClientFactory
                 serverUrl: $system->base_url,
                 model: $system->model,
                 maxTokens: $system->max_tokens,
+                contextLength: $system->context_length,
                 apiKey: $system->api_key,
             ),
             AiProvider::Gemini => new GeminiService(
