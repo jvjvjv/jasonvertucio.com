@@ -1,5 +1,9 @@
+import HandymanIcon from "@mui/icons-material/Handyman";
+import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -7,9 +11,19 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
+interface ModelCapabilities {
+    reasoning?: boolean;
+    vision?: boolean;
+    tools?: boolean;
+    max_context_length?: number | null;
+}
+
 interface ModelOption {
     id: string;
     name: string;
+    loaded?: boolean;
+    max_context_length?: number | null;
+    capabilities?: ModelCapabilities;
 }
 
 interface FetchModelsResponse {
@@ -22,6 +36,7 @@ interface FormData {
     provider: string;
     api_key: string;
     model: string;
+    model_capabilities: ModelCapabilities | null;
     base_url: string;
     api_version: string;
     max_tokens: number;
@@ -47,7 +62,7 @@ interface AiSystemFormProps {
     data: FormData;
     setData: (
         _key: keyof FormData,
-        _value: string | number | boolean | string[] | null,
+        _value: string | number | boolean | string[] | ModelCapabilities | null,
     ) => void;
     errors: Partial<{ [key: string]: string }>;
     existingDefaults: string[];
@@ -168,7 +183,9 @@ export default function AiSystemForm({
     const [fetchError, setFetchError] = useState("");
 
     const fetchModels = async () => {
-        if (!data.provider) return;
+        if (!data.provider) {
+            return;
+        }
 
         if (PROVIDERS_REQUIRING_API_KEY.has(data.provider) && !data.api_key) {
             return;
@@ -200,7 +217,20 @@ export default function AiSystemForm({
                 setFetchError(result.error);
                 setAvailableModels([]);
             } else {
-                setAvailableModels(result.models ?? []);
+                const models = result.models ?? [];
+                setAvailableModels(models);
+
+                const selectedModel = models.find(
+                    (model) => model.id === data.model,
+                );
+
+                if (selectedModel) {
+                    setData("model_capabilities", {
+                        ...(selectedModel.capabilities ?? {}),
+                        max_context_length:
+                            selectedModel.max_context_length ?? null,
+                    });
+                }
             }
         } catch {
             setFetchError("Failed to fetch models. Check your API key.");
@@ -215,6 +245,7 @@ export default function AiSystemForm({
 
         setData("provider", value);
         setData("model", "");
+        setData("model_capabilities", null);
         setAvailableModels([]);
         setFetchError("");
 
@@ -228,7 +259,10 @@ export default function AiSystemForm({
     };
 
     const fetchModelOnFieldChange = () => {
-        if (data.provider && data.api_key) {
+        if (
+            data.provider &&
+            (!PROVIDERS_REQUIRING_API_KEY.has(data.provider) || data.api_key)
+        ) {
             void fetchModels();
         }
     };
@@ -246,6 +280,14 @@ export default function AiSystemForm({
     const supportsContextLength = PROVIDERS_SUPPORTING_CONTEXT_LENGTH.has(
         data.provider,
     );
+    const selectedModel =
+        availableModels.find((model) => model.id === data.model) ?? null;
+    const selectedModelCapabilities = selectedModel
+        ? {
+              ...(selectedModel.capabilities ?? {}),
+              max_context_length: selectedModel.max_context_length ?? null,
+          }
+        : data.model_capabilities;
 
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
@@ -343,7 +385,22 @@ export default function AiSystemForm({
                         fullWidth
                         value={data.model}
                         onChange={(e) => {
+                            const nextModel = availableModels.find(
+                                (model) => model.id === e.target.value,
+                            );
+
                             setData("model", e.target.value);
+                            setData(
+                                "model_capabilities",
+                                nextModel
+                                    ? {
+                                          ...(nextModel.capabilities ?? {}),
+                                          max_context_length:
+                                              nextModel.max_context_length ??
+                                              null,
+                                      }
+                                    : null,
+                            );
                         }}
                         disabled={isEdit}
                         error={!!errors.model}
@@ -368,6 +425,57 @@ export default function AiSystemForm({
                             </MenuItem>
                         ))}
                     </TextField>
+
+                    {selectedModelCapabilities && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mt: 1,
+                            }}
+                        >
+                            {selectedModelCapabilities.reasoning && (
+                                <Chip
+                                    size="small"
+                                    icon={<PsychologyAltIcon />}
+                                    label="Reasoning"
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModelCapabilities.vision && (
+                                <Chip
+                                    size="small"
+                                    icon={<VisibilityIcon />}
+                                    label="Vision"
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModelCapabilities.tools && (
+                                <Chip
+                                    size="small"
+                                    icon={<HandymanIcon />}
+                                    label="Tool Use"
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModelCapabilities.max_context_length && (
+                                <Chip
+                                    size="small"
+                                    label={`Max context ${selectedModelCapabilities.max_context_length.toLocaleString()}`}
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModel?.loaded && (
+                                <Chip
+                                    size="small"
+                                    color="success"
+                                    label="Loaded"
+                                    variant="outlined"
+                                />
+                            )}
+                        </Box>
+                    )}
                 </Box>
             </Box>
 

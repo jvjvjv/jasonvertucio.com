@@ -49,6 +49,12 @@ export interface AiSystem {
     provider: string;
     api_key: string;
     model: string;
+    model_capabilities?: {
+        reasoning?: boolean;
+        vision?: boolean;
+        tools?: boolean;
+        max_context_length?: number | null;
+    } | null;
     base_url: string | null;
     api_version: string | null;
     max_tokens: number;

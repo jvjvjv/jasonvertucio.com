@@ -23,6 +23,7 @@ export default function Create({ existingDefaults }: CreateProps) {
         provider: "anthropic",
         api_key: "",
         model: "",
+        model_capabilities: null,
         base_url: "",
         api_version: "",
         max_tokens: 4096,
@@ -101,8 +102,12 @@ export default function Create({ existingDefaults }: CreateProps) {
                     selectable
                     selectedToolNames={form.data.allowed_tools}
                     onToggleTool={(toolName) => {
-                        const nextTools = form.data.allowed_tools.includes(toolName)
-                            ? form.data.allowed_tools.filter((name) => name !== toolName)
+                        const nextTools = form.data.allowed_tools.includes(
+                            toolName,
+                        )
+                            ? form.data.allowed_tools.filter(
+                                  (name) => name !== toolName,
+                              )
                             : [...form.data.allowed_tools, toolName];
 
                         form.setData("allowed_tools", nextTools);

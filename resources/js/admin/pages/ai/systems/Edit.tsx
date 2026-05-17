@@ -27,6 +27,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         provider: aiSystem.provider,
         api_key: aiSystem.api_key,
         model: aiSystem.model,
+        model_capabilities: aiSystem.model_capabilities ?? null,
         base_url: aiSystem.base_url ?? "",
         api_version: aiSystem.api_version ?? "",
         max_tokens: aiSystem.max_tokens,
@@ -153,8 +154,12 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
                     selectable
                     selectedToolNames={form.data.allowed_tools}
                     onToggleTool={(toolName) => {
-                        const nextTools = form.data.allowed_tools.includes(toolName)
-                            ? form.data.allowed_tools.filter((name) => name !== toolName)
+                        const nextTools = form.data.allowed_tools.includes(
+                            toolName,
+                        )
+                            ? form.data.allowed_tools.filter(
+                                  (name) => name !== toolName,
+                              )
                             : [...form.data.allowed_tools, toolName];
 
                         form.setData("allowed_tools", nextTools);

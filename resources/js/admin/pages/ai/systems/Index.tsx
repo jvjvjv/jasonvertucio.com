@@ -6,6 +6,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import HistoryIcon from "@mui/icons-material/History";
+import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -18,6 +20,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import type { AiSystem } from "@/types";
@@ -181,19 +184,53 @@ export default function Index({ systems }: IndexProps) {
                                                 sx={{
                                                     display: "flex",
                                                     gap: 1,
+                                                    flexWrap: "wrap",
                                                 }}
                                             >
+                                                {system.model_capabilities
+                                                    ?.reasoning && (
+                                                    <Tooltip title="Model supports reasoning">
+                                                        <PsychologyAltIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
+                                                {system.model_capabilities
+                                                    ?.vision && (
+                                                    <Tooltip title="Model supports vision">
+                                                        <VisibilityIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
+                                                {system.model_capabilities
+                                                    ?.tools && (
+                                                    <Tooltip title="Model is trained for tool use">
+                                                        <HandymanIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
                                                 {system.supports_tools && (
-                                                    <HandymanIcon fontSize="small" />
+                                                    <Tooltip title="System can expose MCP tools">
+                                                        <HandymanIcon fontSize="small" />
+                                                    </Tooltip>
                                                 )}
                                                 {system.supports_json_mode && (
-                                                    <DataObjectIcon fontSize="small" />
+                                                    <Tooltip title="System supports JSON mode">
+                                                        <DataObjectIcon fontSize="small" />
+                                                    </Tooltip>
                                                 )}
                                                 {system.is_local_endpoint && (
-                                                    <ChairIcon
-                                                        fontSize="small"
-                                                        color="primary"
-                                                    />
+                                                    <Tooltip title="Local endpoint">
+                                                        <ChairIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
                                                 )}
                                             </Box>
                                         </TableCell>

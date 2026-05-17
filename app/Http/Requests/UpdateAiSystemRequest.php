@@ -23,6 +23,11 @@ class UpdateAiSystemRequest extends FormRequest
     {
         return [
             'name'        => ['required', 'string', 'max:255'],
+            'model_capabilities' => ['nullable', 'array'],
+            'model_capabilities.reasoning' => ['nullable', 'boolean'],
+            'model_capabilities.vision' => ['nullable', 'boolean'],
+            'model_capabilities.tools' => ['nullable', 'boolean'],
+            'model_capabilities.max_context_length' => ['nullable', 'integer', 'min:1', 'max:2000000'],
             'base_url'    => ['nullable', 'string', 'url', 'max:255'],
             'api_version' => ['nullable', 'string', 'max:50'],
             'max_tokens'  => ['required', 'integer', 'min:1', 'max:200000'],

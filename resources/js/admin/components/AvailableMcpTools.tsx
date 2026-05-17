@@ -57,11 +57,14 @@ export default function AvailableMcpTools({
                     searchParams.set("ai_system_id", String(aiSystemId));
                 }
 
-                const response = await fetch(`/admin/ai/chat-bots/mcp-tools?${searchParams.toString()}`, {
-                    headers: {
-                        Accept: "application/json",
+                const response = await fetch(
+                    `/admin/ai/chat-bots/mcp-tools?${searchParams.toString()}`,
+                    {
+                        headers: {
+                            Accept: "application/json",
+                        },
                     },
-                });
+                );
 
                 if (!response.ok) {
                     throw new Error("Unable to load MCP tools.");
@@ -125,40 +128,44 @@ export default function AvailableMcpTools({
                     tools.length > 0 ? (
                         <List disablePadding>
                             {tools.map((tool, index) => (
-                            <div key={tool.name}>
-                                {index > 0 ? <Divider component="li" /> : null}
-                                <ListItem
-                                    disableGutters
-                                    alignItems="flex-start"
-                                >
-                                    {selectable ? (
-                                        <Checkbox
-                                            checked={selectedToolNames.includes(tool.name)}
-                                            onChange={() => {
-                                                onToggleTool?.(tool.name);
-                                            }}
-                                            edge="start"
-                                            sx={{ mt: 0.25, mr: 1 }}
-                                        />
+                                <div key={tool.name}>
+                                    {index > 0 ? (
+                                        <Divider component="li" />
                                     ) : null}
-                                    <ListItemText
-                                        primary={tool.name}
-                                        secondary={tool.description}
-                                        slotProps={{
-                                            primary: {
-                                                variant: "subtitle2",
-                                                sx: {
-                                                    fontFamily: "monospace",
+                                    <ListItem
+                                        disableGutters
+                                        alignItems="flex-start"
+                                    >
+                                        {selectable ? (
+                                            <Checkbox
+                                                checked={selectedToolNames.includes(
+                                                    tool.name,
+                                                )}
+                                                onChange={() => {
+                                                    onToggleTool?.(tool.name);
+                                                }}
+                                                edge="start"
+                                                sx={{ mt: 0.25, mr: 1 }}
+                                            />
+                                        ) : null}
+                                        <ListItemText
+                                            primary={tool.name}
+                                            secondary={tool.description}
+                                            slotProps={{
+                                                primary: {
+                                                    variant: "subtitle2",
+                                                    sx: {
+                                                        fontFamily: "monospace",
+                                                    },
                                                 },
-                                            },
-                                            secondary: {
-                                                variant: "body2",
-                                                color: "text.secondary",
-                                            },
-                                        }}
-                                    />
-                                </ListItem>
-                            </div>
+                                                secondary: {
+                                                    variant: "body2",
+                                                    color: "text.secondary",
+                                                },
+                                            }}
+                                        />
+                                    </ListItem>
+                                </div>
                             ))}
                         </List>
                     ) : (

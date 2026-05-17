@@ -262,11 +262,22 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
         return collect($models)
             ->filter(static fn (mixed $m): bool => is_array($m) && isset($m['key']) && ($m['type'] ?? '') === 'llm')
-            ->map(static fn (array $m): array => [
-                'id' => (string) $m['key'],
-                'display_name' => (string) ($m['display_name'] ?? $m['key']),
-                'loaded' => !empty($m['loaded_instances']),
-            ])
+            ->map(static function (array $m): array {
+                $capabilities = is_array($m['capabilities'] ?? null) ? $m['capabilities'] : [];
+                $reasoning = $capabilities['reasoning'] ?? null;
+
+                return [
+                    'id' => (string) $m['key'],
+                    'display_name' => (string) ($m['display_name'] ?? $m['key']),
+                    'loaded' => !empty($m['loaded_instances']),
+                    'max_context_length' => isset($m['max_context_length']) ? (int) $m['max_context_length'] : null,
+                    'capabilities' => [
+                        'vision' => (bool) ($capabilities['vision'] ?? false),
+                        'tools' => (bool) ($capabilities['trained_for_tool_use'] ?? false),
+                        'reasoning' => is_array($reasoning) || (bool) $reasoning,
+                    ],
+                ];
+            })
             ->values()
             ->toArray();
     }
