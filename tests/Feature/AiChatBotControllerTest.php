@@ -115,7 +115,9 @@ class AiChatBotControllerTest extends TestCase
     {
         $user = $this->authenticatedUser();
 
-        $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools'));
+        $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', [
+            'include_all' => 1,
+        ]));
 
         $response->assertOk();
         $response->assertJsonStructure([
@@ -130,6 +132,26 @@ class AiChatBotControllerTest extends TestCase
         $response->assertJsonFragment([
             'name' => 'get_resume_data',
             'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
+        ]);
+    }
+
+    public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void {
+        $user = $this->authenticatedUser();
+        $system = AiSystem::factory()->create([
+            'allowed_tools' => ['get_recent_blog_posts'],
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', [
+            'ai_system_id' => $system->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'tools');
+        $response->assertJsonFragment([
+            'name' => 'get_recent_blog_posts',
+        ]);
+        $response->assertJsonMissing([
+            'name' => 'get_resume_data',
         ]);
     }
 }

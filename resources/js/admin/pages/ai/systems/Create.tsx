@@ -99,6 +99,7 @@ export default function Create({ existingDefaults }: CreateProps) {
             <Box sx={{ mt: 2 }}>
                 <AvailableMcpTools
                     enabled={form.data.supports_tools}
+                    includeAllTools
                     selectable
                     selectedToolNames={form.data.allowed_tools}
                     onToggleTool={(toolName) => {

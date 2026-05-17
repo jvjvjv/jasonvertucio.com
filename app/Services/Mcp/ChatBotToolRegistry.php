@@ -22,6 +22,7 @@ class ChatBotToolRegistry implements AiToolRegistryContract
         AiMemoryService $memoryService,
         TargetedResumeService $targetedResumeService,
         ?array $allowedToolNames = null,
+        bool $exposeAllDiscoveredTools = false,
     )
     {
         $handlers = $this->discoverHandlers(
@@ -35,6 +36,12 @@ class ChatBotToolRegistry implements AiToolRegistryContract
             ],
             ['Services/Mcp/Tools/ChatBot'],
         );
+
+        if ($exposeAllDiscoveredTools) {
+            $this->handlers = $handlers;
+
+            return;
+        }
 
         if ($allowedToolNames === null || $allowedToolNames === []) {
             $this->handlers = [];

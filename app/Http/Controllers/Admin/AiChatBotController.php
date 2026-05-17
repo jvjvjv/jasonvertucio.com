@@ -114,6 +114,7 @@ class AiChatBotController extends Controller
     ): JsonResponse {
         $request->validate([
             'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
+            'include_all' => ['nullable', 'boolean'],
         ]);
 
         $conversation = new AiConversation([
@@ -122,8 +123,9 @@ class AiChatBotController extends Controller
         ]);
 
         $allowedTools = null;
+        $includeAllTools = $request->boolean('include_all');
 
-        if ($request->filled('ai_system_id')) {
+        if (!$includeAllTools && $request->filled('ai_system_id')) {
             $allowedTools = AiSystem::query()
                 ->whereKey($request->integer('ai_system_id'))
                 ->value('allowed_tools');
@@ -135,6 +137,7 @@ class AiChatBotController extends Controller
             $memoryService,
             $targetedResumeService,
             $allowedTools,
+            $includeAllTools,
         );
 
         return response()->json([

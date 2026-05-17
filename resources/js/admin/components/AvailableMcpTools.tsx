@@ -20,6 +20,7 @@ interface AvailableMcpToolsProps {
     enabled?: boolean;
     aiSystemId?: number | "";
     selectable?: boolean;
+    includeAllTools?: boolean;
     selectedToolNames?: string[];
     onToggleTool?: (_toolName: string) => void;
     description?: string;
@@ -29,6 +30,7 @@ export default function AvailableMcpTools({
     enabled = true,
     aiSystemId,
     selectable = false,
+    includeAllTools = false,
     selectedToolNames = [],
     onToggleTool,
     description = "The bot can call these tools when tool use is enabled.",
@@ -55,6 +57,10 @@ export default function AvailableMcpTools({
 
                 if (aiSystemId !== "" && aiSystemId !== undefined) {
                     searchParams.set("ai_system_id", String(aiSystemId));
+                }
+
+                if (includeAllTools) {
+                    searchParams.set("include_all", "1");
                 }
 
                 const response = await fetch(
@@ -98,7 +104,7 @@ export default function AvailableMcpTools({
         return () => {
             isMounted = false;
         };
-    }, [aiSystemId, enabled]);
+    }, [aiSystemId, enabled, includeAllTools]);
 
     if (!enabled) {
         return null;
