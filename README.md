@@ -1,109 +1,60 @@
-# Jason Vertucio Wink Blog
+# Jason Vertucio's Personal Website & Blog
 
-Wink Blog implementation for Jason Vertucio's site.
+Jason Vertucio's personal website, blog, and portfolio built with **Laravel 12** and **Canvas**. This project serves as a modern web application featuring a CMS-powered blog, resume/portfolio section, and AI conversation tracking. As the site is designed to showcase Jason's work it may contain some competing frameworks especially in the history. I used to use Vue and Tailwind for the frontend, but I have been slowly migrating to Inertia.js with MUI Material and React. The public site is still Blade components where the auth tier leverages Inertia and React for a modern SPA-like experience within the Laravel ecosystem.
 
-## Updates
+The blog is powered by Canvas, which provides a user-friendly interface for managing posts, categories, and tags. The resume/portfolio section is built with custom Laravel models and views, allowing for easy updates and maintenance. Additionally, the site includes AI conversation tracking to monitor token usage and costs for any AI interactions.
 
-### 2020.07.03
+## Features
 
-JasonVertucio.com will now require Laravel 7.x, as it is the new requirement for Wink, now on its v1.x branch!
+- **Laravel 12** - Latest PHP framework features
+- **Canvas 6.x** - Blog and content management system (successor to Wink)
+- **Inertia.js 2.x** - SPA-like experience with server-side rendering
+- **React 19** - Modern frontend library
+- **Vite** - Fast build tooling and hot module replacement
+- **Docker support** - Consistent development environment
+- **Role-based access control** - bspdx/keystone package
+- **AI Conversation Tracking** - Token usage and cost tracking for AI interactions
 
-## Dependencies
+## Requirements
 
--   [Composer](https://getcomposer.org) - This dependency manager is required to install all other packages.
--   [Node & NPM](https://nodejs.org) - NodeJS!
--   [Laravel](https://laravel.com) - Laravel 7.x is the base framework for this site
--   [Wink](https://github.com/themsaid/wink) - Wink adds basic blog capabilities to any Laravel blog.
+- [Composer](https://getcomposer.org) - PHP dependency manager
+- [Node.js & NPM](https://nodejs.org) - JavaScript runtime (v18+)
+- [PHP 8.4+](https://php.net) - Required by Laravel 12
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) - Optional but recommended
 
-## Development Setup
-
-### Clone repository
-
-```
-git clone https://github.com/jvjvjv/winkglog.git
-```
-
-### Set up environment
-
-```
-cp .env.example .env
-```
-
-Update settings to match your environment
-
-### Run migrations
-
-```
-php artisan key:generate
-php artisan wink:migrate
-php artisan migrate
-```
-
-### Remember to write down generated user credentials
-
-Mine are admin@mail.com / Du6jcxT3rvGpuOaK, but yours may be different.
-
-### Set up new user
-
-```
-php artisan wink:create-user <new-user-email> <new-user-name> [new-user-password]
-```
-
-If not entered, you will be prompted for a password.
-
-### Other user functions
-
-```
-php artisan wink:change-user-password <user-email> [new-user-password]
-```
-
-If not entered, you will be prompted for a password.
-
-## Production Deployment
-
-Deployment to a new server:
-
-1. Clone the repository.
-2. Fetch the latest changes.
-3. Set up the environment file.
-4. Set up database.
-5. Download dependencies with `composer install && npm ci`.
-6. Run migrations with `php artisan migrate` and `php artisan db:seed`.
-7. Set up Apache/Nginx to point to the `public` directory.
-
-## Troubleshooting
-
-### CentOS
-
-In CentOS, SELinux may cause issues with storage.
-
-```
-chcon -R -t httpd_sys_rw_content_t storage
-
-```
-
-## Docker
+## Quick Start with Docker (Recommended)
 
 ### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 
-### Build and run
+- Docker Desktop installed and running
+- Git cloned locally
+
+### Setup
+
 ```bash
+# Clone the repository
+git clone https://github.com/jvjvjv/jasonvertucio.com.git
+cd jasonvertucio.com
+
+# Build and run containers
 docker compose up --build
 ```
 
 The application will be available at **http://localhost:8003**.
-Vite HMR dev server runs on port **5175** (mapped from internal 5173).
 
-### Database configuration
+### Database Configuration Options
 
-By default, the app connects to your **host machine's MySQL** via `host.docker.internal`. To use the containerized MariaDB instead, set `DB_HOST=db`:
+By default, the app connects to your **host machine's MySQL** via `host.docker.internal`. This is useful for using an existing database.
+
+To use the containerized MariaDB instead:
 
 ```bash
-DB_HOST=db docker compose up --build
+# Use internal database service
+docker compose up --build -e DB_HOST=db
 ```
 
-Or create a `.env` file:
+Or create a `.env` file with these settings:
+
 ```env
 DB_HOST=db
 DB_DATABASE=jasonvertucio
@@ -111,28 +62,280 @@ DB_USERNAME=jasonvertucio
 DB_PASSWORD=jvsecret
 ```
 
-### Services
+### Initial Setup (First Run)
 
-The Docker setup includes:
-- **app** — Laravel application with PHP-FPM, Nginx, Vite, and queue worker
-- **db** — MariaDB 11 (port 3308)
-- **redis** — Redis 7 Alpine (port 6379) for caching, sessions, and queues
+After starting the containers for the first time, run migrations and seed the database:
 
-### Useful commands
+```bash
+# Run database migrations
+docker compose exec app php artisan migrate
+
+# Seed initial data
+docker compose exec app php artisan db:seed
+
+# Create a CMS admin user (interactive mode recommended)
+docker compose exec app php artisan user:make --admin
+```
+
+### Available Services
+
+| Service | Host Port | Container Port | Description                                   |
+| ------- | --------- | -------------- | --------------------------------------------- |
+| app     | 8003      | 80             | Laravel application with PHP-FPM, Nginx, Vite |
+| db      | 3308      | 3306           | MariaDB 11 (internal: 3306)                   |
+| redis   | 6379      | 6379           | Redis 7 Alpine for caching and queues         |
+
+### Useful Docker Commands
+
 ```bash
 # Run artisan commands inside the container
 docker compose exec app php artisan migrate
 docker compose exec app php artisan db:seed
+docker compose exec app php artisan cache:clear
 
-# Generate resume DOCX
-docker compose exec app node scripts/generate-resume.js
-
-# Access the container shell
+# Access the application shell
 docker compose exec app bash
+
+# View logs
+docker compose logs -f app
 
 # Stop all services
 docker compose down
 
-# Stop and remove volumes (fresh start)
-docker compose down -v
+# Restart with fresh database (removes volumes)
+docker compose down -v && docker compose up --build
+
+# Sync AI conversation usage data
+docker compose exec app php artisan ai:sync-conversation-usage --minutes=10
 ```
+
+## Local Development Setup
+
+If you prefer to run the application locally without Docker:
+
+### Installation
+
+1. **Clone the repository**
+
+    ```bash
+    git clone https://github.com/jvjvjv/jasonvertucio.com.git
+    cd jasonvertucio.com
+    ```
+
+2. **Install PHP dependencies**
+
+    ```bash
+    composer install
+    ```
+
+3. **Install JavaScript dependencies**
+
+    ```bash
+    npm install
+    ```
+
+4. **Set up environment**
+
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
+
+5. **Configure database and run migrations**
+
+    ```bash
+    # Update .env with your database credentials
+    php artisan migrate
+    php artisan db:seed
+    ```
+
+6. **Create a CMS admin user**
+
+    ```bash
+    # Interactive mode (recommended)
+    php artisan user:make --admin
+
+    # Or use command-line arguments
+    php artisan user:create admin@example.com "Admin User" password123 --role=admin
+    ```
+
+7. **Compile assets and start development server**
+
+    ```bash
+    npm run dev
+    php artisan serve
+    ```
+
+## Available Artisan Commands
+
+### User Management Commands
+
+| Command            | Description                       | Example                                                        |
+| ------------------ | --------------------------------- | -------------------------------------------------------------- |
+| `user:make`        | Interactively create a new user   | `php artisan user:make --admin`                                |
+| `user:create`      | Create user via CLI arguments     | `php artisan user:create email name [password] [--role=admin]` |
+| `user:list`        | List all users with roles         | `php artisan user:list`                                        |
+| `user:list-roles`  | Show system roles or user's roles | `php artisan user:list-roles <email>`                          |
+| `user:info`        | Display detailed user information | `php artisan user:info <email>`                                |
+| `user:password`    | Change a user's password          | `php artisan user:password <email> [new-password]`             |
+| `user:add-role`    | Assign a role to a user           | `php artisan user:add-role <email> <role>`                     |
+| `user:remove-role` | Remove a role from a user         | `php artisan user:remove-role <email> <role>`                  |
+| `user:sync-roles`  | Replace all roles on a user       | `php artisan user:sync-roles <email> admin editor`             |
+| `user:delete`      | Delete a user account             | `php artisan user:delete <email> --force`                      |
+
+### AI Conversation Commands
+
+| Command                      | Description                     | Example                                               |
+| ---------------------------- | ------------------------------- | ----------------------------------------------------- |
+| `ai:sync-conversation-usage` | Sync token usage and costs      | `php artisan ai:sync-conversation-usage --minutes=10` |
+| `paper:harvest`              | Harvest paper editions from API | `php artisan paper:harvest --limit=5`                 |
+
+### Resume Commands
+
+| Command                | Description                        | Example                                    |
+| ---------------------- | ---------------------------------- | ------------------------------------------ |
+| `resume:migrate-to-db` | Migrate resume content to database | `php artisan resume:migrate-to-db --force` |
+
+### Database Commands
+
+```bash
+# Run migrations
+php artisan migrate
+
+# Seed the database with initial data
+php artisan db:seed
+
+# View all available commands
+php artisan list
+```
+
+## Project Structure
+
+```
+├── app/                    # Application logic
+│   ├── Actions/           # Action classes for complex operations
+│   ├── Console/Commands/  # Custom artisan commands
+│   ├── Contracts/         # Interface definitions
+│   ├── Enums/             # Enum value objects
+│   ├── Models/            # Eloquent models (User, Paper, AiConversation)
+│   └── Services/          # Business logic services
+├── bootstrap/              # Framework bootstrapping files
+├── config/                 # Configuration files
+├── database/               # Migrations and seeders
+├── docker/                 # Docker configuration files
+├── docs/                   # Additional documentation
+├── resources/              # Views, assets, templates
+│   ├── js/                # React components (Inertia)
+│   └── views/             # Blade templates
+├── routes/                 # Application route definitions
+├── storage/                # Logs, cache, uploaded files
+│   ├── app/               # Publicly accessible files
+│   ├── framework/         # Cache, sessions, views
+│   └── logs/              # Application logs
+└── tests/                  # Unit and feature tests
+```
+
+## Technologies Used
+
+| Technology                                          | Version | Purpose                          |
+| --------------------------------------------------- | ------- | -------------------------------- |
+| [Laravel](https://laravel.com)                      | 12.x    | PHP Framework                    |
+| [Canvas](https://trycanvas.app/)                    | 6.x     | Blog/CMS system                  |
+| [Inertia.js](https://inertiajs.com)                 | 2.x     | Server-side SPA rendering        |
+| [React](https://react.dev)                                 | 19.x    | Frontend library                 |
+| [Vite](https://vitejs.dev)                          | Latest  | Build tooling and asset bundling |
+| [MariaDB](https://mariadb.org)                      | 11.x    | Database (optional)              |
+| [MySQL](https://mysql.com)                          | 8.0+    | Database (host connection)       |
+| [Redis](https://redis.io)                           | 7.x     | Caching and queues               |
+| [bspdx/keystone](https://github.com/bspdx/keystone) | 0.6.x   | Role-based access control        |
+
+## Development Notes
+
+### Port Configuration
+
+- **Application (Docker)**: 8003 (Nginx)
+- **Application (Local)**: 8000 (`php artisan serve`)
+- **Vite Dev Server**: 5175 (external) / 5173 (internal container)
+- **MariaDB (Docker)**: Host 3308 → Container 3306
+
+### Environment Variables
+
+Key environment variables to configure:
+
+```env
+# Database
+DB_CONNECTION=mysql
+DB_HOST=host.docker.internal  # or 'db' for internal MariaDB
+DB_PORT=3306
+DB_DATABASE=jasonvertucio
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Redis (for caching and queues)
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+# Paper.li integration
+PAPER_ID=your_paper_id
+
+# Twilio (for SMS features if enabled)
+TWILIO_ACCOUNT_SID=your_sid
+TWILIO_AUTH_TOKEN=your_token
+TWILIO_FROM_NUMBER=+1234567890
+```
+
+### Troubleshooting
+
+#### Storage Permissions (Linux/CentOS/RHEL)
+
+If you encounter permission issues with the storage directory:
+
+```bash
+# Set appropriate SELinux context
+chcon -R -t httpd_sys_rw_content_t storage
+
+# Or reset permissions
+chmod -R 775 storage
+chown -R www-data:www-data storage
+```
+
+#### Docker Issues
+
+If experiencing container connection issues:
+
+```bash
+# Restart containers
+docker compose restart
+
+# Check container status
+docker compose ps
+
+# View error logs
+docker compose logs app
+
+# Rebuild with fresh state
+docker compose down -v && docker compose build --no-cache && docker compose up --build
+```
+
+#### Database Connection Issues
+
+If unable to connect to host MySQL from Docker:
+
+```bash
+# Check if host MySQL is running
+mysql -h 127.0.0.1 -u root -p
+
+# Use internal MariaDB instead
+docker compose up --build -e DB_HOST=db
+```
+
+## License & Credits
+
+This project is the personal website of **Jason Vertucio**. Built with Laravel, Canvas, and modern web technologies.
+
+**Copyright © 2026 Jason Vertucio. All rights reserved.**
+
+---
+
+_Last updated: May 2026_
