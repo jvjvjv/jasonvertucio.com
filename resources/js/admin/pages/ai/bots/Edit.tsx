@@ -130,7 +130,11 @@ export default function Edit({ bot, systems, roles }: EditProps) {
             </Card>
 
             <Box sx={{ mt: 2 }}>
-                <AvailableMcpTools enabled={shouldShowMcpTools} />
+                <AvailableMcpTools
+                    enabled={shouldShowMcpTools}
+                    aiSystemId={form.data.ai_system_id}
+                    description="These are the MCP tools allowed by the selected system and available to this bot when tool use is enabled."
+                />
             </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>

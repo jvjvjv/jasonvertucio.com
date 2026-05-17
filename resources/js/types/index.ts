@@ -62,6 +62,7 @@ export interface AiSystem {
     system_prompt?: string | null;
     system_prompt_mode?: string | null;
     supports_tools?: boolean;
+    allowed_tools?: string[] | null;
     supports_json_mode?: boolean;
     is_local_endpoint?: boolean;
     pricing_profile?: { [key: string]: unknown } | null;

@@ -46,6 +46,8 @@ class StoreAiSystemRequest extends FormRequest
             'stream_protocol' => ['nullable', 'string', 'max:50'],
             'system_prompt_mode' => ['nullable', 'string', 'max:50'],
             'supports_tools' => ['boolean'],
+            'allowed_tools' => ['nullable', 'array'],
+            'allowed_tools.*' => ['string', 'max:255'],
             'supports_json_mode' => ['boolean'],
             'is_local_endpoint' => ['boolean'],
             'pricing_profile' => ['nullable', 'json'],

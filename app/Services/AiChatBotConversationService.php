@@ -128,8 +128,11 @@ class AiChatBotConversationService
                 $this->resumeDataService,
                 $this->memoryService,
                 $this->targetedResumeService,
+                $conversation->aiSystem->allowed_tools ?? [],
             )
             : null;
+        $availableTools = $toolRegistry?->toApiTools() ?? [];
+        $toolRegistry = $availableTools !== [] ? $toolRegistry : null;
 
         // Accumulated state across all tool-loop iterations
         $iterationMessages = $apiMessages;
@@ -166,7 +169,7 @@ class AiChatBotConversationService
                 }
 
                 if ($toolRegistry !== null) {
-                    $client->withTools($toolRegistry->toApiTools());
+                    $client->withTools($availableTools);
                 }
 
                 $iterationRequestPayload = [

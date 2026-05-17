@@ -21,9 +21,10 @@ class ChatBotToolRegistry implements AiToolRegistryContract
         ResumeDataServiceContract $resumeDataService,
         AiMemoryService $memoryService,
         TargetedResumeService $targetedResumeService,
+        ?array $allowedToolNames = null,
     )
     {
-        $this->handlers = $this->discoverHandlers(
+        $handlers = $this->discoverHandlers(
             [app_path('Services/Mcp/Tools')],
             [
                 'conversation' => $conversation,
@@ -33,6 +34,21 @@ class ChatBotToolRegistry implements AiToolRegistryContract
                 'userId' => $conversation->user_id,
             ],
             ['Services/Mcp/Tools/ChatBot'],
+        );
+
+        if ($allowedToolNames === null || $allowedToolNames === []) {
+            $this->handlers = [];
+
+            return;
+        }
+
+        $allowedToolNames = array_values(array_unique(array_map('strval', $allowedToolNames)));
+        $allowedLookup = array_fill_keys($allowedToolNames, true);
+
+        $this->handlers = array_filter(
+            $handlers,
+            static fn (AiToolHandlerContract $handler, string $name): bool => isset($allowedLookup[$name]),
+            ARRAY_FILTER_USE_BOTH,
         );
     }
 

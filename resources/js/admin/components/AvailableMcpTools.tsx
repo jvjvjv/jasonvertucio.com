@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
@@ -17,10 +18,20 @@ interface AvailableMcpToolsResponse {
 
 interface AvailableMcpToolsProps {
     enabled?: boolean;
+    aiSystemId?: number | "";
+    selectable?: boolean;
+    selectedToolNames?: string[];
+    onToggleTool?: (_toolName: string) => void;
+    description?: string;
 }
 
 export default function AvailableMcpTools({
     enabled = true,
+    aiSystemId,
+    selectable = false,
+    selectedToolNames = [],
+    onToggleTool,
+    description = "The bot can call these tools when tool use is enabled.",
 }: AvailableMcpToolsProps) {
     const [tools, setTools] = useState<McpToolSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +51,13 @@ export default function AvailableMcpTools({
 
         const loadTools = async () => {
             try {
-                const response = await fetch("/admin/ai/chat-bots/mcp-tools", {
+                const searchParams = new URLSearchParams();
+
+                if (aiSystemId !== "" && aiSystemId !== undefined) {
+                    searchParams.set("ai_system_id", String(aiSystemId));
+                }
+
+                const response = await fetch(`/admin/ai/chat-bots/mcp-tools?${searchParams.toString()}`, {
                     headers: {
                         Accept: "application/json",
                     },
@@ -78,7 +95,7 @@ export default function AvailableMcpTools({
         return () => {
             isMounted = false;
         };
-    }, [enabled]);
+    }, [aiSystemId, enabled]);
 
     if (!enabled) {
         return null;
@@ -95,7 +112,7 @@ export default function AvailableMcpTools({
                     color="text.secondary"
                     sx={{ mb: 2 }}
                 >
-                    The bot can call these tools when tool use is enabled.
+                    {description}
                 </Typography>
 
                 {isLoading ? <CircularProgress size={24} /> : null}
@@ -105,14 +122,25 @@ export default function AvailableMcpTools({
                 ) : null}
 
                 {!isLoading && errorMessage === "" ? (
-                    <List disablePadding>
-                        {tools.map((tool, index) => (
+                    tools.length > 0 ? (
+                        <List disablePadding>
+                            {tools.map((tool, index) => (
                             <div key={tool.name}>
                                 {index > 0 ? <Divider component="li" /> : null}
                                 <ListItem
                                     disableGutters
                                     alignItems="flex-start"
                                 >
+                                    {selectable ? (
+                                        <Checkbox
+                                            checked={selectedToolNames.includes(tool.name)}
+                                            onChange={() => {
+                                                onToggleTool?.(tool.name);
+                                            }}
+                                            edge="start"
+                                            sx={{ mt: 0.25, mr: 1 }}
+                                        />
+                                    ) : null}
                                     <ListItemText
                                         primary={tool.name}
                                         secondary={tool.description}
@@ -131,8 +159,13 @@ export default function AvailableMcpTools({
                                     />
                                 </ListItem>
                             </div>
-                        ))}
-                    </List>
+                            ))}
+                        </List>
+                    ) : (
+                        <Alert severity="info">
+                            No MCP tools are available for this configuration.
+                        </Alert>
+                    )
                 ) : null}
             </CardContent>
         </Card>

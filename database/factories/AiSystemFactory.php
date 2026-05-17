@@ -26,6 +26,7 @@ class AiSystemFactory extends Factory
             'temperature' => 0.7,
             'is_active' => true,
             'config' => [],
+            'allowed_tools' => null,
         ];
     }
 

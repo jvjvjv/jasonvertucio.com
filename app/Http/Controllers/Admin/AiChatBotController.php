@@ -112,16 +112,29 @@ class AiChatBotController extends Controller
         AiMemoryService $memoryService,
         TargetedResumeService $targetedResumeService,
     ): JsonResponse {
+        $request->validate([
+            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
+        ]);
+
         $conversation = new AiConversation([
             'user_id' => $request->user()?->getKey(),
             'context' => [],
         ]);
+
+        $allowedTools = null;
+
+        if ($request->filled('ai_system_id')) {
+            $allowedTools = AiSystem::query()
+                ->whereKey($request->integer('ai_system_id'))
+                ->value('allowed_tools');
+        }
 
         $registry = new ChatBotToolRegistry(
             $conversation,
             $resumeDataService,
             $memoryService,
             $targetedResumeService,
+            $allowedTools,
         );
 
         return response()->json([

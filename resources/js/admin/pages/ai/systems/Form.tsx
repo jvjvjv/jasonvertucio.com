@@ -35,6 +35,7 @@ interface FormData {
     stream_protocol: string;
     system_prompt_mode: string;
     supports_tools: boolean;
+    allowed_tools: string[];
     supports_json_mode: boolean;
     is_local_endpoint: boolean;
     pricing_profile: string;
