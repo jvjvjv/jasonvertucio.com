@@ -47,6 +47,7 @@ class AiChatBotController extends Controller
                 'allowed_roles' => $bot->allowed_roles ?? [],
                 'is_active' => $bot->is_active,
                 'is_public' => $bot->is_public,
+                'ai_system' => $bot->aiSystem,
                 'require_visitor_identity' => $bot->require_visitor_identity,
                 'conversations_count' => $bot->conversations_count,
                 '_id' => $bot->aiSystemId,
