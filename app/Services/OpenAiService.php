@@ -313,7 +313,9 @@ class OpenAiService implements AiClientContract
                 'type' => 'function',
                 'function' => [
                     'name' => $toolCall['name'],
-                    'arguments' => json_encode($toolCall['input']),
+                    'arguments' => json_encode(
+                        $toolCall['input'] === [] ? new \stdClass() : $toolCall['input']
+                    ),
                 ],
             ];
         }
@@ -333,7 +335,7 @@ class OpenAiService implements AiClientContract
     {
         return array_map(static fn (array $result): array => [
             'role' => 'tool',
-            'tool_call_id' => $result['id'],
+            'tool_call_id' => $result['tool_use_id'] ?? $result['id'],
             'content' => json_encode($result['result']),
         ], $toolResults);
     }

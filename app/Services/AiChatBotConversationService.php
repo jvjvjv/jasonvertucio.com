@@ -90,9 +90,15 @@ class AiChatBotConversationService
                 continue;
             }
 
+            $content = $message->content;
+
+            if ($message->role === 'assistant' && trim((string) $content) === '') {
+                $content = null;
+            }
+
             $apiMessages[] = [
                 'role' => $message->role,
-                'content' => $message->content,
+                'content' => $content,
             ];
         }
 
@@ -225,11 +231,12 @@ class AiChatBotConversationService
 
                     switch ($event['type']) {
                         case 'content_block_start':
-                            if (isset($event['block']['type']) && $event['block']['type'] === 'tool_use') {
+                            $block = $event['content_block'] ?? $event['block'] ?? [];
+                            if (isset($block['type']) && $block['type'] === 'tool_use') {
                                 $currentToolBlockIndex = $event['index'] ?? count($pendingToolCalls);
                                 $pendingToolCalls[$currentToolBlockIndex] = [
-                                    'id' => $event['block']['id'] ?? Str::uuid()->toString(),
-                                    'name' => $event['block']['name'] ?? '',
+                                    'id' => $block['id'] ?? Str::uuid()->toString(),
+                                    'name' => $block['name'] ?? '',
                                     'inputJson' => '',
                                 ];
                             } else {
@@ -284,7 +291,7 @@ class AiChatBotConversationService
                             if (isset($event['usage'])) {
                                 $iterationOutputTokens = $event['usage']['output_tokens'] ?? null;
                             }
-                            $iterationStopReason = $event['stop_reason'] ?? null;
+                            $iterationStopReason = $event['delta']['stop_reason'] ?? $event['stop_reason'] ?? null;
                             yield 'data: ' . json_encode($event) . "\n\n";
                             break;
 
@@ -328,7 +335,7 @@ class AiChatBotConversationService
 
                 // If the model requested tool calls, execute them and loop
                 if ($iterationStopReason === 'tool_use' && $toolRegistry !== null && $pendingToolCalls !== []) {
-                    $iterationText = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
+                    $iterationText = trim(collect($blocks)->where('type', 'text')->pluck('content')->implode(''));
 
                     $formattedToolCalls = [];
                     $toolResults = [];
@@ -399,7 +406,7 @@ class AiChatBotConversationService
             ]);
 
             $this->conversationUsageService->syncConversation($conversation->fresh());
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             // Store error information in LLM messages table
             AiLlmMessage::create([
                 'ai_conversation_id' => $conversation->id,

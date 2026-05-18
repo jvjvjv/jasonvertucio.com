@@ -41,7 +41,7 @@ class GetRecentBlogPostsTool implements AiToolHandlerContract
             ->with('topic')
             ->latest('published_at')
             ->limit($limit)
-            ->get(['id', 'title', 'summary', 'slug', 'published_at', 'topic_id']);
+            ->get(['id', 'title', 'summary', 'slug', 'published_at']);
 
         return [
             'posts' => $posts->map(static fn (Post $post): array => [

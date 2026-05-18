@@ -20,7 +20,7 @@ class ProcessAiMemoryJob implements ShouldQueue
      */
     public function __construct(
         public AiConversation $conversation,
-        protected ?int $userId = null,
+        protected ?string $userId = null,
         protected ?string $visitorEmail = null,
     ) {
     }

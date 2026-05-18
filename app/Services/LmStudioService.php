@@ -6,6 +6,7 @@ use App\Contracts\AiClientContract;
 use App\Contracts\CanLoadModels;
 use Generator;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class LmStudioService implements AiClientContract, CanLoadModels
 {
@@ -123,6 +124,8 @@ class LmStudioService implements AiClientContract, CanLoadModels
     {
         $payload = $this->buildOpenAiPayload($messages, true);
 
+        Log::debug('LmStudio stream payload', ['message_count' => count($payload['messages']), 'messages' => $payload['messages']]);
+
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
             ->timeout(600)
@@ -137,6 +140,11 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $inputTokens = null;
         $outputTokens = null;
         $started = false;
+
+        // Track in-flight tool calls: index → {id, name, arguments}
+        /** @var array<int, array{id: string, name: string, arguments: string}> $pendingToolCalls */
+        $pendingToolCalls = [];
+        $finishReason = null;
 
         while (!$body->eof()) {
             $buffer .= $body->read(1024);
@@ -202,19 +210,67 @@ class LmStudioService implements AiClientContract, CanLoadModels
                     ];
                 }
 
-                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
-                    yield [
-                        'type' => 'message_delta',
-                        'usage' => [
-                            'output_tokens' => $outputTokens,
-                        ],
-                    ];
+                // Accumulate streaming tool_calls fragments (delta format)
+                if (!empty($delta['tool_calls'])) {
+                    foreach ($delta['tool_calls'] as $tcDelta) {
+                        $idx = (int) ($tcDelta['index'] ?? 0);
 
-                    yield [
-                        'type' => 'message_stop',
-                    ];
+                        if (!isset($pendingToolCalls[$idx])) {
+                            $pendingToolCalls[$idx] = ['id' => '', 'name' => '', 'arguments' => ''];
+                        }
+
+                        if (isset($tcDelta['id']) && $tcDelta['id'] !== '') {
+                            $pendingToolCalls[$idx]['id'] = $tcDelta['id'];
+                        }
+
+                        if (isset($tcDelta['function']['name']) && $tcDelta['function']['name'] !== '') {
+                            $pendingToolCalls[$idx]['name'] = $tcDelta['function']['name'];
+                        }
+
+                        if (isset($tcDelta['function']['arguments'])) {
+                            $pendingToolCalls[$idx]['arguments'] .= $tcDelta['function']['arguments'];
+                        }
+                    }
+                }
+
+                // LM Studio fallback: complete tool_calls in choice['message'] instead of delta
+                if (empty($delta['tool_calls']) && !empty($choice['message']['tool_calls'])) {
+                    foreach ($choice['message']['tool_calls'] as $i => $tc) {
+                        $pendingToolCalls[$i] = [
+                            'id' => (string) ($tc['id'] ?? ''),
+                            'name' => (string) ($tc['function']['name'] ?? ''),
+                            'arguments' => (string) ($tc['function']['arguments'] ?? ''),
+                        ];
+                    }
+                }
+
+                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
+                    $finishReason = $choice['finish_reason'];
+                    Log::debug('LmStudio finish_reason chunk', ['chunk' => $chunk]);
                 }
             }
+        }
+
+        // Emit accumulated tool calls as normalized Anthropic-style events
+        foreach ($pendingToolCalls as $toolCall) {
+            yield [
+                'type' => 'content_block_start',
+                'content_block' => [
+                    'type' => 'tool_use',
+                    'id' => $toolCall['id'],
+                    'name' => $toolCall['name'],
+                ],
+            ];
+
+            yield [
+                'type' => 'content_block_delta',
+                'delta' => [
+                    'type' => 'input_json_delta',
+                    'partial_json' => $toolCall['arguments'],
+                ],
+            ];
+
+            yield ['type' => 'content_block_stop'];
         }
 
         if ($started === false) {
@@ -228,8 +284,11 @@ class LmStudioService implements AiClientContract, CanLoadModels
             ];
         }
 
+        $stopReason = $finishReason === 'tool_calls' ? 'tool_use' : 'end_turn';
+
         yield [
             'type' => 'message_delta',
+            'delta' => ['stop_reason' => $stopReason],
             'usage' => [
                 'output_tokens' => $outputTokens,
             ],
@@ -358,7 +417,9 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 'type' => 'function',
                 'function' => [
                     'name' => $toolCall['name'],
-                    'arguments' => json_encode($toolCall['input']),
+                    'arguments' => json_encode(
+                        $toolCall['input'] === [] ? new \stdClass() : $toolCall['input']
+                    ),
                 ],
             ];
         }
@@ -378,7 +439,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     {
         return array_map(static fn (array $result): array => [
             'role' => 'tool',
-            'tool_call_id' => $result['id'],
+            'tool_call_id' => $result['tool_use_id'] ?? $result['id'],
             'content' => json_encode($result['result']),
         ], $toolResults);
     }
