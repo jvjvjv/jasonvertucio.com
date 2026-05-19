@@ -6,6 +6,7 @@ use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -101,6 +102,44 @@ class CoverLetterResumeVersionValidationTest extends TestCase
 
         $coverLetter->refresh();
         $this->assertSame($version->id, $coverLetter->resume_version_id);
+    }
+
+    public function test_edit_page_receives_date_as_html_date_string(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+
+        $coverLetter = CoverLetter::create($this->validPayload([
+            'resume_version_id' => $version->id,
+            'date' => '2026-05-19',
+        ]));
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.cover-letters.edit', $coverLetter));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('cover-letters/Edit', false)
+            ->where('coverLetter.date', '2026-05-19')
+        );
+    }
+
+    public function test_preview_page_receives_date_as_html_date_string(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+
+        $coverLetter = CoverLetter::create($this->validPayload([
+            'resume_version_id' => $version->id,
+            'date' => '2026-05-19',
+        ]));
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.cover-letters.preview', $coverLetter));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('cover-letters/Preview', false)
+            ->where('coverLetter.date', '2026-05-19')
+        );
     }
 
     /**
