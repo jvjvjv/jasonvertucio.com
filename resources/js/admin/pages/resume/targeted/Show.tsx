@@ -8,6 +8,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
+import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -461,6 +462,59 @@ export default function Show({
         );
     };
 
+    const isApplied =
+        targetedResume !== null &&
+        targetedResume.status !== "draft" &&
+        targetedResume.status !== "finalized";
+
+    const handleApplied = () => {
+        confirm(
+            "Mark this job as applied?",
+            () => {
+                void (async () => {
+                    setIsSubmittingStatus(true);
+                    setStatusError(null);
+                    try {
+                        const res = await fetch(
+                            `/admin/resume/targeted-builder/${conversation.id}/status-update`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-CSRF-TOKEN": csrfToken,
+                                    Accept: "application/json",
+                                },
+                                body: JSON.stringify({ status: "applied" }),
+                            },
+                        );
+                        const data = (await res.json()) as {
+                            success?: boolean;
+                            message?: string;
+                            status_updates?: StatusUpdate[];
+                            allowed_next_statuses?: string[];
+                        };
+                        if (!res.ok || !data.success) {
+                            setStatusError(
+                                data.message ?? "Failed to mark as applied.",
+                            );
+                            return;
+                        }
+                        setStatusUpdates(data.status_updates ?? []);
+                        setAllowedNextStatuses(
+                            data.allowed_next_statuses ?? [],
+                        );
+                        router.reload({ only: ["targetedResume"] });
+                    } catch {
+                        setStatusError("Failed to mark as applied.");
+                    } finally {
+                        setIsSubmittingStatus(false);
+                    }
+                })();
+            },
+            { confirmLabel: "Applied", confirmColor: "success" },
+        );
+    };
+
     const handleAddStatusUpdate = async (e: SyntheticEvent) => {
         e.preventDefault();
         if (!selectedNextStatus || !targetedResume) {
@@ -588,19 +642,30 @@ export default function Show({
                 >
                     <ResponsiveButton
                         size="small"
+                        color="success"
+                        icon={<DoneIcon />}
+                        label="Mark Applied"
+                        title={
+                            isApplied
+                                ? "Already in application flow"
+                                : "Mark as applied"
+                        }
+                        variant="outlined"
+                        disabled={isApplied || isSubmittingStatus}
+                        onClick={handleApplied}
+                    />
+                    <ResponsiveButton
+                        size="small"
                         color="warning"
                         icon={<BackHandOutlinedIcon />}
                         label="Pass"
                         title={
-                            targetedResume?.status === "passed"
+                            conversation.status === "pass"
                                 ? "Already marked as passed"
                                 : "Mark as passed"
                         }
                         variant="outlined"
-                        disabled={
-                            conversation.status === "pass" ||
-                            targetedResume?.status !== "draft"
-                        }
+                        disabled={conversation.status === "pass"}
                         onClick={handlePass}
                     />
                     {jobUrl ? (

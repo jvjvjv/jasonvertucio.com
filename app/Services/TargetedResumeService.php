@@ -500,7 +500,7 @@ Salary Assessment: <Below Market|At Market|Above Market|Significant Increase> - 
 Ask if the candidate wants to proceed with tailoring their resume.
 
 ### Step 5: Resume Tailoring (only if candidate agrees to proceed)
-Generate a tailored version of the resume optimized for this job posting, highlighting relevant experience and skills. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`.
+Generate a tailored version of the resume optimized for this job posting, highlighting relevant experience and skills. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`. This tailored resume does not need a header that includes personal information, as the template used for document generation will handle that. Focus on making the content ATS-friendly and relevant to the job description.
 
 Use this structure:
 
@@ -519,15 +519,15 @@ Skill 1, Skill 2
 ### Company Name - Location - Start Year - End Year
 - Achievement or responsibility
 
-# Education
-## Degree
-### Institution - Start Year - End Year
-Description if applicable
-
 # Projects
 ## Project Name
 Description
 - Detail or highlight
+
+# Education
+## Degree
+### Institution - Start Year - End Year
+Description if applicable
 ```
 
 When tailoring:

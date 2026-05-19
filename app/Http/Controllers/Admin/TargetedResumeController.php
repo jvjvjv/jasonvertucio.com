@@ -407,7 +407,21 @@ class TargetedResumeController extends Controller
         $targetedResume = $conversation->targetedResume;
 
         if (! $targetedResume) {
-            return response()->json(['message' => 'No finalized resume found. Save the tailored resume first.'], 422);
+            $fitScore = $conversation->context['fit_score'] ?? null;
+            if (! $fitScore) {
+                return response()->json(['message' => 'A fit score is required before logging an application status. Ask the AI to analyze the job posting first.'], 422);
+            }
+            $targetedResume = TargetedResume::create([
+                'resume_version_id' => $conversation->context['resume_version_id'] ?? null,
+                'ai_conversation_id' => $conversation->id,
+                'job_url_id' => $conversation->context['job_url_id'] ?? null,
+                'company_name' => $conversation->context['company_name'] ?? 'Unknown Company',
+                'position' => $conversation->context['job_title'] ?? 'Unknown Position',
+                'job_description' => $conversation->context['job_description'] ?? null,
+                'fit_score' => $fitScore,
+                'status' => TargetedResumeStatus::Draft,
+                'base_resume' => true,
+            ]);
         }
 
         $newStatus = TargetedResumeApplicationStatus::from($request->input('status'));
