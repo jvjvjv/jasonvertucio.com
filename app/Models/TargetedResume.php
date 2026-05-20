@@ -81,10 +81,13 @@ class TargetedResume extends Model
      */
     public function generateFilename(): string
     {
-        $companyName = $this->sanitizeFilenamePart($this->company_name);
-        $position = $this->sanitizeFilenamePart($this->position);
+        $this->loadMissing('resumeVersion.personalInfo', 'conversation');
 
-        return trim("{$companyName} {$position} Resume");
+        $name = $this->sanitizeFilenamePart($this->resumeVersion?->personalInfo?->name);
+        $company = $this->sanitizeFilenamePart($this->company_name);
+        $uuid = $this->conversation?->uuid ?? 'unknown';
+
+        return trim("{$name} Resume {$company} {$uuid}");
     }
 
     private function sanitizeFilenamePart(?string $value): string
