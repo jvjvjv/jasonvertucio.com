@@ -11,6 +11,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
+import { api } from "@/api";
+
 interface ModelCapabilities {
     reasoning?: boolean;
     vision?: boolean;
@@ -195,23 +197,14 @@ export default function AiSystemForm({
         setFetchError("");
 
         try {
-            const response = await fetch("/admin/ai/systems/fetch-models", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-                body: JSON.stringify({
+            const result = await api.post<FetchModelsResponse>(
+                "/api/admin/ai/systems/fetch-models",
+                {
                     provider: data.provider,
                     api_key: data.api_key,
                     base_url: data.base_url || null,
-                }),
-            });
-
-            const result = (await response.json()) as FetchModelsResponse;
+                },
+            );
 
             if (result.error) {
                 setFetchError(result.error);

@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 
 import type { McpToolSummary } from "@/types";
 
+import { api } from "@/api";
+
 interface AvailableMcpToolsResponse {
     tools?: McpToolSummary[];
 }
@@ -53,31 +55,20 @@ export default function AvailableMcpTools({
 
         const loadTools = async () => {
             try {
-                const searchParams = new URLSearchParams();
+                const params: { [key: string]: string } = {};
 
                 if (aiSystemId !== "" && aiSystemId !== undefined) {
-                    searchParams.set("ai_system_id", String(aiSystemId));
+                    params.ai_system_id = String(aiSystemId);
                 }
 
                 if (includeAllTools) {
-                    searchParams.set("include_all", "1");
+                    params.include_all = "1";
                 }
 
-                const response = await fetch(
-                    `/admin/ai/chat-bots/mcp-tools?${searchParams.toString()}`,
-                    {
-                        headers: {
-                            Accept: "application/json",
-                        },
-                    },
+                const result = await api.get<AvailableMcpToolsResponse>(
+                    "/api/admin/ai/chat-bots/mcp-tools",
+                    params,
                 );
-
-                if (!response.ok) {
-                    throw new Error("Unable to load MCP tools.");
-                }
-
-                const result =
-                    (await response.json()) as AvailableMcpToolsResponse;
 
                 if (!isMounted) {
                     return;

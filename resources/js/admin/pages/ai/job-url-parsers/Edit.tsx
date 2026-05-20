@@ -15,6 +15,8 @@ import AdminLayout from "../../../layouts/AdminLayout";
 
 import type { SyntheticEvent } from "react";
 
+import { api, ApiError } from "@/api";
+
 interface ParserEditModel {
     id: number;
     domain: string;
@@ -81,53 +83,39 @@ export default function Edit({ parser }: EditProps) {
         form.put(`/admin/ai/job-url-parsers/${parser.id}`);
     };
 
-    const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? "";
-
     const handlePreview = async () => {
         setIsPreviewing(true);
         setPreviewError("");
 
         try {
-            const response = await fetch(
-                `/admin/ai/job-url-parsers/${parser.id}/preview`,
+            const result = await api.post<PreviewApiResponse>(
+                `/api/admin/ai/job-url-parsers/${parser.id}/preview`,
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                    },
-                    body: JSON.stringify({
-                        html: form.data.html,
-                        company_name_selector: form.data.company_name_selector,
-                        job_title_selector: form.data.job_title_selector,
-                        job_location_selector: form.data.job_location_selector,
-                        job_description_selector:
-                            form.data.job_description_selector,
-                    }),
+                    html: form.data.html,
+                    company_name_selector: form.data.company_name_selector,
+                    job_title_selector: form.data.job_title_selector,
+                    job_location_selector: form.data.job_location_selector,
+                    job_description_selector:
+                        form.data.job_description_selector,
                 },
             );
-
-            const result = (await response.json()) as PreviewApiResponse;
-
-            if (!response.ok) {
-                setPreviewError(
-                    result.message ?? "Failed to preview selectors.",
-                );
-                setPreviewResult(null);
-                setPreviewFieldErrors({});
-                return;
-            }
 
             setPreviewResult(result.results);
             setPreviewFieldErrors(result.errors);
         } catch (err: unknown) {
-            setPreviewError(
-                "Network error: " +
-                    (err instanceof Error ? err.message : "An error occurred"),
-            );
+            if (err instanceof ApiError) {
+                const result = err.data as PreviewApiResponse;
+                setPreviewError(
+                    result?.message ?? "Failed to preview selectors.",
+                );
+            } else {
+                setPreviewError(
+                    "Network error: " +
+                        (err instanceof Error
+                            ? err.message
+                            : "An error occurred"),
+                );
+            }
             setPreviewResult(null);
             setPreviewFieldErrors({});
         } finally {

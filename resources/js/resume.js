@@ -9,6 +9,7 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
 import expressionParser from 'docxtemplater/expressions.js';
+import { api } from './api';
 
 /**
  * Generate filename with timestamp: YYMMDDHHMMSS - Jasonvertucio.docx
@@ -45,25 +46,8 @@ async function uploadGeneratedFile(blob, filename) {
     formData.append('file', blob, filename);
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-        const response = await fetch('/resume/docx/completed', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
-            },
-            credentials: 'same-origin', // Ensure cookies/session are sent
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const text = await response.text();
-            console.warn('Failed to upload generated resume:', response.status, response.statusText, text);
-        } else {
-            const result = await response.json();
-            console.log('Resume copy saved to server:', result);
-        }
+        const result = await api.upload('/resume/docx/completed', formData);
+        console.log('Resume copy saved to server:', result);
     } catch (error) {
         console.warn('Error uploading generated resume:', error);
     }

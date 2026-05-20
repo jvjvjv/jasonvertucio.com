@@ -51,6 +51,7 @@ import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import { api, ApiError } from "@/api";
 import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import ToolsPanel from "@/components/ToolsPanel";
@@ -133,10 +134,6 @@ export default function Show({
     const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
 
-    const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? "";
-
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
@@ -166,85 +163,55 @@ export default function Show({
             setStreamingContent("");
 
             try {
-                const response = await fetch(
-                    `/admin/resume/targeted-builder/${conversation.id}/chat`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Accept: "text/event-stream",
-                            "X-CSRF-TOKEN": csrfToken,
-                        },
-                        body: JSON.stringify({ message: text || null }),
-                    },
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const reader = response.body?.getReader();
-                if (!reader) throw new Error("No reader available");
-
-                const decoder = new TextDecoder();
                 let accumulated = "";
                 let preambleText = "";
 
-                for (;;) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+                for await (const jsonStr of api.stream(
+                    `/api/admin/resume/targeted-builder/${conversation.id}/chat`,
+                    { message: text || null },
+                )) {
+                    try {
+                        const event = JSON.parse(jsonStr) as StreamEvent;
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split("\n");
-
-                    for (const line of lines) {
-                        if (!line.startsWith("data: ")) continue;
-                        const jsonStr = line.slice(6);
-                        if (!jsonStr.trim()) continue;
-
-                        try {
-                            const event = JSON.parse(jsonStr) as StreamEvent;
-
-                            if (
-                                event.type === "content_block_delta" &&
-                                event.delta?.text
-                            ) {
-                                accumulated += event.delta.text;
-                                setStreamingContent(accumulated);
-                            } else if (event.type === "tool_use_progress") {
-                                // Move preamble text into a tool panel; reset main stream.
-                                // Save accumulated text so it survives the reset and ends
-                                // up in the final message even if the follow-up iteration
-                                // produces no additional text.
-                                if (accumulated) {
-                                    preambleText +=
-                                        (preambleText ? "\n\n" : "") +
-                                        accumulated;
-                                }
-                                setStreamingToolPanels((prev) => [
-                                    ...prev,
-                                    {
-                                        pretext: event.text ?? "",
-                                        tools: event.tools ?? [],
-                                    },
-                                ]);
-                                accumulated = "";
-                                setStreamingContent("");
-                            } else if (event.type === "page_reload") {
-                                router.reload({
-                                    only: [
-                                        "targetedResume",
-                                        "coverLetter",
-                                        "conversation",
-                                    ],
-                                });
-                            } else if (event.type === "error") {
-                                accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
-                                setStreamingContent(accumulated);
+                        if (
+                            event.type === "content_block_delta" &&
+                            event.delta?.text
+                        ) {
+                            accumulated += event.delta.text;
+                            setStreamingContent(accumulated);
+                        } else if (event.type === "tool_use_progress") {
+                            // Move preamble text into a tool panel; reset main stream.
+                            // Save accumulated text so it survives the reset and ends
+                            // up in the final message even if the follow-up iteration
+                            // produces no additional text.
+                            if (accumulated) {
+                                preambleText +=
+                                    (preambleText ? "\n\n" : "") + accumulated;
                             }
-                        } catch {
-                            // Skip malformed JSON lines
+                            setStreamingToolPanels((prev) => [
+                                ...prev,
+                                {
+                                    pretext: event.text ?? "",
+                                    tools: event.tools ?? [],
+                                },
+                            ]);
+                            accumulated = "";
+                            setStreamingContent("");
+                        } else if (event.type === "page_reload") {
+                            router.reload({
+                                only: [
+                                    "targetedResume",
+                                    "coverLetter",
+                                    "conversation",
+                                ],
+                            });
+                        } else if (event.type === "error") {
+                            accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
+                            setStreamingContent(accumulated);
                         }
+                    } catch {
+                        // Skip malformed JSON lines
+                        console.warn(jsonStr);
                     }
                 }
 
@@ -277,7 +244,7 @@ export default function Show({
                 setStreamingToolPanels([]);
             }
         },
-        [userInput, conversation.id, csrfToken, shouldAutoStart],
+        [userInput, conversation.id, shouldAutoStart],
     );
 
     // Auto-start initial analysis
@@ -377,31 +344,23 @@ export default function Show({
         setIsFinalizing(true);
         setFinalizeError(null);
         try {
-            const response = await fetch(
-                `/admin/resume/targeted-builder/${conversation.id}/finalize`,
+            await api.post(
+                `/api/admin/resume/targeted-builder/${conversation.id}/finalize`,
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        tailored_content: latestResumeData.rawContent,
-                        fit_score: latestResumeData.fitScore,
-                    }),
+                    tailored_content: latestResumeData.rawContent,
+                    fit_score: latestResumeData.fitScore,
                 },
             );
-            const data = (await response.json()) as FinalizeResponse;
-            if (!response.ok) {
-                setFinalizeError(
-                    data.message ?? "Failed to save targeted resume.",
-                );
-                return;
-            }
             window.location.reload();
-        } catch {
-            setFinalizeError("Network error. Please try again.");
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as FinalizeResponse;
+                setFinalizeError(
+                    data?.message ?? "Failed to save targeted resume.",
+                );
+            } else {
+                setFinalizeError("Network error. Please try again.");
+            }
         } finally {
             setIsFinalizing(false);
         }
@@ -412,30 +371,20 @@ export default function Show({
         setIsFinalizingCoverLetter(true);
         setFinalizeCoverLetterError(null);
         try {
-            const response = await fetch(
-                `/admin/resume/targeted-builder/${conversation.id}/finalize-cover-letter`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        cover_letter_content: latestCoverLetterContent,
-                    }),
-                },
+            await api.post(
+                `/api/admin/resume/targeted-builder/${conversation.id}/finalize-cover-letter`,
+                { cover_letter_content: latestCoverLetterContent },
             );
-            const data = (await response.json()) as FinalizeResponse;
-            if (!response.ok) {
-                setFinalizeCoverLetterError(
-                    data.message ?? "Failed to save cover letter.",
-                );
-                return;
-            }
             window.location.reload();
-        } catch {
-            setFinalizeCoverLetterError("Network error. Please try again.");
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as FinalizeResponse;
+                setFinalizeCoverLetterError(
+                    data?.message ?? "Failed to save cover letter.",
+                );
+            } else {
+                setFinalizeCoverLetterError("Network error. Please try again.");
+            }
         } finally {
             setIsFinalizingCoverLetter(false);
         }
@@ -475,25 +424,16 @@ export default function Show({
                     setIsSubmittingStatus(true);
                     setStatusError(null);
                     try {
-                        const res = await fetch(
-                            `/admin/resume/targeted-builder/${conversation.id}/status-update`,
-                            {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    "X-CSRF-TOKEN": csrfToken,
-                                    Accept: "application/json",
-                                },
-                                body: JSON.stringify({ status: "applied" }),
-                            },
-                        );
-                        const data = (await res.json()) as {
+                        const data = await api.post<{
                             success?: boolean;
                             message?: string;
                             status_updates?: StatusUpdate[];
                             allowed_next_statuses?: string[];
-                        };
-                        if (!res.ok || !data.success) {
+                        }>(
+                            `/api/admin/resume/targeted-builder/${conversation.id}/status-update`,
+                            { status: "applied" },
+                        );
+                        if (!data.success) {
                             setStatusError(
                                 data.message ?? "Failed to mark as applied.",
                             );
@@ -523,29 +463,20 @@ export default function Show({
         setIsSubmittingStatus(true);
         setStatusError(null);
         try {
-            const res = await fetch(
-                `/admin/resume/targeted-builder/${conversation.id}/status-update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        status: selectedNextStatus,
-                        notes: statusNotes || null,
-                        occurred_at: statusOccurredAt || null,
-                    }),
-                },
-            );
-            const data = (await res.json()) as {
+            const data = await api.post<{
                 success?: boolean;
                 message?: string;
                 status_updates?: StatusUpdate[];
                 allowed_next_statuses?: string[];
-            };
-            if (!res.ok || !data.success) {
+            }>(
+                `/api/admin/resume/targeted-builder/${conversation.id}/status-update`,
+                {
+                    status: selectedNextStatus,
+                    notes: statusNotes || null,
+                    occurred_at: statusOccurredAt || null,
+                },
+            );
+            if (!data.success) {
                 setStatusError(data.message ?? "Failed to update status.");
                 return;
             }

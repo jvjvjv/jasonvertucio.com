@@ -1,3 +1,5 @@
+import { api } from './api';
+
 class CurrentlyWatching extends HTMLElement {
   constructor() {
     super();
@@ -109,8 +111,7 @@ class CurrentlyWatching extends HTMLElement {
 
   async fetchData() {
     try {
-      const response = await fetch('/api/currently-watching');
-      const data = await response.json();
+      const data = await api.get('/api/currently-watching');
 
       const content = this.shadowRoot.querySelector('.content');
 

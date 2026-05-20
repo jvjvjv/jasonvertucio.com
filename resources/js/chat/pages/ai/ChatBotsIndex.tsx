@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 
 import type { BotItem, ModelStatusItem } from "./types";
 
+import { api } from "@/api";
 import ChatBotCard from "@/components/ChatBotCard";
 
 interface ChatBotsIndexProps {
@@ -45,26 +46,19 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
         for (const bot of bots) {
             void (async () => {
                 try {
-                    const response = await fetch(bot.status_url, {
-                        headers: { Accept: "application/json" },
-                        signal: abortController.signal,
-                    });
-
-                    if (!response.ok) {
-                        return;
-                    }
-
-                    const payload = (await response.json()) as StatusResponse;
+                    const payload = await api.get<StatusResponse>(
+                        bot.status_url,
+                        undefined,
+                        abortController.signal,
+                    );
 
                     if (payload.status == null) {
                         return;
                     }
 
-                    const status = payload.status;
-
                     setStatuses((current) => ({
                         ...current,
-                        [bot.slug]: status,
+                        [bot.slug]: payload.status,
                     }));
                 } catch {
                     return;
