@@ -60,7 +60,9 @@ export default function EducationTab({
                                     ...education,
                                     {
                                         institution: "",
+                                        location: "",
                                         degree: "",
+                                        level: "",
                                         dates: ["", ""],
                                         description: "",
                                     },
@@ -128,6 +130,20 @@ export default function EducationTab({
                                 }}
                             />
                             <TextField
+                                label="Location"
+                                size="small"
+                                placeholder="City, State"
+                                value={edu.location}
+                                onChange={(e) => {
+                                    const updated = [...education];
+                                    updated[eduIdx] = {
+                                        ...updated[eduIdx],
+                                        location: e.target.value,
+                                    };
+                                    onChange(updated);
+                                }}
+                            />
+                            <TextField
                                 label="Degree"
                                 size="small"
                                 value={edu.degree}
@@ -136,6 +152,20 @@ export default function EducationTab({
                                     updated[eduIdx] = {
                                         ...updated[eduIdx],
                                         degree: e.target.value,
+                                    };
+                                    onChange(updated);
+                                }}
+                            />
+                            <TextField
+                                label="Level"
+                                size="small"
+                                placeholder="BS, BA, Masters, Certificate, Non-Degree…"
+                                value={edu.level}
+                                onChange={(e) => {
+                                    const updated = [...education];
+                                    updated[eduIdx] = {
+                                        ...updated[eduIdx],
+                                        level: e.target.value,
                                     };
                                     onChange(updated);
                                 }}

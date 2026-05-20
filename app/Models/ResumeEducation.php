@@ -16,7 +16,9 @@ class ResumeEducation extends Model
     protected $fillable = [
         'version_id',
         'institution',
+        'location',
         'degree',
+        'level',
         'date_start',
         'date_end',
         'description',
