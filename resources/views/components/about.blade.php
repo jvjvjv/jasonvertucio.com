@@ -1,15 +1,16 @@
-@props(['aboutMe', 'summary' => null])
+@props(['aboutMe', 'title' => null, 'summary' => null])
 
 <section class="site-section" id="about">
     <div class="w-full">
         <h1 class="text-4xl sm:text-8xl uppercase tracking-tight mt-4 sm:mt-4 mb-0 font-bold" aria-hidden="true">
-            {{ $aboutMe['name']['given'] }}
-            <span class="text-primary">{{ $aboutMe['name']['sur'] }}</span>
+            Jason
+            <span class="text-primary">Vertucio</span>
         </h1>
+        <div class="text-xl font-light text-gray-500 mb-4 uppercase">{{ $title }}</div>
         <div class="subheading font-family-heading text-base uppercase font-medium tracking-wide mb-6">
-            {{ $aboutMe['address']['city'] }},
-            {{ $aboutMe['address']['state'] }}
-            {{ $aboutMe['address']['zip'] }}
+            {{ $aboutMe['address']['city'] ?? 'Philadelphia' }},
+            {{ $aboutMe['address']['state'] ?? 'PA'}}
+            {{ $aboutMe['address']['zip'] ?? '19107' }}
             &middot;
             @if($aboutMe['telegram'])
                 <a class="text-primary underline hover:text-secondary transition-all duration-500"

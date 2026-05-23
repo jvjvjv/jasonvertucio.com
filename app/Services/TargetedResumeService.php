@@ -226,10 +226,9 @@ class TargetedResumeService
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
-                'status' => $existingTargetedResume?->status === TargetedResumeStatus::Applied
-                    ? TargetedResumeStatus::Applied
+                'status' => ($existingTargetedResume?->status !== null && $existingTargetedResume->status !== TargetedResumeStatus::Draft)
+                    ? $existingTargetedResume->status
                     : TargetedResumeStatus::Finalized,
-                'applied_at' => $existingTargetedResume?->applied_at,
             ]
         );
 
@@ -450,7 +449,7 @@ class TargetedResumeService
         return <<<PROMPT
 # Targeted Resume & Cover Letter
 
-You are an expert career advisor, resume tailoring specialist, and cover letter ghostwriter for Jason Vertucio. You help candidates optimize their resumes for specific job postings and produce cover letters that sound like Jay wrote them himself — not like an AI filled in a template.
+You are an expert career advisor, resume tailoring specialist, and cover letter ghostwriter for Jason Vertucio. You help candidates optimize their resumes for specific job postings and produce cover letters that sound like Jay wrote them himself — not like an AI filled in a template. Your main job is to get the resume past automated ATS.
 
 ## Tools Available
 
@@ -462,7 +461,7 @@ Use these tools to load data and take actions at the appropriate steps:
 - `update_fit_assessment` — Call this after Step 4 to persist the fit score, fit summary, company name, and job title. Do NOT write "Fit Score: N" in your text response; use this tool instead so the data is saved.
 - `save_tailored_resume` — Call this when the user approves the tailored resume. It generates DOCX and PDF automatically.
 - `save_cover_letter` — Call this when the user approves the cover letter. It generates DOCX and PDF automatically.
-- `mark_applied` - Call this when the user asks to mark this job as applied. It saves today's date as the applied date and updates the resume status to "Applied". Only call this when the candidate confirms they have submitted an application. Does nothing if an applied date is already recorded.
+- `update_status` - Call this when the user reports a status change in their job application (e.g. "I applied", "I have an interview on June 12th", "I got rejected"). Accepts status (applied, interviewing, interviewed, offered, accepted, hired, rejected), an optional date, and optional notes. For `interviewing`, the date should be the scheduled interview date.
 
 ## Your Role
 
@@ -501,7 +500,7 @@ Salary Assessment: <Below Market|At Market|Above Market|Significant Increase> - 
 Ask if the candidate wants to proceed with tailoring their resume.
 
 ### Step 5: Resume Tailoring (only if candidate agrees to proceed)
-Generate a tailored version of the resume optimized for this job posting, highlighting relevant experience and skills. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`.
+Generate a tailored version of the resume optimized for this job posting, highlighting relevant experience and skills. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`. This tailored resume does not need a header that includes personal information, as the template used for document generation will handle that. Focus on making the content ATS-friendly and relevant to the job description.
 
 Use this structure:
 
@@ -520,15 +519,15 @@ Skill 1, Skill 2
 ### Company Name - Location - Start Year - End Year
 - Achievement or responsibility
 
-# Education
-## Degree
-### Institution - Start Year - End Year
-Description if applicable
-
 # Projects
 ## Project Name
 Description
 - Detail or highlight
+
+# Education
+## Degree
+### Institution - Start Year - End Year
+Description if applicable
 ```
 
 When tailoring:
@@ -609,7 +608,6 @@ PROMPT;
         $title = trim((string) ($data['title'] ?? ''));
         $companyName = trim((string) ($data['company_name'] ?? ''));
         $jobTitle = trim((string) ($data['job_title'] ?? ''));
-        $appliedAt = $data['applied_at'] ?? null;
 
         $conversation->title = $title !== '' ? $title : null;
 
@@ -633,21 +631,12 @@ PROMPT;
         $conversation->save();
 
         if ($conversation->targetedResume) {
-            $targetedResumeData = [
+            $conversation->targetedResume->update([
                 'company_name' => $context['company_name'] ?? $conversation->targetedResume->company_name,
                 'position' => $context['job_title'] ?? $conversation->targetedResume->position,
                 'fit_score' => $context['fit_score'] ?? $conversation->targetedResume->fit_score,
                 'fit_summary' => $context['fit_summary'] ?? $conversation->targetedResume->fit_summary,
-                'applied_at' => $appliedAt,
-            ];
-
-            if ($appliedAt !== null && $appliedAt !== '') {
-                $targetedResumeData['status'] = TargetedResumeStatus::Applied;
-            } elseif ($conversation->targetedResume->status === TargetedResumeStatus::Applied) {
-                $targetedResumeData['status'] = TargetedResumeStatus::Finalized;
-            }
-
-            $conversation->targetedResume->update($targetedResumeData);
+            ]);
         }
 
         return $conversation->fresh(['targetedResume']);

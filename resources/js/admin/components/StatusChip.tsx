@@ -22,7 +22,17 @@ export default function StatusChip({
     tip,
 }: StatusChipProps) {
     const color = colorMap?.[status] ?? statusColor(status);
-    const variant = ["pass", "finalized", "applied"].includes(status)
+    const variant = [
+        "pass",
+        "finalized",
+        "applied",
+        "interviewing",
+        "interviewed",
+        "offered",
+        "accepted",
+        "hired",
+        "rejected",
+    ].includes(status)
         ? "outlined"
         : "filled";
     const chip = (

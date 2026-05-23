@@ -62,6 +62,7 @@ export default [
                         ignoreRestSiblings: true,
                     },
                 ],
+                '@typescript-eslint/no-unnecessary-condition': 'warn',
                 '@typescript-eslint/prefer-nullish-coalescing': 'warn',
                 '@typescript-eslint/restrict-template-expressions': ['error', { allowBoolean: true, allowNullish: true, allowNumber: true }],
                 '@typescript-eslint/switch-exhaustiveness-check': 'error',

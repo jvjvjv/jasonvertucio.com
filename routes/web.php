@@ -36,4 +36,6 @@ require base_path('routes/resume.php');
 require base_path('routes/blog.php');
 require base_path('routes/honeypots.php');
 
+require base_path('routes/api-web.php');
+
 require base_path('routes/chatbots.php');

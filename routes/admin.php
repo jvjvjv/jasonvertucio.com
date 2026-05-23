@@ -39,5 +39,4 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', \App\Http\Middl
 
         // Site settings (navigation links)
         Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
-        Route::post('/site-settings', [SiteSettingsController::class, 'update'])->name('site-settings.update');
     });

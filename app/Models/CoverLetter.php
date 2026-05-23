@@ -53,10 +53,14 @@ class CoverLetter extends Model
      */
     public function generateFilename(): string
     {
-        $companyName = $this->sanitizeFilenamePart($this->company_name);
-        $position = $this->sanitizeFilenamePart($this->position);
+        $this->loadMissing('resumeVersion.personalInfo', 'targetedResume.conversation');
 
-        return trim("{$companyName} {$position} {$this->date->format('Y-m-d')}");
+        $name = $this->sanitizeFilenamePart($this->resumeVersion?->personalInfo?->name);
+        $company = $this->sanitizeFilenamePart($this->company_name);
+        $uuid = $this->targetedResume?->conversation?->uuid ?? 'unknown';
+        $date = $this->date->format('Y-m-d');
+
+        return trim("{$name} Cover Letter {$company} {$date} {$uuid}");
     }
 
     private function sanitizeFilenamePart(?string $value): string

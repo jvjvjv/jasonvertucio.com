@@ -19,6 +19,8 @@ class AiChatBotFactory extends Factory
     {
         return [
             'ai_system_id' => AiSystem::factory(),
+            'context_length' => null,
+            'temperature' => null,
             'name' => fake()->words(3, true),
             'slug' => fake()->unique()->slug(),
             'access_path' => 'chat',

@@ -29,7 +29,6 @@
         <style>.fonts-loading { opacity: 1 !important; }</style>
     </noscript>
 </head>
-
 <body id="page-top" class="fonts-loading font-body text-dark bg-gray-50">
 
     <button
@@ -47,7 +46,7 @@
 
     <main id="main-content" tabindex="-1" class="p-0 md:ml-52 lg:ml-64">
 
-        <x-about :about-me="$config['about_me']" :summary="$resumeData['personal']['summary'] ?? ''" />
+        <x-about :about-me="$config['about_me']" :title="$resumeData['personal']['title'] ?? ''" :summary="$resumeData['personal']['summary'] ?? ''" />
 
         <x-latest-blog :post="$blog" />
 

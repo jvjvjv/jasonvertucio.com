@@ -49,9 +49,16 @@ export interface AiSystem {
     provider: string;
     api_key: string;
     model: string;
+    model_capabilities?: {
+        reasoning?: boolean;
+        vision?: boolean;
+        tools?: boolean;
+        max_context_length?: number | null;
+    } | null;
     base_url: string | null;
     api_version: string | null;
     max_tokens: number;
+    context_length: number | null;
     temperature: number | null;
     config: { [key: string]: unknown } | null;
     credentials?: { [key: string]: unknown } | null;
@@ -61,6 +68,7 @@ export interface AiSystem {
     system_prompt?: string | null;
     system_prompt_mode?: string | null;
     supports_tools?: boolean;
+    allowed_tools?: string[] | null;
     supports_json_mode?: boolean;
     is_local_endpoint?: boolean;
     pricing_profile?: { [key: string]: unknown } | null;
@@ -77,6 +85,8 @@ export interface AiChatBot {
     access_path: "chat" | "root";
     public_url?: string;
     description: string | null;
+    context_length?: number | null;
+    temperature?: number | null;
     prompt_template?: string;
     allowed_roles: string[];
     is_active: boolean;
@@ -131,6 +141,13 @@ export interface PaginatedResponse<T> {
 
 // Resume / Targeted
 
+export interface StatusUpdate {
+    id: number;
+    status: string;
+    notes?: string | null;
+    occurred_at: string;
+}
+
 export interface TargetedResume {
     id: number;
     company_name: string;
@@ -138,11 +155,13 @@ export interface TargetedResume {
     fit_score: number | null;
     status: string;
     resume_version?: string | null;
-    applied_at?: string | null;
+    latest_status_update?: { status: string; occurred_at: string } | null;
     docx_path?: boolean;
     pdf_path?: boolean;
     tailored_content?: string | null;
     tailored_title?: string | null;
+    status_updates?: StatusUpdate[];
+    allowed_next_statuses?: string[];
 }
 
 export interface ConversationUsage {

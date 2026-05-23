@@ -32,6 +32,8 @@ import VersionTab from "./tabs/VersionTab";
 
 import type { EditorProps, Personal, ResumeData } from "./types";
 
+import { api, ApiError } from "@/api";
+
 interface SaveErrorResponse {
     errors?: { [key: string]: string[] };
     message?: string;
@@ -141,37 +143,24 @@ export default function Editor({
         setErrors([]);
 
         try {
-            const response = await fetch("/admin/resume/editor", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-                body: JSON.stringify({
-                    version,
-                    data,
-                    notify_recipients: notifyRecipients,
-                }),
+            await api.post("/api/admin/resume/editor", {
+                version,
+                data,
+                notify_recipients: notifyRecipients,
             });
-
-            const result = (await response.json()) as SaveErrorResponse;
-
-            if (!response.ok) {
-                if (result.errors) {
-                    setErrors(Object.values(result.errors).flat());
-                } else {
-                    setErrors([result.message ?? "Failed to save"]);
-                }
-                return;
-            }
 
             router.reload();
         } catch (error) {
-            setErrors(["Network error: " + (error as Error).message]);
+            if (error instanceof ApiError) {
+                const result = error.data as SaveErrorResponse;
+                if (result?.errors) {
+                    setErrors(Object.values(result.errors).flat());
+                } else {
+                    setErrors([result?.message ?? "Failed to save"]);
+                }
+            } else {
+                setErrors(["Network error: " + (error as Error).message]);
+            }
         } finally {
             setSaving(false);
         }

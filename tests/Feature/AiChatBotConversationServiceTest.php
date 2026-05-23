@@ -9,6 +9,7 @@ use App\Services\AiClientFactory;
 use App\Services\AiMemoryService;
 use App\Services\ClaudeService;
 use App\Services\ConversationUsageService;
+use App\Services\TargetedResumeService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Mockery;
@@ -34,8 +35,9 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
         $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
 
         $conversation = $service->startConversation($bot);
 
@@ -73,8 +75,9 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
         $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
 
         $conversation = $service->startConversation($bot->fresh());
 

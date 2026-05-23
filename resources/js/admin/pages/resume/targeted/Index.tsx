@@ -194,8 +194,8 @@ export default function Index({
                                             | undefined) ??
                                         "";
                                     const displayStatus =
-                                        resume?.status === "finalized" ||
-                                        resume?.status === "applied"
+                                        resume?.status &&
+                                        resume.status !== "draft"
                                             ? resume.status
                                             : conv.status;
 
@@ -240,9 +240,13 @@ export default function Index({
                                                 <StatusChip
                                                     status={displayStatus}
                                                     tip={
-                                                        resume?.applied_at &&
+                                                        resume
+                                                            ?.latest_status_update
+                                                            ?.occurred_at &&
                                                         new Date(
-                                                            resume.applied_at,
+                                                            resume
+                                                                .latest_status_update
+                                                                .occurred_at,
                                                         ).toLocaleDateString(
                                                             undefined,
                                                             {

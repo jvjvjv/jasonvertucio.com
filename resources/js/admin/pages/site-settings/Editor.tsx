@@ -24,6 +24,8 @@ import { useCallback, useState } from "react";
 import PageHeader from "../../components/PageHeader";
 import AdminLayout from "../../layouts/AdminLayout";
 
+import { api } from "@/api";
+
 interface LinkItem {
     label?: string;
     href?: string;
@@ -147,22 +149,11 @@ export default function SiteSettingsEditor({
             };
         });
 
-        const token =
-            document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content") ?? "";
-
         try {
-            const res = await fetch("/admin/site-settings", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": token,
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ links: payload }),
-            });
-            const json = (await res.json()) as SaveResponse;
+            const json = await api.post<SaveResponse>(
+                "/api/admin/site-settings",
+                { links: payload },
+            );
 
             if (json.status === "success") {
                 setSnackbar({

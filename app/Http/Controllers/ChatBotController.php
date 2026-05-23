@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -165,7 +166,7 @@ class ChatBotController extends Controller
         $this->abortIfInaccessible($request, $aiChatBot);
 
         return response()->json([
-            'status' => $this->modelReadinessService->statusForSystem($aiChatBot->aiSystem),
+            'status' => $this->modelReadinessService->statusForChatBot($aiChatBot),
         ]);
     }
 
@@ -174,7 +175,7 @@ class ChatBotController extends Controller
         $this->abortIfInaccessible($request, $aiChatBot);
 
         return response()->json([
-            'status' => $this->modelReadinessService->warmUpSystem($aiChatBot->aiSystem),
+            'status' => $this->modelReadinessService->warmUpChatBot($aiChatBot),
         ]);
     }
 
@@ -226,8 +227,18 @@ class ChatBotController extends Controller
                 $request->validated('message'),
             );
 
-            foreach ($generator as $chunk) {
-                echo $chunk;
+            try {
+                foreach ($generator as $chunk) {
+                    echo $chunk;
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+            } catch (\Throwable $e) {
+                Log::error('Chat bot stream failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                echo 'data: ' . json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.']) . "\n\n";
+                echo "data: [DONE]\n\n";
                 if (ob_get_level() > 0) {
                     ob_flush();
                 }

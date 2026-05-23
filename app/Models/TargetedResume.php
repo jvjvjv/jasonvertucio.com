@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property array<string, mixed>|null $tailored_data
@@ -30,7 +31,6 @@ class TargetedResume extends Model
         'pdf_path',
         'base_resume',
         'status',
-        'applied_at',
     ];
 
     /**
@@ -42,7 +42,6 @@ class TargetedResume extends Model
             'tailored_data' => 'array',
             'fit_score' => 'integer',
             'status' => TargetedResumeStatus::class,
-            'applied_at' => 'datetime',
             'base_resume' => 'boolean',
         ];
     }
@@ -67,15 +66,28 @@ class TargetedResume extends Model
         return $this->hasMany(CoverLetter::class);
     }
 
+    public function statusUpdates(): HasMany
+    {
+        return $this->hasMany(TargetedResumeStatusUpdate::class)->orderBy('occurred_at');
+    }
+
+    public function latestStatusUpdate(): HasOne
+    {
+        return $this->hasOne(TargetedResumeStatusUpdate::class)->latestOfMany('occurred_at');
+    }
+
     /**
      * Generate the base filename for this targeted resume's documents.
      */
     public function generateFilename(): string
     {
-        $companyName = $this->sanitizeFilenamePart($this->company_name);
-        $position = $this->sanitizeFilenamePart($this->position);
+        $this->loadMissing('resumeVersion.personalInfo', 'conversation');
 
-        return trim("{$companyName} {$position} Resume");
+        $name = $this->sanitizeFilenamePart($this->resumeVersion?->personalInfo?->name);
+        $company = $this->sanitizeFilenamePart($this->company_name);
+        $uuid = $this->conversation?->uuid ?? 'unknown';
+
+        return trim("{$name} Resume {$company} {$uuid}");
     }
 
     private function sanitizeFilenamePart(?string $value): string

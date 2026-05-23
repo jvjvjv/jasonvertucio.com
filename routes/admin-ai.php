@@ -18,7 +18,6 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::get('/systems', [AiSystemController::class, 'index'])->name('systems.index');
         Route::get('/systems/new', [AiSystemController::class, 'create'])->name('systems.create');
         Route::post('/systems', [AiSystemController::class, 'store'])->name('systems.store');
-        Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels'])->name('systems.fetch-models');
         Route::get('/systems/{aiSystem}', [AiSystemController::class, 'edit'])->name('systems.edit');
         Route::put('/systems/{aiSystem}', [AiSystemController::class, 'update'])->name('systems.update');
         Route::post('/systems/{aiSystem}/duplicate', [AiSystemController::class, 'duplicate'])->name('systems.duplicate');
@@ -43,7 +42,7 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         // AI Chat Bots CRUD
         Route::get('/chat-bots', [AiChatBotController::class, 'index'])->name('bots.index');
         Route::get('/chat-bots/new', [AiChatBotController::class, 'create'])->name('bots.create');
-        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools'])->name('bots.mcp-tools');
+
         Route::post('/chat-bots', [AiChatBotController::class, 'store'])->name('bots.store');
         Route::get('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'edit'])->name('bots.edit');
         Route::put('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'update'])->name('bots.update');
@@ -53,7 +52,7 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::get('/job-url-parsers', [JobUrlParserController::class, 'index'])->name('job-url-parsers.index');
         Route::get('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'edit'])->name('job-url-parsers.edit');
         Route::put('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'update'])->name('job-url-parsers.update');
-        Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview'])->name('job-url-parsers.preview');
+
         Route::post('/job-url-parsers/{jobUrlParser}/approve', [JobUrlParserController::class, 'approve'])->name('job-url-parsers.approve');
         Route::post('/job-url-parsers/{jobUrlParser}/reject', [JobUrlParserController::class, 'reject'])->name('job-url-parsers.reject');
         Route::delete('/job-url-parsers/{jobUrlParser}', [JobUrlParserController::class, 'destroy'])->name('job-url-parsers.destroy');

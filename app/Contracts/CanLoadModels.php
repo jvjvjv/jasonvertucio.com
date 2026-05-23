@@ -14,5 +14,5 @@ interface CanLoadModels
      *
      * @return array{status: string, instance_id: string, load_time_seconds: float}
      */
-    public function loadModel(string $model): array;
+    public function loadModel(string $model, ?int $contextLength = null): array;
 }

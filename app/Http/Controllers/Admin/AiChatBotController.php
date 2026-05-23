@@ -47,9 +47,10 @@ class AiChatBotController extends Controller
                 'allowed_roles' => $bot->allowed_roles ?? [],
                 'is_active' => $bot->is_active,
                 'is_public' => $bot->is_public,
+                'ai_system' => $bot->aiSystem,
                 'require_visitor_identity' => $bot->require_visitor_identity,
                 'conversations_count' => $bot->conversations_count,
-                'ai_system' => $bot->aiSystem,
+                '_id' => $bot->aiSystemId,
                 'tools_enabled' => $bot->tools_enabled,
                 'usage' => $bot->conversations_sum_usage_cost_usd !== null ? [
                     'input_tokens' => (int) ($bot->conversations_sum_usage_input_tokens ?? 0),
@@ -111,16 +112,32 @@ class AiChatBotController extends Controller
         AiMemoryService $memoryService,
         TargetedResumeService $targetedResumeService,
     ): JsonResponse {
+        $request->validate([
+            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
+            'include_all' => ['nullable', 'boolean'],
+        ]);
+
         $conversation = new AiConversation([
             'user_id' => $request->user()?->getKey(),
             'context' => [],
         ]);
+
+        $allowedTools = null;
+        $includeAllTools = $request->boolean('include_all');
+
+        if (!$includeAllTools && $request->filled('ai_system_id')) {
+            $allowedTools = AiSystem::query()
+                ->whereKey($request->integer('ai_system_id'))
+                ->value('allowed_tools');
+        }
 
         $registry = new ChatBotToolRegistry(
             $conversation,
             $resumeDataService,
             $memoryService,
             $targetedResumeService,
+            $allowedTools,
+            $includeAllTools,
         );
 
         return response()->json([
@@ -158,7 +175,7 @@ class AiChatBotController extends Controller
     }
 
     /**
-     * @return array<int, array{id: int, name: string, model: string, supports_tools: bool}>
+    * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
      */
     private function systems(): array
     {
@@ -170,6 +187,8 @@ class AiChatBotController extends Controller
                 'id' => $system->id,
                 'name' => $system->name,
                 'model' => $system->model,
+                'context_length' => $system->context_length,
+                'temperature' => $system->temperature !== null ? (float) $system->temperature : null,
                 'supports_tools' => (bool) $system->supports_tools,
             ])
             ->all();

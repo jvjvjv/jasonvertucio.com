@@ -135,7 +135,9 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 $dates = $edu['dates'] ?? [];
                 $version->educations()->create([
                     'institution' => $edu['institution'],
+                    'location' => $edu['location'] ?? null,
                     'degree' => $edu['degree'] ?? null,
+                    'level' => $edu['level'] ?? null,
                     'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
                     'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
                     'description' => $edu['description'] ?? null,
@@ -356,7 +358,9 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
 
             return array_filter([
                 'institution' => $edu->institution,
+                'location' => $edu->location ?? '',
                 'degree' => $edu->degree,
+                'level' => $edu->level ?? '',
                 'dates' => array_values($dates),
                 'description' => $edu->description,
             ], fn ($value) => $value !== null && $value !== []);
@@ -415,6 +419,15 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             $edu['dateEnd'] = $dates[1] ?? '';
             $edu['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
             $edu['dateDisplay'] = $buildDateDisplay($dates);
+
+            $metaParts = array_filter([
+                $edu['location'] ?? null,
+                $edu['dateRange'] ?: null,
+                $edu['degree'] ?? null,
+                $edu['level'] ?? null,
+            ], fn ($v) => $v !== null && $v !== '');
+            $edu['metaLine'] = implode(' • ', $metaParts);
+
             return $edu;
         }, $data['education']);
 

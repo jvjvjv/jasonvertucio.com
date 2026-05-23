@@ -26,6 +26,7 @@ import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { SharedProps } from "@/types";
 import type { KeyboardEvent } from "react";
 
+import { api } from "@/api";
 import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ResponsiveButton from "@/components/ResponsiveButton";
 
@@ -174,28 +175,11 @@ export default function ChatBot({
         }
     }, [messages, streamingBlocks]);
 
-    const csrfToken =
-        document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content") ?? "";
-
     const fetchModelStatus = async (): Promise<ModelStatus | null> => {
         try {
             setIsCheckingModelStatus(true);
-            const response = await fetch(statusUrl, {
-                headers: {
-                    Accept: "application/json",
-                },
-            });
+            const payload = await api.get<ModelStatusResponse>(statusUrl);
 
-            if (!response.ok) {
-                setUnavailableStatus(
-                    `Provider is unavailable (HTTP ${response.status}).`,
-                );
-                return null;
-            }
-
-            const payload = (await response.json()) as ModelStatusResponse;
             if (!payload.status) {
                 setUnavailableStatus("Provider status is unavailable.");
                 return null;
@@ -218,22 +202,8 @@ export default function ChatBot({
             setIsWarmingModel(true);
             setLoadingMessage("Loading model. This can take a little while...");
 
-            const response = await fetch(warmupUrl, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN": csrfToken,
-                },
-            });
+            const payload = await api.post<ModelStatusResponse>(warmupUrl);
 
-            if (!response.ok) {
-                setUnavailableStatus(
-                    `Provider is unavailable (HTTP ${response.status}).`,
-                );
-                return null;
-            }
-
-            const payload = (await response.json()) as ModelStatusResponse;
             if (!payload.status || payload.status.state === "unavailable") {
                 setUnavailableStatus(
                     payload.status?.message ?? "Provider is down.",
@@ -262,25 +232,14 @@ export default function ChatBot({
 
             let status: ModelStatus | null = null;
             try {
-                const statusResponse = await fetch(statusUrl, {
-                    headers: {
-                        Accept: "application/json",
-                    },
-                });
+                const payload = await api.get<ModelStatusResponse>(statusUrl);
+                status = payload.status ?? null;
 
-                if (statusResponse.ok) {
-                    const payload =
-                        (await statusResponse.json()) as ModelStatusResponse;
-                    status = payload.status ?? null;
-
-                    if (status) {
-                        setModelStatus(status);
-                    }
-                } else {
-                    setUnavailableStatus(
-                        `Provider is unavailable (HTTP ${statusResponse.status}).`,
-                    );
+                if (status) {
+                    setModelStatus(status);
                 }
+            } catch {
+                setUnavailableStatus("Provider is unavailable.");
             } finally {
                 setIsCheckingModelStatus(false);
             }
@@ -296,21 +255,11 @@ export default function ChatBot({
                 );
 
                 try {
-                    const warmupResponse = await fetch(warmupUrl, {
-                        method: "POST",
-                        headers: {
-                            Accept: "application/json",
-                            "X-CSRF-TOKEN": csrfToken,
-                        },
-                    });
-
-                    if (warmupResponse.ok) {
-                        const warmupPayload =
-                            (await warmupResponse.json()) as ModelStatusResponse;
-                        const warmStatus = warmupPayload.status;
-                        if (warmStatus != null) {
-                            setModelStatus(warmStatus);
-                        }
+                    const warmupPayload =
+                        await api.post<ModelStatusResponse>(warmupUrl);
+                    const warmStatus = warmupPayload.status;
+                    if (warmStatus != null) {
+                        setModelStatus(warmStatus);
                     }
                 } finally {
                     setIsWarmingModel(false);
@@ -324,7 +273,7 @@ export default function ChatBot({
         return () => {
             mounted = false;
         };
-    }, [csrfToken, statusUrl, warmupUrl]);
+    }, [statusUrl, warmupUrl]);
 
     const ensureModelReady = async (): Promise<boolean> => {
         const currentStatus = modelStatus ?? (await fetchModelStatus());
@@ -393,45 +342,8 @@ export default function ChatBot({
         }
 
         try {
-            const response = await fetch(messageUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "text/event-stream",
-                    "X-CSRF-TOKEN": csrfToken,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            // Update URL as soon as the server confirms the request — headers
-            // are available before the body streams, so this is safe and ensures
-            // the hash is set even if streaming fails partway through.
-            const receivedHash = response.headers.get("X-Chat-Hash");
-            if (
-                receivedHash &&
-                chatUrlBase &&
-                window.location.pathname !== chatUrlBase + receivedHash
-            ) {
-                window.history.replaceState(
-                    null,
-                    "",
-                    chatUrlBase + receivedHash,
-                );
-            }
-
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error("No response stream available");
-            }
-
-            const decoder = new TextDecoder();
             // Local mutable copy — avoids stale closure; synced to state for renders
             let liveBlocks: MessageBlock[] = [];
-            let bufferedText = "";
 
             const appendToBlocks = (
                 type: MessageBlock["type"],
@@ -451,11 +363,26 @@ export default function ChatBot({
                 setStreamingBlocks([...liveBlocks]);
             };
 
-            const processDataLine = (line: string): void => {
-                if (!line.startsWith("data: ")) return;
-
-                const jsonStr = line.slice(6).trim();
-                if (!jsonStr || jsonStr === "[DONE]") return;
+            for await (const jsonStr of api.stream(
+                messageUrl,
+                payload,
+                // Update URL as soon as headers arrive — before the body streams.
+                (res) => {
+                    const receivedHash = res.headers.get("X-Chat-Hash");
+                    if (
+                        receivedHash &&
+                        chatUrlBase &&
+                        window.location.pathname !== chatUrlBase + receivedHash
+                    ) {
+                        window.history.replaceState(
+                            null,
+                            "",
+                            chatUrlBase + receivedHash,
+                        );
+                    }
+                },
+            )) {
+                if (!jsonStr || jsonStr === "[DONE]") continue;
 
                 let event: {
                     type: string;
@@ -467,7 +394,7 @@ export default function ChatBot({
                 try {
                     event = JSON.parse(jsonStr) as typeof event;
                 } catch {
-                    return;
+                    continue;
                 }
 
                 if (
@@ -489,29 +416,6 @@ export default function ChatBot({
                 } else if (event.type === "error") {
                     throw new Error(event.message ?? "Unknown error");
                 }
-            };
-
-            let done = false;
-            while (!done) {
-                const chunk = await reader.read();
-                done = chunk.done;
-
-                if (!done) {
-                    bufferedText += decoder.decode(chunk.value, {
-                        stream: true,
-                    });
-                    const lines = bufferedText.split("\n");
-                    bufferedText = lines.pop() ?? "";
-
-                    for (const line of lines) {
-                        processDataLine(line);
-                    }
-                }
-            }
-
-            bufferedText += decoder.decode();
-            for (const line of bufferedText.split("\n")) {
-                processDataLine(line);
             }
 
             const finalText = liveBlocks

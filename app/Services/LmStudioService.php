@@ -6,11 +6,13 @@ use App\Contracts\AiClientContract;
 use App\Contracts\CanLoadModels;
 use Generator;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class LmStudioService implements AiClientContract, CanLoadModels
 {
     private string $defaultModel;
     private int $defaultMaxTokens;
+    private ?int $defaultContextLength;
 
     /** The root URL, e.g. http://localhost:1234 */
     private string $serverUrl;
@@ -19,6 +21,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     private ?string $system = null;
     private ?string $model = null;
     private ?int $maxTokens = null;
+    private ?int $contextLength = null;
     private ?float $temperature = null;
 
     /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> */
@@ -28,6 +31,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         ?string $serverUrl = null,
         ?string $model = null,
         ?int $maxTokens = null,
+        ?int $contextLength = null,
         ?string $apiKey = null,
     ) {
         $this->serverUrl = $this->normalizeServerUrl(
@@ -35,6 +39,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         );
         $this->defaultModel = $model ?? config('lmstudio.model', '');
         $this->defaultMaxTokens = $maxTokens ?? (int) config('lmstudio.max_tokens', 1024);
+        $this->defaultContextLength = $contextLength;
         $this->apiKey = $apiKey;
     }
 
@@ -119,6 +124,8 @@ class LmStudioService implements AiClientContract, CanLoadModels
     {
         $payload = $this->buildOpenAiPayload($messages, true);
 
+        Log::debug('LmStudio stream payload', ['message_count' => count($payload['messages']), 'messages' => $payload['messages']]);
+
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
             ->timeout(600)
@@ -133,6 +140,11 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $inputTokens = null;
         $outputTokens = null;
         $started = false;
+
+        // Track in-flight tool calls: index → {id, name, arguments}
+        /** @var array<int, array{id: string, name: string, arguments: string}> $pendingToolCalls */
+        $pendingToolCalls = [];
+        $finishReason = null;
 
         while (!$body->eof()) {
             $buffer .= $body->read(1024);
@@ -198,19 +210,67 @@ class LmStudioService implements AiClientContract, CanLoadModels
                     ];
                 }
 
-                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
-                    yield [
-                        'type' => 'message_delta',
-                        'usage' => [
-                            'output_tokens' => $outputTokens,
-                        ],
-                    ];
+                // Accumulate streaming tool_calls fragments (delta format)
+                if (!empty($delta['tool_calls'])) {
+                    foreach ($delta['tool_calls'] as $tcDelta) {
+                        $idx = (int) ($tcDelta['index'] ?? 0);
 
-                    yield [
-                        'type' => 'message_stop',
-                    ];
+                        if (!isset($pendingToolCalls[$idx])) {
+                            $pendingToolCalls[$idx] = ['id' => '', 'name' => '', 'arguments' => ''];
+                        }
+
+                        if (isset($tcDelta['id']) && $tcDelta['id'] !== '') {
+                            $pendingToolCalls[$idx]['id'] = $tcDelta['id'];
+                        }
+
+                        if (isset($tcDelta['function']['name']) && $tcDelta['function']['name'] !== '') {
+                            $pendingToolCalls[$idx]['name'] = $tcDelta['function']['name'];
+                        }
+
+                        if (isset($tcDelta['function']['arguments'])) {
+                            $pendingToolCalls[$idx]['arguments'] .= $tcDelta['function']['arguments'];
+                        }
+                    }
+                }
+
+                // LM Studio fallback: complete tool_calls in choice['message'] instead of delta
+                if (empty($delta['tool_calls']) && !empty($choice['message']['tool_calls'])) {
+                    foreach ($choice['message']['tool_calls'] as $i => $tc) {
+                        $pendingToolCalls[$i] = [
+                            'id' => (string) ($tc['id'] ?? ''),
+                            'name' => (string) ($tc['function']['name'] ?? ''),
+                            'arguments' => (string) ($tc['function']['arguments'] ?? ''),
+                        ];
+                    }
+                }
+
+                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
+                    $finishReason = $choice['finish_reason'];
+                    Log::debug('LmStudio finish_reason chunk', ['chunk' => $chunk]);
                 }
             }
+        }
+
+        // Emit accumulated tool calls as normalized Anthropic-style events
+        foreach ($pendingToolCalls as $toolCall) {
+            yield [
+                'type' => 'content_block_start',
+                'content_block' => [
+                    'type' => 'tool_use',
+                    'id' => $toolCall['id'],
+                    'name' => $toolCall['name'],
+                ],
+            ];
+
+            yield [
+                'type' => 'content_block_delta',
+                'delta' => [
+                    'type' => 'input_json_delta',
+                    'partial_json' => $toolCall['arguments'],
+                ],
+            ];
+
+            yield ['type' => 'content_block_stop'];
         }
 
         if ($started === false) {
@@ -224,8 +284,11 @@ class LmStudioService implements AiClientContract, CanLoadModels
             ];
         }
 
+        $stopReason = $finishReason === 'tool_calls' ? 'tool_use' : 'end_turn';
+
         yield [
             'type' => 'message_delta',
+            'delta' => ['stop_reason' => $stopReason],
             'usage' => [
                 'output_tokens' => $outputTokens,
             ],
@@ -258,11 +321,22 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
         return collect($models)
             ->filter(static fn (mixed $m): bool => is_array($m) && isset($m['key']) && ($m['type'] ?? '') === 'llm')
-            ->map(static fn (array $m): array => [
-                'id' => (string) $m['key'],
-                'display_name' => (string) ($m['display_name'] ?? $m['key']),
-                'loaded' => !empty($m['loaded_instances']),
-            ])
+            ->map(static function (array $m): array {
+                $capabilities = is_array($m['capabilities'] ?? null) ? $m['capabilities'] : [];
+                $reasoning = $capabilities['reasoning'] ?? null;
+
+                return [
+                    'id' => (string) $m['key'],
+                    'display_name' => (string) ($m['display_name'] ?? $m['key']),
+                    'loaded' => !empty($m['loaded_instances']),
+                    'max_context_length' => isset($m['max_context_length']) ? (int) $m['max_context_length'] : null,
+                    'capabilities' => [
+                        'vision' => (bool) ($capabilities['vision'] ?? false),
+                        'tools' => (bool) ($capabilities['trained_for_tool_use'] ?? false),
+                        'reasoning' => is_array($reasoning) || (bool) $reasoning,
+                    ],
+                ];
+            })
             ->values()
             ->toArray();
     }
@@ -302,13 +376,21 @@ class LmStudioService implements AiClientContract, CanLoadModels
      *
      * @return array{status: string, instance_id: string, load_time_seconds: float}
      */
-    public function loadModel(string $model): array
+    public function loadModel(string $model, ?int $contextLength = null): array
     {
+        $payload = [
+            'model' => $model,
+        ];
+
+        $resolvedContextLength = $contextLength ?? $this->contextLength ?? $this->defaultContextLength;
+
+        if ($resolvedContextLength !== null) {
+            $payload['context_length'] = $resolvedContextLength;
+        }
+
         $response = Http::withHeaders($this->headers())
             ->timeout(300)
-            ->post($this->serverUrl . '/api/v1/models/load', [
-                'model' => $model,
-            ]);
+            ->post($this->serverUrl . '/api/v1/models/load', $payload);
 
         $response->throw();
 
@@ -335,7 +417,9 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 'type' => 'function',
                 'function' => [
                     'name' => $toolCall['name'],
-                    'arguments' => json_encode($toolCall['input']),
+                    'arguments' => json_encode(
+                        $toolCall['input'] === [] ? new \stdClass() : $toolCall['input']
+                    ),
                 ],
             ];
         }
@@ -355,7 +439,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     {
         return array_map(static fn (array $result): array => [
             'role' => 'tool',
-            'tool_call_id' => $result['id'],
+            'tool_call_id' => $result['tool_use_id'] ?? $result['id'],
             'content' => json_encode($result['result']),
         ], $toolResults);
     }
@@ -418,6 +502,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $this->system = null;
         $this->model = null;
         $this->maxTokens = null;
+        $this->contextLength = null;
         $this->temperature = null;
         $this->tools = [];
     }

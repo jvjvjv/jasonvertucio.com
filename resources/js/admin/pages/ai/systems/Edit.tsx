@@ -27,9 +27,11 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         provider: aiSystem.provider,
         api_key: aiSystem.api_key,
         model: aiSystem.model,
+        model_capabilities: aiSystem.model_capabilities ?? null,
         base_url: aiSystem.base_url ?? "",
         api_version: aiSystem.api_version ?? "",
         max_tokens: aiSystem.max_tokens,
+        context_length: aiSystem.context_length,
         temperature: aiSystem.temperature?.toString() ?? "",
         system_prompt: aiSystem.system_prompt ?? "",
         config: aiSystem.config ? JSON.stringify(aiSystem.config, null, 2) : "",
@@ -41,6 +43,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         stream_protocol: aiSystem.stream_protocol ?? "",
         system_prompt_mode: aiSystem.system_prompt_mode ?? "",
         supports_tools: aiSystem.supports_tools ?? false,
+        allowed_tools: aiSystem.allowed_tools ?? [],
         supports_json_mode: aiSystem.supports_json_mode ?? false,
         is_local_endpoint: aiSystem.is_local_endpoint ?? false,
         pricing_profile: aiSystem.pricing_profile
@@ -146,7 +149,24 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
             </Card>
 
             <Box sx={{ mt: 2 }}>
-                <AvailableMcpTools enabled={form.data.supports_tools} />
+                <AvailableMcpTools
+                    enabled={form.data.supports_tools}
+                    includeAllTools
+                    selectable
+                    selectedToolNames={form.data.allowed_tools}
+                    onToggleTool={(toolName) => {
+                        const nextTools = form.data.allowed_tools.includes(
+                            toolName,
+                        )
+                            ? form.data.allowed_tools.filter(
+                                  (name) => name !== toolName,
+                              )
+                            : [...form.data.allowed_tools, toolName];
+
+                        form.setData("allowed_tools", nextTools);
+                    }}
+                    description="Select the MCP tools this system may expose. If none are selected, chat bots on this system cannot use MCP tools."
+                />
             </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>

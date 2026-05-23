@@ -23,9 +23,11 @@ export default function Create({ existingDefaults }: CreateProps) {
         provider: "anthropic",
         api_key: "",
         model: "",
+        model_capabilities: null,
         base_url: "",
         api_version: "",
         max_tokens: 4096,
+        context_length: null,
         temperature: "",
         system_prompt: "",
         config: "",
@@ -35,6 +37,7 @@ export default function Create({ existingDefaults }: CreateProps) {
         stream_protocol: "",
         system_prompt_mode: "",
         supports_tools: false,
+        allowed_tools: [],
         supports_json_mode: false,
         is_local_endpoint: false,
         pricing_profile: "",
@@ -94,7 +97,24 @@ export default function Create({ existingDefaults }: CreateProps) {
             </Card>
 
             <Box sx={{ mt: 2 }}>
-                <AvailableMcpTools enabled={form.data.supports_tools} />
+                <AvailableMcpTools
+                    enabled={form.data.supports_tools}
+                    includeAllTools
+                    selectable
+                    selectedToolNames={form.data.allowed_tools}
+                    onToggleTool={(toolName) => {
+                        const nextTools = form.data.allowed_tools.includes(
+                            toolName,
+                        )
+                            ? form.data.allowed_tools.filter(
+                                  (name) => name !== toolName,
+                              )
+                            : [...form.data.allowed_tools, toolName];
+
+                        form.setData("allowed_tools", nextTools);
+                    }}
+                    description="Select the MCP tools this system may expose. If none are selected, chat bots on this system cannot use MCP tools."
+                />
             </Box>
         </AdminLayout>
     );

@@ -1,5 +1,9 @@
+import HandymanIcon from "@mui/icons-material/Handyman";
+import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -7,9 +11,21 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
+import { api } from "@/api";
+
+interface ModelCapabilities {
+    reasoning?: boolean;
+    vision?: boolean;
+    tools?: boolean;
+    max_context_length?: number | null;
+}
+
 interface ModelOption {
     id: string;
     name: string;
+    loaded?: boolean;
+    max_context_length?: number | null;
+    capabilities?: ModelCapabilities;
 }
 
 interface FetchModelsResponse {
@@ -22,9 +38,11 @@ interface FormData {
     provider: string;
     api_key: string;
     model: string;
+    model_capabilities: ModelCapabilities | null;
     base_url: string;
     api_version: string;
     max_tokens: number;
+    context_length: number | null;
     temperature: string;
     system_prompt: string;
     config: string;
@@ -34,6 +52,7 @@ interface FormData {
     stream_protocol: string;
     system_prompt_mode: string;
     supports_tools: boolean;
+    allowed_tools: string[];
     supports_json_mode: boolean;
     is_local_endpoint: boolean;
     pricing_profile: string;
@@ -45,7 +64,7 @@ interface AiSystemFormProps {
     data: FormData;
     setData: (
         _key: keyof FormData,
-        _value: string | number | boolean | string[],
+        _value: string | number | boolean | string[] | ModelCapabilities | null,
     ) => void;
     errors: Partial<{ [key: string]: string }>;
     existingDefaults: string[];
@@ -78,6 +97,7 @@ const AUTH_TYPES = ["bearer", "x-api-key", "none", "custom"];
 const ENDPOINT_TYPES = ["managed", "openai-compatible", "local"];
 const STREAM_PROTOCOLS = ["sse", "chunked-json", "json-lines"];
 const SYSTEM_PROMPT_MODES = ["top-level", "messages"];
+const PROVIDERS_SUPPORTING_CONTEXT_LENGTH = new Set(["lm-studio"]);
 
 const PROVIDER_DEFAULTS: {
     [key: string]: {
@@ -165,7 +185,9 @@ export default function AiSystemForm({
     const [fetchError, setFetchError] = useState("");
 
     const fetchModels = async () => {
-        if (!data.provider) return;
+        if (!data.provider) {
+            return;
+        }
 
         if (PROVIDERS_REQUIRING_API_KEY.has(data.provider) && !data.api_key) {
             return;
@@ -175,29 +197,33 @@ export default function AiSystemForm({
         setFetchError("");
 
         try {
-            const response = await fetch("/admin/ai/systems/fetch-models", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-                body: JSON.stringify({
+            const result = await api.post<FetchModelsResponse>(
+                "/api/admin/ai/systems/fetch-models",
+                {
                     provider: data.provider,
                     api_key: data.api_key,
                     base_url: data.base_url || null,
-                }),
-            });
-
-            const result = (await response.json()) as FetchModelsResponse;
+                },
+            );
 
             if (result.error) {
                 setFetchError(result.error);
                 setAvailableModels([]);
             } else {
-                setAvailableModels(result.models ?? []);
+                const models = result.models ?? [];
+                setAvailableModels(models);
+
+                const selectedModel = models.find(
+                    (model) => model.id === data.model,
+                );
+
+                if (selectedModel) {
+                    setData("model_capabilities", {
+                        ...(selectedModel.capabilities ?? {}),
+                        max_context_length:
+                            selectedModel.max_context_length ?? null,
+                    });
+                }
             }
         } catch {
             setFetchError("Failed to fetch models. Check your API key.");
@@ -212,6 +238,7 @@ export default function AiSystemForm({
 
         setData("provider", value);
         setData("model", "");
+        setData("model_capabilities", null);
         setAvailableModels([]);
         setFetchError("");
 
@@ -225,7 +252,10 @@ export default function AiSystemForm({
     };
 
     const fetchModelOnFieldChange = () => {
-        if (data.provider && data.api_key) {
+        if (
+            data.provider &&
+            (!PROVIDERS_REQUIRING_API_KEY.has(data.provider) || data.api_key)
+        ) {
             void fetchModels();
         }
     };
@@ -240,6 +270,17 @@ export default function AiSystemForm({
     const apiVersionPlaceholder = providerDefaults.apiVersion || "Optional";
     const modelPlaceholder =
         providerDefaults.model || "Fetch models or enter model id";
+    const supportsContextLength = PROVIDERS_SUPPORTING_CONTEXT_LENGTH.has(
+        data.provider,
+    );
+    const selectedModel =
+        availableModels.find((model) => model.id === data.model) ?? null;
+    const selectedModelCapabilities = selectedModel
+        ? {
+              ...(selectedModel.capabilities ?? {}),
+              max_context_length: selectedModel.max_context_length ?? null,
+          }
+        : data.model_capabilities;
 
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
@@ -337,7 +378,22 @@ export default function AiSystemForm({
                         fullWidth
                         value={data.model}
                         onChange={(e) => {
+                            const nextModel = availableModels.find(
+                                (model) => model.id === e.target.value,
+                            );
+
                             setData("model", e.target.value);
+                            setData(
+                                "model_capabilities",
+                                nextModel
+                                    ? {
+                                          ...(nextModel.capabilities ?? {}),
+                                          max_context_length:
+                                              nextModel.max_context_length ??
+                                              null,
+                                      }
+                                    : null,
+                            );
                         }}
                         disabled={isEdit}
                         error={!!errors.model}
@@ -362,6 +418,57 @@ export default function AiSystemForm({
                             </MenuItem>
                         ))}
                     </TextField>
+
+                    {selectedModelCapabilities && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mt: 1,
+                            }}
+                        >
+                            {selectedModelCapabilities.reasoning && (
+                                <Chip
+                                    size="small"
+                                    icon={<PsychologyAltIcon />}
+                                    label="Reasoning"
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModelCapabilities.vision && (
+                                <Chip
+                                    size="small"
+                                    icon={<VisibilityIcon />}
+                                    label="Vision"
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModelCapabilities.tools && (
+                                <Chip
+                                    size="small"
+                                    icon={<HandymanIcon />}
+                                    label="Tool Use"
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModelCapabilities.max_context_length && (
+                                <Chip
+                                    size="small"
+                                    label={`Max context ${selectedModelCapabilities.max_context_length.toLocaleString()}`}
+                                    variant="outlined"
+                                />
+                            )}
+                            {selectedModel?.loaded && (
+                                <Chip
+                                    size="small"
+                                    color="success"
+                                    label="Loaded"
+                                    variant="outlined"
+                                />
+                            )}
+                        </Box>
+                    )}
                 </Box>
             </Box>
 
@@ -425,6 +532,32 @@ export default function AiSystemForm({
                     helperText={errors.max_tokens}
                     slotProps={{ htmlInput: { min: 1, max: 200000 } }}
                 />
+                <TextField
+                    label="Context Length"
+                    type="number"
+                    size="small"
+                    value={data.context_length ?? ""}
+                    onChange={(e) => {
+                        const value = e.target.value.trim();
+                        setData(
+                            "context_length",
+                            value === "" ? null : parseInt(value) || null,
+                        );
+                    }}
+                    disabled={!supportsContextLength}
+                    error={!!errors.context_length}
+                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
+                />
+            </Box>
+
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
                 <TextField
                     label="Temperature"
                     type="number"

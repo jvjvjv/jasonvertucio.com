@@ -1,19 +1,31 @@
+# Development & Build
 /node_modules
 /public/hot
 /public/storage
 /storage/*.key
 /vendor
 /.certs
+
+#Environment
 .env
 .env.backup
-.phpunit.result.cache
-.phpunit.cache
 Homestead.json
 Homestead.yaml
+
+# Testing
+.phpunit.result.cache
+.phpunit.cache
 npm-debug.log
 yarn-error.log
+
+# Other ... stuff.
 public
 prod.*
 *.sh
 !/scripts/*.sh
 ~*.docx
+
+# AI helpers
+AGENTS.md
+SKILL.md
+boost.json

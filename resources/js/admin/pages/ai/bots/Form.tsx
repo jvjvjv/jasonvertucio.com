@@ -23,6 +23,8 @@ export interface FormData {
     access_path: "chat" | "root";
     description: string;
     ai_system_id: number | "";
+    context_length: number | null;
+    temperature: string;
     prompt_template: string;
     allowed_roles: string[];
     is_active: boolean;
@@ -35,6 +37,8 @@ interface SystemOption {
     id: number;
     name: string;
     model: string;
+    context_length: number | null;
+    temperature: number | null;
     supports_tools: boolean;
 }
 
@@ -42,7 +46,7 @@ interface AiChatBotFormProps {
     data: FormData;
     setData: (
         key: keyof FormData,
-        value: string | number | boolean | string[],
+        value: string | number | boolean | string[] | null,
     ) => void;
     errors: Partial<{ [K in keyof FormData]: string }>;
     systems: SystemOption[];
@@ -62,6 +66,16 @@ export default function Form({
         (system) => system.id === data.ai_system_id,
     );
     const toolsEnabledBySystem = selectedSystem?.supports_tools === true;
+    const systemTemperaturePlaceholder =
+        selectedSystem?.temperature !== null &&
+        selectedSystem?.temperature !== undefined
+            ? selectedSystem.temperature.toString()
+            : undefined;
+    const systemContextLengthPlaceholder =
+        selectedSystem?.context_length !== null &&
+        selectedSystem?.context_length !== undefined
+            ? selectedSystem.context_length.toString()
+            : undefined;
 
     useEffect(() => {
         if (toolsEnabledBySystem && !data.tools_enabled) {
@@ -171,6 +185,46 @@ export default function Form({
                     </MenuItem>
                 ))}
             </TextField>
+
+            <Box
+                sx={{
+                    display: "grid",
+                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    mb: 2,
+                }}
+            >
+                <TextField
+                    label="Temperature"
+                    type="number"
+                    size="small"
+                    value={data.temperature}
+                    placeholder={systemTemperaturePlaceholder}
+                    onChange={(event) => {
+                        setData("temperature", event.target.value);
+                    }}
+                    error={!!errors.temperature}
+                    slotProps={{ htmlInput: { min: 0, max: 1, step: 0.01 } }}
+                    sx={{ mb: 2 }}
+                />
+                <TextField
+                    label="Context Length"
+                    type="number"
+                    size="small"
+                    value={data.context_length ?? ""}
+                    placeholder={systemContextLengthPlaceholder}
+                    onChange={(event) => {
+                        const value = event.target.value.trim();
+                        setData(
+                            "context_length",
+                            value === "" ? null : parseInt(value, 10) || null,
+                        );
+                    }}
+                    error={!!errors.context_length}
+                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
+                    sx={{ mb: 2 }}
+                />
+            </Box>
 
             <TextField
                 label="Prompt Template"

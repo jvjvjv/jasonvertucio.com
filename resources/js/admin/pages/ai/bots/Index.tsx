@@ -171,7 +171,14 @@ export default function Index({ bots, filters }: IndexProps) {
                                                         : `/chat/${bot.slug}`)}
                                             </TableCell>
                                             <TableCell>
-                                                {bot.ai_system.name}
+                                                <Link
+                                                    component={InertiaLink}
+                                                    href={`/admin/ai/systems/${bot.ai_system.id}`}
+                                                    underline="hover"
+                                                    color="primary"
+                                                >
+                                                    {bot.ai_system.name}
+                                                </Link>
                                             </TableCell>
                                             <TableCell>Status</TableCell>
                                             <TableCell>
