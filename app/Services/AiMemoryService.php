@@ -17,15 +17,35 @@ class AiMemoryService
 
     /**
      * Get formatted memory text for injection into a system prompt.
+     *
+     * Memories are scoped by user identity:
+     * - For logged-in users (user_id): memories tied to that user across all their conversations with the chatbot
+     * - For visitors (email): memories tied to their email address
+     * This allows each individual user to have persistent chatbot memories while keeping different users' data separate.
+     *
+     * @param string $feature The feature key (e.g., 'chat-bot:resume-assistant')
+     * @param string|int|null $userId User ID if logged in, null for visitors (supports both UUID and integer IDs)
+     * @param string|null $email Email address for visitors or when user_id is unavailable
      */
-    public function getMemoriesForPrompt(string $feature): string
+    public function getMemoriesForPrompt(string $feature, string|int|null $userId = null, ?string $email = null): string
     {
-        $memories = AiFeatureMemory::query()
+        $query = AiFeatureMemory::query()
             ->forFeature($feature)
-            ->active()
-            ->orderByDesc('confidence')
-            ->orderByDesc('times_reinforced')
-            ->get();
+            ->active();
+
+        // Scope memories to the current user (by ID or email)
+        if ($userId !== null) {
+            $query->where('user_id', $userId);
+        } elseif ($email !== null) {
+            $query->where('visitor_email', $email);
+        } else {
+            // No user identity - return no memories (or we could fallback to all memories for backward compatibility)
+            return '';
+        }
+
+        $memories = $query->orderByDesc('confidence')
+                          ->orderByDesc('times_reinforced')
+                          ->get();
 
         if ($memories->isEmpty()) {
             return '';
@@ -51,17 +71,26 @@ class AiMemoryService
 
     /**
      * Analyze a completed conversation and extract memory operations.
+     * Memories are scoped to the current user (by ID or email).
      *
      * @return array{add: array<int, mixed>, update: array<int, mixed>, remove: array<int, mixed>}
      */
-    public function analyzeConversation(AiConversation $conversation): array
+    public function analyzeConversation(AiConversation $conversation, string|int|null $userId = null, ?string $visitorEmail = null): array
     {
         $conversation->loadMissing(['messages', 'aiSystem']);
 
-        $existingMemories = AiFeatureMemory::query()
+        // Scope existing memories to the current user
+        $existingMemoriesQuery = AiFeatureMemory::query()
             ->forFeature($conversation->feature)
-            ->active()
-            ->get(['key', 'category', 'content', 'confidence'])
+            ->active();
+
+        if ($userId !== null) {
+            $existingMemoriesQuery->where('user_id', $userId);
+        } elseif ($visitorEmail !== null) {
+            $existingMemoriesQuery->where('visitor_email', $visitorEmail);
+        }
+
+        $existingMemories = $existingMemoriesQuery->get(['key', 'category', 'content', 'confidence'])
             ->toArray();
 
         $conversationMessages = $conversation->messages
@@ -87,10 +116,11 @@ class AiMemoryService
 
     /**
      * Apply memory operations (add/update/remove) from an analysis result.
+     * Memories are scoped to the user who owns them, identified by either user_id or visitor_email.
      */
-    public function applyMemoryOperations(string $feature, array $operations, int $conversationId): void
+    public function applyMemoryOperations(string $feature, array $operations, int $conversationId, string|int|null $userId = null, ?string $visitorEmail = null): void
     {
-        DB::transaction(function () use ($feature, $operations, $conversationId) {
+        DB::transaction(function () use ($feature, $operations, $conversationId, $userId, $visitorEmail) {
             foreach ($operations['add'] ?? [] as $entry) {
                 AiFeatureMemory::create([
                     'feature' => $feature,
@@ -99,16 +129,26 @@ class AiMemoryService
                     'content' => $entry['content'],
                     'confidence' => $entry['confidence'] ?? 50,
                     'source_conversation_id' => $conversationId,
+                    'user_id' => $userId,
+                    'visitor_email' => $visitorEmail,
                     'is_active' => true,
                 ]);
             }
 
+            // When updating memories, scope to the current user (by ID or email)
+            $updateQuery = AiFeatureMemory::query()
+                ->forFeature($feature)
+                ->where('key', $entry['key'] ?? '')
+                ->active();
+
+            if ($userId !== null) {
+                $updateQuery->where('user_id', $userId);
+            } elseif ($visitorEmail !== null) {
+                $updateQuery->where('visitor_email', $visitorEmail);
+            }
+
             foreach ($operations['update'] ?? [] as $entry) {
-                $memory = AiFeatureMemory::query()
-                    ->forFeature($feature)
-                    ->where('key', $entry['key'])
-                    ->active()
-                    ->first();
+                $memory = $updateQuery->first();
 
                 if ($memory === null) {
                     continue;
@@ -132,11 +172,20 @@ class AiMemoryService
                 $memory->update($updates);
             }
 
+            // When removing memories, also scope to the current user
+            $removeQuery = AiFeatureMemory::query()
+                ->forFeature($feature)
+                ->active();
+
+            if ($userId !== null) {
+                $removeQuery->where('user_id', $userId);
+            } elseif ($visitorEmail !== null) {
+                $removeQuery->where('visitor_email', $visitorEmail);
+            }
+
             foreach ($operations['remove'] ?? [] as $entry) {
-                AiFeatureMemory::query()
-                    ->forFeature($feature)
+                $removeQuery
                     ->where('key', $entry['key'])
-                    ->active()
                     ->update(['is_active' => false]);
             }
         });
@@ -144,16 +193,19 @@ class AiMemoryService
 
     /**
      * Orchestrate: analyze a completed conversation and apply the results.
+     * Memories are scoped to the user who owns them (identified by user_id or visitor_email).
      */
-    public function processCompletedConversation(AiConversation $conversation): void
+    public function processCompletedConversation(AiConversation $conversation, string|int|null $userId = null, ?string $visitorEmail = null): void
     {
         try {
-            $operations = $this->analyzeConversation($conversation);
-            $this->applyMemoryOperations($conversation->feature, $operations, $conversation->id);
+            $operations = $this->analyzeConversation($conversation, $userId, $visitorEmail);
+            $this->applyMemoryOperations($conversation->feature, $operations, $conversation->id, $userId, $visitorEmail);
         } catch (\Throwable $e) {
             Log::error('AI Memory processing failed', [
                 'conversation_id' => $conversation->id,
                 'feature' => $conversation->feature,
+                'user_id' => $userId,
+                'visitor_email' => $visitorEmail,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -161,9 +213,11 @@ class AiMemoryService
 
     /**
      * Rebuild all memories for a feature from scratch.
+     * Memories are rebuilt with user scoping (user_id or visitor_email).
      */
     public function rebuildMemories(string $feature): void
     {
+        // Deactivate existing memories but don't delete them
         AiFeatureMemory::query()
             ->forFeature($feature)
             ->update(['is_active' => false]);
@@ -175,7 +229,12 @@ class AiMemoryService
             ->get();
 
         foreach ($conversations as $conversation) {
-            $this->processCompletedConversation($conversation);
+            // Pass user identity from conversation for proper scoping
+            $this->processCompletedConversation(
+                $conversation,
+                $conversation->user_id,
+                $conversation->visitor_email
+            );
         }
     }
 

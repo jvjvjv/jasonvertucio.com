@@ -1,31 +1,78 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Head, Link as InertiaLink, router, useForm } from "@inertiajs/react";
+import {
+    Head,
+    Link as InertiaLink,
+    router,
+    useForm,
+    usePage,
+} from "@inertiajs/react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import ChatIcon from "@mui/icons-material/Chat";
+import DoneIcon from "@mui/icons-material/Done";
+import EditIcon from "@mui/icons-material/Edit";
+import InfoIcon from "@mui/icons-material/Info";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
+import UpdateIcon from "@mui/icons-material/Update";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import EditIcon from "@mui/icons-material/Edit";
-import StatusChip from "../../../components/StatusChip";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import ChatMessageBubble from "../../../components/ChatMessageBubble";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import UsageChip from "../../../components/UsageChip";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import BuilderStatusCard from "./BuilderStatusCard";
+import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
+
 import type {
     Conversation,
     CoverLetter,
     Message,
+    SharedProps,
+    StatusUpdate,
     TargetedResume,
-} from "../../../types";
-import BuilderStatusCard from "./BuilderStatusCard";
-import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
+} from "@/types";
+import type { SyntheticEvent } from "react";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import { api, ApiError } from "@/api";
+import ChatMessageBubble from "@/components/ChatMessageBubble";
+import ResponsiveButton from "@/components/ResponsiveButton";
+import ToolsPanel from "@/components/ToolsPanel";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
+
+interface StreamEvent {
+    type: string;
+    delta?: { text?: string };
+    message?: string;
+    text?: string;
+    tools?: string[];
+}
+
+interface ToolPanel {
+    pretext: string;
+    tools: string[];
+}
+
+interface FinalizeResponse {
+    message?: string;
+}
 
 interface ShowProps {
     conversation: Conversation;
@@ -42,6 +89,9 @@ export default function Show({
     coverLetter,
     shouldAutoStart,
 }: ShowProps) {
+    const page = usePage<SharedProps>();
+    const authUser = page.props.auth.user;
+
     const [activeTab, setActiveTab] = useState(0);
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [userInput, setUserInput] = useState("");
@@ -54,23 +104,35 @@ export default function Show({
     const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<
         string | null
     >(null);
+    const [streamingToolPanels, setStreamingToolPanels] = useState<ToolPanel[]>(
+        [],
+    );
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasAutoStarted = useRef(false);
 
     const metadataForm = useForm({
-        title: conversation.title || "",
+        title: conversation.title ?? "",
         company_name:
-            targetedResume?.company_name ||
-            conversation.context?.company_name ||
+            targetedResume?.company_name ??
+            (conversation.context?.company_name as string | undefined) ??
             "",
         job_title:
-            targetedResume?.position || conversation.context?.job_title || "",
-        applied_at: targetedResume?.applied_at || "",
+            targetedResume?.position ??
+            (conversation.context?.job_title as string | undefined) ??
+            "",
     });
 
-    const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? "";
+    const [statusUpdates, setStatusUpdates] = useState<StatusUpdate[]>(
+        targetedResume?.status_updates ?? [],
+    );
+    const [allowedNextStatuses, setAllowedNextStatuses] = useState<string[]>(
+        targetedResume?.allowed_next_statuses ?? [],
+    );
+    const [selectedNextStatus, setSelectedNextStatus] = useState("");
+    const [statusNotes, setStatusNotes] = useState("");
+    const [statusOccurredAt, setStatusOccurredAt] = useState("");
+    const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
+    const [statusError, setStatusError] = useState<string | null>(null);
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,66 +163,68 @@ export default function Show({
             setStreamingContent("");
 
             try {
-                const response = await fetch(
-                    `/admin/resume/targeted-builder/${conversation.id}/chat`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Accept: "text/event-stream",
-                            "X-CSRF-TOKEN": csrfToken,
-                        },
-                        body: JSON.stringify({ message: text || null }),
-                    },
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const reader = response.body?.getReader();
-                if (!reader) throw new Error("No reader available");
-
-                const decoder = new TextDecoder();
                 let accumulated = "";
+                let preambleText = "";
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+                for await (const jsonStr of api.stream(
+                    `/api/admin/resume/targeted-builder/${conversation.id}/chat`,
+                    { message: text || null },
+                )) {
+                    try {
+                        const event = JSON.parse(jsonStr) as StreamEvent;
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split("\n");
-
-                    for (const line of lines) {
-                        if (!line.startsWith("data: ")) continue;
-                        const jsonStr = line.slice(6);
-                        if (!jsonStr.trim()) continue;
-
-                        try {
-                            const event = JSON.parse(jsonStr);
-
-                            if (
-                                event.type === "content_block_delta" &&
-                                event.delta?.text
-                            ) {
-                                accumulated += event.delta.text;
-                                setStreamingContent(accumulated);
-                            } else if (event.type === "error") {
-                                accumulated += `\n\n**Error:** ${event.message || "Unknown error"}`;
-                                setStreamingContent(accumulated);
+                        if (
+                            event.type === "content_block_delta" &&
+                            event.delta?.text
+                        ) {
+                            accumulated += event.delta.text;
+                            setStreamingContent(accumulated);
+                        } else if (event.type === "tool_use_progress") {
+                            // Move preamble text into a tool panel; reset main stream.
+                            // Save accumulated text so it survives the reset and ends
+                            // up in the final message even if the follow-up iteration
+                            // produces no additional text.
+                            if (accumulated) {
+                                preambleText +=
+                                    (preambleText ? "\n\n" : "") + accumulated;
                             }
-                        } catch {
-                            // Skip malformed JSON lines
+                            setStreamingToolPanels((prev) => [
+                                ...prev,
+                                {
+                                    pretext: event.text ?? "",
+                                    tools: event.tools ?? [],
+                                },
+                            ]);
+                            accumulated = "";
+                            setStreamingContent("");
+                        } else if (event.type === "page_reload") {
+                            router.reload({
+                                only: [
+                                    "targetedResume",
+                                    "coverLetter",
+                                    "conversation",
+                                ],
+                            });
+                        } else if (event.type === "error") {
+                            accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
+                            setStreamingContent(accumulated);
                         }
+                    } catch {
+                        // Skip malformed JSON lines
+                        console.warn(jsonStr);
                     }
                 }
 
-                if (accumulated) {
+                const finalContent = preambleText
+                    ? preambleText + (accumulated ? "\n\n" + accumulated : "")
+                    : accumulated;
+
+                if (finalContent) {
                     setMessages((prev) => [
                         ...prev,
                         {
                             role: "assistant",
-                            content: accumulated,
+                            content: finalContent,
                             created_at: new Date().toISOString(),
                         },
                     ]);
@@ -177,16 +241,17 @@ export default function Show({
             } finally {
                 setIsStreaming(false);
                 setStreamingContent("");
+                setStreamingToolPanels([]);
             }
         },
-        [userInput, conversation.id, csrfToken, shouldAutoStart],
+        [userInput, conversation.id, shouldAutoStart],
     );
 
     // Auto-start initial analysis
     useEffect(() => {
         if (shouldAutoStart && !hasAutoStarted.current) {
             hasAutoStarted.current = true;
-            sendMessage("");
+            void sendMessage("");
         }
     }, [shouldAutoStart, sendMessage]);
 
@@ -197,7 +262,7 @@ export default function Show({
         content: string;
     } {
         const normalized = raw.trim().replace(/\r\n/g, "\n");
-        const titleMatch = normalized.match(/^Title:\s*(.+)\n+/i);
+        const titleMatch = /^Title:\s*(.+)\n+/i.exec(normalized);
         if (!titleMatch) return { title: null, content: normalized };
         return {
             title: titleMatch[1].trim(),
@@ -209,15 +274,17 @@ export default function Show({
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
-            const contentMatch = msg.content.match(
-                /```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i,
-            );
+            const contentMatch =
+                /```tailored(?:-|\s+)resume\s*\n([\s\S]*?)```/i.exec(
+                    msg.content,
+                );
             if (!contentMatch) continue;
             const parsed = parseTailoredResumeBlock(contentMatch[1]);
             let fitScore: number | null = null;
-            const scoreMatch = msg.content.match(
-                /(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i,
-            );
+            const scoreMatch =
+                /(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[/%]|\s*out of\s*100)?/i.exec(
+                    msg.content,
+                );
             if (scoreMatch) {
                 const s = parseInt(scoreMatch[1]);
                 if (s <= 100) fitScore = s;
@@ -231,8 +298,8 @@ export default function Show({
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
-            const m = msg.content.match(
-                /```cover[-\s]letter\s*\n([\s\S]*?)```/i,
+            const m = /```cover[-\s]letter\s*\n([\s\S]*?)```/i.exec(
+                msg.content,
             );
             if (m) return m[1].trim();
         }
@@ -242,10 +309,18 @@ export default function Show({
     const latestResumeData = getLatestTailoredResumeData(messages);
     const latestCoverLetterContent = getLatestCoverLetterContent(messages);
 
+    // Compute fit score from either targeted resume or conversation context.
+    // Fit scores are always 1-100, so we can use falsy checks to simplify logic.
+    const _hasFitScore = () => {
+        if (targetedResume?.fit_score) return true;
+        if (conversation.context?.fit_score) return true;
+        return false;
+    };
+
     const hasNewerResume = (() => {
         if (!targetedResume || !latestResumeData) return false;
         const normalize = (s: string | null | undefined) =>
-            (s || "").trim().replace(/\r\n/g, "\n");
+            (s ?? "").trim().replace(/\r\n/g, "\n");
         return (
             normalize(latestResumeData.title) !==
                 normalize(targetedResume.tailored_title) ||
@@ -254,40 +329,38 @@ export default function Show({
         );
     })();
 
-    const canFinalizeResume =
-        latestResumeData !== null && (!targetedResume || hasNewerResume);
+    const canFinalizeResume = latestResumeData !== null;
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {
-        if (!canFinalizeResume || !latestResumeData) return;
+        // If already finalized and no new resume block in conversation, just regenerate docs
+        if (!canFinalizeResume && targetedResume) {
+            router.post(
+                `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
+            );
+            return;
+        }
+        if (!canFinalizeResume) return;
         setIsFinalizing(true);
         setFinalizeError(null);
         try {
-            const response = await fetch(
-                `/admin/resume/targeted-builder/${conversation.id}/finalize`,
+            await api.post(
+                `/api/admin/resume/targeted-builder/${conversation.id}/finalize`,
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        tailored_content: latestResumeData.rawContent,
-                        fit_score: latestResumeData.fitScore,
-                    }),
+                    tailored_content: latestResumeData.rawContent,
+                    fit_score: latestResumeData.fitScore,
                 },
             );
-            const data = await response.json();
-            if (!response.ok) {
-                setFinalizeError(
-                    data.message || "Failed to save targeted resume.",
-                );
-                return;
-            }
             window.location.reload();
-        } catch {
-            setFinalizeError("Network error. Please try again.");
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as FinalizeResponse;
+                setFinalizeError(
+                    data?.message ?? "Failed to save targeted resume.",
+                );
+            } else {
+                setFinalizeError("Network error. Please try again.");
+            }
         } finally {
             setIsFinalizing(false);
         }
@@ -298,30 +371,20 @@ export default function Show({
         setIsFinalizingCoverLetter(true);
         setFinalizeCoverLetterError(null);
         try {
-            const response = await fetch(
-                `/admin/resume/targeted-builder/${conversation.id}/finalize-cover-letter`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        cover_letter_content: latestCoverLetterContent,
-                    }),
-                },
+            await api.post(
+                `/api/admin/resume/targeted-builder/${conversation.id}/finalize-cover-letter`,
+                { cover_letter_content: latestCoverLetterContent },
             );
-            const data = await response.json();
-            if (!response.ok) {
-                setFinalizeCoverLetterError(
-                    data.message || "Failed to save cover letter.",
-                );
-                return;
-            }
             window.location.reload();
-        } catch {
-            setFinalizeCoverLetterError("Network error. Please try again.");
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as FinalizeResponse;
+                setFinalizeCoverLetterError(
+                    data?.message ?? "Failed to save cover letter.",
+                );
+            } else {
+                setFinalizeCoverLetterError("Network error. Please try again.");
+            }
         } finally {
             setIsFinalizingCoverLetter(false);
         }
@@ -330,7 +393,7 @@ export default function Show({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
-            sendMessage();
+            void sendMessage();
         }
     };
 
@@ -348,19 +411,88 @@ export default function Show({
         );
     };
 
+    const isApplied =
+        targetedResume !== null &&
+        targetedResume.status !== "draft" &&
+        targetedResume.status !== "finalized";
+
     const handleApplied = () => {
         confirm(
             "Mark this job as applied?",
             () => {
-                router.post(
-                    `/admin/resume/targeted-builder/${conversation.id}/applied`,
-                );
+                void (async () => {
+                    setIsSubmittingStatus(true);
+                    setStatusError(null);
+                    try {
+                        const data = await api.post<{
+                            success?: boolean;
+                            message?: string;
+                            status_updates?: StatusUpdate[];
+                            allowed_next_statuses?: string[];
+                        }>(
+                            `/api/admin/resume/targeted-builder/${conversation.id}/status-update`,
+                            { status: "applied" },
+                        );
+                        if (!data.success) {
+                            setStatusError(
+                                data.message ?? "Failed to mark as applied.",
+                            );
+                            return;
+                        }
+                        setStatusUpdates(data.status_updates ?? []);
+                        setAllowedNextStatuses(
+                            data.allowed_next_statuses ?? [],
+                        );
+                        router.reload({ only: ["targetedResume"] });
+                    } catch {
+                        setStatusError("Failed to mark as applied.");
+                    } finally {
+                        setIsSubmittingStatus(false);
+                    }
+                })();
             },
             { confirmLabel: "Applied", confirmColor: "success" },
         );
     };
 
-    const handleMetadataSave = (e: React.FormEvent) => {
+    const handleAddStatusUpdate = async (e: SyntheticEvent) => {
+        e.preventDefault();
+        if (!selectedNextStatus || !targetedResume) {
+            return;
+        }
+        setIsSubmittingStatus(true);
+        setStatusError(null);
+        try {
+            const data = await api.post<{
+                success?: boolean;
+                message?: string;
+                status_updates?: StatusUpdate[];
+                allowed_next_statuses?: string[];
+            }>(
+                `/api/admin/resume/targeted-builder/${conversation.id}/status-update`,
+                {
+                    status: selectedNextStatus,
+                    notes: statusNotes || null,
+                    occurred_at: statusOccurredAt || null,
+                },
+            );
+            if (!data.success) {
+                setStatusError(data.message ?? "Failed to update status.");
+                return;
+            }
+            setStatusUpdates(data.status_updates ?? []);
+            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            setSelectedNextStatus("");
+            setStatusNotes("");
+            setStatusOccurredAt("");
+        } catch {
+            setStatusError("Failed to update status.");
+        } finally {
+            setIsSubmittingStatus(false);
+        }
+    };
+
+    const handleMetadataSave = (e: SyntheticEvent) => {
         e.preventDefault();
         metadataForm.put(
             `/admin/resume/targeted-builder/${conversation.id}/metadata`,
@@ -368,44 +500,129 @@ export default function Show({
     };
 
     const companyName: string =
-        targetedResume?.company_name ||
-        (conversation.context?.company_name as string) ||
+        targetedResume?.company_name ??
+        (conversation.context?.company_name as string | undefined) ??
         "Conversation";
     const position: string =
-        targetedResume?.position ||
-        (conversation.context?.job_title as string) ||
+        targetedResume?.position ??
+        (conversation.context?.job_title as string | undefined) ??
         "";
     const pageTitle: string =
-        conversation?.title ??
+        conversation.title ??
         (position ? `${companyName} - ${position}` : companyName);
-
+    const jobUrl = conversation.job_url;
     return (
         <AdminLayout>
             <Head title={`${pageTitle} | Targeted Resumes`} />
-            <PageHeader
-                title={pageTitle}
-                backHref="/admin/resume/targeted-builder"
-                backLabel="Back to Targeted Resumes"
-            />
+            <PageHeader title={pageTitle} />
 
             <TargetedBuilderStatusBar
                 conversation={conversation}
                 targetedResume={targetedResume}
-                coverLetter={coverLetter}
-                onApplied={handleApplied}
-                onPass={handlePass}
+                statusUpdates={statusUpdates}
             />
 
-            <Tabs
-                value={activeTab}
-                onChange={(_, v) => setActiveTab(v)}
-                sx={{ mb: 2 }}
+            <Box
+                sx={{
+                    position: "sticky",
+                    top: { xs: 56, md: 64 },
+                    zIndex: 10,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    bgcolor: "background.paper",
+                    borderBottom: 1,
+                    borderColor: "divider",
+                }}
             >
-                <Tab label="Chat" />
-                <Tab label="Details" />
-            </Tabs>
+                <IconButton
+                    component={InertiaLink}
+                    href="/admin/resume/targeted-builder"
+                    aria-label="Back to Targeted Resumes"
+                    size="small"
+                    sx={{ ml: 0.5 }}
+                >
+                    <ArrowBackIcon fontSize="small" />
+                </IconButton>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, v) => {
+                        setActiveTab(v as number);
+                    }}
+                    aria-label="Targeted resume tabs"
+                    sx={{
+                        "& .MuiTab-root": {
+                            minWidth: 0,
+                            px: 2,
+                            py: 1.5,
+                        },
+                    }}
+                >
+                    <Tab icon={<ChatIcon />} />
+                    <Tab icon={<InfoIcon />} />
+                </Tabs>
+                <Box sx={{ flexGrow: 1 }} />
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        pr: 1,
+                    }}
+                >
+                    <ResponsiveButton
+                        size="small"
+                        color="success"
+                        icon={<DoneIcon />}
+                        label="Mark Applied"
+                        title={
+                            isApplied
+                                ? "Already in application flow"
+                                : "Mark as applied"
+                        }
+                        variant="outlined"
+                        disabled={isApplied || isSubmittingStatus}
+                        onClick={handleApplied}
+                    />
+                    <ResponsiveButton
+                        size="small"
+                        color="warning"
+                        icon={<BackHandOutlinedIcon />}
+                        label="Pass"
+                        title={
+                            conversation.status === "pass"
+                                ? "Already marked as passed"
+                                : "Mark as passed"
+                        }
+                        variant="outlined"
+                        disabled={conversation.status === "pass"}
+                        onClick={handlePass}
+                    />
+                    {jobUrl ? (
+                        <ResponsiveButton
+                            size="small"
+                            color="primary"
+                            icon={<OpenInNewIcon />}
+                            variant="outlined"
+                            label="Job URL"
+                            title="Open Job URL in new tab"
+                            onClick={() => {
+                                if (!jobUrl) {
+                                    return;
+                                }
+                                window.open(
+                                    jobUrl,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                );
+                            }}
+                        />
+                    ) : null}
+                </Box>
+            </Box>
 
-            {(finalizeError || finalizeCoverLetterError) && (
+            {(finalizeError !== null || finalizeCoverLetterError !== null) && (
                 <Box
                     sx={{
                         mb: 2,
@@ -439,23 +656,51 @@ export default function Show({
                             label="Resume"
                             isFinalized={!!targetedResume}
                             color="success"
-                            canFinalize={canFinalizeResume}
+                            canFinalize={canFinalizeResume || !!targetedResume}
                             isFinalizing={isFinalizing}
                             hasUpdate={hasNewerResume}
                             finalizeTitle={
-                                !latestResumeData
-                                    ? "Finalize is available after the assistant returns a tailored resume block"
-                                    : !canFinalizeResume
-                                      ? "Resume already finalized with the latest content"
-                                      : hasNewerResume
-                                        ? "Update resume and regenerate documents"
-                                        : "Save the tailored resume and generate documents"
+                                hasNewerResume
+                                    ? "Update resume and regenerate documents"
+                                    : canFinalizeResume
+                                      ? "Save the tailored resume and generate documents"
+                                      : targetedResume
+                                        ? "Regenerate DOCX and PDF from saved content"
+                                        : "Finalize is available after the assistant returns a tailored resume block"
                             }
                             onFinalize={handleFinalizeResume}
                             caption={
                                 targetedResume
                                     ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
                                     : undefined
+                            }
+                            extraActions={
+                                targetedResume ? (
+                                    <>
+                                        {targetedResume.docx_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
+                                                title="Download resume DOCX"
+                                                color="success"
+                                            >
+                                                <StickyNote2Icon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        {targetedResume.pdf_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
+                                                title="Download resume PDF"
+                                                color="success"
+                                            >
+                                                <PictureAsPdfIcon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                    </>
+                                ) : undefined
                             }
                         />
                         <BuilderStatusCard
@@ -481,14 +726,38 @@ export default function Show({
                             }
                             extraActions={
                                 coverLetter ? (
-                                    <IconButton
-                                        size="small"
-                                        component={InertiaLink}
-                                        href={`/admin/cover-letters/${coverLetter.id}`}
-                                        title="Edit cover letter"
-                                    >
-                                        <EditIcon fontSize="small" />
-                                    </IconButton>
+                                    <>
+                                        {coverLetter.docx_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
+                                                title="Download cover letter DOCX"
+                                                color="secondary"
+                                            >
+                                                <StickyNote2Icon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        {coverLetter.pdf_path && (
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
+                                                title="Download cover letter PDF"
+                                                color="secondary"
+                                            >
+                                                <PictureAsPdfIcon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        <IconButton
+                                            size="small"
+                                            component={InertiaLink}
+                                            href={`/admin/cover-letters/${coverLetter.id}`}
+                                            title="Edit cover letter"
+                                        >
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                    </>
                                 ) : undefined
                             }
                         />
@@ -524,22 +793,32 @@ export default function Show({
                                         content={msg.content}
                                         variant="chat"
                                         sentAt={msg.created_at ?? null}
+                                        isAuthenticated={!!authUser}
                                     />
                                 ))}
+                                {streamingToolPanels.map((panel, idx) => (
+                                    <ToolsPanel
+                                        key={idx}
+                                        pretext={panel.pretext}
+                                        tools={panel.tools}
+                                        isActive={false}
+                                    />
+                                ))}
+                                {isStreaming && !streamingContent && (
+                                    <ToolsPanel
+                                        pretext=""
+                                        tools={[]}
+                                        isActive
+                                    />
+                                )}
                                 {isStreaming && streamingContent && (
                                     <ChatMessageBubble
                                         role="assistant"
                                         content={streamingContent}
                                         variant="chat"
+                                        isStreaming
+                                        isAuthenticated={!!authUser}
                                     />
-                                )}
-                                {isStreaming && !streamingContent && (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        AI is thinking...
-                                    </Typography>
                                 )}
                                 <div ref={messagesEndRef} />
                             </Box>
@@ -559,9 +838,9 @@ export default function Show({
                                     maxRows={4}
                                     placeholder="Type a message... (Ctrl+Enter to send)"
                                     value={userInput}
-                                    onChange={(e) =>
-                                        setUserInput(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setUserInput(e.target.value);
+                                    }}
                                     onKeyDown={handleKeyDown}
                                     disabled={isStreaming}
                                 />
@@ -591,12 +870,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.title}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "title",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.title}
                                 helperText={metadataForm.errors.title}
                                 sx={{ mb: 2 }}
@@ -610,7 +889,7 @@ export default function Show({
                                     AI System
                                 </Typography>
                                 <Typography variant="body2">
-                                    {conversation.ai_system_name || "Unknown"}
+                                    {conversation.ai_system_name ?? "Unknown"}
                                 </Typography>
                             </Box>
                             <TextField
@@ -618,12 +897,12 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.company_name}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "company_name",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.company_name}
                                 helperText={metadataForm.errors.company_name}
                                 sx={{ mb: 2 }}
@@ -633,36 +912,36 @@ export default function Show({
                                 size="small"
                                 fullWidth
                                 value={metadataForm.data.job_title}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     metadataForm.setData(
                                         "job_title",
                                         e.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 error={!!metadataForm.errors.job_title}
                                 helperText={metadataForm.errors.job_title}
                                 sx={{ mb: 3 }}
                             />
-                            <TextField
-                                label="Applied Date"
-                                type="date"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.applied_at}
-                                onChange={(e) =>
-                                    metadataForm.setData(
-                                        "applied_at",
-                                        e.target.value,
-                                    )
-                                }
-                                error={!!metadataForm.errors.applied_at}
-                                helperText={
-                                    metadataForm.errors.applied_at ||
-                                    "Leave blank if you have not applied yet."
-                                }
-                                slotProps={{ inputLabel: { shrink: true } }}
-                                sx={{ mb: 3 }}
-                            />
+                            {conversation.job_url && (
+                                <Box sx={{ mb: 3 }}>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{ display: "block" }}
+                                    >
+                                        Parsed Job URL
+                                    </Typography>
+                                    <Link
+                                        href={conversation.job_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        underline="hover"
+                                        sx={{ wordBreak: "break-all" }}
+                                    >
+                                        {conversation.job_url}
+                                    </Link>
+                                </Box>
+                            )}
                             <Box
                                 sx={{
                                     display: "flex",
@@ -706,6 +985,186 @@ export default function Show({
                                         {targetedResume.position}
                                     </Typography>
                                 </Box>
+                            </Box>
+                        )}
+                        {targetedResume && (
+                            <Box
+                                sx={{
+                                    mt: 3,
+                                    pt: 3,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Application Status History
+                                </Typography>
+                                {statusUpdates.length === 0 ? (
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        No status updates yet.
+                                    </Typography>
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 1,
+                                        }}
+                                    >
+                                        {statusUpdates.map((u, i) => (
+                                            <Box key={u.id}>
+                                                {i > 0 && (
+                                                    <Divider sx={{ mb: 1 }} />
+                                                )}
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        gap: 1,
+                                                        alignItems:
+                                                            "flex-start",
+                                                    }}
+                                                >
+                                                    <StatusChip
+                                                        status={u.status}
+                                                    />
+                                                    <Box>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
+                                                            {new Date(
+                                                                u.occurred_at,
+                                                            ).toLocaleDateString(
+                                                                undefined,
+                                                                {
+                                                                    year: "numeric",
+                                                                    month: "short",
+                                                                    day: "numeric",
+                                                                },
+                                                            )}
+                                                        </Typography>
+                                                        {u.notes && (
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
+                                                                    mt: 0.25,
+                                                                }}
+                                                            >
+                                                                {u.notes}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                                {allowedNextStatuses.length > 0 && (
+                                    <Box
+                                        component="form"
+                                        onSubmit={(e) => {
+                                            void handleAddStatusUpdate(e);
+                                        }}
+                                        sx={{ mt: 2 }}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ display: "block", mb: 1 }}
+                                        >
+                                            Log Status Update
+                                        </Typography>
+                                        <FormControl
+                                            size="small"
+                                            fullWidth
+                                            sx={{ mb: 1 }}
+                                        >
+                                            <InputLabel id="next-status-label">
+                                                Status
+                                            </InputLabel>
+                                            <Select
+                                                labelId="next-status-label"
+                                                label="Status"
+                                                value={selectedNextStatus}
+                                                onChange={(e) => {
+                                                    setSelectedNextStatus(
+                                                        e.target.value,
+                                                    );
+                                                }}
+                                            >
+                                                {allowedNextStatuses.map(
+                                                    (s) => (
+                                                        <MenuItem
+                                                            key={s}
+                                                            value={s}
+                                                        >
+                                                            {s
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                s.slice(1)}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                        <TextField
+                                            label={
+                                                selectedNextStatus ===
+                                                "interviewing"
+                                                    ? "Scheduled date"
+                                                    : "Date (optional)"
+                                            }
+                                            type="date"
+                                            size="small"
+                                            fullWidth
+                                            value={statusOccurredAt}
+                                            onChange={(e) => {
+                                                setStatusOccurredAt(
+                                                    e.target.value,
+                                                );
+                                            }}
+                                            slotProps={{
+                                                inputLabel: { shrink: true },
+                                            }}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        <TextField
+                                            label="Notes (optional)"
+                                            size="small"
+                                            fullWidth
+                                            multiline
+                                            rows={2}
+                                            value={statusNotes}
+                                            onChange={(e) => {
+                                                setStatusNotes(e.target.value);
+                                            }}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        {statusError && (
+                                            <Alert
+                                                severity="error"
+                                                sx={{ mb: 1 }}
+                                            >
+                                                {statusError}
+                                            </Alert>
+                                        )}
+                                        <Button
+                                            type="submit"
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<UpdateIcon />}
+                                            disabled={
+                                                !selectedNextStatus ||
+                                                isSubmittingStatus
+                                            }
+                                        >
+                                            Log Status
+                                        </Button>
+                                    </Box>
+                                )}
                             </Box>
                         )}
                         <Box

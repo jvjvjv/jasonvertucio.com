@@ -1,9 +1,9 @@
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 export interface ConfirmDialogProps {
     open: boolean;
@@ -23,10 +23,10 @@ export interface ConfirmDialogProps {
 
 export default function ConfirmDialog({
     open,
-    title = 'Confirm',
+    title = "Confirm",
     message,
-    confirmLabel = 'Confirm',
-    confirmColor = 'error',
+    confirmLabel = "Confirm",
+    confirmColor = "error",
     onConfirm,
     onCancel,
 }: ConfirmDialogProps) {
@@ -38,7 +38,11 @@ export default function ConfirmDialog({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onCancel}>Cancel</Button>
-                <Button onClick={onConfirm} color={confirmColor} variant="contained">
+                <Button
+                    onClick={onConfirm}
+                    color={confirmColor}
+                    variant="contained"
+                >
                     {confirmLabel}
                 </Button>
             </DialogActions>

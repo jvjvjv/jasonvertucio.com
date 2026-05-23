@@ -3,16 +3,29 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import PageHeader from "../../../components/PageHeader";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiChatBot } from "../../../types";
-import Form, { type FormData } from "./Form";
+
+import Form from "./Form";
+
+import type { FormData } from "./Form";
+import type { AiChatBot } from "@/types";
+import type { SyntheticEvent } from "react";
+
+import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface EditProps {
-    bot: AiChatBot;
-    systems: Array<{ id: number; name: string; model: string }>;
+    bot: Omit<AiChatBot, "ai_system"> & { ai_system_id: number };
+    systems: {
+        id: number;
+        name: string;
+        model: string;
+        context_length: number | null;
+        temperature: number | null;
+        supports_tools: boolean;
+    }[];
     roles: string[];
 }
 
@@ -22,24 +35,32 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         slug: bot.slug,
         access_path: bot.access_path,
         description: bot.description ?? "",
-        ai_system_id: bot.ai_system_id ?? "",
+        ai_system_id: bot.ai_system_id,
+        context_length: bot.context_length ?? null,
+        temperature: bot.temperature?.toString() ?? "",
         prompt_template: bot.prompt_template ?? "",
-        allowed_roles: bot.allowed_roles ?? [],
+        allowed_roles: bot.allowed_roles,
         is_active: bot.is_active,
         is_public: bot.is_public,
         require_visitor_identity: bot.require_visitor_identity,
+        tools_enabled: bot.tools_enabled,
     });
 
+    const selectedSystem = systems.find(
+        (system) => system.id === form.data.ai_system_id,
+    );
+    const shouldShowMcpTools =
+        selectedSystem?.supports_tools === true || form.data.tools_enabled;
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.put(`/admin/ai/chat-bots/${bot.id}`);
+        form.put(`/admin/ai/chat-bots/${bot.slug}`);
     };
 
     const handleDelete = () => {
         confirm(`Delete AI chat bot "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.id}`);
+            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
         });
     };
 
@@ -52,6 +73,17 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                 backLabel="Back to AI Chat Bots"
             />
 
+            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                <Button
+                    component={InertiaLink}
+                    href={`/admin/ai/conversations?ai_chat_bot_id=${bot.id}`}
+                    variant="outlined"
+                    size="small"
+                >
+                    Sessions ({bot.conversations_count ?? 0})
+                </Button>
+            </Box>
+
             <Card>
                 <CardContent>
                     <Box component="form" onSubmit={handleSubmit}>
@@ -61,6 +93,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                             errors={form.errors}
                             systems={systems}
                             roles={roles}
+                            originalName={bot.name}
                         />
 
                         <Box
@@ -95,6 +128,14 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            <Box sx={{ mt: 2 }}>
+                <AvailableMcpTools
+                    enabled={shouldShowMcpTools}
+                    aiSystemId={form.data.ai_system_id}
+                    description="These are the MCP tools allowed by the selected system and available to this bot when tool use is enabled."
+                />
+            </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

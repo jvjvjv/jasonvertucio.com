@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
@@ -14,13 +13,5 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/canvas';
-
-    /**
-     * Define your route model bindings, pattern filters, etc.
-     */
-    public function boot(): void
-    {
-        //
-    }
+    public const HOME = '/';
 }

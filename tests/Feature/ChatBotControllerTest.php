@@ -4,17 +4,131 @@ namespace Tests\Feature;
 
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
+use App\Models\AiConversationMessage;
 use App\Models\User;
 use App\Services\AiChatBotConversationService;
+use App\Services\AiModelReadinessService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Mockery;
+use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ChatBotControllerTest extends TestCase
 {
     use DatabaseTransactions;
+
+    public function test_chats_index_for_guests_only_includes_public_chatbots(): void
+    {
+        AiChatBot::factory()->create([
+            'name' => 'Public Bot',
+            'is_active' => true,
+            'is_public' => true,
+        ]);
+
+        AiChatBot::factory()->create([
+            'name' => 'Private Bot',
+            'is_active' => true,
+            'is_public' => false,
+        ]);
+
+        AiChatBot::factory()->create([
+            'name' => 'Inactive Public Bot',
+            'is_active' => false,
+            'is_public' => true,
+        ]);
+
+        $response = $this->get(route('chat-bots.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBotsIndex', false)
+            ->has('bots', 1)
+            ->where('bots.0.name', 'Public Bot')
+            ->where('bots.0.conversations', [])
+        );
+    }
+
+    public function test_chats_index_for_authenticated_users_includes_accessible_private_bots_and_sorts_conversations_descending(): void
+    {
+        Role::findOrCreate('editor', 'web');
+        $user = User::factory()->create();
+        $user->assignRole('editor');
+
+        $publicBot = AiChatBot::factory()->create([
+            'name' => 'Public Bot',
+            'is_active' => true,
+            'is_public' => true,
+        ]);
+
+        $privateAllowedBot = AiChatBot::factory()->create([
+            'name' => 'Private Allowed Bot',
+            'is_active' => true,
+            'is_public' => false,
+            'allowed_roles' => ['editor'],
+        ]);
+
+        AiChatBot::factory()->create([
+            'name' => 'Private Denied Bot',
+            'is_active' => true,
+            'is_public' => false,
+            'allowed_roles' => ['admin'],
+        ]);
+
+        $olderConversationId = DB::table('ai_conversations')->insertGetId([
+            'user_id' => $user->id,
+            'ai_system_id' => $privateAllowedBot->ai_system_id,
+            'ai_chat_bot_id' => $privateAllowedBot->id,
+            'feature' => $privateAllowedBot->featureKey(),
+            'title' => 'Older Conversation',
+            'status' => 'active',
+            'context' => json_encode([]),
+            'created_at' => now()->subDays(4),
+            'updated_at' => now()->subDays(4),
+        ]);
+
+        $newerConversationId = DB::table('ai_conversations')->insertGetId([
+            'user_id' => $user->id,
+            'ai_system_id' => $privateAllowedBot->ai_system_id,
+            'ai_chat_bot_id' => $privateAllowedBot->id,
+            'feature' => $privateAllowedBot->featureKey(),
+            'title' => 'Newer Conversation',
+            'status' => 'active',
+            'context' => json_encode([]),
+            'created_at' => now()->subHours(2),
+            'updated_at' => now()->subHours(2),
+        ]);
+
+        AiConversationMessage::query()->create([
+            'ai_conversation_id' => $olderConversationId,
+            'role' => 'assistant',
+            'content' => 'An older message',
+            'created_at' => now()->subDays(3),
+            'updated_at' => now()->subDays(3),
+        ]);
+
+        AiConversationMessage::query()->create([
+            'ai_conversation_id' => $newerConversationId,
+            'role' => 'assistant',
+            'content' => 'A newer message',
+            'created_at' => now()->subHour(),
+            'updated_at' => now()->subHour(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('chat-bots.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBotsIndex', false)
+            ->has('bots', 2)
+            ->where('bots.0.name', 'Private Allowed Bot')
+            ->where('bots.0.conversations.0.title', 'Newer Conversation')
+            ->where('bots.0.conversations.1.title', 'Older Conversation')
+            ->where('bots.1.name', 'Public Bot')
+        );
+    }
 
     public function test_guest_can_view_public_bot(): void
     {
@@ -28,6 +142,74 @@ class ChatBotControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('Guest Bot');
+    }
+
+    public function test_chats_statuses_endpoint_returns_statuses_for_accessible_bots(): void
+    {
+        $publicBot = AiChatBot::factory()->create([
+            'name' => 'Public Bot',
+            'is_public' => true,
+        ]);
+
+        AiChatBot::factory()->create([
+            'name' => 'Private Bot',
+            'is_public' => false,
+        ]);
+
+        $readiness = Mockery::mock(AiModelReadinessService::class);
+        $readiness->shouldReceive('statusForSystem')
+            ->once()
+            ->andReturnUsing(fn (): array => $this->loadedStatus('anthropic', 'claude-sonnet-4-6'));
+
+        $this->app->instance(AiModelReadinessService::class, $readiness);
+
+        $response = $this->get(route('chat-bots.statuses'));
+
+        $response->assertOk();
+        $response->assertJsonPath('statuses.' . $publicBot->slug . '.state', 'loaded');
+    }
+
+    public function test_guest_can_request_public_bot_status_endpoint(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $readiness = Mockery::mock(AiModelReadinessService::class);
+        $readiness->shouldReceive('statusForSystem')
+            ->once()
+            ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill'));
+
+        $this->app->instance(AiModelReadinessService::class, $readiness);
+
+        $response = $this->get(route('chat-bots.chat.status', $bot));
+
+        $response->assertOk();
+        $response->assertJsonPath('status.state', 'loaded');
+    }
+
+    public function test_guest_can_request_public_bot_warmup_endpoint(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'is_public' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $readiness = Mockery::mock(AiModelReadinessService::class);
+        $readiness->shouldReceive('warmUpSystem')
+            ->once()
+            ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill') + [
+                'warmup_attempted' => true,
+            ]);
+
+        $this->app->instance(AiModelReadinessService::class, $readiness);
+
+        $response = $this->post(route('chat-bots.chat.warmup', $bot));
+
+        $response->assertOk();
+        $response->assertJsonPath('status.state', 'loaded');
+        $response->assertJsonPath('status.warmup_attempted', true);
     }
 
     public function test_guest_can_view_public_root_bot(): void
@@ -208,6 +390,20 @@ class ChatBotControllerTest extends TestCase
     private function fakeStream(): Generator
     {
         yield "data: [DONE]\n\n";
+    }
+
+    /**
+     * @return array{state: string, provider: string, model: string, message: string, checked_at: string}
+     */
+    private function loadedStatus(string $provider, string $model): array
+    {
+        return [
+            'state' => 'loaded',
+            'provider' => $provider,
+            'model' => $model,
+            'message' => 'Model is available.',
+            'checked_at' => now()->toIso8601String(),
+        ];
     }
 
     protected function tearDown(): void

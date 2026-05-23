@@ -1,18 +1,20 @@
-import { createInertiaApp } from '@inertiajs/react';
-import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider } from '@mui/material/styles';
-import { createRoot } from 'react-dom/client';
-import { theme } from '../admin/theme';
+import { createInertiaApp } from "@inertiajs/react";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
+import { createRoot } from "react-dom/client";
 
-createInertiaApp({
-    title: (title) => (title ? `${title} | Jason Vertucio` : 'Jason Vertucio'),
+import { theme } from "../admin/theme";
+
+void createInertiaApp({
+    title: (title) => (title ? `${title} | Jason Vertucio` : "Jason Vertucio"),
     resolve: (name) => {
-        const pages = import.meta.glob('./pages/**/*.tsx', { eager: true });
+        const pages = import.meta.glob("./pages/**/*.tsx", { eager: true });
+
         const page = pages[`./pages/${name}.tsx`];
         if (!page) {
             throw new Error(`Page not found: ${name}`);
         }
-        return page as never;
+        return page;
     },
     setup({ el, App, props }) {
         createRoot(el).render(

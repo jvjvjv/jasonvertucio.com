@@ -12,6 +12,8 @@ use App\Models\AiSystemFeatureDefault;
 use App\Services\ClaudeService;
 use App\Services\GeminiService;
 use App\Services\GrokService;
+use App\Services\AiSystemCapabilityService;
+use App\Services\LmStudioService;
 use App\Services\OpenAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +24,9 @@ use Inertia\Response as InertiaResponse;
 
 class AiSystemController extends Controller
 {
+    public function __construct(private AiSystemCapabilityService $aiSystemCapabilityService) {
+    }
+
     /**
      * Display a list of all AI systems.
      */
@@ -63,6 +68,8 @@ class AiSystemController extends Controller
         unset($data['feature_defaults']);
 
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
+        $this->aiSystemCapabilityService->normalizeForPersistence($data);
+        $this->aiSystemCapabilityService->hydrateForPersistence($data);
 
         $system = AiSystem::create($data);
 
@@ -78,6 +85,7 @@ class AiSystemController extends Controller
     public function edit(AiSystem $aiSystem): InertiaResponse
     {
         $aiSystem->load('featureDefaults');
+        $aiSystem->loadCount('chatBots');
         $aiSystem->feature_defaults_list = $aiSystem->featureDefaults->pluck('feature')->toArray();
 
         $existingDefaults = AiSystemFeatureDefault::where('ai_system_id', '!=', $aiSystem->id)
@@ -100,6 +108,17 @@ class AiSystemController extends Controller
         unset($data['feature_defaults']);
 
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
+        $data['provider'] = $aiSystem->provider;
+        $data['model'] = $aiSystem->model;
+
+        if (!array_key_exists('base_url', $data) || blank($data['base_url'])) {
+            $data['base_url'] = $aiSystem->base_url;
+        }
+
+        $this->aiSystemCapabilityService->normalizeForPersistence($data);
+        $this->aiSystemCapabilityService->hydrateForPersistence($data);
+
+        unset($data['provider'], $data['model']);
 
         $aiSystem->update($data);
 
@@ -183,6 +202,9 @@ class AiSystemController extends Controller
                     apiKey: (string) ($request->input('api_key') ?? ''),
                     baseUrl: $request->string('base_url')->toString() ?: null,
                 ),
+                AiProvider::LmStudio => new LmStudioService(
+                    serverUrl: $request->string('base_url')->toString() ?: null,
+                ),
                 AiProvider::Gemini => new GeminiService(
                     apiKey: (string) ($request->input('api_key') ?? ''),
                     baseUrl: $request->string('base_url')->toString() ?: null,
@@ -198,6 +220,13 @@ class AiSystemController extends Controller
             $formatted = collect($models)->map(fn(array $m) => [
                 'id' => $m['id'],
                 'name' => $m['display_name'] ?? $m['id'],
+                'loaded' => (bool) ($m['loaded'] ?? false),
+                'max_context_length' => $m['max_context_length'] ?? null,
+                'capabilities' => [
+                    'reasoning' => (bool) data_get($m, 'capabilities.reasoning', false),
+                    'vision' => (bool) data_get($m, 'capabilities.vision', false),
+                    'tools' => (bool) data_get($m, 'capabilities.tools', false),
+                ],
             ])->sortBy('name')->values()->toArray();
 
             return response()->json(['models' => $formatted]);
@@ -259,4 +288,5 @@ class AiSystemController extends Controller
             }
         }
     }
+
 }

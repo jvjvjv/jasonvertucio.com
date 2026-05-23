@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+
+import type { ReactNode } from "react";
 
 interface BuilderStatusCardProps {
     label: string;
@@ -53,13 +54,17 @@ export default function BuilderStatusCard({
                     <Box>
                         <Typography
                             variant="overline"
-                            color={isFinalized ? `${color}.dark` : "text.secondary"}
+                            color={
+                                isFinalized ? `${color}.dark` : "text.secondary"
+                            }
                             sx={{ display: "block", lineHeight: 1.5 }}
                         >
                             {label}
                         </Typography>
                         <Typography variant="subtitle2">
-                            {isFinalized ? "Finalized and ready" : "Not finalized yet"}
+                            {isFinalized
+                                ? "Finalized and ready"
+                                : "Not finalized yet"}
                         </Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 0.5 }}>

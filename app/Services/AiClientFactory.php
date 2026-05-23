@@ -33,6 +33,13 @@ class AiClientFactory
                 maxTokens: $system->max_tokens,
                 baseUrl: $system->base_url,
             ),
+            AiProvider::LmStudio => new LmStudioService(
+                serverUrl: $system->base_url,
+                model: $system->model,
+                maxTokens: $system->max_tokens,
+                contextLength: $system->context_length,
+                apiKey: $system->api_key,
+            ),
             AiProvider::Gemini => new GeminiService(
                 apiKey: $system->api_key,
                 model: $system->model,

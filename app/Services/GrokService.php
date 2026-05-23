@@ -73,7 +73,7 @@ class GrokService implements AiClientContract
         $payload = $this->buildPayload($messages, false);
 
         $response = Http::withHeaders($this->headers())
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/chat/completions', $payload);
 
         $this->reset();
@@ -100,6 +100,7 @@ class GrokService implements AiClientContract
                     'text' => (string) $content,
                 ],
             ],
+            'reasoning_content' => $choice['message']['reasoning_content'] ?? null,
             'model' => (string) ($data['model'] ?? ($this->model ?? $this->defaultModel)),
             'stop_reason' => (string) ($choice['finish_reason'] ?? 'stop'),
             'usage' => [
@@ -115,7 +116,7 @@ class GrokService implements AiClientContract
 
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/chat/completions', $payload);
 
         $this->reset();
@@ -172,6 +173,16 @@ class GrokService implements AiClientContract
                 $choice = $chunk['choices'][0] ?? [];
                 $delta = $choice['delta'] ?? [];
                 $text = $delta['content'] ?? null;
+                $reasoning = $delta['reasoning_content'] ?? null;
+
+                if (is_string($reasoning) && $reasoning !== '') {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => [
+                            'reasoning' => $reasoning,
+                        ],
+                    ];
+                }
 
                 if (is_string($text) && $text !== '') {
                     yield [
@@ -242,6 +253,45 @@ class GrokService implements AiClientContract
             ])
             ->values()
             ->toArray();
+    }
+
+    /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, content: string|null, tool_calls: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $formattedCalls = [];
+
+        foreach ($toolCalls as $toolCall) {
+            $formattedCalls[] = [
+                'id' => $toolCall['id'],
+                'type' => 'function',
+                'function' => [
+                    'name' => $toolCall['name'],
+                    'arguments' => json_encode($toolCall['input']),
+                ],
+            ];
+        }
+
+        return [
+            'role' => 'assistant',
+            'content' => $textContent !== '' ? $textContent : null,
+            'tool_calls' => $formattedCalls,
+        ];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, tool_call_id: string, content: string}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        return array_map(static fn (array $result): array => [
+            'role' => 'tool',
+            'tool_call_id' => $result['id'],
+            'content' => json_encode($result['result']),
+        ], $toolResults);
     }
 
     /**

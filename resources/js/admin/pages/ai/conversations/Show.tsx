@@ -1,4 +1,4 @@
-import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import { Head, Link as InertiaLink, router, usePage } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -6,14 +6,16 @@ import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ChatMessageBubble from "../../../components/ChatMessageBubble";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import PageHeader from "../../../components/PageHeader";
-import StatusChip from "../../../components/StatusChip";
-import UsageChip from "../../../components/UsageChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { ConversationUsage, Message, Memory } from "../../../types";
+
+import type { ConversationUsage, Memory, Message, SharedProps } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import PageHeader from "@/admin/components/PageHeader";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import ChatMessageBubble from "@/components/ChatMessageBubble";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface ShowProps {
     conversation: {
@@ -21,13 +23,14 @@ interface ShowProps {
         title: string | null;
         feature: string;
         status: string;
-        context: Record<string, unknown> | null;
+        context: { [key: string]: unknown } | null;
         visitor_name: string | null;
         visitor_email: string | null;
         user_name: string | null;
         user_email: string | null;
         ai_system_name: string | null;
         ai_chat_bot: { id: number; name: string; slug: string } | null;
+        chat_hash: string | null;
         usage: ConversationUsage | null;
         targeted_resume: {
             id: number;
@@ -40,6 +43,8 @@ interface ShowProps {
 }
 
 export default function Show({ conversation, messages, memories }: ShowProps) {
+    const page = usePage<SharedProps>();
+    const authUser = page.props.auth.user;
     const { dialogProps, confirm } = useConfirmDialog();
 
     const handleDelete = () => {
@@ -51,10 +56,10 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
     return (
         <AdminLayout>
             <Head
-                title={`${conversation.title || `Conversation #${conversation.id}`} | Conversations`}
+                title={`${conversation.title ?? `Conversation #${conversation.id}`} | Conversations`}
             />
             <PageHeader
-                title={conversation.title || `Conversation #${conversation.id}`}
+                title={conversation.title ?? `Conversation #${conversation.id}`}
                 backHref="/admin/ai/conversations"
                 backLabel="Back to AI Conversations"
             />
@@ -121,6 +126,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                         content={message.content}
                                         variant="history"
                                         sentAt={message.created_at ?? null}
+                                        isAuthenticated={!!authUser}
                                     />
                                 </Box>
                             ))}
@@ -138,6 +144,15 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                 <Box>
                                     <strong>Status:</strong>{" "}
                                     <StatusChip status={conversation.status} />
+                                </Box>
+                                <Box>
+                                    <strong>Hash:</strong>{" "}
+                                    <InertiaLink
+                                        href={`/chat/${conversation.ai_chat_bot?.slug}/${conversation.chat_hash}`}
+                                        disabled={!conversation.chat_hash}
+                                    >
+                                        {conversation.chat_hash ?? "-"}
+                                    </InertiaLink>
                                 </Box>
                                 <Box>
                                     <strong>Feature:</strong>{" "}

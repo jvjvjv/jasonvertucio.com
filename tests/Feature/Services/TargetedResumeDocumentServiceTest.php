@@ -262,7 +262,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertNotFalse($xml);
 
         $replaceSimple = new \ReflectionMethod($this->service, 'replaceSimplePlaceholders');
-        $replaceResume = new \ReflectionMethod($this->service, 'replaceResumeContent');
+        $replaceResume = new \ReflectionMethod($this->service, 'appendResumeContent');
 
         $xml = $replaceSimple->invoke($this->service, $xml, $data);
         $xml = $replaceResume->invoke($this->service, $xml, $data['resume']);

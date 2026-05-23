@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { marked } from "marked";
 import { Head } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -10,9 +8,28 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import type { AiSystem } from "../../../types";
+import { marked } from "marked";
+import { useState } from "react";
+
+import type { AiSystem } from "@/types";
+import type { SyntheticEvent } from "react";
+
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import { api, ApiError } from "@/api";
+
+interface ParseJobResponse {
+    message?: string;
+    job_title?: string;
+    company_name?: string;
+    job_location?: string;
+    job_description?: string;
+    job_url_id?: string | null;
+    reasoning?: string;
+    parser_id?: number | null;
+    used_existing_parser?: boolean;
+    redirect?: string;
+}
 
 interface CreateProps {
     systems: Pick<AiSystem, "id" | "name" | "model">[];
@@ -24,6 +41,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         defaultSystemId ?? "",
     );
     const [jobUrl, setJobUrl] = useState("");
+    const [jobUrlId, setJobUrlId] = useState<string | null>(null);
     const [jobTitle, setJobTitle] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [jobLocation, setJobLocation] = useState("");
@@ -40,49 +58,33 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
 
-    const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? "";
-
     const handleParseUrl = async () => {
         if (!jobUrl.trim()) return;
         setIsParsing(true);
         setParseError("");
 
         try {
-            const response = await fetch(
-                "/admin/resume/targeted-builder/parse-url",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                    },
-                    body: JSON.stringify({
-                        url: jobUrl,
-                        ai_system_id: aiSystemId,
-                    }),
-                },
+            const result = await api.post<ParseJobResponse>(
+                "/api/admin/resume/targeted-builder/parse-url",
+                { url: jobUrl, ai_system_id: aiSystemId },
             );
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                setParseError(result.message || "Failed to parse URL");
-                return;
-            }
 
             if (result.job_title) setJobTitle(result.job_title);
             if (result.company_name) setCompanyName(result.company_name);
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
-            setParseReasoning(result.reasoning || "");
+            setJobUrlId(result.job_url_id ?? null);
+            setParseReasoning(result.reasoning ?? "");
             if (result.parser_id) setParserId(result.parser_id);
             if (result.used_existing_parser) setUsedExistingParser(true);
         } catch (err) {
-            setParseError("Network error: " + (err as Error).message);
+            if (err instanceof ApiError) {
+                const result = err.data as ParseJobResponse;
+                setParseError(result?.message ?? "Failed to parse URL");
+            } else {
+                setParseError("Network error: " + (err as Error).message);
+            }
         } finally {
             setIsParsing(false);
         }
@@ -94,45 +96,33 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         setParseError("");
 
         try {
-            const response = await fetch(
-                `/admin/resume/targeted-builder/parser/${parserId}/reparse`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                    },
-                    body: JSON.stringify({
-                        ai_system_id: aiSystemId,
-                        feedback: reparseFeedback,
-                    }),
-                },
+            const result = await api.post<ParseJobResponse>(
+                `/api/admin/resume/targeted-builder/parser/${parserId}/reparse`,
+                { ai_system_id: aiSystemId, feedback: reparseFeedback },
             );
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                setParseError(result.message || "Failed to re-parse URL");
-                return;
-            }
 
             if (result.job_title) setJobTitle(result.job_title);
             if (result.company_name) setCompanyName(result.company_name);
             if (result.job_location) setJobLocation(result.job_location);
             if (result.job_description)
                 setJobDescription(result.job_description);
-            setParseReasoning(result.reasoning || "");
+            setJobUrlId(result.job_url_id ?? null);
+            setParseReasoning(result.reasoning ?? "");
             if (result.parser_id) setParserId(result.parser_id);
             setReparseFeedback("");
         } catch (err) {
-            setParseError("Network error: " + (err as Error).message);
+            if (err instanceof ApiError) {
+                const result = err.data as ParseJobResponse;
+                setParseError(result?.message ?? "Failed to re-parse URL");
+            } else {
+                setParseError("Network error: " + (err as Error).message);
+            }
         } finally {
             setIsReparsing(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: SyntheticEvent) => {
         e.preventDefault();
         if (!aiSystemId) {
             setError("Please select an AI system.");
@@ -147,35 +137,26 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         setError("");
 
         try {
-            const response = await fetch(
-                "/admin/resume/targeted-builder/start",
+            const result = await api.post<ParseJobResponse>(
+                "/api/admin/resume/targeted-builder/start",
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        "X-CSRF-TOKEN": csrfToken,
-                    },
-                    body: JSON.stringify({
-                        ai_system_id: aiSystemId,
-                        job_title: jobTitle,
-                        job_location: jobLocation,
-                        company_name: companyName,
-                        job_description: jobDescription,
-                    }),
+                    ai_system_id: aiSystemId,
+                    job_url_id: jobUrlId,
+                    job_title: jobTitle,
+                    job_location: jobLocation,
+                    company_name: companyName,
+                    job_description: jobDescription,
                 },
             );
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                setError(result.message || "Failed to start session");
-                return;
-            }
-
-            window.location.href = result.redirect;
+            window.location.href = result.redirect ?? "";
         } catch (err) {
-            setError("Network error: " + (err as Error).message);
+            if (err instanceof ApiError) {
+                const result = err.data as ParseJobResponse;
+                setError(result?.message ?? "Failed to start session");
+            } else {
+                setError("Network error: " + (err as Error).message);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -206,9 +187,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             size="small"
                             fullWidth
                             value={aiSystemId}
-                            onChange={(e) =>
-                                setAiSystemId(Number(e.target.value))
-                            }
+                            onChange={(e) => {
+                                setAiSystemId(Number(e.target.value));
+                            }}
                             sx={{ mb: 3 }}
                         >
                             {systems.map((s) => (
@@ -232,7 +213,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                                 size="small"
                                 fullWidth
                                 value={jobUrl}
-                                onChange={(e) => setJobUrl(e.target.value)}
+                                onChange={(e) => {
+                                    setJobUrl(e.target.value);
+                                }}
                                 placeholder="https://..."
                             />
                             <Button
@@ -251,6 +234,12 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                         {parseError && (
                             <Alert severity="warning" sx={{ mb: 2 }}>
                                 {parseError}
+                            </Alert>
+                        )}
+
+                        {jobUrlId && !parseError && (
+                            <Alert severity="success" sx={{ mb: 2 }}>
+                                Parsed job URL attached to this session.
                             </Alert>
                         )}
 
@@ -299,9 +288,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                                     size="small"
                                     fullWidth
                                     value={reparseFeedback}
-                                    onChange={(e) =>
-                                        setReparseFeedback(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setReparseFeedback(e.target.value);
+                                    }}
                                     placeholder="Describe what was extracted incorrectly..."
                                 />
                                 <Button

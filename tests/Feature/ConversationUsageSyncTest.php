@@ -96,6 +96,89 @@ class ConversationUsageSyncTest extends TestCase
         $this->assertNotNull($conversation->usage_synced_at);
     }
 
+    public function testBackfillCommandUsesSystemPricingProfileOverride(): void
+    {
+        $system = AiSystem::factory()->create([
+            'model' => 'claude-sonnet-4-6',
+            'pricing_profile' => [
+                'models' => [
+                    'claude-sonnet-4-6' => [
+                        'input_per_million' => 500.00,
+                        'output_per_million' => 1000.00,
+                    ],
+                ],
+            ],
+        ]);
+        $conversation = AiConversation::factory()->completed()->create([
+            'ai_system_id' => $system->id,
+            'status' => AiConversationStatus::Completed,
+            'usage_total_tokens' => null,
+        ]);
+
+        AiInteractionLog::create([
+            'ai_system_id' => $system->id,
+            'ai_conversation_id' => $conversation->id,
+            'ai_chat_bot_id' => null,
+            'user_id' => null,
+            'feature' => $conversation->feature,
+            'input_tokens' => 2000,
+            'output_tokens' => 1000,
+            'model' => 'claude-sonnet-4-6',
+            'duration_ms' => 400,
+            'status' => AiInteractionStatus::Success,
+        ]);
+
+        $this->artisan('ai:backfill-conversation-usage')->assertExitCode(0);
+
+        $conversation->refresh();
+
+        $this->assertSame(2000, $conversation->usage_input_tokens);
+        $this->assertSame(1000, $conversation->usage_output_tokens);
+        $this->assertSame(3000, $conversation->usage_total_tokens);
+        $this->assertSame('2.000000', (string) $conversation->usage_cost_usd);
+    }
+
+    public function testBackfillCommandUsesInteractionPriceSnapshotsWhenAvailable(): void
+    {
+        $system = AiSystem::factory()->create([
+            'model' => 'claude-sonnet-4-6',
+            'pricing_profile' => [
+                'models' => [
+                    'claude-sonnet-4-6' => [
+                        'input_per_million' => 1.00,
+                        'output_per_million' => 1.00,
+                    ],
+                ],
+            ],
+        ]);
+        $conversation = AiConversation::factory()->completed()->create([
+            'ai_system_id' => $system->id,
+            'status' => AiConversationStatus::Completed,
+            'usage_total_tokens' => null,
+        ]);
+
+        AiInteractionLog::create([
+            'ai_system_id' => $system->id,
+            'ai_conversation_id' => $conversation->id,
+            'ai_chat_bot_id' => null,
+            'user_id' => null,
+            'feature' => $conversation->feature,
+            'input_tokens' => 2000,
+            'output_tokens' => 1000,
+            'model' => 'claude-sonnet-4-6',
+            'input_token_price_snapshot' => 0.001,
+            'output_token_price_snapshot' => 0.002,
+            'duration_ms' => 400,
+            'status' => AiInteractionStatus::Success,
+        ]);
+
+        $this->artisan('ai:backfill-conversation-usage')->assertExitCode(0);
+
+        $conversation->refresh();
+
+        $this->assertSame('4.000000', (string) $conversation->usage_cost_usd);
+    }
+
     public function testSyncCommandSkipsOlderActiveConversationsOutsideWindow(): void
     {
         $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);

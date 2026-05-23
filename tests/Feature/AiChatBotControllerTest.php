@@ -67,6 +67,8 @@ class AiChatBotControllerTest extends TestCase
             'access_path' => 'root',
             'description' => 'Qualify inbound prospects.',
             'ai_system_id' => $system->id,
+            'context_length' => 8192,
+            'temperature' => 0.45,
             'prompt_template' => 'You are {{bot_name}}.',
             'allowed_roles' => ['admin'],
             'is_active' => true,
@@ -80,6 +82,8 @@ class AiChatBotControllerTest extends TestCase
             'slug' => 'lead-intake',
             'access_path' => 'root',
             'ai_system_id' => $system->id,
+            'context_length' => 8192,
+            'temperature' => '0.45',
             'is_public' => false,
             'require_visitor_identity' => true,
         ]);
@@ -105,5 +109,49 @@ class AiChatBotControllerTest extends TestCase
 
         $response->assertRedirect(route('admin.ai.bots.create'));
         $response->assertSessionHasErrors(['slug']);
+    }
+
+    public function test_mcp_tools_returns_available_tool_summaries(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', [
+            'include_all' => 1,
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'tools' => [
+                '*' => ['name', 'description'],
+            ],
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'get_recent_blog_posts',
+            'description' => 'Load recent blog posts with titles, summaries, and URLs.',
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'get_resume_data',
+            'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
+        ]);
+    }
+
+    public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void {
+        $user = $this->authenticatedUser();
+        $system = AiSystem::factory()->create([
+            'allowed_tools' => ['get_recent_blog_posts'],
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', [
+            'ai_system_id' => $system->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'tools');
+        $response->assertJsonFragment([
+            'name' => 'get_recent_blog_posts',
+        ]);
+        $response->assertJsonMissing([
+            'name' => 'get_resume_data',
+        ]);
     }
 }

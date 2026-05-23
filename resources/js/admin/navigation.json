@@ -1,0 +1,80 @@
+{
+  "navigation": [
+    {
+      "route": "/admin",
+      "name": "Admin Dashboard",
+      "appBar": true,
+      "can": null,
+      "navigationItems": [
+          {
+              "can": "edit-resume",
+              "href": "/admin/resume",
+              "icon": "Description",
+              "label": "Resume Management",
+              "description": "Edit resume content, manage share codes, and generate documents"
+          },
+          {
+              "can": "edit-resume",
+              "href": "/admin/cover-letters",
+              "icon": "DriveFileRenameOutline",
+              "label": "Cover Letter Management",
+              "description": "Create and manage cover letters with automatic DOCX and PDF generation"
+          },
+          {
+              "can": "manage-ai-tools",
+              "href": "/admin/ai",
+              "icon": "SmartToy",
+              "label": "AI Tools",
+              "description": "Manage AI systems, targeted resume builder, and AI cover letter generation"
+          },
+          {
+              "can": "edit-settings",
+              "href": "/admin/mail-preview",
+              "icon": "Inbox",
+              "label": "Mail Preview",
+              "description": "See how emails might be rendered, right here in the browser!"
+          },
+          {
+              "can": "edit-settings",
+              "href": "/admin/site-settings",
+              "icon": "PushPin",
+              "label": "Site Navigation",
+              "description": "Manage sidebar navigation links and their order"
+          }
+      ]
+    },
+    {
+      "route": "/admin/resume",
+      "name": "Resume Management",
+      "appBar": false,
+      "can": "edit-resume",
+      "navigationItems": [
+        { "can": "edit-resume", "href": "/admin/resume/editor",           "icon": "EditNote",     "label": "Resume Builder",          "description": "Build and edit resume content. Documents auto-generate on save." },
+        { "can": "edit-resume", "href": "/admin/resume/targeted-builder", "icon": "TrackChanges", "label": "Targeted Resume Builder", "description": "Use AI to tailor your resume for specific job postings" },
+        { "can": null,          "href": "/resume",                        "icon": "Visibility",   "label": "Resume Preview",          "description": "View the resume as it appears to visitors" },
+        { "can": "edit-resume", "href": "/admin/resume/codes",            "icon": "Code",         "label": "Share Codes",             "description": "Share and manage codes for unauthenticated resume access" }
+      ]
+    },
+    {
+      "route": "/admin/ai",
+      "name": "AI Tools",
+      "appBar": true,
+      "can": "manage-ai-tools",
+      "navigationItems": [
+        { "can": "manage-ai-tools", "href": "/admin/resume/targeted-builder", "icon": "TrackChanges", "label": "Targeted Resume Builder", "description": "Use AI to tailor your resume for specific job postings" },
+        { "can": "manage-ai-tools", "href": "/admin/ai/systems",              "icon": "Memory",       "label": "AI Systems",              "description": "Manage AI providers, API keys, and feature defaults" },
+        { "can": "manage-ai-tools", "href": "/admin/ai/chat-bots",            "icon": "SmartToy",     "label": "AI Chat Bots",            "description": "Create and manage reusable AI chat bots and their access rules" },
+        { "can": "manage-ai-tools", "href": "/admin/ai/conversations",        "icon": "Forum",        "label": "AI Conversations",        "description": "Browse AI conversations, review message history, and delete old threads" },
+        { "can": "manage-ai-tools", "href": "/admin/ai/memories",             "icon": "Psychology",   "label": "AI Memory",               "description": "View and manage learned insights from AI conversations" },
+        { "can": "manage-ai-tools", "href": "/admin/ai/job-url-parsers",      "icon": "Rule",         "label": "Job URL Parsers",         "description": "Review, approve, and edit saved parsers generated from job posting URLs" }
+      ]
+    },
+    {
+      "route": "/admin/site-settings",
+      "name": "Site Navigation",
+      "appBar": true,
+      "can": "edit-settings",
+      "navigationItems": []
+    }
+  ]
+}

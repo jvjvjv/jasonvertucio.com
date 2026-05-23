@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Concerns\ExecutesAiTools;
 use App\Contracts\ResumeDataServiceContract;
 use App\Enums\AiConversationStatus;
 use App\Enums\AiInteractionStatus;
@@ -13,11 +14,14 @@ use App\Models\AiSystem;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
+use App\Services\Mcp\TargetedResumeToolRegistry;
 use Generator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 
 class TargetedResumeService
 {
+    use ExecutesAiTools;
     public function __construct(
         private AiClientFactory $clientFactory,
         private ResumeDataServiceContract $resumeDataService,
@@ -57,7 +61,7 @@ class TargetedResumeService
         ]);
 
         // Store the system prompt as the first message
-        $systemPrompt = $this->buildSystemPrompt($resumeVersion);
+        $systemPrompt = $this->buildSystemPrompt();
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'system',
@@ -123,33 +127,31 @@ class TargetedResumeService
 
         $client->withMaxTokens($conversation->aiSystem->max_tokens);
 
+        $toolRegistry = new TargetedResumeToolRegistry(
+            $conversation,
+            $this->resumeDataService,
+            $this->memoryService,
+            $this,
+        );
+
         $startTime = microtime(true);
-        $fullResponse = '';
-        $inputTokens = null;
-        $outputTokens = null;
+        $loopResult = null;
 
         try {
-            $stream = $client->stream($apiMessages);
-
-            foreach ($stream as $event) {
-                if (isset($event['type'])) {
-                    if ($event['type'] === 'content_block_delta' && isset($event['delta']['text'])) {
-                        $fullResponse .= $event['delta']['text'];
-                        yield "data: " . json_encode($event) . "\n\n";
-                    } elseif ($event['type'] === 'message_start' && isset($event['message']['usage'])) {
-                        $inputTokens = $event['message']['usage']['input_tokens'] ?? null;
-                    } elseif ($event['type'] === 'message_delta' && isset($event['usage'])) {
-                        $outputTokens = $event['usage']['output_tokens'] ?? null;
-                    } elseif ($event['type'] === 'message_stop') {
-                        yield "data: " . json_encode($event) . "\n\n";
-                    }
-                }
-            }
+            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult);
 
             yield "data: [DONE]\n\n";
 
-            // Save the assistant response
-            if ($fullResponse) {
+            $fullResponse = $loopResult['text'] ?? '';
+            $inputTokens = $loopResult['inputTokens'] ?? null;
+            $outputTokens = $loopResult['outputTokens'] ?? null;
+
+            $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
+                $conversation->aiSystem,
+                $conversation->aiSystem->model,
+            );
+
+            if ($fullResponse !== '') {
                 AiConversationMessage::create([
                     'ai_conversation_id' => $conversation->id,
                     'role' => 'assistant',
@@ -164,7 +166,6 @@ class TargetedResumeService
                 $this->syncConversationMetadataFromAssistantResponse($conversation, $fullResponse);
             }
 
-            // Log the interaction
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
             AiInteractionLog::create([
                 'ai_system_id' => $conversation->aiSystem->id,
@@ -174,6 +175,8 @@ class TargetedResumeService
                 'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
                 'model' => $conversation->aiSystem->model,
+                'input_token_price_snapshot' => $pricingSnapshot['input_token_price_snapshot'],
+                'output_token_price_snapshot' => $pricingSnapshot['output_token_price_snapshot'],
                 'duration_ms' => $durationMs,
                 'status' => AiInteractionStatus::Success,
             ]);
@@ -223,10 +226,9 @@ class TargetedResumeService
                 ],
                 'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
                 'fit_summary' => $context['fit_summary'] ?? null,
-                'status' => $existingTargetedResume?->status === TargetedResumeStatus::Applied
-                    ? TargetedResumeStatus::Applied
+                'status' => ($existingTargetedResume?->status !== null && $existingTargetedResume->status !== TargetedResumeStatus::Draft)
+                    ? $existingTargetedResume->status
                     : TargetedResumeStatus::Finalized,
-                'applied_at' => $existingTargetedResume?->applied_at,
             ]
         );
 
@@ -243,6 +245,7 @@ class TargetedResumeService
         }
 
         $conversation->update(['status' => AiConversationStatus::Completed]);
+
 
         return $targetedResume->fresh();
     }
@@ -366,11 +369,48 @@ class TargetedResumeService
 
     /**
      * Parse cover letter content into greeting, body, and closing.
+     * Detects if AI returned raw OOXML (wrapped in ```cover-letter code block) or plain text.
      *
      * @return array{greeting: string, message_body: string, closing: string}
      */
     private function parseCoverLetterContent(string $content): array
     {
+        // Check if AI returned raw OOXML wrapped in a markdown code block
+        $codeBlockMatch = null;
+        if (preg_match('/```cover[-\s]?letter\s*\n([\s\S]*?)```/i', $content, $codeBlockMatch)) {
+            // Extract the content inside the code block - this is raw OOXML text
+            $rawContent = trim($codeBlockMatch[1]);
+
+            // Try to extract greeting from beginning of OOXML (it's plain text)
+            $greeting = 'Dear Hiring Manager,';
+            $closing = 'Sincerely,';
+
+            if (preg_match('/^(<w:p[^>]*><w:r[^>]*><w:t[^>]*>)?([^<]+)<\/w:t>(<\/w:r><\/w:p>)?/s', $rawContent, $greetingMatch)) {
+                $extractedGreeting = trim($greetingMatch[2]);
+                if (preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $extractedGreeting)) {
+                    $greeting = $extractedGreeting;
+                }
+            }
+
+            // Try to extract closing from end of OOXML
+            if (preg_match('/(<w:p[^>]*><w:r[^>]*><w:t[^>]*>)?([^<]+)<\/w:t>(<\/w:r><\/w:p>)?\s*$/', $rawContent, $closingMatch)) {
+                $extractedClosing = trim($closingMatch[2]);
+                if (preg_match('/^(Sincerely|Best regards|Kind regards|Regards|Warm regards|Respectfully|Thank you|With appreciation)/i', $extractedClosing)) {
+                    $closing = $extractedClosing;
+                }
+            }
+
+            // Extract the message body (OOXML paragraphs between greeting and closing)
+            $messageBody = trim($rawContent);
+
+            return [
+                'greeting' => $greeting,
+                'message_body' => $messageBody,
+                'closing' => $closing,
+            ];
+        }
+
+        // Fallback: treat as plain text cover letter
         $lines = preg_split('/\r?\n/', trim($content));
 
         $greeting = 'Dear Hiring Manager,';
@@ -402,41 +442,33 @@ class TargetedResumeService
     }
 
     /**
-     * Build the system prompt with full resume data.
+     * Build the system prompt. Resume data and memories are fetched on-demand via tools.
      */
-    public function buildSystemPrompt(ResumeVersion $resumeVersion): string
+    public function buildSystemPrompt(): string
     {
-        $resumeData = $this->resumeDataService->getAllEditableData();
-
-        $resumeJson = json_encode($resumeData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
         return <<<PROMPT
-You are an expert career advisor and resume tailoring specialist. You help candidates optimize their resumes for specific job postings.
+# Targeted Resume & Cover Letter
 
-## Candidate's Current Resume Data
+You are an expert career advisor, resume tailoring specialist, and cover letter ghostwriter for Jason Vertucio. You help candidates optimize their resumes for specific job postings and produce cover letters that sound like Jay wrote them himself — not like an AI filled in a template. Your main job is to get the resume past automated ATS.
 
-```json
-{$resumeJson}
-```
+## Tools Available
 
-## Salary Context (CONFIDENTIAL - do not include in any output documents)
+Use these tools to load data and take actions at the appropriate steps:
 
-The resume data above may include salary history for some positions. Use this to:
-- Understand the candidate's compensation trajectory
-- When a job posting includes a salary range, assess whether it represents a lateral move, increase, or decrease relative to the candidate's most recent comparable full-time salary
-- Rate the offered salary range as: "Below Market" / "At Market" / "Above Market" / "Significant Increase" relative to the candidate's history
-- Freelance/contract positions are marked with `isFreelance: true` — do not directly compare freelance rates to full-time salaries without adjusting for benefits, taxes, and overhead (a common rule of thumb is that freelance rates need to be ~30-50% higher to be equivalent)
-- Salary periods vary (per_hour, per_month, per_year) — normalize to annual when comparing
-- NEVER include salary information in the tailored resume or cover letter output
-
-{$this->getMemorySection()}
+- `get_resume_data` — Call this first to load the candidate's full resume data (experience, skills, salary history, education, projects).
+- `get_job_description` — Call this to access the full job posting text and any known title or company name.
+- `get_resume_memories` — Call this to load learned preferences and insights from previous sessions.
+- `update_fit_assessment` — Call this after Step 4 to persist the fit score, fit summary, company name, and job title. Do NOT write "Fit Score: N" in your text response; use this tool instead so the data is saved.
+- `save_tailored_resume` — Call this when the user approves the tailored resume. It generates DOCX and PDF automatically.
+- `save_cover_letter` — Call this when the user approves the cover letter. It generates DOCX and PDF automatically.
+- `update_status` - Call this when the user reports a status change in their job application (e.g. "I applied", "I have an interview on June 12th", "I got rejected"). Accepts status (applied, interviewing, interviewed, offered, accepted, hired, rejected), an optional date, and optional notes. For `interviewing`, the date should be the scheduled interview date.
 
 ## Your Role
 
 You will be given a job posting. Follow this multi-step process:
 
-### Step 0: Initial Analysis
-Find the company name and position from the job description. If not explicitly stated, make your best guess based on the content. Indicate these in your response as "Company Name: XYZ" and "Position: ABC". This will help with tailoring the resume later.
+### Step 0: Load Context
+Before responding, call `get_resume_data`, `get_job_description`, and `get_resume_memories` to load everything you need.
 
 ### Step 1: Company Analysis
 Begin your first response with these lines when you can infer them from the job description:
@@ -446,7 +478,7 @@ Job Title: <job title>
 After that, describe the company briefly — high-level and important notes only. Identify the key requirements and qualifications from the job description.
 
 ### Step 2: Eligibility Assessment
-When the position is remote, assess the candidate's eligibility based on their location and any remote work requirements mentioned in the job description. If the position is not remote, assess eligibility based on the location of the job and the candidate's location. Candidate is in Philadelphia, PA. Then, using the candidate's resume data above, assess their eligibility for this role. Identify:
+When the position is remote, assess the candidate's eligibility based on their location and any remote work requirements mentioned in the job description. If the position is not remote, assess eligibility based on the location of the job and the candidate's location. Candidate is in Philadelphia, PA. Then, using the loaded resume data, assess their eligibility for this role. Identify:
 - Strong matches between the candidate's experience and the job requirements
 - Gaps or areas where the candidate may fall short
 - Transferable skills that could bridge any gaps
@@ -455,15 +487,20 @@ When the position is remote, assess the candidate's eligibility based on their l
 Ask if there is any additional experience, skills, or accomplishments NOT in the resume that could strengthen the application. Wait for the candidate's response.
 
 ### Step 4: Fit Assessment
-Provide a fit score (1-100) and a brief summary of fit for the role. Format the score line as `Fit Score: <number>`.
+Assess fit for the role. Call `update_fit_assessment` with the fit score (1-100), a brief fit summary, and the confirmed company name and job title. Then present the assessment to the user.
 
 If the job description includes a salary range, also provide:
-Salary Assessment: <Below Market|At Market|Above Market|Significant Increase> - <brief explanation comparing to candidate's compensation history>
+Salary Assessment: <Below Market|At Market|Above Market|Significant Increase> - <brief explanation comparing to the candidate's compensation history from the resume data>
+
+## Salary Context (CONFIDENTIAL - never include in any output documents)
+- Use salary history from the resume data to assess compensation
+- Freelance/contract positions are marked with `isFreelance: true` — do not compare freelance rates to full-time salaries without adjusting for benefits and overhead (~30-50% higher to be equivalent)
+- Salary periods vary (per_hour, per_month, per_year) — normalize to annual when comparing
 
 Ask if the candidate wants to proceed with tailoring their resume.
 
 ### Step 5: Resume Tailoring (only if candidate agrees to proceed)
-Generate a tailored version of the resume optimized for this job posting, highlighting relevant experience and skills. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`.
+Generate a tailored version of the resume optimized for this job posting, highlighting relevant experience and skills. The tailored resume must be returned as Markdown wrapped in a code block with the language tag `tailored-resume`. This tailored resume does not need a header that includes personal information, as the template used for document generation will handle that. Focus on making the content ATS-friendly and relevant to the job description.
 
 Use this structure:
 
@@ -482,43 +519,42 @@ Skill 1, Skill 2
 ### Company Name - Location - Start Year - End Year
 - Achievement or responsibility
 
-# Education
-## Degree
-### Institution - Start Year - End Year
-Description if applicable
-
 # Projects
 ## Project Name
 Description
 - Detail or highlight
+
+# Education
+## Degree
+### Institution - Start Year - End Year
+Description if applicable
 ```
 
 When tailoring:
+- Do not provide personal or contact information at the top of the resume. A template is used that handles this.
 - Provide a `Title:` line before the summary. This should be a concise header title such as `Senior Frontend Engineer`, not a sentence.
 - Adjust the professional summary to highlight relevance to this specific role
 - Reorder and emphasize skills that match the job requirements
 - When skills are wholly irrelevant to job requirements, consider omitting them to save space
 - Refine experience bullet points to use keywords from the job description
 - Keep all factual information accurate — only change presentation and emphasis
-- When a year is not defined (e.g., current job or ongoing education), omit the year range entirely rather than showing "undefined", "Present", or "Current". For example, use `### Company Name - Location` instead of `### Company Name - Location - 2020 - Present`
+- When a year is not defined for current job, use "Present". For example: `### Company Name - Location - 2020 - Present`
+- When a year is not defined for education, omit the year range entirely. For example: `### Institution`
 - Use Markdown only for new tailored resumes
 
+When the candidate approves the resume, call `save_tailored_resume` with the full markdown content.
+
 ### Step 6: Cover Letter & Application Assistance
-After providing the tailored resume, offer to write a cover letter for the position. If the candidate agrees, generate a cover letter wrapped in a code block with the language tag `cover-letter`.
+After providing the tailored resume, offer to write a cover letter for the position. If the candidate agrees, follow the Cover Letter guidelines below and generate a cover letter wrapped in a code block with the language tag `cover-letter`.
 
 ```cover-letter
 
 (Cover letter content here)
 ```
 
-The cover letter content should follow this structure:
-- Start with a greeting line (e.g., "Dear Hiring Manager,")
-- Body paragraphs explaining fit for the role
-- A closing line (e.g., "Sincerely,")
+Draft the cover letter, then ask for review and feedback. Iterate until approved. Do not defend choices — just revise.
 
-Do NOT include the candidate's name, address, date, or signature in the cover letter — those are added automatically from their profile data.
-
-When providing the cover letter, wrap it in a code block with the language tag `cover-letter`.
+When the candidate approves the cover letter, call `save_cover_letter` with the full content.
 
 Also offer to help with any other application questions the candidate may encounter.
 
@@ -526,28 +562,44 @@ Also offer to help with any other application questions the candidate may encoun
 - Be concise and actionable in your responses
 - Always wait for the candidate's input before moving to the next step
 - When providing the tailored resume, wrap it in a code block with the language tag `tailored-resume`
+- When providing the cover letter, wrap it in a code block with the language tag `cover-letter`
 - Do NOT fabricate experience or qualifications
+
+---
+
+## Cover Letter Guidelines
+
+### Voice & Tone
+
+- Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.
+- No corporate jargon. No filler. No padding.
+- Sentence fragments are fine when they create natural rhythm, the way a speaker pauses for emphasis.
+- Occasional personality is encouraged. Jay has a dry wit and a pragmatic worldview. Let that come through when appropriate.
+- Never sycophantic. Never desperate. The tone is: "I'm good at what I do, here's why I'd be good at what you do."
+
+### Structure
+
+- Three paragraphs preferred. Four if absolutely necessary. Never five.
+- No greeting beyond "Hi [name]" or "Hello [name]" when a name is available. No "Dear Hiring Manager" unless there is truly no alternative.
+- No "Sincerely" or "Best regards" closings. End with something human — a forward-looking statement, a direct ask, or a short closer that sounds like Jay.
+- The cover letter does NOT summarize the resume. It provides motivation, fit, and voice. If a bullet point on the resume already says it, the cover letter should not repeat it. It can reference the same work, but only to frame it differently — why it mattered, what it taught him, how it connects to the role.
+
+### What to Avoid
+
+- Em dashes where a comma would work. Absolutely no hyphens pretending to be em dashes.
+- The word "actually" used as a pivot ("It's not X, it's actually Y").
+- "I believe," "I am passionate about," "I am excited to," or any other filler openers that signal template usage.
+- Gerund-heavy constructions ("Leveraging my experience in..." / "Utilizing my skills to...").
+- Mirroring the job posting's language back verbatim. Paraphrase. Show understanding, not copy-paste.
+- Any phrase that reads like it came from a LinkedIn influencer post.
+- Over-qualifying or being apologetic about gaps. If React experience is 1 year vs. 6 years of Vue, frame it as pattern transfer and current production work, not as a weakness to explain away.
+
+### What to Include
+
+- A specific reason Jay wants THIS job at THIS company. Not generic "mission-driven" language — something concrete that connects his experience or values to the company's work.
+- One or two concrete examples from his career that demonstrate relevant capability. These should be framed as stories or outcomes, not resume bullets reworded into prose.
+- An honest self-assessment of fit. If the role stretches into areas where Jay has less depth, acknowledge it briefly and pivot to why that's manageable.
 PROMPT;
-    }
-
-    /**
-     * Get the memory section for the system prompt, if any memories exist.
-     */
-    private function getMemorySection(): string
-    {
-        $memoryBlock = $this->memoryService->getMemoriesForPrompt('targeted-resume');
-
-        if ($memoryBlock === '') {
-            return '';
-        }
-
-        return <<<MEMORY
-## Learned Preferences & Insights
-
-The following insights were learned from previous conversations with this user. Use them to guide your approach:
-
-{$memoryBlock}
-MEMORY;
     }
 
     public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation {
@@ -556,7 +608,6 @@ MEMORY;
         $title = trim((string) ($data['title'] ?? ''));
         $companyName = trim((string) ($data['company_name'] ?? ''));
         $jobTitle = trim((string) ($data['job_title'] ?? ''));
-        $appliedAt = $data['applied_at'] ?? null;
 
         $conversation->title = $title !== '' ? $title : null;
 
@@ -580,21 +631,12 @@ MEMORY;
         $conversation->save();
 
         if ($conversation->targetedResume) {
-            $targetedResumeData = [
+            $conversation->targetedResume->update([
                 'company_name' => $context['company_name'] ?? $conversation->targetedResume->company_name,
                 'position' => $context['job_title'] ?? $conversation->targetedResume->position,
                 'fit_score' => $context['fit_score'] ?? $conversation->targetedResume->fit_score,
                 'fit_summary' => $context['fit_summary'] ?? $conversation->targetedResume->fit_summary,
-                'applied_at' => $appliedAt,
-            ];
-
-            if ($appliedAt !== null && $appliedAt !== '') {
-                $targetedResumeData['status'] = TargetedResumeStatus::Applied;
-            } elseif ($conversation->targetedResume->status === TargetedResumeStatus::Applied) {
-                $targetedResumeData['status'] = TargetedResumeStatus::Finalized;
-            }
-
-            $conversation->targetedResume->update($targetedResumeData);
+            ]);
         }
 
         return $conversation->fresh(['targetedResume']);

@@ -128,7 +128,7 @@ class ClaudeService implements AiClientContract
         $payload = $this->buildPayload($messages);
 
         $response = Http::withHeaders($this->headers())
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/messages', $payload);
 
         $this->reset();
@@ -159,7 +159,7 @@ class ClaudeService implements AiClientContract
 
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
-            ->timeout(120)
+            ->timeout(600)
             ->post($this->baseUrl . '/messages', $payload);
 
         $this->reset();
@@ -254,6 +254,49 @@ class ClaudeService implements AiClientContract
         $response->throw();
 
         return $response->json('data', []);
+    }
+
+    /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, content: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $content = [];
+
+        if ($textContent !== '') {
+            $content[] = ['type' => 'text', 'text' => $textContent];
+        }
+
+        foreach ($toolCalls as $toolCall) {
+            $content[] = [
+                'type' => 'tool_use',
+                'id' => $toolCall['id'],
+                'name' => $toolCall['name'],
+                'input' => (object) $toolCall['input'],
+            ];
+        }
+
+        return ['role' => 'assistant', 'content' => $content];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, content: array<int, mixed>}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        $content = [];
+
+        foreach ($toolResults as $result) {
+            $content[] = [
+                'type' => 'tool_result',
+                'tool_use_id' => $result['id'],
+                'content' => json_encode($result['result']),
+            ];
+        }
+
+        return [['role' => 'user', 'content' => $content]];
     }
 
     /**

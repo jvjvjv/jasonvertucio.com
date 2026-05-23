@@ -1,23 +1,25 @@
-import { useRef } from 'react';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import {
     DndContext,
-    closestCenter,
+    type DragEndEvent,
     KeyboardSensor,
     PointerSensor,
+    closestCenter,
     useSensor,
     useSensors,
-    type DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
     SortableContext,
-    sortableKeyboardCoordinates,
-    horizontalListSortingStrategy,
-    useSortable,
     arrayMove,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+    horizontalListSortingStrategy,
+    sortableKeyboardCoordinates,
+    useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import { useRef } from "react";
+
+import type { ClipboardEvent, KeyboardEvent } from "react";
 
 interface SkillsInputProps {
     skills: string[];
@@ -46,7 +48,7 @@ function SortableChip({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab',
+        cursor: "grab",
     };
 
     return (
@@ -89,7 +91,7 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
 
     const addSkill = (value: string) => {
         const trimmed = value.trim();
-        if (trimmed === '') return;
+        if (trimmed === "") return;
         const isDuplicate = skills.some(
             (s) => s.toLowerCase() === trimmed.toLowerCase(),
         );
@@ -102,7 +104,7 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
         onChange(skills.filter((_, i) => i !== index));
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         const input = e.currentTarget;
         if (e.key === "Enter") {
             e.preventDefault();
@@ -117,9 +119,9 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
         }
     };
 
-    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
         e.preventDefault();
-        const pasted = e.clipboardData.getData('text');
+        const pasted = e.clipboardData.getData("text");
         const newSkills = pasted
             .replace(/\r/g, "")
             .split("\n")
@@ -135,7 +137,7 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
             }
         });
         onChange(updated);
-        if (inputRef.current) inputRef.current.value = '';
+        if (inputRef.current) inputRef.current.value = "";
     };
 
     return (
@@ -173,7 +175,9 @@ export default function SkillsInput({ skills, onChange }: SkillsInputProps) {
                             key={sortableIds[idx]}
                             id={sortableIds[idx]}
                             label={skill}
-                            onDelete={() => removeSkill(idx)}
+                            onDelete={() => {
+                                removeSkill(idx);
+                            }}
                         />
                     ))}
                 </SortableContext>

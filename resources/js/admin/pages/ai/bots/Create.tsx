@@ -3,12 +3,25 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import Form, { type FormData } from "./Form";
+
+import Form from "./Form";
+
+import type { FormData } from "./Form";
+import type { SyntheticEvent } from "react";
+
+import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface CreateProps {
-    systems: Array<{ id: number; name: string; model: string }>;
+    systems: {
+        id: number;
+        name: string;
+        model: string;
+        context_length: number | null;
+        temperature: number | null;
+        supports_tools: boolean;
+    }[];
     roles: string[];
 }
 
@@ -19,14 +32,22 @@ export default function Create({ systems, roles }: CreateProps) {
         access_path: "chat",
         description: "",
         ai_system_id: "",
+        context_length: null,
+        temperature: "",
         prompt_template: "You are {{bot_name}}. {{bot_description}}",
         allowed_roles: [],
         is_active: true,
         is_public: false,
         require_visitor_identity: false,
+        tools_enabled: false,
     });
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const selectedSystem = systems.find(
+        (system) => system.id === form.data.ai_system_id,
+    );
+    const shouldShowMcpTools =
+        selectedSystem?.supports_tools === true || form.data.tools_enabled;
+    const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.post("/admin/ai/chat-bots");
     };
@@ -49,6 +70,7 @@ export default function Create({ systems, roles }: CreateProps) {
                             errors={form.errors}
                             systems={systems}
                             roles={roles}
+                            originalName=""
                         />
 
                         <Box
@@ -77,6 +99,14 @@ export default function Create({ systems, roles }: CreateProps) {
                     </Box>
                 </CardContent>
             </Card>
+
+            <Box sx={{ mt: 2 }}>
+                <AvailableMcpTools
+                    enabled={shouldShowMcpTools}
+                    aiSystemId={form.data.ai_system_id}
+                    description="These are the MCP tools allowed by the selected system and available to this bot when tool use is enabled."
+                />
+            </Box>
         </AdminLayout>
     );
 }

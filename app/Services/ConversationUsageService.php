@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AiInteractionStatus;
 use App\Models\AiConversation;
 use App\Models\AiInteractionLog;
+use App\Models\AiSystem;
 use Illuminate\Support\Collection;
 
 class ConversationUsageService
@@ -43,19 +44,17 @@ class ConversationUsageService
      */
     public function buildUsageSummary(AiConversation $conversation): array
     {
-        $rows = AiInteractionLog::query()
+        $logs = AiInteractionLog::query()
             ->where('ai_conversation_id', $conversation->id)
             ->where('status', AiInteractionStatus::Success->value)
             ->where(function ($query): void {
                 $query->whereNotNull('input_tokens')
                     ->orWhereNotNull('output_tokens');
             })
-            ->join('ai_systems', 'ai_systems.id', '=', 'ai_interaction_logs.ai_system_id')
-            ->selectRaw('ai_systems.provider as provider, ai_interaction_logs.model as model, COALESCE(SUM(ai_interaction_logs.input_tokens), 0) as input_tokens_sum, COALESCE(SUM(ai_interaction_logs.output_tokens), 0) as output_tokens_sum')
-            ->groupBy('ai_systems.provider', 'ai_interaction_logs.model')
+            ->with('aiSystem:id,provider,pricing_profile')
             ->get();
 
-        if ($rows->isEmpty()) {
+        if ($logs->isEmpty()) {
             return [
                 'input_tokens' => null,
                 'output_tokens' => null,
@@ -64,10 +63,10 @@ class ConversationUsageService
             ];
         }
 
-        $inputTokens = (int) $rows->sum('input_tokens_sum');
-        $outputTokens = (int) $rows->sum('output_tokens_sum');
+        $inputTokens = (int) $logs->sum(fn (AiInteractionLog $log): int => (int) ($log->input_tokens ?? 0));
+        $outputTokens = (int) $logs->sum(fn (AiInteractionLog $log): int => (int) ($log->output_tokens ?? 0));
         $totalTokens = $inputTokens + $outputTokens;
-        $costUsd = $this->estimateCostUsd($rows);
+        $costUsd = $this->estimateCostUsd($logs);
 
         return [
             'input_tokens' => $inputTokens,
@@ -77,45 +76,183 @@ class ConversationUsageService
         ];
     }
 
-    private function estimateCostUsd(Collection $rows): ?float
+    /**
+     * @return array{input_token_price_snapshot: ?float, output_token_price_snapshot: ?float}
+     */
+    public function pricingSnapshotForSystem(AiSystem $system, ?string $model = null): array
+    {
+        $pricing = $this->pricingRatesForSystem($system, $model);
+
+        return [
+            'input_token_price_snapshot' => $pricing['input_rate'] !== null
+                ? round($pricing['input_rate'] / 1000000, 8)
+                : null,
+            'output_token_price_snapshot' => $pricing['output_rate'] !== null
+                ? round($pricing['output_rate'] / 1000000, 8)
+                : null,
+        ];
+    }
+
+    /**
+     * @param Collection<int, AiInteractionLog> $logs
+     */
+    private function estimateCostUsd(Collection $logs): ?float
     {
         $totalCost = 0.0;
 
-        foreach ($rows as $row) {
-            $providerPricing = $this->pricingConfigForProvider((string) ($row->provider ?? ''));
+        foreach ($logs as $log) {
+            $inputTokens = (int) ($log->input_tokens ?? 0);
+            $outputTokens = (int) ($log->output_tokens ?? 0);
+            $inputSnapshot = $log->input_token_price_snapshot !== null
+                ? (float) $log->input_token_price_snapshot
+                : null;
+            $outputSnapshot = $log->output_token_price_snapshot !== null
+                ? (float) $log->output_token_price_snapshot
+                : null;
 
-            if ($providerPricing === null) {
+            if ($inputSnapshot !== null) {
+                $totalCost += $inputTokens * $inputSnapshot;
+            }
+
+            if ($outputSnapshot !== null) {
+                $totalCost += $outputTokens * $outputSnapshot;
+            }
+
+            if ($inputSnapshot !== null && $outputSnapshot !== null) {
+                continue;
+            }
+
+            $pricing = $this->pricingRatesForSystem($log->aiSystem, $log->model);
+
+            if (($inputSnapshot === null && $pricing['input_rate'] === null)
+                || ($outputSnapshot === null && $pricing['output_rate'] === null)) {
                 return null;
             }
 
-            $pricingByModel = (array) ($providerPricing['models'] ?? []);
-            $defaultPricing = (array) ($providerPricing['default'] ?? []);
-
-            $defaultInputRate = isset($defaultPricing['input_per_million']) ? (float) $defaultPricing['input_per_million'] : null;
-            $defaultOutputRate = isset($defaultPricing['output_per_million']) ? (float) $defaultPricing['output_per_million'] : null;
-
-            $model = (string) ($row->model ?? '');
-            $modelPricing = (array) ($pricingByModel[$model] ?? []);
-
-            $inputRate = isset($modelPricing['input_per_million'])
-                ? (float) $modelPricing['input_per_million']
-                : $defaultInputRate;
-            $outputRate = isset($modelPricing['output_per_million'])
-                ? (float) $modelPricing['output_per_million']
-                : $defaultOutputRate;
-
-            if ($inputRate === null || $outputRate === null) {
-                return null;
+            if ($inputSnapshot === null && $pricing['input_rate'] !== null) {
+                $totalCost += ($inputTokens / 1000000) * $pricing['input_rate'];
             }
 
-            $inputTokens = (int) ($row->input_tokens_sum ?? 0);
-            $outputTokens = (int) ($row->output_tokens_sum ?? 0);
-
-            $totalCost += ($inputTokens / 1000000) * $inputRate;
-            $totalCost += ($outputTokens / 1000000) * $outputRate;
+            if ($outputSnapshot === null && $pricing['output_rate'] !== null) {
+                $totalCost += ($outputTokens / 1000000) * $pricing['output_rate'];
+            }
         }
 
         return round($totalCost, 6);
+    }
+
+    /**
+     * @return array{input_rate: ?float, output_rate: ?float}
+     */
+    private function pricingRatesForSystem(?AiSystem $system, ?string $model = null): array
+    {
+        if ($system === null) {
+            return [
+                'input_rate' => null,
+                'output_rate' => null,
+            ];
+        }
+
+        $pricingConfig = $this->effectivePricingConfig(
+            $system->provider,
+            (array) ($system->pricing_profile ?? []),
+        );
+
+        if ($pricingConfig === null) {
+            return [
+                'input_rate' => null,
+                'output_rate' => null,
+            ];
+        }
+
+        return $this->pricingRatesForConfig($pricingConfig, (string) ($model ?? ''));
+    }
+
+    /**
+     * @param array<string, mixed> $pricingProfile
+     * @return array<string, mixed>|null
+     */
+    private function effectivePricingConfig(string $provider, array $pricingProfile): ?array
+    {
+        $providerPricing = $this->pricingConfigForProvider($provider);
+
+        if ($providerPricing === null && $pricingProfile === []) {
+            return null;
+        }
+
+        $normalizedProfile = $this->normalizePricingConfig($pricingProfile);
+
+        if ($providerPricing === null) {
+            return $normalizedProfile;
+        }
+
+        if ($normalizedProfile === []) {
+            return $providerPricing;
+        }
+
+        return array_replace_recursive($providerPricing, $normalizedProfile);
+    }
+
+    /**
+     * @param array<string, mixed> $pricingConfig
+     * @return array{input_rate: ?float, output_rate: ?float}
+     */
+    private function pricingRatesForConfig(array $pricingConfig, string $model): array
+    {
+        $normalizedPricing = $this->normalizePricingConfig($pricingConfig);
+        $pricingByModel = (array) ($normalizedPricing['models'] ?? []);
+        $defaultPricing = (array) ($normalizedPricing['default'] ?? []);
+        $modelPricing = (array) ($pricingByModel[$model] ?? []);
+
+        $defaultInputRate = isset($defaultPricing['input_per_million'])
+            ? (float) $defaultPricing['input_per_million']
+            : null;
+        $defaultOutputRate = isset($defaultPricing['output_per_million'])
+            ? (float) $defaultPricing['output_per_million']
+            : null;
+
+        return [
+            'input_rate' => isset($modelPricing['input_per_million'])
+                ? (float) $modelPricing['input_per_million']
+                : $defaultInputRate,
+            'output_rate' => isset($modelPricing['output_per_million'])
+                ? (float) $modelPricing['output_per_million']
+                : $defaultOutputRate,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $pricingConfig
+     * @return array<string, mixed>
+     */
+    private function normalizePricingConfig(array $pricingConfig): array
+    {
+        if ($pricingConfig === []) {
+            return [];
+        }
+
+        if (array_key_exists('default', $pricingConfig) || array_key_exists('models', $pricingConfig)) {
+            return $pricingConfig;
+        }
+
+        $defaultPricing = [];
+
+        if (isset($pricingConfig['input_per_million'])) {
+            $defaultPricing['input_per_million'] = $pricingConfig['input_per_million'];
+        }
+
+        if (isset($pricingConfig['output_per_million'])) {
+            $defaultPricing['output_per_million'] = $pricingConfig['output_per_million'];
+        }
+
+        if ($defaultPricing === []) {
+            return $pricingConfig;
+        }
+
+        return [
+            'default' => $defaultPricing,
+            'models' => (array) ($pricingConfig['models'] ?? []),
+        ];
     }
 
     /**

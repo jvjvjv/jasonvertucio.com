@@ -1,7 +1,11 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import ChatIcon from "@mui/icons-material/Chat";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Table from "@mui/material/Table";
@@ -11,15 +15,17 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
-import AdminLayout from "../../../layouts/AdminLayout";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import PageHeader from "../../../components/PageHeader";
-import Pagination from "../../../components/Pagination";
-import StatusChip from "../../../components/StatusChip";
-import UsageChip from "../../../components/UsageChip";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { Conversation, PaginatedResponse } from "../../../types";
+
+import type { Conversation, PaginatedResponse } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import Pagination from "@/admin/components/Pagination";
+import StatusChip from "@/admin/components/StatusChip";
+import UsageChip from "@/admin/components/UsageChip";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface Filters {
     feature?: string;
@@ -32,8 +38,8 @@ interface Filters {
 interface IndexProps {
     conversations: PaginatedResponse<Conversation>;
     features: string[];
-    systems: Array<{ id: number; name: string }>;
-    bots: Array<{ id: number; name: string }>;
+    systems: { id: number; name: string }[];
+    bots: { id: number; name: string }[];
     filters: Filters;
 }
 
@@ -47,12 +53,10 @@ export default function Index({
     const { dialogProps, confirm } = useConfirmDialog();
 
     const updateFilters = (next: Filters) => {
-        const params: Record<string, string> = { ...filters, ...next };
-        Object.keys(params).forEach((key) => {
-            if (!params[key]) {
-                delete params[key];
-            }
-        });
+        const merged: { [key: string]: string } = { ...filters, ...next };
+        const params = Object.fromEntries(
+            Object.entries(merged).filter(([, v]) => Boolean(v)),
+        );
         router.get("/admin/ai/conversations", params, { preserveState: true });
     };
 
@@ -138,18 +142,18 @@ export default function Index({
                     label="Search"
                     size="small"
                     value={filters.search ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ search: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ search: event.target.value });
+                    }}
                 />
                 <TextField
                     label="Feature"
                     select
                     size="small"
                     value={filters.feature ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ feature: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ feature: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Features</MenuItem>
                     {features.map((feature) => (
@@ -163,9 +167,9 @@ export default function Index({
                     select
                     size="small"
                     value={filters.status ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ status: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ status: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Statuses</MenuItem>
                     <MenuItem value="active">active</MenuItem>
@@ -177,9 +181,9 @@ export default function Index({
                     select
                     size="small"
                     value={filters.ai_system_id ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ ai_system_id: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ ai_system_id: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Systems</MenuItem>
                     {systems.map((system) => (
@@ -193,9 +197,9 @@ export default function Index({
                     select
                     size="small"
                     value={filters.ai_chat_bot_id ?? ""}
-                    onChange={(event) =>
-                        updateFilters({ ai_chat_bot_id: event.target.value })
-                    }
+                    onChange={(event) => {
+                        updateFilters({ ai_chat_bot_id: event.target.value });
+                    }}
                 >
                     <MenuItem value="">All Bots</MenuItem>
                     {bots.map((bot) => (
@@ -240,7 +244,7 @@ export default function Index({
                                                 }}
                                                 underline="hover"
                                             >
-                                                {conversation.title ||
+                                                {conversation.title ??
                                                     `Conversation #${conversation.id}`}
                                             </Link>
                                         </TableCell>
@@ -248,8 +252,8 @@ export default function Index({
                                             {conversation.feature}
                                         </TableCell>
                                         <TableCell>
-                                            {conversation.user_name ||
-                                                conversation.visitor_name ||
+                                            {conversation.user_name ??
+                                                conversation.visitor_name ??
                                                 "Unknown"}
                                         </TableCell>
                                         <TableCell>
@@ -293,24 +297,42 @@ export default function Index({
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                {conversation.chat_hash && (
+                                                    <IconButton
+                                                        component={InertiaLink}
+                                                        href={`/chat/${conversation.ai_chat_bot_slug}/${conversation.chat_hash}`}
+                                                        size="small"
+                                                        color="success"
+                                                        title="Continue Chat"
+                                                        aria-label="Continue Chat"
+                                                        target="_blank"
+                                                    >
+                                                        <ChatIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/conversations/${conversation.id}`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="View Details"
+                                                    aria-label="View Details"
                                                 >
-                                                    View
-                                                </Button>
-                                                <Button
+                                                    <OpenInNewIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
+                                                    onClick={() => {
                                                         handleDelete(
                                                             conversation,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>

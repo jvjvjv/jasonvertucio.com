@@ -1,0 +1,63 @@
+import { Link } from "@inertiajs/react";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+
+import type { ButtonProps } from "@mui/material/Button";
+import type { ReactNode } from "react";
+
+import useDeviceInfo from "@/hooks/useDeviceInfo";
+
+interface ResponsiveButtonProps {
+    type?: ButtonProps["type"];
+    size?: ButtonProps["size"];
+    href?: ButtonProps["href"];
+    color?: ButtonProps["color"];
+    icon: ReactNode;
+    label: ReactNode;
+    title?: string;
+    variant?: ButtonProps["variant"];
+    disabled?: boolean;
+    onClick?: ButtonProps["onClick"];
+}
+
+export default function ResponsiveButton({
+    color,
+    href,
+    disabled,
+    title,
+    onClick,
+    variant = "outlined",
+    icon,
+    size,
+    label,
+}: ResponsiveButtonProps) {
+    const { isMobile } = useDeviceInfo();
+    const spreadHref = href ? { href, component: Link } : {};
+
+    return isMobile ? (
+        <IconButton
+            {...spreadHref}
+            color={color}
+            disabled={disabled}
+            aria-label={
+                title ?? (typeof label === "string" ? label : undefined)
+            }
+            title={title}
+            onClick={onClick}
+        >
+            {icon}
+        </IconButton>
+    ) : (
+        <Button
+            {...spreadHref}
+            size={size}
+            color={color}
+            variant={variant}
+            disabled={disabled}
+            onClick={onClick}
+            startIcon={icon}
+        >
+            {label}
+        </Button>
+    );
+}

@@ -1,31 +1,236 @@
-import { type ReactNode, useState } from 'react';
 import { Link as InertiaLink, usePage } from "@inertiajs/react";
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import MenuIcon from '@mui/icons-material/Menu';
-import { ADMIN_NAVIGATION_ITEMS } from '../constants/navigation';
-import type { SharedProps } from '../types';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import MenuIcon from "@mui/icons-material/Menu";
+import Alert from "@mui/material/Alert";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Collapse from "@mui/material/Collapse";
+import Container from "@mui/material/Container";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Snackbar from "@mui/material/Snackbar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import { type ReactNode, useState } from "react";
+
+import type { AppBarItem, SharedProps } from "@/types";
 
 interface AdminLayoutProps {
     children: ReactNode;
     title?: string;
 }
 
+function isPathActive(currentPath: string, item: AppBarItem): boolean {
+    return (
+        currentPath === item.href ||
+        currentPath.startsWith(`${item.href}/`) ||
+        item.children.some(
+            (c) =>
+                currentPath === c.href || currentPath.startsWith(`${c.href}/`),
+        )
+    );
+}
+
+function DesktopNavItem({
+    item,
+    currentPath,
+}: {
+    item: AppBarItem;
+    currentPath: string;
+}) {
+    const [anchor, setAnchor] = useState<null | HTMLElement>(null);
+    const hasChildren = item.children.length > 0;
+    const isActive = isPathActive(currentPath, item);
+
+    return (
+        <>
+            <Button
+                color="inherit"
+                component={hasChildren ? "button" : InertiaLink}
+                href={hasChildren ? undefined : item.href}
+                endIcon={
+                    hasChildren ? (
+                        <ExpandMoreIcon
+                            sx={{
+                                transition: "transform 150ms",
+                                transform: anchor
+                                    ? "rotate(180deg)"
+                                    : "rotate(0deg)",
+                            }}
+                        />
+                    ) : undefined
+                }
+                onClick={
+                    hasChildren
+                        ? (e: React.MouseEvent<HTMLButtonElement>) => {
+                              setAnchor(e.currentTarget);
+                          }
+                        : undefined
+                }
+                variant={isActive ? "outlined" : "text"}
+                sx={{
+                    borderColor: isActive
+                        ? "rgba(255, 255, 255, 0.7)"
+                        : "transparent",
+                    bgcolor: isActive
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "transparent",
+                    px: 1.5,
+                }}
+            >
+                {item.label}
+            </Button>
+
+            {hasChildren && (
+                <Menu
+                    anchorEl={anchor}
+                    open={Boolean(anchor)}
+                    onClose={() => {
+                        setAnchor(null);
+                    }}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    slotProps={{ paper: { sx: { minWidth: 220 } } }}
+                >
+                    <MenuItem
+                        component={InertiaLink}
+                        href={item.href}
+                        selected={currentPath === item.href}
+                        onClick={() => {
+                            setAnchor(null);
+                        }}
+                    >
+                        <ListItemText
+                            primary={item.label}
+                            slotProps={{
+                                primary: {
+                                    variant: "body2",
+                                    color: "text.secondary",
+                                },
+                            }}
+                        />
+                    </MenuItem>
+                    <Divider />
+                    {item.children.map((child) => (
+                        <MenuItem
+                            key={child.href}
+                            component={InertiaLink}
+                            href={child.href}
+                            selected={
+                                currentPath === child.href ||
+                                currentPath.startsWith(`${child.href}/`)
+                            }
+                            onClick={() => {
+                                setAnchor(null);
+                            }}
+                        >
+                            {child.label}
+                        </MenuItem>
+                    ))}
+                </Menu>
+            )}
+        </>
+    );
+}
+
+function MobileNavSection({
+    item,
+    currentPath,
+    onNavigate,
+}: {
+    item: AppBarItem;
+    currentPath: string;
+    onNavigate: () => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const hasChildren = item.children.length > 0;
+    const isActive = isPathActive(currentPath, item);
+
+    if (!hasChildren) {
+        return (
+            <MenuItem
+                component={InertiaLink}
+                href={item.href}
+                selected={isActive}
+                onClick={onNavigate}
+            >
+                {item.label}
+            </MenuItem>
+        );
+    }
+
+    return (
+        <>
+            <MenuItem
+                selected={isActive}
+                onClick={() => {
+                    setOpen((v) => !v);
+                }}
+                sx={{ justifyContent: "space-between" }}
+            >
+                {item.label}
+                <ExpandMoreIcon
+                    fontSize="small"
+                    sx={{
+                        ml: 1,
+                        transition: "transform 150ms",
+                        transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                    }}
+                />
+            </MenuItem>
+            <Collapse in={open}>
+                <List disablePadding dense>
+                    <ListItemButton
+                        component={InertiaLink}
+                        href={item.href}
+                        selected={currentPath === item.href}
+                        onClick={onNavigate}
+                        sx={{ pl: 4 }}
+                    >
+                        <ListItemText
+                            primary={item.label}
+                            slotProps={{
+                                primary: {
+                                    variant: "body2",
+                                    color: "text.secondary",
+                                },
+                            }}
+                        />
+                    </ListItemButton>
+                    {item.children.map((child) => (
+                        <ListItemButton
+                            key={child.href}
+                            component={InertiaLink}
+                            href={child.href}
+                            selected={
+                                currentPath === child.href ||
+                                currentPath.startsWith(`${child.href}/`)
+                            }
+                            onClick={onNavigate}
+                            sx={{ pl: 4 }}
+                        >
+                            <ListItemText primary={child.label} />
+                        </ListItemButton>
+                    ))}
+                </List>
+            </Collapse>
+        </>
+    );
+}
+
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
     const page = usePage<SharedProps>();
     const { flash } = page.props;
-    const currentPath = page.url.split('?')[0];
+    const adminNav = page.props.adminNav;
+    const currentPath = page.url.split("?")[0];
     const [flashOpen, setFlashOpen] = useState(
-        !!(flash.success || flash.error)
+        !!(flash.success ?? flash.error),
     );
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -70,39 +275,22 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                             gap: 1,
                         }}
                     >
-                        {ADMIN_NAVIGATION_ITEMS.map((item) => {
-                            const isActive =
-                                currentPath === item.slug ||
-                                currentPath.startsWith(`${item.slug}/`);
-
-                            return (
-                                <Button
-                                    key={item.slug}
-                                    color="inherit"
-                                    component={InertiaLink}
-                                    href={item.slug}
-                                    variant={isActive ? "outlined" : "text"}
-                                    sx={{
-                                        borderColor: isActive
-                                            ? "rgba(255, 255, 255, 0.7)"
-                                            : "transparent",
-                                        bgcolor: isActive
-                                            ? "rgba(255, 255, 255, 0.08)"
-                                            : "transparent",
-                                        px: 1.5,
-                                    }}
-                                >
-                                    {item.label}
-                                </Button>
-                            );
-                        })}
+                        {adminNav.map((item) => (
+                            <DesktopNavItem
+                                key={item.href}
+                                item={item}
+                                currentPath={currentPath}
+                            />
+                        ))}
                     </Box>
 
                     {/* Mobile hamburger */}
                     <IconButton
                         color="inherit"
                         aria-label="open navigation menu"
-                        onClick={(e) => setMenuAnchor(e.currentTarget)}
+                        onClick={(e) => {
+                            setMenuAnchor(e.currentTarget);
+                        }}
                         sx={{ display: { xs: "flex", md: "none" } }}
                     >
                         <MenuIcon />
@@ -110,25 +298,23 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     <Menu
                         anchorEl={menuAnchor}
                         open={Boolean(menuAnchor)}
-                        onClose={() => setMenuAnchor(null)}
+                        onClose={() => {
+                            setMenuAnchor(null);
+                        }}
+                        slotProps={{ paper: { sx: { minWidth: 240 } } }}
                     >
-                        {ADMIN_NAVIGATION_ITEMS.map((item) => {
-                            const isActive =
-                                currentPath === item.slug ||
-                                currentPath.startsWith(`${item.slug}/`);
-
-                            return (
-                                <MenuItem
-                                    key={item.slug}
-                                    component={InertiaLink}
-                                    href={item.slug}
-                                    onClick={() => setMenuAnchor(null)}
-                                    selected={isActive}
-                                >
-                                    {item.label}
-                                </MenuItem>
-                            );
-                        })}
+                        {adminNav.map((item, i) => (
+                            <Box key={item.href}>
+                                {i > 0 && <Divider />}
+                                <MobileNavSection
+                                    item={item}
+                                    currentPath={currentPath}
+                                    onNavigate={() => {
+                                        setMenuAnchor(null);
+                                    }}
+                                />
+                            </Box>
+                        ))}
                     </Menu>
                 </Toolbar>
             </AppBar>
@@ -168,15 +354,19 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             <Snackbar
                 open={flashOpen}
                 autoHideDuration={5000}
-                onClose={() => setFlashOpen(false)}
+                onClose={() => {
+                    setFlashOpen(false);
+                }}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
                 <Alert
-                    onClose={() => setFlashOpen(false)}
+                    onClose={() => {
+                        setFlashOpen(false);
+                    }}
                     severity={flash.success ? "success" : "error"}
                     variant="filled"
                 >
-                    {flash.success || flash.error}
+                    {flash.success ?? flash.error}
                 </Alert>
             </Snackbar>
         </Box>

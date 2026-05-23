@@ -1,19 +1,19 @@
-import { useState } from 'react';
 import { Head, Link as InertiaLink } from "@inertiajs/react";
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Fab from '@mui/material/Fab';
+import DescriptionIcon from "@mui/icons-material/Description";
+import DownloadIcon from "@mui/icons-material/Download";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import Box from "@mui/material/Box";
+import Fab from "@mui/material/Fab";
 import Link from "@mui/material/Link";
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Typography from '@mui/material/Typography';
-import DownloadIcon from '@mui/icons-material/Download';
-import DescriptionIcon from '@mui/icons-material/Description';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import AdminLayout from '../../layouts/AdminLayout';
-import { letterMarkdownSx } from '../../utils/markdownSx';
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Typography from "@mui/material/Typography";
+import { useState } from "react";
+
+import AdminLayout from "../../layouts/AdminLayout";
+import { letterMarkdownSx } from "../../utils/markdownSx";
 
 interface PersonalInfo {
     name: string;
@@ -40,19 +40,29 @@ interface PreviewProps {
     pdfExists: boolean;
 }
 
-export default function Preview({ personal, coverLetter, messageBodyHtml, docxExists, pdfExists }: PreviewProps) {
+export default function Preview({
+    personal,
+    coverLetter,
+    messageBodyHtml,
+    docxExists,
+    pdfExists,
+}: PreviewProps) {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const hasDownloads = docxExists || pdfExists;
 
-    const formattedDate = new Date(coverLetter.date + 'T00:00:00').toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+    const formattedDate = new Date(
+        coverLetter.date + "T00:00:00",
+    ).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
     });
 
     return (
         <AdminLayout>
-            <Head title={`${coverLetter.company_name} Preview | Cover Letters`} />
+            <Head
+                title={`${coverLetter.company_name} Preview | Cover Letters`}
+            />
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
                 <Link
@@ -138,7 +148,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                     <Fab
                         color="primary"
                         aria-label="Download cover letter"
-                        onClick={(e) => setAnchorEl(e.currentTarget)}
+                        onClick={(e) => {
+                            setAnchorEl(e.currentTarget);
+                        }}
                         sx={{ position: "fixed", bottom: 24, right: 24 }}
                     >
                         <DownloadIcon />
@@ -146,7 +158,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                     <Menu
                         anchorEl={anchorEl}
                         open={Boolean(anchorEl)}
-                        onClose={() => setAnchorEl(null)}
+                        onClose={() => {
+                            setAnchorEl(null);
+                        }}
                         anchorOrigin={{ vertical: "top", horizontal: "center" }}
                         transformOrigin={{
                             vertical: "bottom",
@@ -157,7 +171,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                             <MenuItem
                                 component="a"
                                 href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
-                                onClick={() => setAnchorEl(null)}
+                                onClick={() => {
+                                    setAnchorEl(null);
+                                }}
                             >
                                 <ListItemIcon>
                                     <DescriptionIcon color="primary" />
@@ -169,7 +185,9 @@ export default function Preview({ personal, coverLetter, messageBodyHtml, docxEx
                             <MenuItem
                                 component="a"
                                 href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
-                                onClick={() => setAnchorEl(null)}
+                                onClick={() => {
+                                    setAnchorEl(null);
+                                }}
                             >
                                 <ListItemIcon>
                                     <PictureAsPdfIcon color="error" />

@@ -20,10 +20,7 @@
  * Inject into a docx template using {@fieldName} in the template.
  */
 
-import { Lexer, marked } from 'marked';
-
-const DEFAULT_FONT_SIZE_HALF_POINTS = 24;
-const DEFAULT_BODY_FONT = 'Old Standard TT';
+import { Lexer } from 'marked';
 
 // ─── XML helpers ────────────────────────────────────────────────────────────
 
@@ -38,11 +35,7 @@ function escapeXml(str) {
 
 function wRpr(opts = {}) {
     const parts = [];
-    if (!opts.mono) {
-      parts.push(`<w:rFonts w:ascii="${DEFAULT_BODY_FONT}" w:hAnsi="${DEFAULT_BODY_FONT}"/>`);
-        parts.push(`<w:sz w:val="${DEFAULT_FONT_SIZE_HALF_POINTS}"/>`);
-        parts.push(`<w:szCs w:val="${DEFAULT_FONT_SIZE_HALF_POINTS}"/>`);
-    }
+
     if (opts.bold) { parts.push('<w:b/>'); }
     if (opts.italic) { parts.push('<w:i/>'); }
     if (opts.strike) { parts.push('<w:strike/>'); }
@@ -147,7 +140,6 @@ function inlineTokensToOoxml(tokens, opts = {}) {
 function listItemToOoxml(item, numId, ilvl) {
     let xml = '';
     let inlineXml = '';
-    let hasBlock = false;
 
     for (const token of item.tokens) {
         if (token.type === 'text') {
@@ -163,7 +155,6 @@ function listItemToOoxml(item, numId, ilvl) {
             // Recurse for nested list items, bumping the numId by 10 for ordered vs unordered
             const nestedNumId = token.ordered ? numId + 10 : numId + 1;
             xml += blockTokensToOoxml(token.items.map(i => ({ ...i, _numId: nestedNumId, _ilvl: ilvl + 1 })), { nestedList: true, numId: nestedNumId, ilvl: ilvl + 1 });
-            hasBlock = true;
         } else if (token.type === 'paragraph') {
             if (inlineXml) {
                 xml += wParagraph(inlineXml, wListPPr(numId, ilvl));
@@ -171,7 +162,6 @@ function listItemToOoxml(item, numId, ilvl) {
             }
             const runs = inlineTokensToOoxml(token.tokens ?? []);
             xml += wParagraph(runs, wListPPr(numId, ilvl));
-            hasBlock = true;
         }
     }
 

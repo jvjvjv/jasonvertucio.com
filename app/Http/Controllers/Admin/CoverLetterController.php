@@ -81,7 +81,7 @@ class CoverLetterController extends Controller
             ->get();
 
         return Inertia::render('cover-letters/Edit', [
-            'coverLetter' => $coverLetter,
+            'coverLetter' => $this->serializeCoverLetter($coverLetter),
             'resumeVersions' => $resumeVersions,
         ]);
     }
@@ -101,11 +101,22 @@ class CoverLetterController extends Controller
 
         return Inertia::render('cover-letters/Preview', [
             'personal' => $personalInformation,
-            'coverLetter' => $coverLetter,
+            'coverLetter' => $this->serializeCoverLetter($coverLetter),
             'messageBodyHtml' => $messageBodyHtml,
             'docxExists' => $coverLetter->docxExists(),
             'pdfExists' => $coverLetter->pdfExists(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function serializeCoverLetter(CoverLetter $coverLetter): array
+    {
+        $attributes = $coverLetter->toArray();
+        $attributes['date'] = $coverLetter->date?->toDateString();
+
+        return $attributes;
     }
 
     /**

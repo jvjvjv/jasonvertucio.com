@@ -1,8 +1,18 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import ChairIcon from "@mui/icons-material/Chair";
+import DataObjectIcon from "@mui/icons-material/DataObject";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
+import FileCopyIcon from "@mui/icons-material/FileCopy";
+import HandymanIcon from "@mui/icons-material/Handyman";
+import HistoryIcon from "@mui/icons-material/History";
+import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,13 +20,16 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { AiSystem } from "../../../types";
+
+import type { AiSystem } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface IndexProps {
     systems: AiSystem[];
@@ -26,14 +39,19 @@ export default function Index({ systems }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
     const handleDelete = (system: AiSystem) => {
-        const botCount = system.chat_bots_count ?? 0;
-        const message = botCount > 0
-            ? `"${system.name}" is used by ${botCount} chat bot(s). Deleting it will deactivate those bots. The system data will be preserved. Continue?`
-            : `Delete AI system "${system.name}"? This cannot be undone.`;
+        const botCount = system.chat_bots_count;
+        const message =
+            botCount > 0
+                ? `"${system.name}" is used by ${botCount} chat bot(s). Deleting it will deactivate those bots. The system data will be preserved. Continue?`
+                : `Delete AI system "${system.name}"? This cannot be undone.`;
 
-        confirm(message, () => {
-            router.delete(`/admin/ai/systems/${system.id}`);
-        }, { title: botCount > 0 ? 'System In Use' : 'Confirm Delete' });
+        confirm(
+            message,
+            () => {
+                router.delete(`/admin/ai/systems/${system.id}`);
+            },
+            { title: botCount > 0 ? "System In Use" : "Confirm Delete" },
+        );
     };
 
     const handleDuplicate = (id: number) => {
@@ -55,7 +73,37 @@ export default function Index({ systems }: IndexProps) {
                 backLabel="Back to AI Tools"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                }}
+            >
+                <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/chat-bots"
+                        variant="outlined"
+                    >
+                        AI Chat Bots
+                    </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/conversations"
+                        variant="outlined"
+                    >
+                        AI Conversations
+                    </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/memories"
+                        variant="outlined"
+                    >
+                        AI Memories
+                    </Button>
+                </Box>
                 <Button
                     component={InertiaLink}
                     href="/admin/ai/systems/new"
@@ -74,6 +122,7 @@ export default function Index({ systems }: IndexProps) {
                                 <TableCell>Provider</TableCell>
                                 <TableCell>Model</TableCell>
                                 <TableCell>Default For</TableCell>
+                                <TableCell>Features</TableCell>
                                 <TableCell>API Calls</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
@@ -81,7 +130,7 @@ export default function Index({ systems }: IndexProps) {
                         <TableBody>
                             {systems.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={6}
+                                    colSpan={7}
                                     message="No AI systems configured yet."
                                     actionLabel="Add your first one"
                                     actionHref="/admin/ai/systems/new"
@@ -100,8 +149,8 @@ export default function Index({ systems }: IndexProps) {
                                                 component={InertiaLink}
                                                 href={`/admin/ai/systems/${system.id}`}
                                                 underline="hover"
-                                                color="inherit"
-                                                sx={{ fontWeight: 500 }}
+                                                color="primary"
+                                                sx={{ fontWeight: 600 }}
                                             >
                                                 {system.name}
                                             </Link>
@@ -131,6 +180,61 @@ export default function Index({ systems }: IndexProps) {
                                                 : "-"}
                                         </TableCell>
                                         <TableCell>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 1,
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
+                                                {system.model_capabilities
+                                                    ?.reasoning && (
+                                                    <Tooltip title="Model supports reasoning">
+                                                        <PsychologyAltIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
+                                                {system.model_capabilities
+                                                    ?.vision && (
+                                                    <Tooltip title="Model supports vision">
+                                                        <VisibilityIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
+                                                {system.model_capabilities
+                                                    ?.tools && (
+                                                    <Tooltip title="Model is trained for tool use">
+                                                        <HandymanIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
+                                                {system.supports_tools && (
+                                                    <Tooltip title="System can expose MCP tools">
+                                                        <HandymanIcon fontSize="small" />
+                                                    </Tooltip>
+                                                )}
+                                                {system.supports_json_mode && (
+                                                    <Tooltip title="System supports JSON mode">
+                                                        <DataObjectIcon fontSize="small" />
+                                                    </Tooltip>
+                                                )}
+                                                {system.is_local_endpoint && (
+                                                    <Tooltip title="Local endpoint">
+                                                        <ChairIcon
+                                                            fontSize="small"
+                                                            color="primary"
+                                                        />
+                                                    </Tooltip>
+                                                )}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>
                                             {system.interaction_logs_count >
                                             0 ? (
                                                 <Link
@@ -154,39 +258,50 @@ export default function Index({ systems }: IndexProps) {
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/systems/${system.id}`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="Edit"
+                                                    aria-label="Edit"
                                                 >
-                                                    Edit
-                                                </Button>
-                                                <Button
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/systems/${system.id}/logs`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="View Logs"
+                                                    aria-label="View Logs"
                                                 >
-                                                    Logs
-                                                </Button>
-                                                <Button
+                                                    <HistoryIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
-                                                    onClick={() =>
+                                                    color="primary"
+                                                    onClick={() => {
                                                         handleDuplicate(
                                                             system.id,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
+                                                    title="Duplicate"
+                                                    aria-label="Duplicate"
                                                 >
-                                                    Duplicate
-                                                </Button>
-                                                <Button
+                                                    <FileCopyIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(system)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(system);
+                                                    }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>

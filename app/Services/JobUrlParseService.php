@@ -8,7 +8,6 @@ use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
 
-use Log;
 
 class JobUrlParseService {
     private const MAX_HTML_LENGTH = 100000;
@@ -19,9 +18,9 @@ class JobUrlParseService {
     }
 
     /**
-     * Parse a job URL and extract job information.
-     *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
+      * Parse a job URL and extract job information.
+      *
+      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
     public function parseUrl(string $url, AiSystem $aiSystem): array {
         $domain = $this->extractDomain($url);
@@ -33,10 +32,11 @@ class JobUrlParseService {
             $extracted = $this->extractWithSelectors($html, $activeParser);
 
             if ($extracted !== null) {
-                $this->storeJobUrl($url, $activeParser, $extracted);
+                $jobUrl = $this->storeJobUrl($url, $activeParser, $extracted);
 
                 return [
                     ...$extracted,
+                    'job_url_id' => $jobUrl->id,
                     'parser_id' => $activeParser->id,
                     'used_existing_parser' => true,
                 ];
@@ -64,9 +64,10 @@ class JobUrlParseService {
                 : '';
 
             $jobDescription = $parser->job_description_selector
-                ? $crawler->filter($parser->job_description_selector)->first()->text('')
+                ? $this->htmlToMarkdown($crawler->filter($parser->job_description_selector)->first()->html(''))
                 : '';
 
+            $crawler->filter($parser->job_description_selector)->first()->html();
             $jobLocation = $parser->job_location_selector
                 ? $crawler->filter($parser->job_location_selector)->first()->text('')
                 : '';
@@ -88,9 +89,9 @@ class JobUrlParseService {
     }
 
     /**
-     * Use AI to extract job data from HTML.
-     *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
+      * Use AI to extract job data from HTML.
+      *
+      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
     public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array {
         $cleanedHtml = $this->cleanHtml($html);
@@ -135,10 +136,11 @@ class JobUrlParseService {
             'reasoning' => $parsed['reasoning'] ?? '',
         ];
 
-        $this->storeJobUrl($url, $parser, $extracted);
+        $jobUrl = $this->storeJobUrl($url, $parser, $extracted);
 
         return [
             ...$extracted,
+            'job_url_id' => $jobUrl->id,
             'parser_id' => $parser->id,
             'used_existing_parser' => false,
         ];
@@ -164,9 +166,9 @@ class JobUrlParseService {
     }
 
     /**
-     * Re-parse using stored HTML with user feedback.
-     *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, parser_id: int, used_existing_parser: bool}
+      * Re-parse using stored HTML with user feedback.
+      *
+      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
     public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array {
         $html = $parser->html;
@@ -186,8 +188,8 @@ class JobUrlParseService {
      *
      * @param array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string} $extracted
      */
-    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): void {
-        JobUrl::create([
+    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): JobUrl {
+        return JobUrl::create([
             'job_url_parser_id' => $parser->id,
             'url' => $url,
             'contents' => json_encode($extracted, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
@@ -283,6 +285,60 @@ Respond with valid JSON only, no markdown formatting or code fences:
   "reasoning": "Brief explanation of how you identified each field and chose the selectors"
 }
 PROMPT;
+    }
+
+    /**
+     * Convert HTML content to Markdown format.
+     *
+     * @param string $html The HTML content to convert
+     * @return string The converted Markdown content
+     */
+    public static function htmlToMarkdown(string $html): string {
+        // Remove script and style tags
+        $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
+        $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
+
+        // Remove comments
+        $html = preg_replace('/<!--.*?-->/s', '', $html);
+
+        // Convert headings (h1-h6) to markdown headers
+        for ($level = 6; $level >= 1; $level--) {
+            $pattern = '/<h' . $level . '[^>]*>(.*?)<\/h' . $level . '>/is';
+            $replacement = str_repeat('#', $level) . ' $1' . PHP_EOL . PHP_EOL;
+            $html = preg_replace($pattern, $replacement, $html);
+        }
+
+        // Convert paragraphs
+        $html = preg_replace('/<p[^>]*>(.*?)<\/p>/is', '$1' . PHP_EOL . PHP_EOL, $html);
+
+        // Convert line breaks to newlines
+        $html = preg_replace('/<br\s*\/?>/i', PHP_EOL, $html);
+
+        // Convert bold text
+        $html = preg_replace('/<strong[^>]*>(.*?)([\\r\\n]*)<\/strong>/i', '**$1**$2', $html);
+        $html = preg_replace('/<b[^>]*>(.*?)([\\r\\n]*)<\/b>/i', '**$1**$2', $html);
+
+        // Convert italic text
+        $html = preg_replace('/<em[^>]*>(.*?)([\\r\\n]*)<\/em>/i', '*$1*$2', $html);
+        $html = preg_replace('/<i[^>]*>(.*?)([\\r\\n]*)<\/i>/i', '*$1*$2', $html);
+
+        // Convert unordered lists
+        $html = preg_replace('/<ul[^>]*>/', "\n", $html);
+        $html = preg_replace('/<ol[^>]*>/', "\n", $html);
+
+        // Convert list items
+        $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', '- $1' . PHP_EOL, $html);
+
+        // Convert anchors but keep the URL in parentheses
+        $html = preg_replace('/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/is', '$2 ($1)', $html);
+
+        // Remove all remaining HTML tags and clean up whitespace
+        $text = trim(strip_tags($html, PHP_EOL));
+
+        // Clean up multiple consecutive blank lines
+        $text = preg_replace('/[\n\s]{3,}/', "\n\n", $text);
+
+        return $text;
     }
 
     /**

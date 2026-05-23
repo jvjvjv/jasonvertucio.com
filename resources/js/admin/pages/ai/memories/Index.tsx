@@ -1,8 +1,15 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -12,13 +19,16 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import AdminLayout from "../../../layouts/AdminLayout";
-import PageHeader from "../../../components/PageHeader";
-import EmptyTableRow from "../../../components/EmptyTableRow";
-import Pagination from "../../../components/Pagination";
-import ConfirmDialog from "../../../components/ConfirmDialog";
-import useConfirmDialog from "../../../hooks/useConfirmDialog";
-import type { Memory, PaginatedResponse } from "../../../types";
+import { useState } from "react";
+
+import type { Memory, PaginatedResponse } from "@/types";
+
+import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import PageHeader from "@/admin/components/PageHeader";
+import Pagination from "@/admin/components/Pagination";
+import AdminLayout from "@/admin/layouts/AdminLayout";
+import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface Filters {
     feature?: string;
@@ -34,13 +44,14 @@ interface IndexProps {
 
 export default function Index({ memories, features, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
+    const [rebuildDialogOpen, setRebuildDialogOpen] = useState(false);
+    const [selectedFeature, setSelectedFeature] = useState<string>("");
 
     const handleFilter = (key: string, value: string) => {
-        const params: Record<string, string> = { ...filters, [key]: value };
-        // Remove empty values
-        Object.keys(params).forEach((k) => {
-            if (!params[k]) delete params[k];
-        });
+        const merged: { [key: string]: string } = { ...filters, [key]: value };
+        const params = Object.fromEntries(
+            Object.entries(merged).filter(([, v]) => Boolean(v)),
+        );
         router.get("/admin/ai/memories", params, { preserveState: true });
     };
 
@@ -50,14 +61,29 @@ export default function Index({ memories, features, filters }: IndexProps) {
         });
     };
 
-    const handleRebuild = (feature: string) => {
-        confirm(
-            `Rebuild all memories for "${feature}"? Existing memories will be deactivated and regenerated.`,
-            () => {
-                router.post(`/admin/ai/memories/rebuild/${feature}`);
-            },
-            { confirmLabel: "Rebuild", confirmColor: "warning" },
-        );
+    const openRebuildDialog = () => {
+        setSelectedFeature("");
+        setRebuildDialogOpen(true);
+    };
+
+    const closeRebuildDialog = () => {
+        setRebuildDialogOpen(false);
+        setSelectedFeature("");
+    };
+
+    const handleRebuildWithSelection = () => {
+        if (selectedFeature) {
+            closeRebuildDialog();
+            confirm(
+                `Rebuild all memories for "${selectedFeature}"? Existing memories will be deactivated and regenerated.`,
+                () => {
+                    router.post(
+                        `/admin/ai/memories/rebuild/${selectedFeature}`,
+                    );
+                },
+                { confirmLabel: "Rebuild", confirmColor: "warning" },
+            );
+        }
     };
 
     return (
@@ -84,7 +110,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                     select
                     size="small"
                     value={filters.feature ?? ""}
-                    onChange={(e) => handleFilter("feature", e.target.value)}
+                    onChange={(e) => {
+                        handleFilter("feature", e.target.value);
+                    }}
                     sx={{ minWidth: 160 }}
                 >
                     <MenuItem value="">All Features</MenuItem>
@@ -100,7 +128,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                     select
                     size="small"
                     value={filters.category ?? ""}
-                    onChange={(e) => handleFilter("category", e.target.value)}
+                    onChange={(e) => {
+                        handleFilter("category", e.target.value);
+                    }}
                     sx={{ minWidth: 160 }}
                 >
                     <MenuItem value="">All Categories</MenuItem>
@@ -118,7 +148,9 @@ export default function Index({ memories, features, filters }: IndexProps) {
                     select
                     size="small"
                     value={filters.status ?? ""}
-                    onChange={(e) => handleFilter("status", e.target.value)}
+                    onChange={(e) => {
+                        handleFilter("status", e.target.value);
+                    }}
                     sx={{ minWidth: 120 }}
                 >
                     <MenuItem value="">All</MenuItem>
@@ -128,16 +160,13 @@ export default function Index({ memories, features, filters }: IndexProps) {
 
                 <Box sx={{ flexGrow: 1 }} />
 
-                {features.map((f) => (
-                    <Button
-                        key={f}
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleRebuild(f)}
-                    >
-                        Rebuild {f}
-                    </Button>
-                ))}
+                <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={openRebuildDialog}
+                >
+                    Rebuild
+                </Button>
 
                 <Button
                     component={InertiaLink}
@@ -214,22 +243,27 @@ export default function Index({ memories, features, filters }: IndexProps) {
                                                     gap: 1,
                                                 }}
                                             >
-                                                <Button
+                                                <IconButton
                                                     component={InertiaLink}
                                                     href={`/admin/ai/memories/${memory.id}`}
                                                     size="small"
+                                                    color="primary"
+                                                    title="Edit"
+                                                    aria-label="Edit"
                                                 >
-                                                    Edit
-                                                </Button>
-                                                <Button
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
                                                     size="small"
                                                     color="error"
-                                                    onClick={() =>
-                                                        handleDelete(memory.id)
-                                                    }
+                                                    onClick={() => {
+                                                        handleDelete(memory.id);
+                                                    }}
+                                                    title="Delete"
+                                                    aria-label="Delete"
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
                                             </Box>
                                         </TableCell>
                                     </TableRow>
@@ -245,6 +279,57 @@ export default function Index({ memories, features, filters }: IndexProps) {
                 />
             </Card>
             <ConfirmDialog {...dialogProps} />
+
+            <Dialog
+                open={rebuildDialogOpen}
+                onClose={closeRebuildDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Select Feature to Rebuild</DialogTitle>
+                <DialogContent>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2 }}
+                    >
+                        Choose which feature&apos;s memories you want to
+                        rebuild. Existing memories for the selected feature will
+                        be deactivated and regenerated.
+                    </Typography>
+                    <TextField
+                        select
+                        fullWidth
+                        label="Feature"
+                        size="small"
+                        value={selectedFeature}
+                        onChange={(e) => {
+                            setSelectedFeature(e.target.value);
+                        }}
+                        sx={{ mt: 1 }}
+                    >
+                        <MenuItem value="">
+                            <em>Select a feature...</em>
+                        </MenuItem>
+                        {features.map((f) => (
+                            <MenuItem key={f} value={f}>
+                                {f}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeRebuildDialog}>Cancel</Button>
+                    <Button
+                        onClick={handleRebuildWithSelection}
+                        disabled={!selectedFeature}
+                        variant="contained"
+                        color="warning"
+                    >
+                        Rebuild
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </AdminLayout>
     );
 }

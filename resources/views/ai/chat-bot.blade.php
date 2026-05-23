@@ -41,6 +41,12 @@
             </div>
             <div id="streaming-message" class="hidden border-t border-slate-300 bg-slate-50 px-6 py-4">
                 <p class="mb-2 text-xs uppercase tracking-[0.16em] text-slate-500">assistant</p>
+                <div id="thinking-panel" class="hidden mb-3 border border-slate-200">
+                    <div class="flex items-center gap-1.5 border-b border-slate-200 bg-slate-100 px-3 py-1.5">
+                        <span class="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold">Thinking…</span>
+                    </div>
+                    <div id="thinking-content" class="max-h-32 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed text-slate-500 whitespace-pre-wrap"></div>
+                </div>
                 <div id="streaming-message-content" class="whitespace-pre-wrap text-sm leading-6 text-slate-900"></div>
             </div>
             <form id="chat-form" class="border-t border-slate-300 px-6 py-5">
@@ -133,9 +139,11 @@
         const messagesNode = document.getElementById('chat-messages');
         const streamingNode = document.getElementById('streaming-message');
         const streamingContentNode = document.getElementById('streaming-message-content');
+        const thinkingNode = document.getElementById('thinking-panel');
+        const thinkingContentNode = document.getElementById('thinking-content');
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
 
-        const appendMessage = (role, content) => {
+        const appendMessage = (role, blocks) => {
             const article = document.createElement('article');
             article.className = role === 'user'
                 ? 'border border-slate-800 bg-slate-800 px-4 py-3 text-white'
@@ -146,15 +154,47 @@
                 ? 'mb-2 text-xs uppercase tracking-[0.16em] text-slate-200'
                 : 'mb-2 text-xs uppercase tracking-[0.16em] text-slate-500';
             label.textContent = role;
-
-            const body = document.createElement('div');
-            body.className = 'whitespace-pre-wrap text-sm leading-6';
-            body.textContent = content;
-
             article.appendChild(label);
-            article.appendChild(body);
+
+            if (role === 'assistant' && Array.isArray(blocks)) {
+                blocks.forEach(block => {
+                    if (block.type === 'reasoning') {
+                        const panel = buildReasoningPanel(block.content, false);
+                        article.appendChild(panel);
+                    } else {
+                        const body = document.createElement('div');
+                        body.className = 'whitespace-pre-wrap text-sm leading-6 mt-1';
+                        body.textContent = block.content;
+                        article.appendChild(body);
+                    }
+                });
+            } else {
+                const body = document.createElement('div');
+                body.className = 'whitespace-pre-wrap text-sm leading-6';
+                body.textContent = typeof blocks === 'string' ? blocks : '';
+                article.appendChild(body);
+            }
+
             messagesNode.appendChild(article);
             messagesNode.scrollTop = messagesNode.scrollHeight;
+        };
+
+        const buildReasoningPanel = (content, open) => {
+            const wrap = document.createElement('details');
+            wrap.className = 'mb-2 border border-slate-200 text-xs';
+            if (open) wrap.setAttribute('open', '');
+
+            const summary = document.createElement('summary');
+            summary.className = 'flex cursor-pointer select-none items-center gap-1.5 border-b border-slate-200 bg-slate-100 px-3 py-1.5 list-none';
+            summary.innerHTML = '<span class="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold">Reasoning</span>';
+            wrap.appendChild(summary);
+
+            const body = document.createElement('pre');
+            body.className = 'max-h-48 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed text-slate-500 whitespace-pre-wrap m-0';
+            body.textContent = content;
+            wrap.appendChild(body);
+
+            return wrap;
         };
 
         textarea?.addEventListener('keydown', (event) => {
@@ -178,6 +218,9 @@
             submitButton.setAttribute('disabled', 'disabled');
             streamingNode.classList.remove('hidden');
             streamingContentNode.textContent = '';
+            thinkingNode.classList.add('hidden');
+            thinkingContentNode.textContent = '';
+            let liveBlocks = [];
 
             const payload = {
                 message,
@@ -228,25 +271,45 @@
                         }
 
                         const eventPayload = JSON.parse(jsonStr);
-                        if (eventPayload.type === 'content_block_delta' && eventPayload.delta?.text) {
-                            accumulated += eventPayload.delta.text;
-                            streamingContentNode.textContent = accumulated;
+                        if (eventPayload.type === 'reasoning_block_delta' && eventPayload.delta?.reasoning) {
+                            const last = liveBlocks[liveBlocks.length - 1];
+                            if (last?.type === 'reasoning') {
+                                last.content += eventPayload.delta.reasoning;
+                            } else {
+                                liveBlocks.push({ type: 'reasoning', content: eventPayload.delta.reasoning });
+                            }
+                            thinkingContentNode.textContent = liveBlocks[liveBlocks.length - 1].content;
+                            thinkingNode.classList.remove('hidden');
+                            thinkingContentNode.scrollTop = thinkingContentNode.scrollHeight;
+                        } else if (eventPayload.type === 'content_block_delta' && eventPayload.delta?.text) {
+                            thinkingNode.classList.add('hidden');
+                            const last = liveBlocks[liveBlocks.length - 1];
+                            if (last?.type === 'text') {
+                                last.content += eventPayload.delta.text;
+                            } else {
+                                liveBlocks.push({ type: 'text', content: eventPayload.delta.text });
+                            }
+                            streamingContentNode.textContent = liveBlocks.filter(b => b.type === 'text').map(b => b.content).join('');
                         } else if (eventPayload.type === 'error') {
                             throw new Error(eventPayload.message || 'Unknown error');
                         }
                     }
                 }
 
-                if (accumulated) {
-                    appendMessage('assistant', accumulated);
+                if (liveBlocks.length > 0) {
+                    appendMessage('assistant', liveBlocks);
                 }
 
                 streamingNode.classList.add('hidden');
                 streamingContentNode.textContent = '';
+                thinkingNode.classList.add('hidden');
+                thinkingContentNode.textContent = '';
             } catch (error) {
                 errorNode.textContent = error.message || 'Unable to send message right now.';
                 streamingNode.classList.add('hidden');
                 streamingContentNode.textContent = '';
+                thinkingNode.classList.add('hidden');
+                thinkingContentNode.textContent = '';
             } finally {
                 submitButton.removeAttribute('disabled');
             }

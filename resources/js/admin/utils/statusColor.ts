@@ -1,17 +1,32 @@
-export type ChipColor = 'primary' | 'secondary' |'success' | 'warning' | 'error' | 'info' | 'default';
+export type ChipColor =
+    | "primary"
+    | "secondary"
+    | "success"
+    | "warning"
+    | "error"
+    | "info"
+    | "default";
 
 export function statusColor(status: string): ChipColor {
     switch (status) {
-        case 'finalized':
-            return 'primary';
-        case 'applied':
-        case 'completed':
-            return 'success';
-        case 'active':
-            return 'info';
-        case 'pass':
-            return 'secondary';
+        case "finalized":
+        case "offered":
+            return "primary";
+        case "applied":
+        case "completed":
+        case "accepted":
+        case "hired":
+            return "success";
+        case "interviewing":
+            return "warning";
+        case "active":
+        case "interviewed":
+            return "info";
+        case "pass":
+            return "secondary";
+        case "rejected":
+            return "error";
         default:
-            return 'default';
+            return "default";
     }
 }

@@ -7,6 +7,7 @@ enum AiProvider: string
     case Anthropic = 'anthropic';
     case OpenAI = 'openai';
     case OpenAICompatible = 'openai-compatible';
+    case LmStudio = 'lm-studio';
     case Gemini = 'gemini';
     case Grok = 'grok';
 
@@ -20,6 +21,6 @@ enum AiProvider: string
 
     public function requiresApiKey(): bool
     {
-        return $this !== self::OpenAICompatible;
+        return $this !== self::OpenAICompatible && $this !== self::LmStudio;
     }
 }

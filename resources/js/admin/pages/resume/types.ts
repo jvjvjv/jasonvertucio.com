@@ -23,7 +23,9 @@ export interface SkillCategory {
 
 export interface Education {
     institution: string;
+    location: string;
     degree: string;
+    level: string;
     dates: [string, string];
     description: string;
 }
@@ -76,8 +78,8 @@ export function moveItem<T>(arr: T[], index: number, direction: -1 | 1): T[] {
 }
 
 export const SALARY_PERIODS = [
-    { value: '', label: 'Period' },
-    { value: 'per_hour', label: 'per hour' },
-    { value: 'per_month', label: 'per month' },
-    { value: 'per_year', label: 'per year' },
+    { value: "", label: "Period" },
+    { value: "per_hour", label: "per hour" },
+    { value: "per_month", label: "per month" },
+    { value: "per_year", label: "per year" },
 ];

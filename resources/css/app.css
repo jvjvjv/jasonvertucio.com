@@ -10,6 +10,10 @@ html {
     scroll-behavior: smooth;
 }
 
+textarea {
+    resize: vertical;
+}
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
