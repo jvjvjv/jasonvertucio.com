@@ -31,11 +31,12 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import BuilderStatusCard from "./BuilderStatusCard";
 import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
 
+import type { ChatMessage } from "@/components/ChatInterface";
 import type {
     Conversation,
     CoverLetter,
@@ -52,23 +53,9 @@ import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { api, ApiError } from "@/api";
-import ChatMessageBubble from "@/components/ChatMessageBubble";
+import ChatInterface from "@/components/ChatInterface";
 import ResponsiveButton from "@/components/ResponsiveButton";
-import ToolsPanel from "@/components/ToolsPanel";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-
-interface StreamEvent {
-    type: string;
-    delta?: { text?: string };
-    message?: string;
-    text?: string;
-    tools?: string[];
-}
-
-interface ToolPanel {
-    pretext: string;
-    tools: string[];
-}
 
 interface FinalizeResponse {
     message?: string;
@@ -93,10 +80,6 @@ export default function Show({
     const authUser = page.props.auth.user;
 
     const [activeTab, setActiveTab] = useState(0);
-    const [messages, setMessages] = useState<Message[]>(initialMessages);
-    const [userInput, setUserInput] = useState("");
-    const [isStreaming, setIsStreaming] = useState(false);
-    const [streamingContent, setStreamingContent] = useState("");
     const [isFinalizing, setIsFinalizing] = useState(false);
     const [finalizeError, setFinalizeError] = useState<string | null>(null);
     const [isFinalizingCoverLetter, setIsFinalizingCoverLetter] =
@@ -104,11 +87,6 @@ export default function Show({
     const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<
         string | null
     >(null);
-    const [streamingToolPanels, setStreamingToolPanels] = useState<ToolPanel[]>(
-        [],
-    );
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const hasAutoStarted = useRef(false);
 
     const metadataForm = useForm({
         title: conversation.title ?? "",
@@ -134,126 +112,10 @@ export default function Show({
     const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, streamingContent, scrollToBottom]);
-
-    const sendMessage = useCallback(
-        async (messageText?: string) => {
-            const text = messageText ?? userInput.trim();
-            if (!text && !shouldAutoStart) return;
-
-            if (text) {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        role: "user",
-                        content: text,
-                        created_at: new Date().toISOString(),
-                    },
-                ]);
-                setUserInput("");
-            }
-
-            setIsStreaming(true);
-            setStreamingContent("");
-
-            try {
-                let accumulated = "";
-                let preambleText = "";
-
-                for await (const jsonStr of api.stream(
-                    `/api/admin/resume/targeted-builder/${conversation.id}/chat`,
-                    { message: text || null },
-                )) {
-                    try {
-                        const event = JSON.parse(jsonStr) as StreamEvent;
-
-                        if (
-                            event.type === "content_block_delta" &&
-                            event.delta?.text
-                        ) {
-                            accumulated += event.delta.text;
-                            setStreamingContent(accumulated);
-                        } else if (event.type === "tool_use_progress") {
-                            // Move preamble text into a tool panel; reset main stream.
-                            // Save accumulated text so it survives the reset and ends
-                            // up in the final message even if the follow-up iteration
-                            // produces no additional text.
-                            if (accumulated) {
-                                preambleText +=
-                                    (preambleText ? "\n\n" : "") + accumulated;
-                            }
-                            setStreamingToolPanels((prev) => [
-                                ...prev,
-                                {
-                                    pretext: event.text ?? "",
-                                    tools: event.tools ?? [],
-                                },
-                            ]);
-                            accumulated = "";
-                            setStreamingContent("");
-                        } else if (event.type === "page_reload") {
-                            router.reload({
-                                only: [
-                                    "targetedResume",
-                                    "coverLetter",
-                                    "conversation",
-                                ],
-                            });
-                        } else if (event.type === "error") {
-                            accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
-                            setStreamingContent(accumulated);
-                        }
-                    } catch {
-                        // Skip malformed JSON lines
-                        console.warn(jsonStr);
-                    }
-                }
-
-                const finalContent = preambleText
-                    ? preambleText + (accumulated ? "\n\n" + accumulated : "")
-                    : accumulated;
-
-                if (finalContent) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            role: "assistant",
-                            content: finalContent,
-                            created_at: new Date().toISOString(),
-                        },
-                    ]);
-                }
-            } catch (err) {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        role: "assistant",
-                        content: `**Error:** ${(err as Error).message}`,
-                        created_at: new Date().toISOString(),
-                    },
-                ]);
-            } finally {
-                setIsStreaming(false);
-                setStreamingContent("");
-                setStreamingToolPanels([]);
-            }
-        },
-        [userInput, conversation.id, shouldAutoStart],
+    // Mirror of ChatInterface's message list, used to scan for resume/cover letter blocks
+    const [liveMessages, setLiveMessages] = useState<ChatMessage[]>(
+        initialMessages as ChatMessage[],
     );
-
-    // Auto-start initial analysis
-    useEffect(() => {
-        if (shouldAutoStart && !hasAutoStarted.current) {
-            hasAutoStarted.current = true;
-            void sendMessage("");
-        }
-    }, [shouldAutoStart, sendMessage]);
 
     // --- Resume/Cover Letter parsing helpers ---
 
@@ -270,7 +132,7 @@ export default function Show({
         };
     }
 
-    function getLatestTailoredResumeData(msgs: Message[]) {
+    function getLatestTailoredResumeData(msgs: ChatMessage[]) {
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
@@ -294,7 +156,7 @@ export default function Show({
         return null;
     }
 
-    function getLatestCoverLetterContent(msgs: Message[]): string | null {
+    function getLatestCoverLetterContent(msgs: ChatMessage[]): string | null {
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
@@ -306,16 +168,8 @@ export default function Show({
         return null;
     }
 
-    const latestResumeData = getLatestTailoredResumeData(messages);
-    const latestCoverLetterContent = getLatestCoverLetterContent(messages);
-
-    // Compute fit score from either targeted resume or conversation context.
-    // Fit scores are always 1-100, so we can use falsy checks to simplify logic.
-    const _hasFitScore = () => {
-        if (targetedResume?.fit_score) return true;
-        if (conversation.context?.fit_score) return true;
-        return false;
-    };
+    const latestResumeData = getLatestTailoredResumeData(liveMessages);
+    const latestCoverLetterContent = getLatestCoverLetterContent(liveMessages);
 
     const hasNewerResume = (() => {
         if (!targetedResume || !latestResumeData) return false;
@@ -333,7 +187,6 @@ export default function Show({
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {
-        // If already finalized and no new resume block in conversation, just regenerate docs
         if (!canFinalizeResume && targetedResume) {
             router.post(
                 `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
@@ -356,7 +209,7 @@ export default function Show({
             if (error instanceof ApiError) {
                 const data = error.data as FinalizeResponse;
                 setFinalizeError(
-                    data?.message ?? "Failed to save targeted resume.",
+                    data.message ?? "Failed to save targeted resume.",
                 );
             } else {
                 setFinalizeError("Network error. Please try again.");
@@ -380,20 +233,13 @@ export default function Show({
             if (error instanceof ApiError) {
                 const data = error.data as FinalizeResponse;
                 setFinalizeCoverLetterError(
-                    data?.message ?? "Failed to save cover letter.",
+                    data.message ?? "Failed to save cover letter.",
                 );
             } else {
                 setFinalizeCoverLetterError("Network error. Please try again.");
             }
         } finally {
             setIsFinalizingCoverLetter(false);
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-            e.preventDefault();
-            void sendMessage();
         }
     };
 
@@ -457,9 +303,7 @@ export default function Show({
 
     const handleAddStatusUpdate = async (e: SyntheticEvent) => {
         e.preventDefault();
-        if (!selectedNextStatus || !targetedResume) {
-            return;
-        }
+        if (!selectedNextStatus || !targetedResume) return;
         setIsSubmittingStatus(true);
         setStatusError(null);
         try {
@@ -511,6 +355,15 @@ export default function Show({
         conversation.title ??
         (position ? `${companyName} - ${position}` : companyName);
     const jobUrl = conversation.job_url;
+
+    const aiSystemId = conversation.ai_system_id as number | undefined;
+    const statusUrl = aiSystemId
+        ? `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-status`
+        : "";
+    const warmupUrl = aiSystemId
+        ? `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-warmup`
+        : "";
+
     return (
         <AdminLayout>
             <Head title={`${pageTitle} | Targeted Resumes`} />
@@ -608,9 +461,6 @@ export default function Show({
                             label="Job URL"
                             title="Open Job URL in new tab"
                             onClick={() => {
-                                if (!jobUrl) {
-                                    return;
-                                }
                                 window.open(
                                     jobUrl,
                                     "_blank",
@@ -762,99 +612,27 @@ export default function Show({
                             }
                         />
                     </Box>
-                    <Card>
-                        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-                            <Box
-                                sx={{
-                                    height: "60vh",
-                                    overflowY: "auto",
-                                    p: 2,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                    code: { textWrapMode: "wrap" },
-                                }}
-                            >
-                                {messages.length === 0 && !isStreaming && (
-                                    <Typography
-                                        color="text.secondary"
-                                        align="center"
-                                        sx={{ py: 4 }}
-                                    >
-                                        {shouldAutoStart
-                                            ? "Starting analysis..."
-                                            : "Send a message to begin the conversation."}
-                                    </Typography>
-                                )}
-                                {messages.map((msg, idx) => (
-                                    <ChatMessageBubble
-                                        key={idx}
-                                        role={msg.role}
-                                        content={msg.content}
-                                        variant="chat"
-                                        sentAt={msg.created_at ?? null}
-                                        isAuthenticated={!!authUser}
-                                    />
-                                ))}
-                                {streamingToolPanels.map((panel, idx) => (
-                                    <ToolsPanel
-                                        key={idx}
-                                        pretext={panel.pretext}
-                                        tools={panel.tools}
-                                        isActive={false}
-                                    />
-                                ))}
-                                {isStreaming && !streamingContent && (
-                                    <ToolsPanel
-                                        pretext=""
-                                        tools={[]}
-                                        isActive
-                                    />
-                                )}
-                                {isStreaming && streamingContent && (
-                                    <ChatMessageBubble
-                                        role="assistant"
-                                        content={streamingContent}
-                                        variant="chat"
-                                        isStreaming
-                                        isAuthenticated={!!authUser}
-                                    />
-                                )}
-                                <div ref={messagesEndRef} />
-                            </Box>
-                            <Box
-                                sx={{
-                                    p: 2,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                    display: "flex",
-                                    gap: 1,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    size="small"
-                                    multiline
-                                    maxRows={4}
-                                    placeholder="Type a message... (Ctrl+Enter to send)"
-                                    value={userInput}
-                                    onChange={(e) => {
-                                        setUserInput(e.target.value);
-                                    }}
-                                    onKeyDown={handleKeyDown}
-                                    disabled={isStreaming}
-                                />
-                                <Button
-                                    variant="contained"
-                                    onClick={() => sendMessage()}
-                                    disabled={isStreaming || !userInput.trim()}
-                                    sx={{ alignSelf: "flex-end" }}
-                                >
-                                    Send
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
+
+                    <ChatInterface
+                        chatEndpoint={`/api/admin/resume/targeted-builder/${conversation.id}/chat`}
+                        statusUrl={statusUrl}
+                        warmupUrl={warmupUrl}
+                        initialMessages={initialMessages as ChatMessage[]}
+                        isAuthenticated={!!authUser}
+                        shouldAutoStart={shouldAutoStart}
+                        onEvent={(event) => {
+                            if (event.type === "page_reload") {
+                                router.reload({
+                                    only: [
+                                        "targetedResume",
+                                        "coverLetter",
+                                        "conversation",
+                                    ],
+                                });
+                            }
+                        }}
+                        onMessagesChange={setLiveMessages}
+                    />
                 </>
             )}
 

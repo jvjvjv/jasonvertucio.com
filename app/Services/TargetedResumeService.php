@@ -85,6 +85,8 @@ class TargetedResumeService
      */
     public function continueConversation(AiConversation $conversation, ?string $userMessage = null): Generator
     {
+        yield ": heartbeat\n\n";
+
         $conversation->load('aiSystem');
 
         if ($userMessage === null) {

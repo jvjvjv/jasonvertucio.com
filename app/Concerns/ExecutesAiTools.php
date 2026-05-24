@@ -31,6 +31,8 @@ trait ExecutesAiTools
         $totalInputTokens = 0;
         $totalOutputTokens = 0;
 
+        yield ": heartbeat\n\n";
+
         for ($iteration = 0; $iteration < $maxIterations; $iteration++) {
             $stream = $client->withTools($toolRegistry->toApiTools())->stream($messages);
 
@@ -60,6 +62,8 @@ trait ExecutesAiTools
                             'name' => (string) ($block['name'] ?? ''),
                             'partialJson' => '',
                         ];
+                    } elseif (($block['type'] ?? '') === 'thinking') {
+                        yield "data: " . json_encode($event) . "\n\n";
                     }
 
                 } elseif ($type === 'content_block_delta') {
@@ -68,6 +72,8 @@ trait ExecutesAiTools
 
                     if ($deltaType === 'input_json_delta' && $currentBlockKey !== null && isset($pendingToolBlocks[$currentBlockKey])) {
                         $pendingToolBlocks[$currentBlockKey]['partialJson'] .= (string) ($delta['partial_json'] ?? '');
+                    } elseif ($deltaType === 'thinking_delta' || isset($delta['reasoning'])) {
+                        yield "data: " . json_encode($event) . "\n\n";
                     } elseif (isset($delta['text'])) {
                         $fullText .= $delta['text'];
                         yield "data: " . json_encode($event) . "\n\n";
@@ -167,6 +173,8 @@ trait ExecutesAiTools
                     ),
                 ];
             }
+
+            yield ": heartbeat\n\n";
 
             $messages[] = $client->formatAssistantToolCallTurn($fullText, $toolCalls);
 

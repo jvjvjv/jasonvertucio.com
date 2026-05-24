@@ -198,6 +198,7 @@ class TargetedResumeController extends Controller
                 'status' => $conversation->status->value,
                 'title' => $conversation->title,
                 'context' => $conversation->context,
+                'ai_system_id' => $conversation->aiSystem?->id,
                 'ai_system_name' => $conversation->aiSystem?->name,
                 'usage' => [
                     'input_tokens' => $conversation->usage_input_tokens,
@@ -254,6 +255,8 @@ class TargetedResumeController extends Controller
         }
 
         return response()->stream(function () use ($request, $conversation) {
+            set_time_limit(0);
+
             $generator = $this->targetedResumeService->continueConversation(
                 $conversation,
                 $request->input('message'),
