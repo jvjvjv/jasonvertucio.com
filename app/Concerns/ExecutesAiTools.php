@@ -30,6 +30,7 @@ trait ExecutesAiTools
         $preambleText = '';
         $totalInputTokens = 0;
         $totalOutputTokens = 0;
+        $finalTextAccumulator = ''; // accumulates text across max_tokens continuation calls
 
         yield ": heartbeat\n\n";
 
@@ -108,11 +109,20 @@ trait ExecutesAiTools
             $totalInputTokens += (int) ($inputTokens ?? 0);
             $totalOutputTokens += (int) ($outputTokens ?? 0);
 
-            // No tool calls — this is the final response
+            // No tool calls — this is the final response (or a max_tokens continuation)
             if ($stopReason !== 'tool_use' || $toolCalls === []) {
+                $finalTextAccumulator .= $fullText;
+
+                if ($stopReason === 'max_tokens' && $finalTextAccumulator !== '') {
+                    // Response was cut off at the token limit — send it back and ask the model to continue
+                    $messages[] = ['role' => 'assistant', 'content' => $finalTextAccumulator];
+                    $messages[] = ['role' => 'user', 'content' => 'Continue.'];
+                    continue;
+                }
+
                 $combinedText = $preambleText !== ''
-                    ? $preambleText . ($fullText !== '' ? "\n\n" . $fullText : '')
-                    : $fullText;
+                    ? $preambleText . ($finalTextAccumulator !== '' ? "\n\n{$finalTextAccumulator}" : '')
+                    : $finalTextAccumulator;
 
                 $result = [
                     'text' => $combinedText,
@@ -131,6 +141,7 @@ trait ExecutesAiTools
             if ($fullText !== '') {
                 $preambleText .= ($preambleText !== '' ? "\n\n" : '') . $fullText;
             }
+            $finalTextAccumulator = ''; // reset — this iteration had tool calls, not a continuation
 
             // Notify the frontend that tool calls are happening so it can display a panel.
             // Include any preamble text the model wrote before calling tools.

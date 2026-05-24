@@ -178,8 +178,14 @@ class GeminiService implements AiClientContract
                 }
 
                 if (isset($candidate['finishReason']) && $candidate['finishReason'] !== null) {
+                    $stopReason = match ($candidate['finishReason']) {
+                        'MAX_TOKENS' => 'max_tokens',
+                        default => 'end_turn',
+                    };
+
                     yield [
                         'type' => 'message_delta',
+                        'delta' => ['stop_reason' => $stopReason],
                         'usage' => [
                             'output_tokens' => $outputTokens,
                         ],

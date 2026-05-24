@@ -111,12 +111,29 @@ class JobUrlParseService {
             ['role' => 'user', 'content' => $userContent],
         ];
 
-        $response = $client
-            ->withSystem($systemPrompt)
-            ->withMaxTokens(4096)
-            ->message($messages);
+        $accumulatedText = '';
 
-        $parsed = $this->parseAiResponse($response);
+        for ($i = 0; $i < 5; $i++) {
+            $response = $client
+                ->withSystem($systemPrompt)
+                ->withMaxTokens($aiSystem->context_length)
+                ->message($messages);
+
+            foreach ($response['content'] ?? [] as $block) {
+                if (($block['type'] ?? '') === 'text') {
+                    $accumulatedText .= $block['text'];
+                }
+            }
+
+            if (($response['stop_reason'] ?? '') !== 'max_tokens' || $accumulatedText === '') {
+                break;
+            }
+
+            $messages[] = ['role' => 'assistant', 'content' => $accumulatedText];
+            $messages[] = ['role' => 'user', 'content' => 'Continue.'];
+        }
+
+        $parsed = $this->parseAiResponse(['content' => [['type' => 'text', 'text' => $accumulatedText]]]);
 
         $parser = JobUrlParser::create([
             'domain' => $domain,
