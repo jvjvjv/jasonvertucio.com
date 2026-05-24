@@ -116,7 +116,7 @@ class JobUrlParseService {
         for ($i = 0; $i < 5; $i++) {
             $response = $client
                 ->withSystem($systemPrompt)
-                ->withMaxTokens($aiSystem->max_tokens)
+                ->withMaxTokens($aiSystem->context_length ?? $aiSystem->max_tokens)
                 ->message($messages);
 
             foreach ($response['content'] ?? [] as $block) {
