@@ -85,10 +85,11 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
 
                 if (state === "not_loaded") {
                     setModelState("warming");
-                    await api.post(
+                    const warmupRes = await api.post<{ status?: { state: string } }>(
                         `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-warmup`,
                     );
-                    setModelState("ready");
+                    if (!mounted) return;
+                    setModelState(warmupRes.status?.state === "loaded" ? "ready" : "unavailable");
                     return;
                 }
 
