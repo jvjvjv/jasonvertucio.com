@@ -14,6 +14,7 @@ import {
     useState,
     forwardRef,
 } from "react";
+import { flushSync } from "react-dom";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { ReactNode, KeyboardEvent } from "react";
@@ -261,7 +262,9 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                     } else {
                         liveBlocks = [...liveBlocks, { type, content: delta }];
                     }
-                    setStreamingBlocks([...liveBlocks]);
+                    flushSync(() => {
+                        setStreamingBlocks([...liveBlocks]);
+                    });
                 };
 
                 try {

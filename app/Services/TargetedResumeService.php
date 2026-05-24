@@ -61,7 +61,7 @@ class TargetedResumeService
         ]);
 
         // Store the system prompt as the first message
-        $systemPrompt = $this->buildSystemPrompt();
+        $systemPrompt = $system->system_prompt ?: $this->buildSystemPrompt();
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'system',

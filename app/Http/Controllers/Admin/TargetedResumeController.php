@@ -257,13 +257,32 @@ class TargetedResumeController extends Controller
         return response()->stream(function () use ($request, $conversation) {
             set_time_limit(0);
 
+            echo 'data: ' . json_encode([
+                'type' => 'status',
+                'message' => 'Preparing analysis...',
+            ]) . "\n\n";
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
+            flush();
+
             $generator = $this->targetedResumeService->continueConversation(
                 $conversation,
                 $request->input('message'),
             );
 
-            foreach ($generator as $chunk) {
-                echo $chunk;
+            try {
+                foreach ($generator as $chunk) {
+                    echo $chunk;
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Targeted resume stream failed', ['error' => $e->getMessage()]);
+                echo 'data: ' . json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.']) . "\n\n";
+                echo "data: [DONE]\n\n";
                 if (ob_get_level() > 0) {
                     ob_flush();
                 }

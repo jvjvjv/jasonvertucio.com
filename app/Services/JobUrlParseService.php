@@ -6,6 +6,7 @@ use App\Models\AiSystem;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
 
 
@@ -347,6 +348,7 @@ PROMPT;
      * @return array<string, string>
      */
     private function parseAiResponse(array $response): array {
+        Log::debug($response);
         $text = '';
 
         foreach ($response['content'] ?? [] as $block) {
