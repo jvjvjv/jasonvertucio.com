@@ -33,6 +33,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         ?int $maxTokens = null,
         ?int $contextLength = null,
         ?string $apiKey = null,
+        private bool $enableThinking = false,
     ) {
         $this->serverUrl = $this->normalizeServerUrl(
             $serverUrl ?? config('lmstudio.server_url', 'http://localhost:1234'),
@@ -467,6 +468,8 @@ class LmStudioService implements AiClientContract, CanLoadModels
             $payload['stream'] = true;
             $payload['stream_options'] = ['include_usage' => true];
         }
+
+        $payload['enable_thinking'] = $this->enableThinking;
 
         if ($this->tools !== []) {
             $payload['tools'] = collect($this->tools)

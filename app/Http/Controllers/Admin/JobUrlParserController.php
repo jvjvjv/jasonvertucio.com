@@ -43,6 +43,9 @@ class JobUrlParserController extends Controller
         }
 
         $parsers = $query
+            ->orderBy('status', 'asc')
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('domain', 'asc')
             ->paginate(50)
             ->withQueryString()
             ->through(fn (JobUrlParser $parser) => [

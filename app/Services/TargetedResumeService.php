@@ -140,7 +140,7 @@ class TargetedResumeService
         $loopResult = null;
 
         try {
-            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult);
+            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult, conversation: $conversation);
 
             yield "data: [DONE]\n\n";
 

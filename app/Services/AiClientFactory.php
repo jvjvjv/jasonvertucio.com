@@ -39,6 +39,7 @@ class AiClientFactory
                 maxTokens: $system->max_tokens,
                 contextLength: $system->context_length,
                 apiKey: $system->api_key,
+                enableThinking: (bool) $system->enable_thinking,
             ),
             AiProvider::Gemini => new GeminiService(
                 apiKey: $system->api_key,

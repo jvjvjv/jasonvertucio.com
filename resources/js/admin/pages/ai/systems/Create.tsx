@@ -39,6 +39,7 @@ export default function Create({ existingDefaults }: CreateProps) {
         supports_tools: false,
         allowed_tools: [],
         supports_json_mode: false,
+        enable_thinking: false,
         is_local_endpoint: false,
         pricing_profile: "",
         is_active: true,

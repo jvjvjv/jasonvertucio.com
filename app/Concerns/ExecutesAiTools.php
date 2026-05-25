@@ -4,6 +4,8 @@ namespace App\Concerns;
 
 use App\Contracts\AiClientContract;
 use App\Contracts\Mcp\AiToolRegistryContract;
+use App\Models\AiConversation;
+use App\Models\AiLlmMessage;
 use Generator;
 use Illuminate\Support\Facades\Log;
 
@@ -26,15 +28,44 @@ trait ExecutesAiTools
         AiToolRegistryContract $toolRegistry,
         int $maxIterations = 6,
         ?array &$result = null,
+        ?AiConversation $conversation = null,
     ): Generator {
         $preambleText = '';
         $totalInputTokens = 0;
         $totalOutputTokens = 0;
         $finalTextAccumulator = ''; // accumulates text across max_tokens continuation calls
 
+        // Compute the base turn number once, before any iterations
+        $baseTurnNumber = null;
+        if ($conversation !== null) {
+            $max = AiLlmMessage::query()
+                ->where('ai_conversation_id', $conversation->id)
+                ->max('turn_number');
+            $baseTurnNumber = ($max === null || !is_numeric($max)) ? 1 : (int) $max + 1;
+        }
+
         yield ": heartbeat\n\n";
 
         for ($iteration = 0; $iteration < $maxIterations; $iteration++) {
+            $iterationStartTime = microtime(true);
+            $iterationTurnNumber = $baseTurnNumber !== null
+                ? ($iteration === 0 ? (string) $baseTurnNumber : "{$baseTurnNumber}.{$iteration}")
+                : null;
+
+            $iterationRequestPayload = ['messages' => $messages];
+            if ($conversation !== null) {
+                $iterationRequestPayload['model'] = $conversation->aiSystem->model;
+                $iterationRequestPayload['max_tokens'] = $conversation->aiSystem->max_tokens;
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'request',
+                    'turn_number' => $iterationTurnNumber,
+                    'request_data' => $iterationRequestPayload,
+                    'created_at' => now(),
+                ]);
+            }
+
             $stream = $client->withTools($toolRegistry->toApiTools())->stream($messages);
 
             $fullText = '';
@@ -109,9 +140,38 @@ trait ExecutesAiTools
             $totalInputTokens += (int) ($inputTokens ?? 0);
             $totalOutputTokens += (int) ($outputTokens ?? 0);
 
+            if ($conversation !== null && $iterationTurnNumber !== null) {
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'response',
+                    'turn_number' => $iterationTurnNumber,
+                    'request_data' => $iterationRequestPayload,
+                    'response_data' => [
+                        'stop_reason' => $stopReason,
+                        'input_tokens' => $inputTokens,
+                        'output_tokens' => $outputTokens,
+                        'model' => $conversation->aiSystem->model,
+                        'text_length' => strlen($fullText),
+                        'tool_calls' => array_map(
+                            static fn (array $tc): array => ['id' => $tc['id'], 'name' => $tc['name']],
+                            $toolCalls,
+                        ),
+                    ],
+                    'duration_ms' => (int) ((microtime(true) - $iterationStartTime) * 1000),
+                    'created_at' => now(),
+                ]);
+            }
+
             // No tool calls — this is the final response (or a max_tokens continuation)
             if ($stopReason !== 'tool_use' || $toolCalls === []) {
                 $finalTextAccumulator .= $fullText;
+
+                Log::debug('ExecutesAiTools: stop check', [
+                    'iteration' => $iteration,
+                    'stop_reason' => $stopReason,
+                    'full_text_length' => strlen($fullText),
+                    'accumulator_length' => strlen($finalTextAccumulator),
+                ]);
 
                 if ($stopReason === 'max_tokens' && $finalTextAccumulator !== '') {
                     // Response was cut off at the token limit — send it back and ask the model to continue
