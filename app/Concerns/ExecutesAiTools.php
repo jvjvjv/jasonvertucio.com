@@ -69,6 +69,7 @@ trait ExecutesAiTools
             $stream = $client->withTools($toolRegistry->toApiTools())->stream($messages);
 
             $fullText = '';
+            $fullReasoning = '';
             $stopReason = 'end_turn';
             $inputTokens = null;
             $outputTokens = null;
@@ -105,6 +106,7 @@ trait ExecutesAiTools
                     if ($deltaType === 'input_json_delta' && $currentBlockKey !== null && isset($pendingToolBlocks[$currentBlockKey])) {
                         $pendingToolBlocks[$currentBlockKey]['partialJson'] .= (string) ($delta['partial_json'] ?? '');
                     } elseif ($deltaType === 'thinking_delta' || isset($delta['reasoning'])) {
+                        $fullReasoning .= (string) ($delta['thinking'] ?? $delta['reasoning'] ?? '');
                         yield "data: " . json_encode($event) . "\n\n";
                     } elseif (isset($delta['text'])) {
                         $fullText .= $delta['text'];
@@ -116,6 +118,7 @@ trait ExecutesAiTools
 
                 } elseif ($type === 'message_delta') {
                     $outputTokens = $event['usage']['output_tokens'] ?? $outputTokens;
+                    $inputTokens  = $event['usage']['input_tokens']  ?? $inputTokens;
                     $reason = $event['delta']['stop_reason'] ?? null;
 
                     if ($reason !== null) {
@@ -141,6 +144,17 @@ trait ExecutesAiTools
             $totalOutputTokens += (int) ($outputTokens ?? 0);
 
             if ($conversation !== null && $iterationTurnNumber !== null) {
+                $contentBlocks = [];
+                if ($fullReasoning !== '') {
+                    $contentBlocks[] = ['type' => 'thinking', 'thinking' => $fullReasoning];
+                }
+                if ($fullText !== '') {
+                    $contentBlocks[] = ['type' => 'text', 'text' => $fullText];
+                }
+                foreach ($toolCalls as $tc) {
+                    $contentBlocks[] = ['type' => 'tool_use', 'id' => $tc['id'], 'name' => $tc['name'], 'input' => $tc['input']];
+                }
+
                 AiLlmMessage::create([
                     'ai_conversation_id' => $conversation->id,
                     'direction' => 'response',
@@ -152,10 +166,17 @@ trait ExecutesAiTools
                         'output_tokens' => $outputTokens,
                         'model' => $conversation->aiSystem->model,
                         'text_length' => strlen($fullText),
+                        'reasoning_length' => strlen($fullReasoning),
                         'tool_calls' => array_map(
                             static fn (array $tc): array => ['id' => $tc['id'], 'name' => $tc['name']],
                             $toolCalls,
                         ),
+                    ],
+                    'raw_response' => [
+                        'model' => $conversation->aiSystem->model,
+                        'stop_reason' => $stopReason,
+                        'usage' => ['input_tokens' => $inputTokens, 'output_tokens' => $outputTokens],
+                        'content' => $contentBlocks,
                     ],
                     'duration_ms' => (int) ((microtime(true) - $iterationStartTime) * 1000),
                     'created_at' => now(),

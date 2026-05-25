@@ -571,6 +571,9 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                         isUnavailable
                                     }
                                     label="Send Message"
+                                    onClick={() => {
+                                        void sendMessage();
+                                    }}
                                 />
                             </Box>
                         </Stack>

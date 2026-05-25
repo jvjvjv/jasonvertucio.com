@@ -295,6 +295,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
             'type' => 'message_delta',
             'delta' => ['stop_reason' => $stopReason],
             'usage' => [
+                'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
             ],
         ];

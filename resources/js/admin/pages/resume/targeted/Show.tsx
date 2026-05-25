@@ -492,151 +492,149 @@ export default function Show({
                 </Box>
             )}
 
-            {activeTab === 0 && (
-                <>
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gap: 2,
-                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                            mb: 2,
-                        }}
-                    >
-                        <BuilderStatusCard
-                            label="Resume"
-                            isFinalized={!!targetedResume}
-                            color="success"
-                            canFinalize={canFinalizeResume || !!targetedResume}
-                            isFinalizing={isFinalizing}
-                            hasUpdate={hasNewerResume}
-                            finalizeTitle={
-                                hasNewerResume
-                                    ? "Update resume and regenerate documents"
-                                    : canFinalizeResume
-                                      ? "Save the tailored resume and generate documents"
-                                      : targetedResume
-                                        ? "Regenerate DOCX and PDF from saved content"
-                                        : "Finalize is available after the assistant returns a tailored resume block"
-                            }
-                            onFinalize={handleFinalizeResume}
-                            caption={
-                                targetedResume
-                                    ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
-                                    : undefined
-                            }
-                            extraActions={
-                                targetedResume ? (
-                                    <>
-                                        {targetedResume.docx_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
-                                                title="Download resume DOCX"
-                                                color="success"
-                                            >
-                                                <StickyNote2Icon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                        {targetedResume.pdf_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
-                                                title="Download resume PDF"
-                                                color="success"
-                                            >
-                                                <PictureAsPdfIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                    </>
-                                ) : undefined
-                            }
-                        />
-                        <BuilderStatusCard
-                            label="Cover Letter"
-                            isFinalized={!!coverLetter}
-                            color="secondary"
-                            canFinalize={canFinalizeCoverLetter}
-                            isFinalizing={isFinalizingCoverLetter}
-                            hasUpdate={!!coverLetter}
-                            finalizeTitle={
-                                !latestCoverLetterContent
-                                    ? "Finalize is available after the assistant returns a cover letter block"
-                                    : coverLetter
-                                      ? "Update the cover letter from the latest chat content"
-                                      : "Extract and save the cover letter from the conversation"
-                            }
-                            onFinalize={handleFinalizeCoverLetter}
-                            caption={
-                                coverLetter
-                                    ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
-                                      "Cover letter saved"
-                                    : undefined
-                            }
-                            extraActions={
-                                coverLetter ? (
-                                    <>
-                                        {coverLetter.docx_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
-                                                title="Download cover letter DOCX"
-                                                color="secondary"
-                                            >
-                                                <StickyNote2Icon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                        {coverLetter.pdf_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
-                                                title="Download cover letter PDF"
-                                                color="secondary"
-                                            >
-                                                <PictureAsPdfIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
+            <Box sx={{ display: activeTab === 0 ? undefined : "none" }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2,
+                        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                        mb: 2,
+                    }}
+                >
+                    <BuilderStatusCard
+                        label="Resume"
+                        isFinalized={!!targetedResume}
+                        color="success"
+                        canFinalize={canFinalizeResume || !!targetedResume}
+                        isFinalizing={isFinalizing}
+                        hasUpdate={hasNewerResume}
+                        finalizeTitle={
+                            hasNewerResume
+                                ? "Update resume and regenerate documents"
+                                : canFinalizeResume
+                                  ? "Save the tailored resume and generate documents"
+                                  : targetedResume
+                                    ? "Regenerate DOCX and PDF from saved content"
+                                    : "Finalize is available after the assistant returns a tailored resume block"
+                        }
+                        onFinalize={handleFinalizeResume}
+                        caption={
+                            targetedResume
+                                ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
+                                : undefined
+                        }
+                        extraActions={
+                            targetedResume ? (
+                                <>
+                                    {targetedResume.docx_path && (
                                         <IconButton
                                             size="small"
-                                            component={InertiaLink}
-                                            href={`/admin/cover-letters/${coverLetter.id}`}
-                                            title="Edit cover letter"
+                                            component="a"
+                                            href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
+                                            title="Download resume DOCX"
+                                            color="success"
                                         >
-                                            <EditIcon fontSize="small" />
+                                            <StickyNote2Icon fontSize="small" />
                                         </IconButton>
-                                    </>
-                                ) : undefined
-                            }
-                        />
-                    </Box>
-
-                    <ChatInterface
-                        chatEndpoint={`/api/admin/resume/targeted-builder/${conversation.id}/chat`}
-                        statusUrl={statusUrl}
-                        warmupUrl={warmupUrl}
-                        initialMessages={initialMessages as ChatMessage[]}
-                        isAuthenticated={!!authUser}
-                        shouldAutoStart={shouldAutoStart}
-                        onEvent={(event) => {
-                            if (event.type === "page_reload") {
-                                router.reload({
-                                    only: [
-                                        "targetedResume",
-                                        "coverLetter",
-                                        "conversation",
-                                    ],
-                                });
-                            }
-                        }}
-                        onMessagesChange={setLiveMessages}
+                                    )}
+                                    {targetedResume.pdf_path && (
+                                        <IconButton
+                                            size="small"
+                                            component="a"
+                                            href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
+                                            title="Download resume PDF"
+                                            color="success"
+                                        >
+                                            <PictureAsPdfIcon fontSize="small" />
+                                        </IconButton>
+                                    )}
+                                </>
+                            ) : undefined
+                        }
                     />
-                </>
-            )}
+                    <BuilderStatusCard
+                        label="Cover Letter"
+                        isFinalized={!!coverLetter}
+                        color="secondary"
+                        canFinalize={canFinalizeCoverLetter}
+                        isFinalizing={isFinalizingCoverLetter}
+                        hasUpdate={!!coverLetter}
+                        finalizeTitle={
+                            !latestCoverLetterContent
+                                ? "Finalize is available after the assistant returns a cover letter block"
+                                : coverLetter
+                                  ? "Update the cover letter from the latest chat content"
+                                  : "Extract and save the cover letter from the conversation"
+                        }
+                        onFinalize={handleFinalizeCoverLetter}
+                        caption={
+                            coverLetter
+                                ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
+                                  "Cover letter saved"
+                                : undefined
+                        }
+                        extraActions={
+                            coverLetter ? (
+                                <>
+                                    {coverLetter.docx_path && (
+                                        <IconButton
+                                            size="small"
+                                            component="a"
+                                            href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
+                                            title="Download cover letter DOCX"
+                                            color="secondary"
+                                        >
+                                            <StickyNote2Icon fontSize="small" />
+                                        </IconButton>
+                                    )}
+                                    {coverLetter.pdf_path && (
+                                        <IconButton
+                                            size="small"
+                                            component="a"
+                                            href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
+                                            title="Download cover letter PDF"
+                                            color="secondary"
+                                        >
+                                            <PictureAsPdfIcon fontSize="small" />
+                                        </IconButton>
+                                    )}
+                                    <IconButton
+                                        size="small"
+                                        component={InertiaLink}
+                                        href={`/admin/cover-letters/${coverLetter.id}`}
+                                        title="Edit cover letter"
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </>
+                            ) : undefined
+                        }
+                    />
+                </Box>
 
-            {activeTab === 1 && (
+                <ChatInterface
+                    chatEndpoint={`/api/admin/resume/targeted-builder/${conversation.id}/chat`}
+                    statusUrl={statusUrl}
+                    warmupUrl={warmupUrl}
+                    initialMessages={initialMessages as ChatMessage[]}
+                    isAuthenticated={!!authUser}
+                    shouldAutoStart={shouldAutoStart}
+                    onEvent={(event) => {
+                        if (event.type === "page_reload") {
+                            router.reload({
+                                only: [
+                                    "targetedResume",
+                                    "coverLetter",
+                                    "conversation",
+                                ],
+                            });
+                        }
+                    }}
+                    onMessagesChange={setLiveMessages}
+                />
+            </Box>
+
+            <Box sx={{ display: activeTab === 1 ? undefined : "none" }}>
                 <Card>
                     <CardContent>
                         <Typography variant="h6" gutterBottom>
@@ -982,7 +980,7 @@ export default function Show({
                         )}
                     </CardContent>
                 </Card>
-            )}
+            </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );
