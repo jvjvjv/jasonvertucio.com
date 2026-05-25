@@ -45,6 +45,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         supports_tools: aiSystem.supports_tools ?? false,
         allowed_tools: aiSystem.allowed_tools ?? [],
         supports_json_mode: aiSystem.supports_json_mode ?? false,
+        enable_thinking: aiSystem.enable_thinking ?? false,
         is_local_endpoint: aiSystem.is_local_endpoint ?? false,
         pricing_profile: aiSystem.pricing_profile
             ? JSON.stringify(aiSystem.pricing_profile, null, 2)

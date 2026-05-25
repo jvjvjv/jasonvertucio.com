@@ -61,7 +61,7 @@ class TargetedResumeService
         ]);
 
         // Store the system prompt as the first message
-        $systemPrompt = $this->buildSystemPrompt();
+        $systemPrompt = $system->system_prompt ?: $this->buildSystemPrompt();
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'system',
@@ -85,6 +85,8 @@ class TargetedResumeService
      */
     public function continueConversation(AiConversation $conversation, ?string $userMessage = null): Generator
     {
+        yield ": heartbeat\n\n";
+
         $conversation->load('aiSystem');
 
         if ($userMessage === null) {
@@ -138,7 +140,7 @@ class TargetedResumeService
         $loopResult = null;
 
         try {
-            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult);
+            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult, conversation: $conversation);
 
             yield "data: [DONE]\n\n";
 

@@ -70,6 +70,7 @@ export interface AiSystem {
     supports_tools?: boolean;
     allowed_tools?: string[] | null;
     supports_json_mode?: boolean;
+    enable_thinking?: boolean | null;
     is_local_endpoint?: boolean;
     pricing_profile?: { [key: string]: unknown } | null;
     is_active: boolean;

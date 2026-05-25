@@ -54,6 +54,7 @@ class StoreAiSystemRequest extends FormRequest
             'allowed_tools' => ['nullable', 'array'],
             'allowed_tools.*' => ['string', 'max:255'],
             'supports_json_mode' => ['boolean'],
+            'enable_thinking' => ['nullable', 'boolean'],
             'is_local_endpoint' => ['boolean'],
             'pricing_profile' => ['nullable', 'json'],
             'feature_defaults'   => ['nullable', 'array'],

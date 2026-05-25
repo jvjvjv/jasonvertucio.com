@@ -54,6 +54,7 @@ interface FormData {
     supports_tools: boolean;
     allowed_tools: string[];
     supports_json_mode: boolean;
+    enable_thinking: boolean;
     is_local_endpoint: boolean;
     pricing_profile: string;
     is_active: boolean;
@@ -778,6 +779,18 @@ export default function AiSystemForm({
                         />
                     }
                     label="Supports JSON Mode"
+                />
+
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={data.enable_thinking}
+                            onChange={(e) => {
+                                setData("enable_thinking", e.target.checked);
+                            }}
+                        />
+                    }
+                    label="Enable Thinking (reasoning models)"
                 />
 
                 <FormControlLabel

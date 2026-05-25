@@ -33,6 +33,7 @@ class AiSystem extends Model
         'supports_tools',
         'allowed_tools',
         'supports_json_mode',
+        'enable_thinking',
         'is_local_endpoint',
         'pricing_profile',
     ];
@@ -52,6 +53,7 @@ class AiSystem extends Model
             'supports_tools' => 'boolean',
             'allowed_tools' => 'array',
             'supports_json_mode' => 'boolean',
+            'enable_thinking' => 'boolean',
             'is_local_endpoint' => 'boolean',
             'temperature' => 'decimal:2',
             'max_tokens' => 'integer',

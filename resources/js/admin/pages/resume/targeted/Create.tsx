@@ -9,7 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { marked } from "marked";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { AiSystem } from "@/types";
 import type { SyntheticEvent } from "react";
@@ -57,6 +57,59 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
     const [isReparsing, setIsReparsing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [modelState, setModelState] = useState<
+        "idle" | "checking" | "warming" | "ready" | "unavailable"
+    >("idle");
+
+    // Warm up the selected model in the background while the user fills the form
+    useEffect(() => {
+        if (!aiSystemId) return;
+
+        let mounted = true;
+
+        const run = async () => {
+            setModelState("checking");
+
+            try {
+                const res = await api.get<{ status?: { state: string } }>(
+                    `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-status`,
+                );
+                if (!mounted) return;
+
+                const state = res.status?.state;
+
+                if (state === "loaded") {
+                    setModelState("ready");
+                    return;
+                }
+
+                if (state === "not_loaded") {
+                    setModelState("warming");
+                    const warmupRes = await api.post<{
+                        status?: { state: string };
+                    }>(
+                        `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-warmup`,
+                    );
+                    if (!mounted) return;
+                    setModelState(
+                        warmupRes.status?.state === "loaded"
+                            ? "ready"
+                            : "unavailable",
+                    );
+                    return;
+                }
+
+                setModelState("unavailable");
+            } catch {
+                setModelState("unavailable");
+            }
+        };
+
+        void run();
+        return () => {
+            mounted = false;
+        };
+    }, [aiSystemId]);
 
     const handleParseUrl = async () => {
         if (!jobUrl.trim()) return;
@@ -81,7 +134,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         } catch (err) {
             if (err instanceof ApiError) {
                 const result = err.data as ParseJobResponse;
-                setParseError(result?.message ?? "Failed to parse URL");
+                setParseError(result.message ?? "Failed to parse URL");
             } else {
                 setParseError("Network error: " + (err as Error).message);
             }
@@ -113,7 +166,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         } catch (err) {
             if (err instanceof ApiError) {
                 const result = err.data as ParseJobResponse;
-                setParseError(result?.message ?? "Failed to re-parse URL");
+                setParseError(result.message ?? "Failed to re-parse URL");
             } else {
                 setParseError("Network error: " + (err as Error).message);
             }
@@ -153,7 +206,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
         } catch (err) {
             if (err instanceof ApiError) {
                 const result = err.data as ParseJobResponse;
-                setError(result?.message ?? "Failed to start session");
+                setError(result.message ?? "Failed to start session");
             } else {
                 setError("Network error: " + (err as Error).message);
             }
@@ -190,7 +243,7 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             onChange={(e) => {
                                 setAiSystemId(Number(e.target.value));
                             }}
-                            sx={{ mb: 3 }}
+                            sx={{ mb: modelState === "idle" ? 3 : 1 }}
                         >
                             {systems.map((s) => (
                                 <MenuItem key={s.id} value={s.id}>
@@ -198,6 +251,28 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                                 </MenuItem>
                             ))}
                         </TextField>
+                        {modelState === "checking" && (
+                            <Alert severity="info" sx={{ mb: 3 }}>
+                                Checking model status...
+                            </Alert>
+                        )}
+                        {modelState === "warming" && (
+                            <Alert severity="info" sx={{ mb: 3 }}>
+                                Loading model in the background. This may take a
+                                moment.
+                            </Alert>
+                        )}
+                        {modelState === "ready" && (
+                            <Alert severity="success" sx={{ mb: 3 }}>
+                                Model is ready.
+                            </Alert>
+                        )}
+                        {modelState === "unavailable" && (
+                            <Alert severity="warning" sx={{ mb: 3 }}>
+                                Model may not be available. You can still start
+                                the session.
+                            </Alert>
+                        )}
 
                         <Typography
                             variant="body2"

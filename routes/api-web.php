@@ -24,6 +24,8 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
     ->group(function () {
         Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools']);
         Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels']);
+        Route::get('/systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
+        Route::post('/systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
         Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview']);
     });
 
@@ -31,6 +33,8 @@ Route::middleware(['auth', 'can:edit-resume'])
     ->prefix('api/admin/resume')
     ->group(function () {
         Route::post('/editor', [ResumeEditorController::class, 'update']);
+        Route::get('/targeted-builder/ai-systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
+        Route::post('/targeted-builder/ai-systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
         Route::post('/targeted-builder/start', [TargetedResumeController::class, 'start']);
         Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat']);
         Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize']);

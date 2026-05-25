@@ -106,7 +106,7 @@ export default function Edit({ parser }: EditProps) {
             if (err instanceof ApiError) {
                 const result = err.data as PreviewApiResponse;
                 setPreviewError(
-                    result?.message ?? "Failed to preview selectors.",
+                    result.message ?? "Failed to preview selectors.",
                 );
             } else {
                 setPreviewError(

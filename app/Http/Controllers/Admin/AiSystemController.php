@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateAiSystemRequest;
 use App\Models\AiInteractionLog;
 use App\Models\AiSystem;
 use App\Models\AiSystemFeatureDefault;
+use App\Services\AiModelReadinessService;
 use App\Services\ClaudeService;
 use App\Services\GeminiService;
 use App\Services\GrokService;
@@ -24,7 +25,10 @@ use Inertia\Response as InertiaResponse;
 
 class AiSystemController extends Controller
 {
-    public function __construct(private AiSystemCapabilityService $aiSystemCapabilityService) {
+    public function __construct(
+        private AiSystemCapabilityService $aiSystemCapabilityService,
+        private AiModelReadinessService $aiModelReadinessService,
+    ) {
     }
 
     /**
@@ -234,6 +238,26 @@ class AiSystemController extends Controller
         } catch (\Exception $e) {
             return response()->json(['models' => [], 'error' => 'Failed to fetch models: ' . $e->getMessage()], 422);
         }
+    }
+
+    /**
+     * Return the readiness status of the model for an AI system.
+     */
+    public function modelStatus(AiSystem $aiSystem): JsonResponse
+    {
+        return response()->json([
+            'status' => $this->aiModelReadinessService->statusForSystem($aiSystem),
+        ]);
+    }
+
+    /**
+     * Warm up (pre-load) the model for an AI system.
+     */
+    public function modelWarmup(AiSystem $aiSystem): JsonResponse
+    {
+        return response()->json([
+            'status' => $this->aiModelReadinessService->warmUpSystem($aiSystem),
+        ]);
     }
 
     /**

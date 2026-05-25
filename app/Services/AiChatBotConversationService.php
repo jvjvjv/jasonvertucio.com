@@ -354,6 +354,14 @@ class AiChatBotConversationService
                     continue;
                 }
 
+                // Response was cut off at the token limit — continue from where it left off
+                if ($iterationStopReason === 'max_tokens') {
+                    $accumulatedText = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
+                    $iterationMessages[] = ['role' => 'assistant', 'content' => $accumulatedText];
+                    $iterationMessages[] = ['role' => 'user', 'content' => 'Continue.'];
+                    continue;
+                }
+
                 // Normal completion — exit the tool loop
                 break;
             }

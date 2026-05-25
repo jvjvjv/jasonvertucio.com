@@ -260,7 +260,11 @@ class OpenAiService implements AiClientContract
             ];
         }
 
-        $stopReason = $finishReason === 'tool_calls' ? 'tool_use' : 'end_turn';
+        $stopReason = match ($finishReason) {
+            'tool_calls' => 'tool_use',
+            'length' => 'max_tokens',
+            default => 'end_turn',
+        };
 
         yield [
             'type' => 'message_delta',

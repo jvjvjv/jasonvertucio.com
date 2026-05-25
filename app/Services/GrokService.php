@@ -194,8 +194,15 @@ class GrokService implements AiClientContract
                 }
 
                 if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
+                    $stopReason = match ($choice['finish_reason']) {
+                        'tool_calls' => 'tool_use',
+                        'length' => 'max_tokens',
+                        default => 'end_turn',
+                    };
+
                     yield [
                         'type' => 'message_delta',
+                        'delta' => ['stop_reason' => $stopReason],
                         'usage' => [
                             'output_tokens' => $outputTokens,
                         ],
