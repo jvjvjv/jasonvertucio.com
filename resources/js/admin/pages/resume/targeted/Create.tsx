@@ -34,9 +34,14 @@ interface ParseJobResponse {
 interface CreateProps {
     systems: Pick<AiSystem, "id" | "name" | "model">[];
     defaultSystemId: number | null;
+    coverLetterDefaultId: number | null;
 }
 
-export default function Create({ systems, defaultSystemId }: CreateProps) {
+export default function Create({
+    systems,
+    defaultSystemId,
+    coverLetterDefaultId,
+}: CreateProps) {
     const [aiSystemId, setAiSystemId] = useState<number | "">(
         defaultSystemId ?? "",
     );
@@ -57,6 +62,12 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
     const [isReparsing, setIsReparsing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+
+    const separateModelsConfigured =
+        defaultSystemId !== null &&
+        coverLetterDefaultId !== null &&
+        defaultSystemId !== coverLetterDefaultId;
+
     const [modelState, setModelState] = useState<
         "idle" | "checking" | "warming" | "ready" | "unavailable"
     >("idle");
@@ -223,6 +234,13 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                 backHref="/admin/resume/targeted-builder"
                 backLabel="Back to Targeted Resumes"
             />
+
+            {separateModelsConfigured && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                    Separate models for Targeted Resume and Cover Letter are
+                    unsupported at this time.
+                </Alert>
+            )}
 
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -446,7 +464,9 @@ export default function Create({ systems, defaultSystemId }: CreateProps) {
                             <Button
                                 type="submit"
                                 variant="contained"
-                                disabled={isSubmitting}
+                                disabled={
+                                    isSubmitting || separateModelsConfigured
+                                }
                             >
                                 {isSubmitting
                                     ? "Starting..."

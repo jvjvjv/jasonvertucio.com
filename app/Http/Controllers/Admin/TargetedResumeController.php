@@ -123,16 +123,27 @@ class TargetedResumeController extends Controller
      */
     public function create(): InertiaResponse
     {
-        $systems = AiSystem::active()->orderBy('name')->get()->map(fn ($s) => [
-            'id' => $s->id,
-            'name' => $s->name,
-            'model' => $s->model,
-        ]);
+        // Only show systems that have a system prompt assigned OR are feature defaults
+        $systems = AiSystem::active()
+            ->where(function ($q) {
+                $q->whereNotNull('system_prompt_id')
+                    ->orWhereHas('featureDefaults');
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'model' => $s->model,
+            ]);
+
         $defaultSystemId = AiSystem::defaultForFeature('targeted-resume')?->id;
+        $coverLetterDefaultId = AiSystem::defaultForFeature('cover-letter')?->id;
 
         return Inertia::render('resume/targeted/Create', [
             'systems' => $systems,
             'defaultSystemId' => $defaultSystemId,
+            'coverLetterDefaultId' => $coverLetterDefaultId,
         ]);
     }
 
@@ -141,6 +152,15 @@ class TargetedResumeController extends Controller
      */
     public function start(StartTargetedResumeRequest $request): JsonResponse
     {
+        $resumeDefault = AiSystem::defaultForFeature('targeted-resume');
+        $coverLetterDefault = AiSystem::defaultForFeature('cover-letter');
+
+        if ($resumeDefault && $coverLetterDefault && $resumeDefault->id !== $coverLetterDefault->id) {
+            return response()->json([
+                'error' => 'Separate models for Targeted Resume and Cover Letter are unsupported at this time.',
+            ], 422);
+        }
+
         $system = AiSystem::findOrFail($request->validated('ai_system_id'));
         $resumeVersion = ResumeVersion::current()->firstOrFail();
 

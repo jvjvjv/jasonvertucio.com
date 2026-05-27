@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiSystemController;
+use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
@@ -23,6 +24,7 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
     ->prefix('api/admin/ai')
     ->group(function () {
         Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools']);
+        Route::put('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'apiUpdate']);
         Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels']);
         Route::get('/systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
         Route::post('/systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);

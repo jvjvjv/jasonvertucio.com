@@ -1,15 +1,25 @@
+import EditIcon from "@mui/icons-material/Edit";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+
+import type { AiSystemPrompt } from "@/types";
 
 import { api } from "@/api";
 
@@ -44,7 +54,8 @@ interface FormData {
     max_tokens: number;
     context_length: number | null;
     temperature: string;
-    system_prompt: string;
+    system_prompt_id: number | null;
+    custom_system_prompt: string;
     config: string;
     credentials: string;
     auth_type: string;
@@ -69,6 +80,7 @@ interface AiSystemFormProps {
     ) => void;
     errors: Partial<{ [key: string]: string }>;
     existingDefaults: string[];
+    systemPrompts: AiSystemPrompt[];
     isEdit?: boolean;
 }
 
@@ -174,16 +186,32 @@ const PROVIDER_DEFAULTS: {
     },
 };
 
+interface EditPromptFormData {
+    title: string;
+    description: string;
+    content: string;
+}
+
 export default function AiSystemForm({
     data,
     setData,
     errors,
     existingDefaults,
+    systemPrompts: initialSystemPrompts,
     isEdit = false,
 }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [fetchingModels, setFetchingModels] = useState(false);
     const [fetchError, setFetchError] = useState("");
+    const [systemPrompts, setSystemPrompts] =
+        useState<AiSystemPrompt[]>(initialSystemPrompts);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editPromptForm, setEditPromptForm] = useState<EditPromptFormData>({
+        title: "",
+        description: "",
+        content: "",
+    });
+    const [editPromptSaving, setEditPromptSaving] = useState(false);
 
     const fetchModels = async () => {
         if (!data.provider) {
@@ -283,6 +311,22 @@ export default function AiSystemForm({
           }
         : data.model_capabilities;
 
+    // Prompt id locked by feature defaults: targeted-resume locks to 4, cover-letter locks to 5
+    const featureLockedPromptId: number | null = data.feature_defaults.includes(
+        "targeted-resume",
+    )
+        ? 4
+        : data.feature_defaults.includes("cover-letter")
+          ? 5
+          : null;
+    const isPromptLocked = featureLockedPromptId !== null;
+    const effectivePromptId = isPromptLocked
+        ? featureLockedPromptId
+        : data.system_prompt_id;
+    const selectedPrompt =
+        systemPrompts.find((p) => p.id === effectivePromptId) ?? null;
+    const isCustomPrompt = effectivePromptId === null;
+
     const handleFeatureToggle = (feature: string) => {
         const current = data.feature_defaults;
         if (current.includes(feature)) {
@@ -292,6 +336,45 @@ export default function AiSystemForm({
             );
         } else {
             setData("feature_defaults", [...current, feature]);
+        }
+    };
+
+    const handlePromptSelect = (value: string) => {
+        const id = value === "" ? null : Number(value);
+        setData("system_prompt_id", id);
+        setData("custom_system_prompt", "");
+    };
+
+    const openEditModal = () => {
+        if (!selectedPrompt) {
+            return;
+        }
+        setEditPromptForm({
+            title: selectedPrompt.title,
+            description: selectedPrompt.description,
+            content: selectedPrompt.content,
+        });
+        setEditModalOpen(true);
+    };
+
+    const saveEditPrompt = async () => {
+        if (!selectedPrompt) {
+            return;
+        }
+        setEditPromptSaving(true);
+        try {
+            const updated = await api.put<{ prompt: AiSystemPrompt }>(
+                `/api/admin/ai/system-prompts/${selectedPrompt.id}`,
+                editPromptForm,
+            );
+            setSystemPrompts((prev) =>
+                prev.map((p) =>
+                    p.id === updated.prompt.id ? updated.prompt : p,
+                ),
+            );
+            setEditModalOpen(false);
+        } finally {
+            setEditPromptSaving(false);
         }
     };
 
@@ -573,23 +656,180 @@ export default function AiSystemForm({
                 />
             </Box>
 
-            <TextField
-                label="System Prompt"
-                size="small"
-                fullWidth
-                multiline
-                rows={4}
-                value={data.system_prompt}
-                onChange={(e) => {
-                    setData("system_prompt", e.target.value);
+            {/* System Prompt selector */}
+            <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                    <TextField
+                        label="System Prompt"
+                        select
+                        size="small"
+                        fullWidth
+                        value={
+                            isPromptLocked
+                                ? String(featureLockedPromptId)
+                                : data.system_prompt_id !== null
+                                  ? String(data.system_prompt_id)
+                                  : ""
+                        }
+                        onChange={(e) => {
+                            handlePromptSelect(e.target.value);
+                        }}
+                        disabled={isPromptLocked}
+                        error={!!errors.system_prompt_id}
+                        helperText={
+                            errors.system_prompt_id ??
+                            (isPromptLocked
+                                ? "Prompt is automatically assigned by the selected feature default."
+                                : "Select a reusable prompt or enter a custom one below.")
+                        }
+                    >
+                        <MenuItem value="">Custom prompt</MenuItem>
+                        {systemPrompts.map((p) => (
+                            <MenuItem key={p.id} value={String(p.id)}>
+                                {p.title}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    <Tooltip
+                        title={
+                            selectedPrompt
+                                ? "Edit this prompt"
+                                : "Select a prompt to edit"
+                        }
+                    >
+                        <span>
+                            <IconButton
+                                size="small"
+                                onClick={openEditModal}
+                                disabled={!selectedPrompt || isPromptLocked}
+                                sx={{ mt: 0.5 }}
+                            >
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                </Box>
+                <TextField
+                    label={
+                        isCustomPrompt
+                            ? "Custom System Prompt"
+                            : "Prompt Content"
+                    }
+                    size="small"
+                    fullWidth
+                    multiline
+                    rows={6}
+                    disabled={!isCustomPrompt}
+                    value={
+                        isCustomPrompt
+                            ? data.custom_system_prompt
+                            : (selectedPrompt?.content ?? "")
+                    }
+                    onChange={(e) => {
+                        setData("custom_system_prompt", e.target.value);
+                    }}
+                    slotProps={{
+                        input: {
+                            sx: {
+                                fontFamily: "monospace",
+                                fontSize: "0.82rem",
+                            },
+                        },
+                    }}
+                    error={!!errors.custom_system_prompt}
+                    helperText={errors.custom_system_prompt}
+                    sx={{ mt: 1 }}
+                />
+            </Box>
+
+            {/* Edit Prompt modal */}
+            <Dialog
+                open={editModalOpen}
+                onClose={() => {
+                    setEditModalOpen(false);
                 }}
-                error={!!errors.system_prompt}
-                helperText={
-                    errors.system_prompt ??
-                    "Optional default system prompt for this AI system"
-                }
-                sx={{ mb: 2 }}
-            />
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>Edit System Prompt</DialogTitle>
+                <DialogContent>
+                    <Typography
+                        variant="body2"
+                        color="warning.main"
+                        sx={{ mb: 2, mt: 0.5 }}
+                    >
+                        Editing this prompt will affect all AI systems that
+                        reference it.
+                    </Typography>
+                    <TextField
+                        label="Title"
+                        size="small"
+                        fullWidth
+                        value={editPromptForm.title}
+                        onChange={(e) => {
+                            setEditPromptForm((prev) => ({
+                                ...prev,
+                                title: e.target.value,
+                            }));
+                        }}
+                        slotProps={{ htmlInput: { maxLength: 64 } }}
+                        sx={{ mb: 2 }}
+                    />
+                    <TextField
+                        label="Description"
+                        size="small"
+                        fullWidth
+                        value={editPromptForm.description}
+                        onChange={(e) => {
+                            setEditPromptForm((prev) => ({
+                                ...prev,
+                                description: e.target.value,
+                            }));
+                        }}
+                        slotProps={{ htmlInput: { maxLength: 200 } }}
+                        sx={{ mb: 2 }}
+                    />
+                    <TextField
+                        label="Content"
+                        size="small"
+                        fullWidth
+                        multiline
+                        rows={16}
+                        value={editPromptForm.content}
+                        onChange={(e) => {
+                            setEditPromptForm((prev) => ({
+                                ...prev,
+                                content: e.target.value,
+                            }));
+                        }}
+                        slotProps={{
+                            input: {
+                                sx: {
+                                    fontFamily: "monospace",
+                                    fontSize: "0.82rem",
+                                },
+                            },
+                        }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => {
+                            setEditModalOpen(false);
+                        }}
+                        color="inherit"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={saveEditPrompt}
+                        variant="contained"
+                        disabled={editPromptSaving}
+                    >
+                        Save Changes
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <TextField
                 label="Config (JSON)"

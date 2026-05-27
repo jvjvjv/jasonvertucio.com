@@ -103,6 +103,13 @@ export default function Index({ systems }: IndexProps) {
                     >
                         AI Memories
                     </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/system-prompts"
+                        variant="outlined"
+                    >
+                        System Prompts
+                    </Button>
                 </Box>
                 <Button
                     component={InertiaLink}

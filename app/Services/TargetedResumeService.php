@@ -11,6 +11,7 @@ use App\Models\AiConversation;
 use App\Models\AiConversationMessage;
 use App\Models\AiInteractionLog;
 use App\Models\AiSystem;
+use App\Models\AiSystemPrompt;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
@@ -22,6 +23,13 @@ use Illuminate\Support\Facades\Log;
 class TargetedResumeService
 {
     use ExecutesAiTools;
+
+    public const int PROMPT_ID_DEFAULT = 1;
+    public const int PROMPT_ID_CREATIVE = 2;
+    public const int PROMPT_ID_TECHNICAL = 3;
+    public const int PROMPT_ID_TARGETED_RESUME = 4;
+    public const int PROMPT_ID_COVER_LETTER = 5;
+
     public function __construct(
         private AiClientFactory $clientFactory,
         private ResumeDataServiceContract $resumeDataService,
@@ -60,8 +68,19 @@ class TargetedResumeService
             ],
         ]);
 
-        // Store the system prompt as the first message
-        $systemPrompt = $system->system_prompt ?: $this->buildSystemPrompt();
+        // Build system prompt based on which features this system is default for
+        $system->loadMissing('featureDefaults');
+        $features = $system->featureDefaults->pluck('feature');
+        $parts = [];
+        if ($features->contains('targeted-resume')) {
+            $parts[] = AiSystemPrompt::find(self::PROMPT_ID_TARGETED_RESUME)?->content ?? $this->buildResumePortionPrompt();
+        }
+        if ($features->contains('cover-letter')) {
+            $parts[] = AiSystemPrompt::find(self::PROMPT_ID_COVER_LETTER)?->content ?? $this->buildCoverLetterPortionPrompt();
+        }
+        $systemPrompt = !empty($parts)
+            ? implode("\n\n---\n\n## Cover Letter Guidelines\n\n", $parts)
+            : ($system->systemPrompt?->content ?? $this->buildSystemPrompt());
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'system',
@@ -448,6 +467,14 @@ class TargetedResumeService
      */
     public function buildSystemPrompt(): string
     {
+        return $this->buildResumePortionPrompt() . "\n\n---\n\n## Cover Letter Guidelines\n\n" . $this->buildCoverLetterPortionPrompt();
+    }
+
+    /**
+     * Build the resume-portion of the system prompt (steps 0–6, excluding cover letter guidelines).
+     */
+    public function buildResumePortionPrompt(): string
+    {
         return <<<PROMPT
 # Targeted Resume & Cover Letter
 
@@ -566,11 +593,15 @@ Also offer to help with any other application questions the candidate may encoun
 - When providing the tailored resume, wrap it in a code block with the language tag `tailored-resume`
 - When providing the cover letter, wrap it in a code block with the language tag `cover-letter`
 - Do NOT fabricate experience or qualifications
+PROMPT;
+    }
 
----
-
-## Cover Letter Guidelines
-
+    /**
+     * Build the cover letter portion of the system prompt (voice, structure, and guidelines).
+     */
+    public function buildCoverLetterPortionPrompt(): string
+    {
+        return <<<PROMPT
 ### Voice & Tone
 
 - Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.

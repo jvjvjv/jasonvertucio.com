@@ -7,7 +7,7 @@ import CardContent from "@mui/material/CardContent";
 import AiSystemForm from "./Form";
 
 import type { FormData } from "./Form";
-import type { AiSystem } from "@/types";
+import type { AiSystem, AiSystemPrompt } from "@/types";
 import type { SyntheticEvent } from "react";
 
 import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
@@ -19,9 +19,14 @@ import useConfirmDialog from "@/hooks/useConfirmDialog";
 interface EditProps {
     aiSystem: AiSystem;
     existingDefaults: string[];
+    systemPrompts: AiSystemPrompt[];
 }
 
-export default function Edit({ aiSystem, existingDefaults }: EditProps) {
+export default function Edit({
+    aiSystem,
+    existingDefaults,
+    systemPrompts,
+}: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
         provider: aiSystem.provider,
@@ -33,7 +38,8 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
         max_tokens: aiSystem.max_tokens,
         context_length: aiSystem.context_length,
         temperature: aiSystem.temperature?.toString() ?? "",
-        system_prompt: aiSystem.system_prompt ?? "",
+        system_prompt_id: aiSystem.system_prompt_id ?? null,
+        custom_system_prompt: "",
         config: aiSystem.config ? JSON.stringify(aiSystem.config, null, 2) : "",
         credentials: aiSystem.credentials
             ? JSON.stringify(aiSystem.credentials, null, 2)
@@ -115,6 +121,7 @@ export default function Edit({ aiSystem, existingDefaults }: EditProps) {
                             setData={form.setData}
                             errors={form.errors}
                             existingDefaults={existingDefaults}
+                            systemPrompts={systemPrompts}
                             isEdit
                         />
 
