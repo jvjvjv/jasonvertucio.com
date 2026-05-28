@@ -110,6 +110,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 $dates = $exp['dates'] ?? [];
                 $experience = $version->experiences()->create([
                     'job_title' => $exp['jobTitle'],
+                    'job_title_label' => ($exp['jobTitleLabel'] ?? '') !== '' ? $exp['jobTitleLabel'] : null,
                     'company' => $exp['company'],
                     'location' => $exp['location'] ?? null,
                     'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
@@ -320,7 +321,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                 ]));
 
             $result = [
-                'jobTitle' => $exp->job_title,
+                'jobTitle' => $includeSalary ? $exp->job_title : $exp->display_job_title,
                 'company' => $exp->company,
                 'location' => $exp->location,
                 'dates' => array_values($dates),
@@ -328,6 +329,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             ];
 
             if ($includeSalary) {
+                $result['jobTitleLabel'] = $exp->job_title_label ?? '';
                 $result['salaryStart'] = $exp->salary_start_amount ? [
                     'amount' => (float) $exp->salary_start_amount,
                     'period' => $exp->salary_start_period?->value,
@@ -409,7 +411,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             $job['dateStart'] = $dates[0] ?? '';
             $job['dateEnd'] = $dates[1] ?? '';
             $job['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
-            $job['dateDisplay'] = $buildDateDisplay($dates) . (count($dates) > 0 ? ' • ' : '');
+            $job['dateDisplay'] = $buildDateDisplay($dates, ' • ') . (count($dates) > 0 ? ' • ' : '');
             return $job;
         }, $data['experience']);
 
@@ -418,7 +420,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             $edu['dateStart'] = $dates[0] ?? '';
             $edu['dateEnd'] = $dates[1] ?? '';
             $edu['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
-            $edu['dateDisplay'] = $buildDateDisplay($dates);
+            $edu['dateDisplay'] = $buildDateDisplay($dates, ' • ');
 
             $metaParts = array_filter([
                 $edu['location'] ?? null,

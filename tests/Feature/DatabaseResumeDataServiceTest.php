@@ -63,6 +63,7 @@ class DatabaseResumeDataServiceTest extends TestCase
         $exp = ResumeExperience::factory()->create([
             'version_id' => $version->id,
             'job_title' => 'Senior Dev',
+            'job_title_label' => 'Senior Product Engineer',
             'company' => 'Acme Corp',
             'location' => 'New York, NY',
             'date_start' => '2020',
@@ -104,6 +105,7 @@ class DatabaseResumeDataServiceTest extends TestCase
         // Experience
         $this->assertCount(1, $data['experience']);
         $this->assertEquals('Senior Dev', $data['experience'][0]['jobTitle']);
+        $this->assertEquals('Senior Product Engineer', $data['experience'][0]['jobTitleLabel']);
         $this->assertEquals('Acme Corp', $data['experience'][0]['company']);
         $this->assertEquals(['2020', 'Present'], $data['experience'][0]['dates']);
         $this->assertEquals(['Built things'], $data['experience'][0]['bullets']);
@@ -124,6 +126,11 @@ class DatabaseResumeDataServiceTest extends TestCase
         $version = ResumeVersion::factory()->create(['is_current' => true]);
         ResumePersonalInfo::factory()->create(['version_id' => $version->id]);
         ResumeEducation::factory()->create(['version_id' => $version->id]);
+        ResumeExperience::factory()->create([
+            'version_id' => $version->id,
+            'job_title' => 'Software Engineer',
+            'job_title_label' => 'Staff Platform Engineer',
+        ]);
 
         $data = $this->service->getDisplayData();
 
@@ -132,6 +139,7 @@ class DatabaseResumeDataServiceTest extends TestCase
         $this->assertArrayHasKey('skills', $data);
         $this->assertArrayHasKey('experience', $data);
         $this->assertArrayHasKey('projects', $data);
+        $this->assertSame('Staff Platform Engineer', $data['experience'][0]['jobTitle']);
     }
 
     public function test_get_docx_data_includes_education_and_flattened(): void
@@ -199,6 +207,7 @@ class DatabaseResumeDataServiceTest extends TestCase
             'experience' => [
                 [
                     'jobTitle' => 'Lead Developer',
+                    'jobTitleLabel' => 'Lead Platform Architect',
                     'company' => 'Tech Inc',
                     'location' => 'Remote',
                     'dates' => ['2021', 'Present'],
@@ -238,6 +247,7 @@ class DatabaseResumeDataServiceTest extends TestCase
         $this->assertEquals(1, $version->experiences()->count());
         $savedExp = $version->experiences()->first();
         $this->assertEquals('Lead Developer', $savedExp->job_title);
+        $this->assertEquals('Lead Platform Architect', $savedExp->job_title_label);
         $this->assertCount(2, $savedExp->bullets);
 
         // Verify education saved
@@ -397,6 +407,7 @@ class DatabaseResumeDataServiceTest extends TestCase
             'experience' => [
                 [
                     'jobTitle' => 'Senior Developer',
+                    'jobTitleLabel' => 'Principal Product Engineer',
                     'company' => 'First Company',
                     'location' => 'NYC',
                     'dates' => ['2020', 'Present'],
@@ -404,6 +415,7 @@ class DatabaseResumeDataServiceTest extends TestCase
                 ],
                 [
                     'jobTitle' => 'Junior Developer',
+                    'jobTitleLabel' => '',
                     'company' => 'Second Company',
                     'location' => 'LA',
                     'dates' => ['2018', '2020'],
@@ -443,7 +455,9 @@ class DatabaseResumeDataServiceTest extends TestCase
         // Experience
         $this->assertCount(2, $outputData['experience']);
         $this->assertEquals('Senior Developer', $outputData['experience'][0]['jobTitle']);
+        $this->assertEquals('Principal Product Engineer', $outputData['experience'][0]['jobTitleLabel']);
         $this->assertEquals('Junior Developer', $outputData['experience'][1]['jobTitle']);
+        $this->assertEquals('', $outputData['experience'][1]['jobTitleLabel']);
         $this->assertEquals(['Did great things', 'Led team'], $outputData['experience'][0]['bullets']);
 
         // Education

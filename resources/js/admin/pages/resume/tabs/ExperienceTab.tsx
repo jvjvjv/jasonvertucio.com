@@ -150,6 +150,7 @@ export default function ExperienceTab({
                                     ...experience,
                                     {
                                         jobTitle: "",
+                                        jobTitleLabel: "",
                                         company: "",
                                         location: "",
                                         dates: ["", ""],
@@ -225,6 +226,19 @@ export default function ExperienceTab({
                                         updated[jobIdx] = {
                                             ...updated[jobIdx],
                                             jobTitle: e.target.value,
+                                        };
+                                        onChange(updated);
+                                    }}
+                                />
+                                <TextField
+                                    label="Display Job Title"
+                                    size="small"
+                                    value={job.jobTitleLabel}
+                                    onChange={(e) => {
+                                        const updated = [...experience];
+                                        updated[jobIdx] = {
+                                            ...updated[jobIdx],
+                                            jobTitleLabel: e.target.value,
                                         };
                                         onChange(updated);
                                     }}
@@ -520,7 +534,7 @@ export default function ExperienceTab({
                     title="Reorder Work Experience"
                     items={experience.map((job, i) => ({
                         id: `job-${i}`,
-                        label: `${job.jobTitle || "(no title)"} @ ${job.company || "(no company)"}`,
+                        label: `${job.jobTitleLabel || job.jobTitle || "(no title)"} @ ${job.company || "(no company)"}`,
                     }))}
                     onReorder={handleReorder}
                 />

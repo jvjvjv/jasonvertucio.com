@@ -7,6 +7,7 @@ export interface Salary {
 
 export interface Job {
     jobTitle: string;
+    jobTitleLabel: string;
     company: string;
     location: string;
     dates: [string, string];
