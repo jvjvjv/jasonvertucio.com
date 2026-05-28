@@ -3,22 +3,16 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
+import type { ColumnDef } from "@/admin/components/DataTable";
 import type { AiSystemPrompt } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import DataTable from "@/admin/components/DataTable";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
@@ -30,6 +24,45 @@ interface PromptWithCount extends AiSystemPrompt {
 interface IndexProps {
     prompts: PromptWithCount[];
 }
+
+const columns: ColumnDef<PromptWithCount>[] = [
+    {
+        key: "title",
+        label: "Title",
+        render: (row) => (
+            <Typography variant="body2" fontWeight={500}>
+                {row.title}
+            </Typography>
+        ),
+    },
+    {
+        key: "description",
+        label: "Description",
+        render: (row) => (
+            <Typography variant="body2" color="text.secondary">
+                {row.description}
+            </Typography>
+        ),
+    },
+    {
+        key: "ai_systems_count",
+        label: "Used by",
+        align: "center",
+        render: (row) =>
+            row.ai_systems_count > 0 ? (
+                <Chip
+                    label={`${row.ai_systems_count} system${row.ai_systems_count !== 1 ? "s" : ""}`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                />
+            ) : (
+                <Typography variant="body2" color="text.disabled">
+                    —
+                </Typography>
+            ),
+    },
+];
 
 export default function Index({ prompts }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
@@ -63,95 +96,41 @@ export default function Index({ prompts }: IndexProps) {
                 </Button>
             </PageHeader>
 
-            <Card>
-                <TableContainer>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Title</TableCell>
-                                <TableCell>Description</TableCell>
-                                <TableCell align="center">Used by</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {prompts.length === 0 && (
-                                <EmptyTableRow
-                                    colSpan={4}
-                                    message="No system prompts found."
-                                />
-                            )}
-                            {prompts.map((prompt) => (
-                                <TableRow key={prompt.id} hover>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            fontWeight={500}
-                                        >
-                                            {prompt.title}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            {prompt.description}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        {prompt.ai_systems_count > 0 ? (
-                                            <Chip
-                                                label={`${prompt.ai_systems_count} system${prompt.ai_systems_count !== 1 ? "s" : ""}`}
-                                                size="small"
-                                                color="primary"
-                                                variant="outlined"
-                                            />
-                                        ) : (
-                                            <Typography
-                                                variant="body2"
-                                                color="text.disabled"
-                                            >
-                                                —
-                                            </Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "flex-end",
-                                                gap: 0.5,
-                                            }}
-                                        >
-                                            <Tooltip title="Edit">
-                                                <IconButton
-                                                    size="small"
-                                                    component={InertiaLink}
-                                                    href={`/admin/ai/system-prompts/${prompt.id}`}
-                                                >
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete">
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => {
-                                                        handleDelete(prompt);
-                                                    }}
-                                                >
-                                                    <DeleteOutlineIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Card>
+            <DataTable
+                columns={columns}
+                data={prompts}
+                emptyMessage="No system prompts found."
+                rowActions={(prompt) => (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 0.5,
+                        }}
+                    >
+                        <Tooltip title="Edit">
+                            <IconButton
+                                size="small"
+                                component={InertiaLink}
+                                href={`/admin/ai/system-prompts/${prompt.id}`}
+                            >
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                            <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                    handleDelete(prompt);
+                                }}
+                            >
+                                <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                )}
+            />
 
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
