@@ -22,15 +22,18 @@
     },
     "require": {
         "php": "^8.4.0",
+        "anthropic-ai/sdk": "^0.25.0",
         "austintoddj/canvas": "^6.0.55",
         "bspdx/keystone": "^0.6.0",
         "fakerphp/faker": "^1.24.1",
+        "google-gemini-php/client": "^2.7",
         "guzzlehttp/guzzle": "^7.10.0",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.36.1",
         "laravel/framework": "^12.54.1",
         "laravel/tinker": "^2.11.1",
         "laravel/ui": "^4.6.2",
+        "openai-php/client": "^0.19.2",
         "symfony/dom-crawler": "^8.0",
         "twilio/sdk": "^6.44.4"
     },
