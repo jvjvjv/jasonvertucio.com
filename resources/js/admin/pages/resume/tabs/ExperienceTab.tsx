@@ -147,7 +147,6 @@ export default function ExperienceTab({
                             size="small"
                             onClick={() => {
                                 onChange([
-                                    ...experience,
                                     {
                                         jobTitle: "",
                                         jobTitleLabel: "",
@@ -162,6 +161,7 @@ export default function ExperienceTab({
                                         salaryEnd: { amount: null, period: "" },
                                         isFreelance: false,
                                     },
+                                    ...experience,
                                 ]);
                             }}
                         >
