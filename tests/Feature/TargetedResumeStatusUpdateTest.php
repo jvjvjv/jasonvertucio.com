@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\TargetedResumeStatusUpdate;

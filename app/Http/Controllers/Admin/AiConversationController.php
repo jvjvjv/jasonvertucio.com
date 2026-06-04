@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\BackfillConversationUsageJob;
-use App\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
 use App\Models\AiConversation;
-use App\Models\AiFeatureMemory;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

@@ -2,7 +2,7 @@
 
 namespace App\Services\Mcp;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Illuminate\Support\Facades\File;
 use ReflectionClass;
 use SplFileInfo;

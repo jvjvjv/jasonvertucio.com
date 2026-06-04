@@ -34,16 +34,21 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
 Route::middleware(['auth', 'can:edit-resume'])
     ->prefix('api/admin/resume')
     ->group(function () {
-        Route::post('/editor', [ResumeEditorController::class, 'update']);
-        Route::get('/targeted-builder/ai-systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
-        Route::post('/targeted-builder/ai-systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
-        Route::post('/targeted-builder/start', [TargetedResumeController::class, 'start']);
-        Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat']);
-        Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize']);
-        Route::post('/targeted-builder/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter']);
-        Route::post('/targeted-builder/{conversation}/status-update', [TargetedResumeController::class, 'addStatusUpdate']);
-        Route::post('/targeted-builder/parse-url', [JobUrlParseController::class, 'parse']);
-        Route::post('/targeted-builder/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse']);
+        Route::post('/editor', [ResumeEditorController::class, 'update'])->name('admin.resume.editor.save');
+
+        Route::prefix('targeted-builder')
+            ->name('admin.resume.targeted.')
+            ->group(function () {
+                Route::get('/ai-systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
+                Route::post('/ai-systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
+                Route::post('/start', [TargetedResumeController::class, 'start'])->name('start');
+                Route::post('/{conversation}/chat', [TargetedResumeController::class, 'chat'])->name('chat');
+                Route::post('/{conversation}/finalize', [TargetedResumeController::class, 'finalize']);
+                Route::post('/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter']);
+                Route::post('/{conversation}/status-update', [TargetedResumeController::class, 'addStatusUpdate'])->name('status-update');
+                Route::post('/parse-url', [JobUrlParseController::class, 'parse'])->name('parse-url');
+                Route::post('/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse'])->name('parser.reparse');
+            });
     });
 
 Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])

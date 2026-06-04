@@ -20,6 +20,15 @@
         "issues": "https://github.com/jvjvjv/jasonvertucio.com/issues",
         "source": "https://github.com/jvjvjv/jasonvertucio.com"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../code-talker",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "require": {
         "php": "^8.4.0",
         "anthropic-ai/sdk": "^0.25.0",
@@ -29,6 +38,7 @@
         "google-gemini-php/client": "^2.7",
         "guzzlehttp/guzzle": "^7.10.0",
         "inertiajs/inertia-laravel": "^2.0",
+        "jvjvjv/code-talker": "*@dev",
         "laravel/fortify": "^1.36.1",
         "laravel/framework": "^12.54.1",
         "laravel/tinker": "^2.11.1",

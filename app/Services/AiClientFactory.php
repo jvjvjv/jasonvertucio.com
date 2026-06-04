@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
-use App\Enums\AiProvider;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 class AiClientFactory
 {

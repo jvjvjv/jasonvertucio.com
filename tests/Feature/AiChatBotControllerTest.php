@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiChatBot;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;

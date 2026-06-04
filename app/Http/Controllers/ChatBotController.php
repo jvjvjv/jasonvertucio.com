@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SendAiChatBotMessageRequest;
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Models\User;
-use App\Services\AiChatBotConversationService;
-use App\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

@@ -3,18 +3,18 @@
 namespace Tests\Feature;
 
 use App\Contracts\ResumeDataServiceContract;
-use App\Enums\AiConversationStatus;
-use App\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiConversation;
-use App\Models\AiInteractionLog;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
-use App\Services\AiClientFactory;
-use App\Services\AiMemoryService;
-use App\Services\ClaudeService;
-use App\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Services\CoverLetterDocumentService;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;

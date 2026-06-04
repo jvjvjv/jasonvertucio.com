@@ -2,7 +2,7 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Canvas\Models\Post;
 
 class GetRecentBlogPostsTool implements AiToolHandlerContract

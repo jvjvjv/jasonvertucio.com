@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiSystem;
-use App\Models\AiSystemPrompt;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;

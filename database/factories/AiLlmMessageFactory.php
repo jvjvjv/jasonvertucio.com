@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,7 +15,7 @@ class AiLlmMessageFactory extends Factory
      *
      * @var string
      */
-    protected $model = \App\Models\AiLlmMessage::class;
+    protected $model = \Jvjvjv\CodeTalker\Models\AiLlmMessage::class;
 
     /**
      * Define the model's default state.

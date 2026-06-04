@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use App\Models\User;
-use App\Services\AiChatBotConversationService;
-use App\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +78,8 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $olderConversationId = DB::table('ai_conversations')->insertGetId([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'public_id' => (string) \Illuminate\Support\Str::ulid(),
             'user_id' => $user->id,
             'ai_system_id' => $privateAllowedBot->ai_system_id,
             'ai_chat_bot_id' => $privateAllowedBot->id,
@@ -90,6 +92,8 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $newerConversationId = DB::table('ai_conversations')->insertGetId([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'public_id' => (string) \Illuminate\Support\Str::ulid(),
             'user_id' => $user->id,
             'ai_system_id' => $privateAllowedBot->ai_system_id,
             'ai_chat_bot_id' => $privateAllowedBot->id,
@@ -141,7 +145,7 @@ class ChatBotControllerTest extends TestCase
         $response = $this->get(route('chat-bots.chat.show', $bot));
 
         $response->assertOk();
-        $response->assertSeeText('Guest Bot');
+        $response->assertSee('Guest Bot');
     }
 
     public function test_chats_statuses_endpoint_returns_statuses_for_accessible_bots(): void
@@ -177,7 +181,7 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('statusForSystem')
+        $readiness->shouldReceive('statusForChatBot')
             ->once()
             ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill'));
 
@@ -197,7 +201,7 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('warmUpSystem')
+        $readiness->shouldReceive('warmUpChatBot')
             ->once()
             ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill') + [
                 'warmup_attempted' => true,
@@ -223,7 +227,7 @@ class ChatBotControllerTest extends TestCase
         $response = $this->get(route('chat-bots.root.show', $bot));
 
         $response->assertOk();
-        $response->assertSeeText('Root Guest Bot');
+        $response->assertSee('Root Guest Bot');
     }
 
     public function test_guest_cannot_view_private_bot(): void

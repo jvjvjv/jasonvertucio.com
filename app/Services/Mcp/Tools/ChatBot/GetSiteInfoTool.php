@@ -2,7 +2,7 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Illuminate\Support\Facades\File;
 
 class GetSiteInfoTool implements AiToolHandlerContract

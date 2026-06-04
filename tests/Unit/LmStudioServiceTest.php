@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\LmStudioService;
+use Jvjvjv\CodeTalker\Services\LmStudioService;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

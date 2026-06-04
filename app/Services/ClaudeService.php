@@ -14,7 +14,7 @@ use Anthropic\Messages\TextBlock;
 use Anthropic\Messages\TextDelta;
 use Anthropic\Messages\ThinkingDelta;
 use Anthropic\Messages\ToolUseBlock;
-use App\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Generator;
 
 class ClaudeService implements AiClientContract

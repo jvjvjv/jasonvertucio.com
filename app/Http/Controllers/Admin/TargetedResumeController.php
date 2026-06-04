@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
 use App\Models\AiConversation;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\CoverLetter;
 use App\Models\JobUrl;
 use App\Models\ResumeVersion;
@@ -35,7 +35,7 @@ class TargetedResumeController extends Controller
      */
     public function index(Request $request): InertiaResponse
     {
-        $defaultStatuses = [];
+        $defaultStatuses = ['active', 'finalized'];
         $statuses = $request->input('status', $request->has('search') ? [] : $defaultStatuses);
         $statuses = is_array($statuses) ? $statuses : [$statuses];
         $search = $request->input('search', '');

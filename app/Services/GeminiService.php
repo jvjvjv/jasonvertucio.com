@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Gemini\Client as GeminiClient;
 use Gemini\Data\Content;
 use Gemini\Data\GenerationConfig;

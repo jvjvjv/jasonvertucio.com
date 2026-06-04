@@ -2,9 +2,9 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
-use App\Models\AiConversation;
-use App\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use Illuminate\Database\Eloquent\Builder;
 
 class ScanMemoriesTool implements AiToolHandlerContract

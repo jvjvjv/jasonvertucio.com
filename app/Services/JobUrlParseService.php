@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;

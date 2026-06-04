@@ -5,10 +5,12 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AiSystem>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Jvjvjv\CodeTalker\Models\AiSystem>
  */
 class AiSystemFactory extends Factory
 {
+    protected $model = \Jvjvjv\CodeTalker\Models\AiSystem::class;
+
     /**
      * Define the model's default state.
      *

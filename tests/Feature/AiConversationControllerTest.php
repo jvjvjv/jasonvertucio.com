@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\BackfillConversationUsageJob;
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
-use App\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
-use App\Contracts\CanLoadModels;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;

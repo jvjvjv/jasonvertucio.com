@@ -2,7 +2,7 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use App\Contracts\ResumeDataServiceContract;
 
 class GetResumeDataTool implements AiToolHandlerContract
