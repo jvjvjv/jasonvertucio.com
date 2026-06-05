@@ -133,11 +133,13 @@ class AiChatBotController extends Controller
 
         $registry = new ChatBotToolRegistry(
             $conversation,
-            $resumeDataService,
-            $memoryService,
-            $targetedResumeService,
             $allowedTools,
             $includeAllTools,
+            [
+                'resumeDataService' => $resumeDataService,
+                'memoryService' => $memoryService,
+                'targetedResumeService' => $targetedResumeService,
+            ],
         );
 
         return response()->json([

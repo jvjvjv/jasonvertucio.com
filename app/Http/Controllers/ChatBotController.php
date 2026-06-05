@@ -211,6 +211,11 @@ class ChatBotController extends Controller
         // is safe and also migrates any stale hashes stored by old encode versions.
         $chatHash = $conversation->generateChatHash();
 
+        // Release the session file lock before streaming so other browser tabs
+        // aren't blocked waiting for the lock during a long-running LM Studio response.
+        session()->save();
+        session_write_close();
+
         return response()->stream(function () use ($request, $conversation) {
             echo 'data: ' . json_encode([
                 'type' => 'status',

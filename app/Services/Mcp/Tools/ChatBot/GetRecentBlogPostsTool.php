@@ -50,7 +50,7 @@ class GetRecentBlogPostsTool implements AiToolHandlerContract
                 'slug' => $post->slug,
                 'url' => '/blog/' . $post->slug,
                 'published_at' => $post->published_at?->toDateString(),
-                'topic' => $post->topic?->name,
+                'topic' => $post->topic->first()?->name,
             ])->values()->toArray(),
         ];
     }

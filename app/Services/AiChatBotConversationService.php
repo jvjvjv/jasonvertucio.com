@@ -131,10 +131,13 @@ class AiChatBotConversationService
         $toolRegistry = $conversation->aiChatBot?->tools_enabled
             ? new ChatBotToolRegistry(
                 $conversation,
-                $this->resumeDataService,
-                $this->memoryService,
-                $this->targetedResumeService,
                 $conversation->aiSystem->allowed_tools ?? [],
+                false,
+                [
+                    'resumeDataService' => $this->resumeDataService,
+                    'memoryService' => $this->memoryService,
+                    'targetedResumeService' => $this->targetedResumeService,
+                ],
             )
             : null;
         $availableTools = $toolRegistry?->toApiTools() ?? [];
