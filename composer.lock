@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "204c0917b64aa686e20080561b04a2e7",
+    "content-hash": "42677f83b57ddd2a4eefff779c007ec8",
     "packages": [
         {
             "name": "anthropic-ai/sdk",
@@ -1634,11 +1634,17 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "dev-main",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jvjvjv/CodeTalker.git",
+                "reference": "f131c70a2a3d5db701a2f2c095122fb43e194cae"
+            },
             "dist": {
-                "type": "path",
-                "url": "../code-talker",
-                "reference": "c01496fe09cdf07f41fab860f2a16e063f44e9fc"
+                "type": "zip",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/f131c70a2a3d5db701a2f2c095122fb43e194cae",
+                "reference": "f131c70a2a3d5db701a2f2c095122fb43e194cae",
+                "shasum": ""
             },
             "require": {
                 "anthropic-ai/sdk": "^0.25.0",
@@ -1665,11 +1671,7 @@
                     "Jvjvjv\\CodeTalker\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Jvjvjv\\CodeTalker\\Tests\\": "tests/"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1681,20 +1683,21 @@
             ],
             "description": "Multi-provider AI communications package for Laravel — chatbots, streaming, tool-use, memory, and admin management.",
             "keywords": [
+                "Gemini",
                 "ai",
                 "anthropic",
                 "chatbot",
-                "gemini",
                 "grok",
                 "laravel",
                 "llm",
                 "openai",
                 "streaming"
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "support": {
+                "issues": "https://github.com/jvjvjv/CodeTalker/issues",
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/0.1.0"
+            },
+            "time": "2026-06-05T17:59:33+00:00"
         },
         {
             "name": "laravel/fortify",
@@ -10860,9 +10863,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "jvjvjv/code-talker": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
