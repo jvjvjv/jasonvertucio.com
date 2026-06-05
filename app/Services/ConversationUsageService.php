@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Enums\AiInteractionStatus;
-use App\Models\AiConversation;
-use App\Models\AiInteractionLog;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Support\Collection;
 
 class ConversationUsageService

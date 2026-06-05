@@ -2,8 +2,8 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
-use App\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 
 class GetResumeMemoriesTool implements AiToolHandlerContract
 {

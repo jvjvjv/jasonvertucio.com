@@ -3,16 +3,16 @@
 namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
-use App\Enums\AiConversationStatus;
-use App\Enums\AiInteractionStatus;
-use App\Jobs\ProcessAiMemoryJob;
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
-use App\Models\AiInteractionLog;
-use App\Models\AiLlmMessage;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiLlmMessage;
 use App\Models\User;
-use App\Services\Mcp\ChatBotToolRegistry;
+use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
 use Generator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -131,10 +131,13 @@ class AiChatBotConversationService
         $toolRegistry = $conversation->aiChatBot?->tools_enabled
             ? new ChatBotToolRegistry(
                 $conversation,
-                $this->resumeDataService,
-                $this->memoryService,
-                $this->targetedResumeService,
                 $conversation->aiSystem->allowed_tools ?? [],
+                false,
+                [
+                    'resumeDataService' => $this->resumeDataService,
+                    'memoryService' => $this->memoryService,
+                    'targetedResumeService' => $this->targetedResumeService,
+                ],
             )
             : null;
         $availableTools = $toolRegistry?->toApiTools() ?? [];

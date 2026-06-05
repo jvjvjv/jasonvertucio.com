@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SendAiChatBotMessageRequest;
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Models\User;
-use App\Services\AiChatBotConversationService;
-use App\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -210,6 +210,11 @@ class ChatBotController extends Controller
         // generateChatHash() is deterministic (same inputs → same output), so this
         // is safe and also migrates any stale hashes stored by old encode versions.
         $chatHash = $conversation->generateChatHash();
+
+        // Release the session file lock before streaming so other browser tabs
+        // aren't blocked waiting for the lock during a long-running LM Studio response.
+        session()->save();
+        session_write_close();
 
         return response()->stream(function () use ($request, $conversation) {
             echo 'data: ' . json_encode([

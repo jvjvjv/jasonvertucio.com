@@ -2,16 +2,19 @@
 
 namespace App\Services;
 
-use App\Concerns\ExecutesAiTools;
+use Jvjvjv\CodeTalker\Concerns\ExecutesAiTools;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Contracts\ResumeDataServiceContract;
-use App\Enums\AiConversationStatus;
-use App\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
-use App\Models\AiInteractionLog;
-use App\Models\AiSystem;
-use App\Models\AiSystemPrompt;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "69cead9e455e9b5f0ada26170ff85b01",
+    "content-hash": "42677f83b57ddd2a4eefff779c007ec8",
     "packages": [
         {
             "name": "anthropic-ai/sdk",
@@ -1631,6 +1631,73 @@
                 "source": "https://github.com/inertiajs/inertia-laravel/tree/v2.0.24"
             },
             "time": "2026-04-10T14:36:44+00:00"
+        },
+        {
+            "name": "jvjvjv/code-talker",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jvjvjv/CodeTalker.git",
+                "reference": "f131c70a2a3d5db701a2f2c095122fb43e194cae"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/f131c70a2a3d5db701a2f2c095122fb43e194cae",
+                "reference": "f131c70a2a3d5db701a2f2c095122fb43e194cae",
+                "shasum": ""
+            },
+            "require": {
+                "anthropic-ai/sdk": "^0.25.0",
+                "google-gemini-php/client": "^2.7",
+                "guzzlehttp/guzzle": "^7.0",
+                "laravel/framework": "^12.0",
+                "openai-php/client": "^0.19.2",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^10.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Jvjvjv\\CodeTalker\\CodeTalkerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jvjvjv\\CodeTalker\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jason Vertucio",
+                    "email": "bigcartoonjay@gmail.com"
+                }
+            ],
+            "description": "Multi-provider AI communications package for Laravel — chatbots, streaming, tool-use, memory, and admin management.",
+            "keywords": [
+                "Gemini",
+                "ai",
+                "anthropic",
+                "chatbot",
+                "grok",
+                "laravel",
+                "llm",
+                "openai",
+                "streaming"
+            ],
+            "support": {
+                "issues": "https://github.com/jvjvjv/CodeTalker/issues",
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/0.1.0"
+            },
+            "time": "2026-06-05T17:59:33+00:00"
         },
         {
             "name": "laravel/fortify",

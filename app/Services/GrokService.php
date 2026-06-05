@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Generator;
 use OpenAI\Client as OpenAIClient;
 use OpenAI\Responses\Chat\CreateStreamedResponseToolCall;

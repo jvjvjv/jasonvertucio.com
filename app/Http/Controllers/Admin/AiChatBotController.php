@@ -6,11 +6,11 @@ use App\Contracts\ResumeDataServiceContract;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
-use App\Models\AiSystem;
-use App\Services\AiMemoryService;
-use App\Services\Mcp\ChatBotToolRegistry;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
 use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -133,11 +133,13 @@ class AiChatBotController extends Controller
 
         $registry = new ChatBotToolRegistry(
             $conversation,
-            $resumeDataService,
-            $memoryService,
-            $targetedResumeService,
             $allowedTools,
             $includeAllTools,
+            [
+                'resumeDataService' => $resumeDataService,
+                'memoryService' => $memoryService,
+                'targetedResumeService' => $targetedResumeService,
+            ],
         );
 
         return response()->json([

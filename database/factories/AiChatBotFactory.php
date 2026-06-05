@@ -2,14 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AiChatBot>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Jvjvjv\CodeTalker\Models\AiChatBot>
  */
 class AiChatBotFactory extends Factory
 {
+    protected $model = \Jvjvjv\CodeTalker\Models\AiChatBot::class;
+
     /**
      * Define the model's default state.
      *

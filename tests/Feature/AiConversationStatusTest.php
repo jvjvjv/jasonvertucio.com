@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AiConversationStatus;
-use App\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiConversation;
-use App\Models\AiInteractionLog;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\TargetedResume;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

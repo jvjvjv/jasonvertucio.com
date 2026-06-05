@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Services\AiClientFactory;
-use App\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Illuminate\Support\ServiceProvider;
 
 class ClaudeServiceProvider extends ServiceProvider

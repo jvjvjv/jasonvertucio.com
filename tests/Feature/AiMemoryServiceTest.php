@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
-use App\Models\AiFeatureMemory;
-use App\Services\AiClientFactory;
-use App\Services\AiMemoryService;
-use App\Services\ClaudeService;
+use App\Models\User;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -17,20 +18,24 @@ class AiMemoryServiceTest extends TestCase
 
     public function test_get_memories_for_prompt_returns_formatted_string(): void
     {
+        $user = User::factory()->create();
+
         AiFeatureMemory::factory()->preference()->create([
             'feature' => 'targeted-resume',
             'content' => 'Prefers concise bullet points',
             'confidence' => 90,
+            'user_id' => $user->id,
         ]);
 
         AiFeatureMemory::factory()->domainKnowledge()->create([
             'feature' => 'targeted-resume',
             'content' => 'Has 10 years of PHP experience',
             'confidence' => 85,
+            'user_id' => $user->id,
         ]);
 
         $service = app(AiMemoryService::class);
-        $result = $service->getMemoriesForPrompt('targeted-resume');
+        $result = $service->getMemoriesForPrompt('targeted-resume', $user->id);
 
         $this->assertStringContainsString('User Preferences', $result);
         $this->assertStringContainsString('Prefers concise bullet points', $result);
@@ -48,19 +53,23 @@ class AiMemoryServiceTest extends TestCase
 
     public function test_get_memories_for_prompt_excludes_inactive(): void
     {
+        $user = User::factory()->create();
+
         AiFeatureMemory::factory()->create([
             'feature' => 'targeted-resume',
             'content' => 'Active memory',
             'is_active' => true,
+            'user_id' => $user->id,
         ]);
 
         AiFeatureMemory::factory()->inactive()->create([
             'feature' => 'targeted-resume',
             'content' => 'Inactive memory',
+            'user_id' => $user->id,
         ]);
 
         $service = app(AiMemoryService::class);
-        $result = $service->getMemoriesForPrompt('targeted-resume');
+        $result = $service->getMemoriesForPrompt('targeted-resume', $user->id);
 
         $this->assertStringContainsString('Active memory', $result);
         $this->assertStringNotContainsString('Inactive memory', $result);

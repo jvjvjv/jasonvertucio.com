@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use App\Models\User;
-use App\Services\AiClientFactory;
-use App\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Mockery;

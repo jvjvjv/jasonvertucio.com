@@ -2,7 +2,7 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Canvas\Models\Post;
 
 class GetRecentBlogPostsTool implements AiToolHandlerContract
@@ -50,7 +50,7 @@ class GetRecentBlogPostsTool implements AiToolHandlerContract
                 'slug' => $post->slug,
                 'url' => '/blog/' . $post->slug,
                 'published_at' => $post->published_at?->toDateString(),
-                'topic' => $post->topic?->name,
+                'topic' => $post->topic->first()?->name,
             ])->values()->toArray(),
         ];
     }

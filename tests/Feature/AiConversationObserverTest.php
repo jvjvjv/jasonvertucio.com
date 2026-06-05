@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AiConversationStatus;
-use App\Jobs\ProcessAiMemoryJob;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

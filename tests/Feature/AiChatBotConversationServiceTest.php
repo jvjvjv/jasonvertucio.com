@@ -2,14 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\ResumeDataServiceContract;
-use App\Models\AiChatBot;
-use App\Services\AiChatBotConversationService;
-use App\Services\AiClientFactory;
-use App\Services\AiMemoryService;
-use App\Services\ClaudeService;
-use App\Services\ConversationUsageService;
-use App\Services\TargetedResumeService;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Mockery;
@@ -26,6 +25,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $client = Mockery::mock(ClaudeService::class);
         $client->shouldReceive('withSystem')->once()->andReturnSelf();
         $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
+        $client->shouldReceive('withTemperature')->once()->andReturnSelf();
         $client->shouldReceive('stream')->once()->andReturn($this->fakeStream());
 
         $clientFactory = Mockery::mock(AiClientFactory::class);
@@ -34,10 +34,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
-        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
-
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
 
         $conversation = $service->startConversation($bot);
 
@@ -51,7 +48,7 @@ class AiChatBotConversationServiceTest extends TestCase
 
     public function test_continue_conversation_syncs_usage_after_successful_response(): void {
         $bot = AiChatBot::factory()->create([
-            'ai_system_id' => \App\Models\AiSystem::factory()->create([
+            'ai_system_id' => AiSystem::factory()->create([
                 'pricing_profile' => [
                     'models' => [
                         'claude-sonnet-4-6' => [
@@ -66,6 +63,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $client = Mockery::mock(ClaudeService::class);
         $client->shouldReceive('withSystem')->once()->andReturnSelf();
         $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
+        $client->shouldReceive('withTemperature')->once()->andReturnSelf();
         $client->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
 
         $clientFactory = Mockery::mock(AiClientFactory::class);
@@ -74,10 +72,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
-        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
-
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
 
         $conversation = $service->startConversation($bot->fresh());
 

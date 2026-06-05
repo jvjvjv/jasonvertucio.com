@@ -2,8 +2,8 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Services\TargetedResumeService;
 
 class SaveCoverLetterTool implements AiToolHandlerContract

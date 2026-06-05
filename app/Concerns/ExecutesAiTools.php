@@ -2,10 +2,10 @@
 
 namespace App\Concerns;
 
-use App\Contracts\AiClientContract;
-use App\Contracts\Mcp\AiToolRegistryContract;
-use App\Models\AiConversation;
-use App\Models\AiLlmMessage;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiLlmMessage;
 use Generator;
 use Illuminate\Support\Facades\Log;
 
