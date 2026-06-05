@@ -8,13 +8,13 @@ use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ConversationUsageSyncTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function testSyncCommandUpdatesUsageForRecentlyActiveConversations(): void
     {

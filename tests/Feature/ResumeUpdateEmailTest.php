@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Mail\ResumeUpdated;
 use App\Models\ResumeShareCode;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -12,6 +13,8 @@ use Tests\TestCase;
 
 class ResumeUpdateEmailTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected User $admin;
 
     protected function setUp(): void
