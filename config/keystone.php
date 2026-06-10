@@ -16,6 +16,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | User Model
+    |--------------------------------------------------------------------------
+    |
+    | The application's authenticatable model. Keystone uses this to resolve
+    | the inverse role/permission relationships (e.g. KeystoneRole::users()).
+    |
+    */
+
+    'user' => [
+        'model' => \App\Models\User::class,
+        'primary_key_type' => 'uuid',
+        'table_name' => 'users',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Features
     |--------------------------------------------------------------------------
     |
@@ -93,7 +109,7 @@ return [
     | Role & Permission Settings
     |--------------------------------------------------------------------------
     |
-    | Configuration for the RBAC system powered by Spatie Laravel Permission.
+    | Configuration for Keystone's built-in role-based access control (RBAC).
     |
     */
 

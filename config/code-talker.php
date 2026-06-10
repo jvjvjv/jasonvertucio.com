@@ -34,7 +34,7 @@ return [
             'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
             'max_tokens' => (int) env('ANTHROPIC_MAX_TOKENS', 1024),
             'api_version' => env('ANTHROPIC_API_VERSION', '2023-06-01'),
-            'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
+            'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
             'pricing' => [
                 'default' => [
                     'input_per_million' => (float) env('ANTHROPIC_DEFAULT_INPUT_PER_MILLION', 3.00),
@@ -56,6 +56,30 @@ return [
                     'claude-opus-4-5' => [
                         'input_per_million' => (float) env('ANTHROPIC_OPUS_4_INPUT_PER_MILLION', 15.00),
                         'output_per_million' => (float) env('ANTHROPIC_OPUS_4_OUTPUT_PER_MILLION', 75.00),
+                    ],
+                    'claude-sonnet-3-7' => [
+                        'input_per_million' => (float) env('ANTHROPIC_SONNET_37_INPUT_PER_MILLION', 3.00),
+                        'output_per_million' => (float) env('ANTHROPIC_SONNET_37_OUTPUT_PER_MILLION', 15.00),
+                    ],
+                    'claude-sonnet-4' => [
+                        'input_per_million' => (float) env('ANTHROPIC_SONNET_4_INPUT_PER_MILLION', 3.00),
+                        'output_per_million' => (float) env('ANTHROPIC_SONNET_4_OUTPUT_PER_MILLION', 15.00),
+                    ],
+                    'claude-sonnet-4-5' => [
+                        'input_per_million' => (float) env('ANTHROPIC_SONNET_45_INPUT_PER_MILLION', 3.00),
+                        'output_per_million' => (float) env('ANTHROPIC_SONNET_45_OUTPUT_PER_MILLION', 15.00),
+                    ],
+                    'claude-opus-4-1' => [
+                        'input_per_million' => (float) env('ANTHROPIC_OPUS_41_INPUT_PER_MILLION', 15.00),
+                        'output_per_million' => (float) env('ANTHROPIC_OPUS_41_OUTPUT_PER_MILLION', 75.00),
+                    ],
+                    'claude-opus-4-6' => [
+                        'input_per_million' => (float) env('ANTHROPIC_OPUS_46_INPUT_PER_MILLION', 15.00),
+                        'output_per_million' => (float) env('ANTHROPIC_OPUS_46_OUTPUT_PER_MILLION', 75.00),
+                    ],
+                    'claude-opus-4-7' => [
+                        'input_per_million' => (float) env('ANTHROPIC_OPUS_47_INPUT_PER_MILLION', 15.00),
+                        'output_per_million' => (float) env('ANTHROPIC_OPUS_47_OUTPUT_PER_MILLION', 75.00),
                     ],
                 ],
             ],
@@ -79,6 +103,14 @@ return [
                     'gpt-4o-mini' => [
                         'input_per_million' => (float) env('OPENAI_GPT_4O_MINI_INPUT_PER_MILLION', 0.15),
                         'output_per_million' => (float) env('OPENAI_GPT_4O_MINI_OUTPUT_PER_MILLION', 0.60),
+                    ],
+                    'gpt-4.1' => [
+                        'input_per_million' => (float) env('OPENAI_GPT_41_INPUT_PER_MILLION', 2.00),
+                        'output_per_million' => (float) env('OPENAI_GPT_41_OUTPUT_PER_MILLION', 8.00),
+                    ],
+                    'gpt-4.1-mini' => [
+                        'input_per_million' => (float) env('OPENAI_GPT_41_MINI_INPUT_PER_MILLION', 0.40),
+                        'output_per_million' => (float) env('OPENAI_GPT_41_MINI_OUTPUT_PER_MILLION', 1.60),
                     ],
                 ],
             ],

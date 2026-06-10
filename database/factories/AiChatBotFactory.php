@@ -2,15 +2,16 @@
 
 namespace Database\Factories;
 
+use App\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Jvjvjv\CodeTalker\Models\AiChatBot>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AiChatBot>
  */
 class AiChatBotFactory extends Factory
 {
-    protected $model = \Jvjvjv\CodeTalker\Models\AiChatBot::class;
+    protected $model = AiChatBot::class;
 
     /**
      * Define the model's default state.
@@ -30,7 +31,6 @@ class AiChatBotFactory extends Factory
             'prompt_template' => 'You are {{bot_name}}. Respond helpfully to the visitor.',
             'allowed_roles' => [],
             'is_active' => true,
-            'is_public' => true,
             'require_visitor_identity' => false,
         ];
     }

@@ -24,12 +24,12 @@
     "php": "^8.4.0",
     "anthropic-ai/sdk": "^0.25.0",
     "austintoddj/canvas": "^6.0.55",
-    "bspdx/keystone": "^0.6.0",
+    "bspdx/keystone": "^0.9.0",
     "fakerphp/faker": "^1.24.1",
     "google-gemini-php/client": "^2.7",
     "guzzlehttp/guzzle": "^7.10.0",
     "inertiajs/inertia-laravel": "^2.0",
-    "jvjvjv/code-talker": "^0.1.0",
+    "jvjvjv/code-talker": "^0",
     "laravel/fortify": "^1.36.1",
     "laravel/framework": "^12.54.1",
     "laravel/tinker": "^2.11.1",
@@ -86,7 +86,7 @@
     ],
     "test": [
       "@php artisan config:clear --ansi",
-      "@php vendor/bin/phpunit"
+      "@php vendor/bin/phpunit --columns max --testdox --color=always"
     ]
   }
 }

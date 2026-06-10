@@ -36,7 +36,7 @@ interface HistoryItem {
 interface Bot {
     name: string;
     description: string | null;
-    is_public: boolean;
+    allowed_roles: string[];
     require_visitor_identity: boolean;
     total_cost_usd: number;
 }
@@ -490,7 +490,7 @@ export default function ChatBot({
                                             variant="body2"
                                             color="text.secondary"
                                         >
-                                            {bot.is_public
+                                            {bot.allowed_roles.length === 0
                                                 ? "Public bot"
                                                 : "Restricted bot"}
                                         </Typography>

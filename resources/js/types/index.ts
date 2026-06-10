@@ -101,7 +101,6 @@ export interface AiChatBot {
     prompt_template?: string;
     allowed_roles: string[];
     is_active: boolean;
-    is_public: boolean;
     require_visitor_identity: boolean;
     tools_enabled: boolean;
     conversations_count?: number;

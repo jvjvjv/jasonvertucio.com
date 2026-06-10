@@ -27,10 +27,10 @@ class OpenAiService implements AiClientContract
         ?int $maxTokens = null,
         ?string $baseUrl = null,
     ) {
-        $this->defaultModel = $model ?? config('openai.model', 'gpt-4o-mini');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('openai.max_tokens', 1024);
+        $this->defaultModel = $model ?? config('code-talker.providers.openai.model', 'gpt-4o-mini');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.openai.max_tokens', 1024);
 
-        $resolvedBaseUrl = rtrim($baseUrl ?? config('openai.base_url', 'https://api.openai.com/v1'), '/');
+        $resolvedBaseUrl = rtrim($baseUrl ?? config('code-talker.providers.openai.base_url', 'https://api.openai.com/v1'), '/');
         $resolvedApiKey = $apiKey ?? '';
 
         $factory = \OpenAI::factory()->withBaseUri($resolvedBaseUrl);

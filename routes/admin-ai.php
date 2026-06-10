@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiToolsController;
-use App\Http\Controllers\Admin\AiChatBotController;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiConversationController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiSystemPromptController;
@@ -48,9 +48,12 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::get('/conversations/{conversation}', [AiConversationController::class, 'show'])->name('conversations.show');
         Route::delete('/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
 
-        // AI Chat Bots CRUD
+        // AI Chat Bots CRUD (controller provided by jvjvjv/code-talker).
+        // The literal mcp-tools route must precede the {aiChatBot} wildcard so
+        // it is not matched as a bot slug.
         Route::get('/chat-bots', [AiChatBotController::class, 'index'])->name('bots.index');
         Route::get('/chat-bots/new', [AiChatBotController::class, 'create'])->name('bots.create');
+        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools'])->name('bots.mcp-tools');
 
         Route::post('/chat-bots', [AiChatBotController::class, 'store'])->name('bots.store');
         Route::get('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'edit'])->name('bots.edit');

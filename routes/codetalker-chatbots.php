@@ -9,22 +9,25 @@ use Illuminate\Support\Facades\Route;
 | Chat Bot Routes
 |--------------------------------------------------------------------------
 |
-| Routes for public-facing chat bot interfaces. The root-level wildcard
-| ({aiChatBot:slug}) must remain at the end of this file so it does not
-| swallow more-specific literal routes registered in web.php.
+| Published override of the package's codetalker-chatbots.php. The package
+| loads this file via its booted() callback when it exists in routes/, giving
+| the app full control over which controller handles these routes.
+|
+| The root-level wildcard ({aiChatBot:slug}) must remain at the end of this
+| file so it does not swallow more-specific literal routes.
 |
 */
 
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
     ->get('/chats', [ChatBotController::class, 'index'])
     ->name('chat-bots.index');
 
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
     ->get('/chats/statuses', [ChatBotController::class, 'statuses'])
     ->name('chat-bots.statuses');
 
 // Hash/UUID-based conversation links
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
     ->prefix('chat')
     ->group(function () {
         Route::get('/{slug}/{hash}', [ChatBotController::class, 'showByHash'])
@@ -44,16 +47,13 @@ $chatBotRoutes = function () {
 };
 
 // /chat/{slug} prefixed routes
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
+Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
     ->prefix('chat')
     ->name('chat-bots.chat.')
     ->group($chatBotRoutes);
 
 // Root-level /{slug} routes — must be last so the wildcard does not match
 // literal paths registered before this file is loaded.
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
+Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
     ->name('chat-bots.root.')
     ->group($chatBotRoutes);
-
-// TEMP DEBUG
-Route::get('/debug-chatbots-loaded', function () { return 'yes'; })->name('debug.chatbots.loaded');

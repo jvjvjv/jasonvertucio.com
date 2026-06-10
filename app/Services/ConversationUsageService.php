@@ -260,8 +260,8 @@ class ConversationUsageService
      */
     private function pricingConfigForProvider(string $provider): ?array {
         return match ($provider) {
-            'anthropic' => (array) config('claude.pricing', []),
-            'openai', 'openai-compatible' => (array) config('openai.pricing', []),
+            'anthropic' => (array) config('code-talker.providers.anthropic.pricing', []),
+            'openai', 'openai-compatible' => (array) config('code-talker.providers.openai.pricing', []),
             default => null,
         };
     }

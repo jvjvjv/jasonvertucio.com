@@ -45,12 +45,12 @@ class ClaudeService implements AiClientContract
         ?string $apiVersion = null,
         ?string $baseUrl = null,
     ) {
-        $this->defaultModel = $model ?? config('claude.model', 'claude-sonnet-4-6');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('claude.max_tokens', 1024);
+        $this->defaultModel = $model ?? config('code-talker.providers.anthropic.model', 'claude-sonnet-4-6');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.anthropic.max_tokens', 1024);
 
         $this->client = new AnthropicClient(
             apiKey: $apiKey ?? '',
-            baseUrl: $baseUrl ?? config('claude.base_url', 'https://api.anthropic.com'),
+            baseUrl: $baseUrl ?? config('code-talker.providers.anthropic.base_url', 'https://api.anthropic.com'),
         );
     }
 

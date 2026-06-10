@@ -102,7 +102,7 @@ const columns: ColumnDef<AiChatBot>[] = [
         label: "Access",
         render: (row) => (
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                {row.is_public && (
+                {row.allowed_roles.length === 0 && (
                     <Chip
                         label="Public"
                         size="small"
@@ -111,13 +111,7 @@ const columns: ColumnDef<AiChatBot>[] = [
                     />
                 )}
                 {row.allowed_roles.length > 0 && (
-                    <Tooltip
-                        title={
-                            row.allowed_roles.length > 0
-                                ? "Roles: " + row.allowed_roles.join(", ")
-                                : "Any role"
-                        }
-                    >
+                    <Tooltip title={"Roles: " + row.allowed_roles.join(", ")}>
                         <Chip
                             label="Role-based"
                             size="small"

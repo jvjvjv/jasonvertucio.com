@@ -11,7 +11,7 @@ use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\TargetedResume;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiConversationStatusTest extends TestCase
@@ -77,7 +77,7 @@ class AiConversationStatusTest extends TestCase
 
     public function test_pass_action_updates_conversation_status(): void
     {
-        Permission::findOrCreate('edit-resume', 'web');
+        Permission::firstOrCreate(['name' => 'edit-resume']);
         $user = User::factory()->create();
         $user->givePermissionTo('edit-resume');
         $this->actingAs($user);

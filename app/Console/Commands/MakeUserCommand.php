@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -87,7 +87,7 @@ class MakeUserCommand extends Command
 
         if ($assignRole && $roleName) {
             try {
-                $role = Role::findByName($roleName);
+                $role = Role::where('name', $roleName)->firstOrFail();
                 $user->assignRole($role);
                 $this->info("Role '{$roleName}' assigned.");
             } catch (\Exception $e) {

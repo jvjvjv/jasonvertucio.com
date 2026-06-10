@@ -31,12 +31,12 @@ class GeminiService implements AiClientContract
         ?int $maxTokens = null,
         ?string $baseUrl = null,
     ) {
-        $this->defaultModel = $model ?? config('gemini.model', 'gemini-2.5-flash');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('gemini.max_tokens', 1024);
+        $this->defaultModel = $model ?? config('code-talker.providers.gemini.model', 'gemini-2.5-flash');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.gemini.max_tokens', 1024);
 
         $resolvedApiKey = $apiKey ?? '';
         $resolvedBaseUrl = rtrim(
-            $baseUrl ?? config('gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'),
+            $baseUrl ?? config('code-talker.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'),
             '/'
         );
 

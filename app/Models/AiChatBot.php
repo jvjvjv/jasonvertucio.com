@@ -3,21 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Jvjvjv\CodeTalker\Models\AiChatBot as BaseAiChatBot;
 
-class AiChatBot extends Model
+class AiChatBot extends BaseAiChatBot
 {
-    use HasFactory;
-    use SoftDeletes;
-
-    public const ACCESS_PATH_CHAT = 'chat';
-
-    public const ACCESS_PATH_ROOT = 'root';
-
     protected $fillable = [
         'ai_system_id',
         'context_length',
@@ -29,7 +18,6 @@ class AiChatBot extends Model
         'prompt_template',
         'allowed_roles',
         'is_active',
-        'is_public',
         'require_visitor_identity',
         'tools_enabled',
     ];
@@ -44,15 +32,9 @@ class AiChatBot extends Model
             'context_length' => 'integer',
             'temperature' => 'decimal:2',
             'is_active' => 'boolean',
-            'is_public' => 'boolean',
             'require_visitor_identity' => 'boolean',
             'tools_enabled' => 'boolean',
         ];
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'slug';
     }
 
     /**
@@ -95,21 +77,6 @@ class AiChatBot extends Model
         return $query->where('is_active', true);
     }
 
-    public function aiSystem(): BelongsTo
-    {
-        return $this->belongsTo(AiSystem::class);
-    }
-
-    public function conversations(): HasMany
-    {
-        return $this->hasMany(AiConversation::class);
-    }
-
-    public function interactionLogs(): HasMany
-    {
-        return $this->hasMany(AiInteractionLog::class);
-    }
-
     public function allowsRole(?User $user): bool
     {
         if ($user === null) {
@@ -123,45 +90,5 @@ class AiChatBot extends Model
         }
 
         return $user->hasAnyRole($allowedRoles);
-    }
-
-    public function featureKey(): string
-    {
-        return 'chat-bot:' . $this->slug;
-    }
-
-    public function resolvedTemperature(): ?float
-    {
-        if ($this->temperature !== null) {
-            return (float) $this->temperature;
-        }
-
-        if ($this->aiSystem?->temperature !== null) {
-            return (float) $this->aiSystem->temperature;
-        }
-
-        return null;
-    }
-
-    public function resolvedContextLength(): ?int
-    {
-        return $this->context_length ?? $this->aiSystem?->context_length;
-    }
-
-    public function usesRootAccessPath(): bool
-    {
-        return $this->access_path === self::ACCESS_PATH_ROOT;
-    }
-
-    public function usesChatAccessPath(): bool
-    {
-        return $this->access_path !== self::ACCESS_PATH_ROOT;
-    }
-
-    public function publicPath(): string
-    {
-        return $this->usesRootAccessPath()
-            ? '/' . $this->slug
-            : '/chat/' . $this->slug;
     }
 }

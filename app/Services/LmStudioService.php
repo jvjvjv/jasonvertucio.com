@@ -36,10 +36,10 @@ class LmStudioService implements AiClientContract, CanLoadModels
         private bool $enableThinking = false,
     ) {
         $this->serverUrl = $this->normalizeServerUrl(
-            $serverUrl ?? config('lmstudio.server_url', 'http://localhost:1234'),
+            $serverUrl ?? config('code-talker.providers.lm-studio.server_url', 'http://localhost:1234'),
         );
-        $this->defaultModel = $model ?? config('lmstudio.model', '');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('lmstudio.max_tokens', 1024);
+        $this->defaultModel = $model ?? config('code-talker.providers.lm-studio.model', '');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.lm-studio.max_tokens', 1024);
         $this->defaultContextLength = $contextLength;
         $this->apiKey = $apiKey;
     }

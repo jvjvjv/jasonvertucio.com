@@ -37,7 +37,7 @@ class SiteSettingsController extends Controller
     public function edit(): InertiaResponse
     {
         $config = $this->readConfig();
-        $permissions = \Spatie\Permission\Models\Permission::orderBy('name')->pluck('name')->all();
+        $permissions = \BSPDX\Keystone\Models\KeystonePermission::orderBy('name')->pluck('name')->all();
 
         return Inertia::render('site-settings/Editor', [
             'links' => $config['links'] ?? [],
@@ -50,7 +50,7 @@ class SiteSettingsController extends Controller
      */
     public function update(Request $request): JsonResponse|RedirectResponse
     {
-        $permissionNames = \Spatie\Permission\Models\Permission::pluck('name')->all();
+        $permissionNames = \BSPDX\Keystone\Models\KeystonePermission::pluck('name')->all();
         $allowedCan = array_merge(['authenticated'], $permissionNames);
 
         $validated = $request->validate([

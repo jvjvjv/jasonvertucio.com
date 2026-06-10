@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\AiChatBotController;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\JobUrlParseController;

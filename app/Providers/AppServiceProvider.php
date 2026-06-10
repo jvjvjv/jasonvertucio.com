@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Observers\CommentObserver;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use App\Services\TargetedResumeService;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Comment::observe(CommentObserver::class);
+
+        Route::model('aiChatBot', \App\Models\AiChatBot::class);
 
         // Force HTTPS in local development when using local-ssl-proxy
         if (app()->environment('dev') && request()->getHost() === 'localhost') {

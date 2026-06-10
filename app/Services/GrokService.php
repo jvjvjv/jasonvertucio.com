@@ -27,10 +27,10 @@ class GrokService implements AiClientContract
         ?int $maxTokens = null,
         ?string $baseUrl = null,
     ) {
-        $this->defaultModel = $model ?? config('grok.model', 'grok-3-mini');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('grok.max_tokens', 1024);
+        $this->defaultModel = $model ?? config('code-talker.providers.grok.model', 'grok-3-mini');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.grok.max_tokens', 1024);
 
-        $resolvedBaseUrl = rtrim($baseUrl ?? config('grok.base_url', 'https://api.x.ai/v1'), '/');
+        $resolvedBaseUrl = rtrim($baseUrl ?? config('code-talker.providers.grok.base_url', 'https://api.x.ai/v1'), '/');
         $resolvedApiKey = $apiKey ?? '';
 
         $factory = \OpenAI::factory()->withBaseUri($resolvedBaseUrl);

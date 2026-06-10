@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Models\AiChatBot;
+use App\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use App\Models\User;
@@ -13,7 +13,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Tests\TestCase;
 
 class ChatBotControllerTest extends TestCase
@@ -25,19 +25,19 @@ class ChatBotControllerTest extends TestCase
         AiChatBot::factory()->create([
             'name' => 'Public Bot',
             'is_active' => true,
-            'is_public' => true,
+            'allowed_roles' => [],
         ]);
 
         AiChatBot::factory()->create([
             'name' => 'Private Bot',
             'is_active' => true,
-            'is_public' => false,
+            'allowed_roles' => ['admin'],
         ]);
 
         AiChatBot::factory()->create([
             'name' => 'Inactive Public Bot',
             'is_active' => false,
-            'is_public' => true,
+            'allowed_roles' => [],
         ]);
 
         $response = $this->get(route('chat-bots.index'));
@@ -53,27 +53,25 @@ class ChatBotControllerTest extends TestCase
 
     public function test_chats_index_for_authenticated_users_includes_accessible_private_bots_and_sorts_conversations_descending(): void
     {
-        Role::findOrCreate('editor', 'web');
+        Role::firstOrCreate(['name' => 'editor']);
         $user = User::factory()->create();
         $user->assignRole('editor');
 
         $publicBot = AiChatBot::factory()->create([
             'name' => 'Public Bot',
             'is_active' => true,
-            'is_public' => true,
+            'allowed_roles' => [],
         ]);
 
         $privateAllowedBot = AiChatBot::factory()->create([
             'name' => 'Private Allowed Bot',
             'is_active' => true,
-            'is_public' => false,
             'allowed_roles' => ['editor'],
         ]);
 
         AiChatBot::factory()->create([
             'name' => 'Private Denied Bot',
             'is_active' => true,
-            'is_public' => false,
             'allowed_roles' => ['admin'],
         ]);
 
@@ -138,7 +136,7 @@ class ChatBotControllerTest extends TestCase
     {
         $bot = AiChatBot::factory()->create([
             'name' => 'Guest Bot',
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -152,12 +150,12 @@ class ChatBotControllerTest extends TestCase
     {
         $publicBot = AiChatBot::factory()->create([
             'name' => 'Public Bot',
-            'is_public' => true,
+            'allowed_roles' => [],
         ]);
 
         AiChatBot::factory()->create([
             'name' => 'Private Bot',
-            'is_public' => false,
+            'allowed_roles' => ['admin'],
         ]);
 
         $readiness = Mockery::mock(AiModelReadinessService::class);
@@ -176,7 +174,7 @@ class ChatBotControllerTest extends TestCase
     public function test_guest_can_request_public_bot_status_endpoint(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -196,7 +194,7 @@ class ChatBotControllerTest extends TestCase
     public function test_guest_can_request_public_bot_warmup_endpoint(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -220,7 +218,7 @@ class ChatBotControllerTest extends TestCase
     {
         $bot = AiChatBot::factory()->create([
             'name' => 'Root Guest Bot',
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_ROOT,
         ]);
 
@@ -233,7 +231,7 @@ class ChatBotControllerTest extends TestCase
     public function test_guest_cannot_view_private_bot(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => false,
+            'allowed_roles' => ['admin'],
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -244,12 +242,11 @@ class ChatBotControllerTest extends TestCase
 
     public function test_authenticated_user_with_allowed_role_can_view_private_bot(): void
     {
-        Role::findOrCreate('editor', 'web');
+        Role::firstOrCreate(['name' => 'editor']);
         $user = User::factory()->create();
         $user->assignRole('editor');
 
         $bot = AiChatBot::factory()->create([
-            'is_public' => false,
             'allowed_roles' => ['editor'],
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
@@ -262,7 +259,7 @@ class ChatBotControllerTest extends TestCase
     public function test_wrong_entry_point_returns_not_found(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_ROOT,
         ]);
 
@@ -274,7 +271,7 @@ class ChatBotControllerTest extends TestCase
     public function test_first_guest_message_requires_identity_when_configured(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'require_visitor_identity' => true,
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
@@ -290,7 +287,7 @@ class ChatBotControllerTest extends TestCase
     public function test_message_endpoint_creates_session_conversation_and_streams(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'require_visitor_identity' => false,
             'access_path' => AiChatBot::ACCESS_PATH_ROOT,
         ]);
@@ -325,7 +322,7 @@ class ChatBotControllerTest extends TestCase
     public function test_switch_endpoint_sets_current_conversation_from_session_history(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_ROOT,
         ]);
 
@@ -364,7 +361,7 @@ class ChatBotControllerTest extends TestCase
     public function test_new_chat_preserves_history_but_clears_current_conversation(): void
     {
         $bot = AiChatBot::factory()->create([
-            'is_public' => true,
+            'allowed_roles' => [],
             'access_path' => AiChatBot::ACCESS_PATH_ROOT,
         ]);
 

@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 
 class ListRolesCommand extends Command
 {

@@ -14,7 +14,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class TargetedResumeFilterTest extends TestCase
@@ -28,7 +28,7 @@ class TargetedResumeFilterTest extends TestCase
         parent::setUp();
 
         $this->admin = User::factory()->create();
-        Permission::findOrCreate('edit-resume', 'web');
+        Permission::firstOrCreate(['name' => 'edit-resume']);
         $this->admin->givePermissionTo('edit-resume');
     }
 
