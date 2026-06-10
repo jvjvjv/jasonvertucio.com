@@ -33,6 +33,7 @@ class ChatBotToolRegistryTest extends TestCase
 
         // Known package tool must always be present
         $this->assertContains('scan_memories', $registeredToolNames);
+        $this->assertContains('fetch_web_page', $registeredToolNames);
     }
 
     public function testRegistryFiltersToAllowedToolsOnly(): void

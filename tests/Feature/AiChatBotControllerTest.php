@@ -127,6 +127,10 @@ class AiChatBotControllerTest extends TestCase
             'description' => 'Load recent blog posts with titles, summaries, and URLs.',
         ]);
         $response->assertJsonFragment([
+            'name' => 'fetch_web_page',
+            'description' => 'Fetch a web page by URL and return its readable text content using the JayScraper research user agent.',
+        ]);
+        $response->assertJsonFragment([
             'name' => 'get_resume_data',
             'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
         ]);
