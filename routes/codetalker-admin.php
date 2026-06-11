@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\AiMemoryController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 
 // AI Tools routes - requires auth + manage-ai-tools permission
-Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleInertiaRequests::class])
+Route::middleware(['web', 'auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleInertiaRequests::class])
     ->prefix('admin/ai')
     ->name('admin.ai.')
     ->group(function () {

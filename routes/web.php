@@ -29,7 +29,6 @@ Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
 
 require base_path('routes/auth.php');
 require base_path('routes/admin.php');
-require base_path('routes/admin-ai.php');
 require base_path('routes/admin-resume.php');
 require base_path('routes/resume.php');
 require base_path('routes/blog.php');

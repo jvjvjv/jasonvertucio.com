@@ -14,7 +14,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import type { ColumnDef } from "@/admin/components/DataTable";
-import type { AiChatBot } from "@/types";
+import type { AiChatBot, AiSystem } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import DataTable from "@/admin/components/DataTable";
@@ -24,11 +24,20 @@ import AdminLayout from "@/admin/layouts/AdminLayout";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface IndexProps {
-    bots: AiChatBot[];
+    bots: ChatBotRow[];
     filters?: { ai_system_id?: string | null };
 }
 
-const columns: ColumnDef<AiChatBot>[] = [
+type ChatBotRow = Omit<AiChatBot, "ai_system"> & {
+    ai_system: AiSystem | null;
+};
+
+const getSystemLabel = (bot: ChatBotRow) =>
+    bot.ai_system?.name ?? "Missing AI system";
+
+const isSystemActive = (bot: ChatBotRow) => bot.ai_system?.is_active ?? false;
+
+const columns: ColumnDef<ChatBotRow>[] = [
     {
         key: "name",
         label: "Name",
@@ -54,16 +63,21 @@ const columns: ColumnDef<AiChatBot>[] = [
     {
         key: "ai_system",
         label: "AI System",
-        render: (row) => (
-            <Link
-                component={InertiaLink}
-                href={`/admin/ai/systems/${row.ai_system.id}`}
-                underline="hover"
-                color="primary"
-            >
-                {row.ai_system.name}
-            </Link>
-        ),
+        render: (row) =>
+            row.ai_system ? (
+                <Link
+                    component={InertiaLink}
+                    href={`/admin/ai/systems/${row.ai_system.id}`}
+                    underline="hover"
+                    color="primary"
+                >
+                    {row.ai_system.name}
+                </Link>
+            ) : (
+                <Typography color="error.main" variant="body2">
+                    Missing AI system
+                </Typography>
+            ),
     },
     { key: "status", label: "Status", render: () => "Status" },
     {
@@ -71,26 +85,26 @@ const columns: ColumnDef<AiChatBot>[] = [
         label: "Features",
         render: (row) => {
             const toolsEnabled =
-                row.tools_enabled || row.ai_system.supports_tools;
+                row.tools_enabled || row.ai_system?.supports_tools;
             return (
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                     {toolsEnabled && (
                         <HandymanIcon
                             fontSize="small"
                             sx={
-                                row.ai_system.supports_tools
+                                row.ai_system?.supports_tools
                                     ? { opacity: 0.75 }
                                     : { color: "primary" }
                             }
                         />
                     )}
-                    {row.ai_system.supports_json_mode && (
+                    {row.ai_system?.supports_json_mode && (
                         <DataObjectIcon
                             fontSize="small"
                             sx={{ opacity: 0.75 }}
                         />
                     )}
-                    {row.ai_system.is_local_endpoint && (
+                    {row.ai_system?.is_local_endpoint && (
                         <ChairIcon fontSize="small" color="primary" />
                     )}
                 </Box>
@@ -156,6 +170,8 @@ export default function Index({ bots, filters }: IndexProps) {
             router.delete(`/admin/ai/chat-bots/${bot.slug}`);
         });
     };
+
+    console.log(bots);
 
     return (
         <AdminLayout>
@@ -228,9 +244,9 @@ export default function Index({ bots, filters }: IndexProps) {
                 data={bots}
                 rowSx={(bot) => ({
                     opacity:
-                        bot.ai_system.is_active && bot.is_active
+                        isSystemActive(bot) && bot.is_active
                             ? 1
-                            : bot.ai_system.is_active
+                            : isSystemActive(bot)
                               ? 0.75
                               : 0.4,
                 })}
@@ -269,9 +285,7 @@ export default function Index({ bots, filters }: IndexProps) {
                             color="primary"
                             title="Start New Chat"
                             aria-label="Start New Chat"
-                            disabled={
-                                !bot.is_active || !bot.ai_system.is_active
-                            }
+                            disabled={!bot.is_active || !isSystemActive(bot)}
                             target="_blank"
                         >
                             <AddCommentIcon />
@@ -281,7 +295,7 @@ export default function Index({ bots, filters }: IndexProps) {
                             href={`/admin/ai/chat-bots/${bot.slug}`}
                             size="small"
                             color="primary"
-                            title="Edit"
+                            title={`Edit ${getSystemLabel(bot)}`}
                             aria-label="Edit"
                         >
                             <EditIcon />
