@@ -43,7 +43,7 @@
         "@eslint/js": "^10.0.1",
         "@tailwindcss/postcss": "^4.1.18",
         "autoprefixer": "^10.4.23",
-        "concurrently": "^9.2.1",
+        "concurrently": "^10.0.3",
         "eslint-plugin-import-x": "^4.16.2",
         "eslint-plugin-prettier": "^5.5.5",
         "eslint-plugin-react-hooks": "^7.1.1",
