@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Jvjvjv\CodeTalker\Http\Requests\Admin\StoreAiChatBotRequest;
-use Jvjvjv\CodeTalker\Http\Requests\Admin\UpdateAiChatBotRequest;
+use App\Http\Requests\Admin\StoreAiChatBotRequest;
+use App\Http\Requests\Admin\UpdateAiChatBotRequest;
+use BSPDX\Keystone\Models\KeystoneRole;
 use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiSystem;
@@ -71,6 +72,7 @@ class AiChatBotController extends BaseAdminController
     {
         return Inertia::render('ai/bots/Create', [
             'systems' => $this->systems(),
+            'roles'   => $this->roles(),
         ]);
     }
 
@@ -93,8 +95,9 @@ class AiChatBotController extends BaseAdminController
         $aiChatBot->loadCount('conversations');
 
         return Inertia::render('ai/bots/Edit', [
-            'bot' => $aiChatBot,
+            'bot'     => $aiChatBot,
             'systems' => $this->systems(),
+            'roles'   => $this->roles(),
         ]);
     }
 
@@ -162,6 +165,14 @@ class AiChatBotController extends BaseAdminController
 
         return redirect()->route('admin.ai.bots.index')
             ->with('success', "AI chat bot \"{$name}\" deleted successfully.");
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function roles(): array
+    {
+        return KeystoneRole::query()->orderBy('name')->pluck('name')->all();
     }
 
     /**
