@@ -515,7 +515,6 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                 }}
                                 onKeyDown={handleKeyDown}
                                 fullWidth
-                                disabled={isStreaming}
                             />
 
                             {isCheckingModelStatus ? (
@@ -572,6 +571,14 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                     }
                                     label="Send Message"
                                     onClick={() => {
+                                        if (
+                                            isStreaming ||
+                                            isCheckingModelStatus ||
+                                            isWarmingModel ||
+                                            isUnavailable
+                                        ) {
+                                            return;
+                                        }
                                         void sendMessage();
                                     }}
                                 />
