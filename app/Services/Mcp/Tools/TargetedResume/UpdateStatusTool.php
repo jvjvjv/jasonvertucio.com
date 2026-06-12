@@ -72,7 +72,9 @@ class UpdateStatusTool implements AiToolHandlerContract
         }
 
         $occurredAt = isset($input['occurred_at']) && $input['occurred_at'] !== ''
-            ? now()->parse($input['occurred_at'])
+            ? $input['occurred_at']
+            ? stripos($input['occurred_at'], ' ') || stripos($input['occurred_at'], 'T')
+            : now()->parse($input['occurred_at'] . ' 12:00:00')
             : now();
 
         TargetedResumeStatusUpdate::create([

@@ -22,6 +22,10 @@ class AiChatBot extends BaseAiChatBot
         'tools_enabled',
     ];
 
+    protected $casts = [
+        'allowed_roles' => 'array',
+    ];
+
     /**
      * Get the attributes that should be cast.
      */

@@ -1,4 +1,5 @@
 import { Head } from "@inertiajs/react";
+import NotStartedIcon from "@mui/icons-material/NotStarted";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -17,6 +18,7 @@ import type { SyntheticEvent } from "react";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { api, ApiError } from "@/api";
+import ResponsiveButton from "@/components/ResponsiveButton";
 
 interface ParseJobResponse {
     message?: string;
@@ -461,17 +463,29 @@ export default function Create({
                         <Box
                             sx={{ display: "flex", justifyContent: "flex-end" }}
                         >
-                            <Button
+                            <ResponsiveButton
                                 type="submit"
                                 variant="contained"
                                 disabled={
                                     isSubmitting || separateModelsConfigured
                                 }
-                            >
-                                {isSubmitting
-                                    ? "Starting..."
-                                    : "Start Analysis"}
-                            </Button>
+                                icon={<NotStartedIcon />}
+                                label={
+                                    isSubmitting
+                                        ? "Starting..."
+                                        : "Start Analysis"
+                                }
+                                onClick={(e) => {
+                                    if (
+                                        isSubmitting ||
+                                        separateModelsConfigured
+                                    ) {
+                                        e.preventDefault();
+                                        return;
+                                    }
+                                    void handleSubmit(e);
+                                }}
+                            ></ResponsiveButton>
                         </Box>
                     </Box>
                 </CardContent>

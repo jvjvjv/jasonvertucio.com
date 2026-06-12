@@ -124,7 +124,7 @@ class AiChatBotControllerTest extends TestCase
         ]);
         $response->assertJsonFragment([
             'name' => 'get_recent_blog_posts',
-            'description' => 'Load recent blog posts with titles, summaries, and URLs.',
+            'description' => 'Load recent blog posts with titles, summaries, and URLs. Supports search by keyword in title, summary, or body.',
         ]);
         $response->assertJsonFragment([
             'name' => 'fetch_web_page',
