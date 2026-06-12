@@ -3,6 +3,7 @@
 namespace App\Services\Mcp\Tools\TargetedResume;
 
 use App\Models\TargetedResume;
+use Illuminate\Database\Eloquent\Builder;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 
@@ -17,9 +18,8 @@ class GetTargetedResumeContextTool implements AiToolHandlerContract
 
     public function description(): string
     {
-        return 'Load the full context for a finalized targeted resume: the original job description, '
-            . 'the tailored resume markdown, and the cover letter (if one exists). '
-            . 'Use this to reload context for interview prep, cover letter revisions, or fit analysis.';
+        return 'Load the full context for a targeted resume by conversation ID, company name, or job title. '
+            . 'If more than one resume matches, return the candidate list so the user can choose which one to use.';
     }
 
     public function schema(): array
@@ -27,26 +27,84 @@ class GetTargetedResumeContextTool implements AiToolHandlerContract
         return [
             'type' => 'object',
             'properties' => [
-                'targeted_resume_id' => [
+                'conversation_id' => [
                     'type' => 'integer',
-                    'description' => 'The ID of the targeted resume to load context for.',
+                    'description' => 'The conversation ID associated with the targeted resume.',
+                ],
+                'company_name' => [
+                    'type' => 'string',
+                    'description' => 'A company name to search for among the user\'s targeted resumes.',
+                ],
+                'job_title' => [
+                    'type' => 'string',
+                    'description' => 'A job title or resume title to search for among the user\'s targeted resumes.',
                 ],
             ],
-            'required' => ['targeted_resume_id'],
+            'required' => [],
         ];
     }
 
     public function handle(array $input): array
     {
-        $resume = TargetedResume::whereHas(
-            'conversation',
-            fn ($q) => $q->where('user_id', $this->conversation->user_id)
-        )->find((int) $input['targeted_resume_id']);
+        $matches = $this->buildQuery($input)->get();
 
-        if ($resume === null) {
-            return ['error' => 'Targeted resume not found.'];
+        if ($matches->isEmpty()) {
+            return ['error' => 'No targeted resume matched that conversation, company, or job title.'];
         }
 
+        if ($matches->count() > 1) {
+            return [
+                'needs_selection' => true,
+                'message' => 'More than one targeted resume matched. Ask which one to use and pass a narrower conversation ID, company name, or job title.',
+                'matches' => $matches->map(fn(TargetedResume $resume): array => $this->serializeMatch($resume))->all(),
+            ];
+        }
+
+        return $this->serializeContext($matches->first());
+    }
+
+    private function buildQuery(array $input): Builder {
+        $conversationId = isset($input['conversation_id']) ? (int) $input['conversation_id'] : null;
+        $companyName = isset($input['company_name']) ? trim((string) $input['company_name']) : null;
+        $jobTitle = isset($input['job_title']) ? trim((string) $input['job_title']) : null;
+
+        $query = TargetedResume::query()
+            ->whereHas('conversation', fn(Builder $builder): Builder => $builder->where('user_id', $this->conversation->user_id))
+            ->with('conversation')
+            ->orderByDesc('id');
+
+        if ($conversationId !== null) {
+            $query->where('ai_conversation_id', $conversationId);
+        }
+
+        if ($companyName !== null && $companyName !== '') {
+            $query->where('company_name', 'like', '%' . $companyName . '%');
+        }
+
+        if ($jobTitle !== null && $jobTitle !== '') {
+            $query->where(function (Builder $builder) use ($jobTitle): void {
+                $builder
+                    ->where('position', 'like', '%' . $jobTitle . '%')
+                    ->orWhere('title', 'like', '%' . $jobTitle . '%');
+            });
+        }
+
+        return $query;
+    }
+
+    private function serializeMatch(TargetedResume $resume): array {
+        return [
+            'targeted_resume_id' => $resume->id,
+            'conversation_id' => $resume->ai_conversation_id,
+            'company_name' => $resume->company_name,
+            'position' => $resume->position,
+            'title' => $resume->title,
+            'status' => $resume->status->value,
+            'fit_score' => $resume->fit_score,
+        ];
+    }
+
+    private function serializeContext(TargetedResume $resume): array {
         $coverLetter = $resume->coverLetters()->latest()->first();
 
         return [
@@ -63,6 +121,8 @@ class GetTargetedResumeContextTool implements AiToolHandlerContract
                 'signature' => $coverLetter->signature,
             ] : null,
             'meta' => [
+                'targeted_resume_id' => $resume->id,
+                'conversation_id' => $resume->ai_conversation_id,
                 'fit_score' => $resume->fit_score,
                 'fit_summary' => $resume->fit_summary,
                 'status' => $resume->status->value,
