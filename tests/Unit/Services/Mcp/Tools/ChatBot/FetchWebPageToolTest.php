@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\Mcp\Tools\ChatBot;
 
 use App\Models\AiChatBot;
 use App\Services\Mcp\Tools\ChatBot\FetchWebPageTool;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Jvjvjv\CodeTalker\Models\AiConversation;
@@ -52,6 +53,47 @@ class FetchWebPageToolTest extends TestCase
 
         $this->assertSame('The URL must be a valid http or https address.', $result['error']);
         Http::assertNothingSent();
+    }
+
+    public function testItReturnsAMeaningfulErrorForHttpErrorResponses(): void
+    {
+        Http::fake([
+            'https://example.com/missing' => Http::response(
+                '<!DOCTYPE html><html><body>Not Found</body></html>',
+                404,
+                ['Content-Type' => 'text/html; charset=UTF-8'],
+            ),
+        ]);
+
+        $tool = new FetchWebPageTool(new AiConversation(['context' => []]));
+
+        $result = $tool->handle(['url' => 'https://example.com/missing']);
+
+        $this->assertSame(
+            'Failed to fetch https://example.com/missing. The server responded with HTTP status 404 (Not Found).',
+            $result['error'],
+        );
+        $this->assertSame('https://example.com/missing', $result['url']);
+        $this->assertSame(404, $result['status']);
+        $this->assertArrayNotHasKey('content', $result);
+    }
+
+    public function testItReturnsAMeaningfulErrorWhenTheConnectionFails(): void
+    {
+        Http::fake(function (): void {
+            throw new ConnectionException('cURL error 6: Could not resolve host: example.invalid');
+        });
+
+        $tool = new FetchWebPageTool(new AiConversation(['context' => []]));
+
+        $result = $tool->handle(['url' => 'https://example.invalid/page']);
+
+        $this->assertSame(
+            'Could not connect to https://example.invalid/page. The request failed before receiving a response.',
+            $result['error'],
+        );
+        $this->assertSame('https://example.invalid/page', $result['url']);
+        $this->assertArrayNotHasKey('status', $result);
     }
 
     public function testItHandlesPlainTextResponses(): void

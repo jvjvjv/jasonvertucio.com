@@ -2,7 +2,9 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Symfony\Component\DomCrawler\Crawler;
@@ -57,16 +59,44 @@ class FetchWebPageTool implements AiToolHandlerContract
             return ['error' => 'The URL must be a valid http or https address.'];
         }
 
-        $response = Http::connectTimeout(10)
-            ->timeout(20)
-            ->withHeaders([
-                'User-Agent' => $this->userAgent(),
-                'Accept' => 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
-                'Accept-Language' => 'en-US,en;q=0.5',
-            ])
-            ->get($url);
+        try {
+            $response = Http::connectTimeout(10)
+                ->timeout(20)
+                ->withHeaders([
+                    'User-Agent' => $this->userAgent(),
+                    'Accept' => 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'en-US,en;q=0.5',
+                ])
+                ->get($url);
+        } catch (ConnectionException $e) {
+            Log::warning('fetch_web_page could not connect', [
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
 
-        $response->throw();
+            return [
+                'error' => sprintf('Could not connect to %s. The request failed before receiving a response.', $url),
+                'url' => $url,
+            ];
+        }
+
+        if ($response->failed()) {
+            Log::warning('fetch_web_page received an error response', [
+                'url' => $url,
+                'status' => $response->status(),
+            ]);
+
+            return [
+                'error' => sprintf(
+                    'Failed to fetch %s. The server responded with HTTP status %d (%s).',
+                    $url,
+                    $response->status(),
+                    $response->reason() ?: 'Unknown',
+                ),
+                'url' => $url,
+                'status' => $response->status(),
+            ];
+        }
 
         $contentType = strtolower((string) ($response->header('Content-Type') ?? ''));
         $body = mb_substr($response->body(), 0, self::MAX_BODY_LENGTH);
@@ -127,7 +157,7 @@ class FetchWebPageTool implements AiToolHandlerContract
         }
 
         return sprintf(
-            'JayScraper/0.1.0 (name: %s; purpose: research; contact: https://jasonvertucio.com)',
+            'JayScraper/0.2.0 (name: %s; purpose: research; contact: https://jasonvertucio.com)',
             $sanitizedName,
         );
     }
