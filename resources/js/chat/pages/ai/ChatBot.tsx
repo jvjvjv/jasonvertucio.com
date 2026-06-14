@@ -197,6 +197,7 @@ export default function ChatBot({
         "success" | "warning" | "error" | "info"
     >("info");
 
+    console.log(bot);
     return (
         <>
             <Head title={bot.name} />
@@ -490,9 +491,14 @@ export default function ChatBot({
                                             variant="body2"
                                             color="text.secondary"
                                         >
-                                            {bot.allowed_roles.length === 0
+                                            {!(bot.allowed_roles?.length > 0) &&
+                                            bot.require_visitor_identity
                                                 ? "Public bot"
-                                                : "Restricted bot"}
+                                                : bot.allowed_roles?.length >
+                                                        0 &&
+                                                    bot.require_visitor_identity
+                                                  ? "Mostly public bot"
+                                                  : "Restricted bot"}
                                         </Typography>
                                         <Typography
                                             variant="body2"

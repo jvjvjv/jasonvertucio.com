@@ -1637,16 +1637,16 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "v0.2.4",
+            "version": "v0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jvjvjv/CodeTalker.git",
-                "reference": "cc89c4effcf3f003664fd5c698b46e1143076dfa"
+                "reference": "2613c57bfb9538d47866d99ea199b48b3e303807"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/cc89c4effcf3f003664fd5c698b46e1143076dfa",
-                "reference": "cc89c4effcf3f003664fd5c698b46e1143076dfa",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/2613c57bfb9538d47866d99ea199b48b3e303807",
+                "reference": "2613c57bfb9538d47866d99ea199b48b3e303807",
                 "shasum": ""
             },
             "require": {
@@ -1702,9 +1702,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jvjvjv/CodeTalker/issues",
-                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.2.4"
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.3.0"
             },
-            "time": "2026-06-10T22:57:25+00:00"
+            "time": "2026-06-14T11:35:11+00:00"
         },
         {
             "name": "laravel/fortify",
