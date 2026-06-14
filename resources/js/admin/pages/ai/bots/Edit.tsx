@@ -39,7 +39,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         context_length: bot.context_length ?? null,
         temperature: bot.temperature?.toString() ?? "",
         prompt_template: bot.prompt_template ?? "",
-        allowed_roles: bot.allowed_roles,
+        allowed_roles: bot.allowed_roles ?? [],
         is_active: bot.is_active,
         require_visitor_identity: bot.require_visitor_identity,
         tools_enabled: bot.tools_enabled,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Jvjvjv\CodeTalker\Models\AiChatBot as BaseAiChatBot;
 use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;

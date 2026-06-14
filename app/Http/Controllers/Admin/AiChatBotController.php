@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
-use BSPDX\Keystone\Models\KeystoneRole;
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiSystem;
+use App\Models\AiConversation;
+use App\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
+use BSPDX\Keystone\Models\KeystoneRole;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

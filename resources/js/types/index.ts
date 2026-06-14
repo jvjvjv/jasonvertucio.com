@@ -99,7 +99,7 @@ export interface AiChatBot {
     context_length?: number | null;
     temperature?: number | null;
     prompt_template?: string;
-    allowed_roles: string[];
+    allowed_roles?: string[];
     is_active: boolean;
     require_visitor_identity: boolean;
     tools_enabled: boolean;

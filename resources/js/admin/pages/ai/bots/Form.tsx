@@ -277,7 +277,7 @@ export default function Form({
                     ))}
                 </TextField>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-                    {data.allowed_roles.map((role) => (
+                    {data.allowed_roles?.map((role) => (
                         <Chip
                             key={role}
                             label={role}
