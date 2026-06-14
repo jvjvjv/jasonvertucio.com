@@ -197,7 +197,6 @@ export default function ChatBot({
         "success" | "warning" | "error" | "info"
     >("info");
 
-    console.log(bot);
     return (
         <>
             <Head title={bot.name} />

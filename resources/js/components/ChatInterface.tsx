@@ -15,6 +15,7 @@ import {
     forwardRef,
 } from "react";
 import { flushSync } from "react-dom";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { ReactNode, KeyboardEvent } from "react";
@@ -94,6 +95,31 @@ export interface ChatInterfaceProps {
     onStreamResponse?: (response: Response) => void;
 }
 
+type VirtualItem =
+    | { _kind: "message"; msg: ChatMessage; msgIndex: number }
+    | {
+          _kind: "stream";
+          blocks: MessageBlock[];
+          toolPanels: ToolPanel[];
+      };
+
+const EmptyPlaceholder = () => (
+    <Box
+        sx={{
+            border: "1px dashed",
+            borderColor: "divider",
+            py: 3,
+            px: 2,
+            mx: 3,
+            mt: 2.5,
+            textAlign: "center",
+            color: "text.secondary",
+        }}
+    >
+        Send the first message to start the conversation.
+    </Box>
+);
+
 export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
     function ChatInterface(
         {
@@ -133,26 +159,41 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         const [error, setError] = useState("");
         const [messageText, setMessageText] = useState("");
 
-        const messagesEndRef = useRef<HTMLDivElement>(null);
+        const virtuosoRef = useRef<VirtuosoHandle>(null);
         const hasAutoStarted = useRef(false);
-        // Always-fresh ref so sendMessage closure never goes stale on extraPayload
         const extraPayloadRef = useRef(extraPayload);
-        extraPayloadRef.current = extraPayload;
-
-        useEffect(() => {
-            setMessages(initialMessages);
-            onMessagesChangeRef.current?.(initialMessages);
-        }, [initialMessages]);
-
-        useEffect(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, [messages, streamingBlocks]);
-
         const onModelStatusChangeRef = useRef(onModelStatusChange);
-        onModelStatusChangeRef.current = onModelStatusChange;
-
         const onMessagesChangeRef = useRef(onMessagesChange);
-        onMessagesChangeRef.current = onMessagesChange;
+
+        // Keep callback refs fresh without mutating during render
+        useEffect(() => {
+            extraPayloadRef.current = extraPayload;
+        });
+        useEffect(() => {
+            onModelStatusChangeRef.current = onModelStatusChange;
+        });
+        useEffect(() => {
+            onMessagesChangeRef.current = onMessagesChange;
+        });
+
+        // Capture the initial last index so Virtuoso starts scrolled to the bottom
+        const [initialTopMostItemIndex] = useState(() =>
+            initialMessages.length > 0 ? initialMessages.length - 1 : 0,
+        );
+
+        // Reset messages when the conversation changes (initialMessages reference changes).
+        // React's "setState during render" pattern — React re-renders immediately with new state.
+        const [prevInitialMessages, setPrevInitialMessages] =
+            useState(initialMessages);
+        if (prevInitialMessages !== initialMessages) {
+            setPrevInitialMessages(initialMessages);
+            setMessages(initialMessages);
+        }
+
+        // Notify parent whenever messages change (including on conversation reset above)
+        useEffect(() => {
+            onMessagesChangeRef.current?.(messages);
+        }, [messages]);
 
         const updateModelStatus = (status: ModelStatus | null) => {
             setModelStatus(status);
@@ -401,95 +442,110 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         };
 
         const isUnavailable = modelStatus?.state === "unavailable";
-        const lastStreamingBlock =
-            streamingBlocks.length > 0
-                ? streamingBlocks[streamingBlocks.length - 1]
-                : null;
+
+        // Build the virtual item list: past messages + optional live streaming item
+        const virtualItems: VirtualItem[] = messages.map((msg, msgIndex) => ({
+            _kind: "message",
+            msg,
+            msgIndex,
+        }));
+        if (isStreaming) {
+            virtualItems.push({
+                _kind: "stream",
+                blocks: streamingBlocks,
+                toolPanels: streamingToolPanels,
+            });
+        }
 
         return (
             <Card>
                 <CardContent sx={{ p: 0 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            px: 3,
-                            py: 2.5,
+                    {slots?.aboveMessages ? (
+                        <Box sx={{ px: 3, pt: 2.5, pb: 1 }}>
+                            {slots.aboveMessages}
+                        </Box>
+                    ) : null}
+
+                    <Virtuoso<VirtualItem>
+                        ref={virtuosoRef}
+                        style={{
+                            height: "calc(100vh - 480px)",
+                            minHeight: 300,
                         }}
-                    >
-                        {slots?.aboveMessages}
+                        data={virtualItems}
+                        followOutput="smooth"
+                        initialTopMostItemIndex={initialTopMostItemIndex}
+                        components={{
+                            EmptyPlaceholder,
+                        }}
+                        itemContent={(_, item) => {
+                            if (item._kind === "message") {
+                                return (
+                                    <Box sx={{ px: 3, py: 1.5 }}>
+                                        <ChatMessageBubble
+                                            role={item.msg.role}
+                                            content={item.msg.content}
+                                            blocks={item.msg.blocks ?? null}
+                                            reasoningContent={
+                                                item.msg.reasoning_content ??
+                                                null
+                                            }
+                                            isAuthenticated={isAuthenticated}
+                                        />
+                                    </Box>
+                                );
+                            }
 
-                        {messages.length === 0 && !isStreaming ? (
-                            <Box
-                                sx={{
-                                    border: "1px dashed",
-                                    borderColor: "divider",
-                                    py: 3,
-                                    px: 2,
-                                    textAlign: "center",
-                                    color: "text.secondary",
-                                }}
-                            >
-                                Send the first message to start the
-                                conversation.
-                            </Box>
-                        ) : (
-                            messages.map((message, index) => (
-                                <ChatMessageBubble
-                                    key={index}
-                                    role={message.role}
-                                    content={message.content}
-                                    blocks={message.blocks ?? null}
-                                    reasoningContent={
-                                        message.reasoning_content ?? null
-                                    }
-                                    isAuthenticated={isAuthenticated}
-                                />
-                            ))
-                        )}
-                    </Box>
-
-                    {streamingToolPanels.length > 0 || isStreaming ? (
-                        <>
-                            <Divider />
-                            <Box sx={{ px: 3, py: 2.5, bgcolor: "grey.50" }}>
-                                {streamingToolPanels.map((panel, i) => (
-                                    <ToolsPanel
-                                        key={i}
-                                        pretext={panel.pretext}
-                                        tools={panel.tools}
-                                        isActive={false}
-                                    />
-                                ))}
-                                {isStreaming &&
-                                streamingBlocks.length === 0 &&
-                                streamingToolPanels.length > 0 ? (
-                                    <ToolsPanel
-                                        pretext=""
-                                        tools={[]}
-                                        isActive
-                                    />
-                                ) : null}
-                                {isStreaming ? (
+                            // Streaming item: tool panels + live assistant bubble
+                            const lastBlock =
+                                item.blocks.length > 0
+                                    ? item.blocks[item.blocks.length - 1]
+                                    : null;
+                            return (
+                                <Box sx={{ px: 3, py: 1.5 }}>
+                                    {item.toolPanels.length > 0 ? (
+                                        <Box
+                                            sx={{
+                                                bgcolor: "grey.50",
+                                                p: 2,
+                                                mb: 1.5,
+                                            }}
+                                        >
+                                            {item.toolPanels.map((panel, i) => (
+                                                <ToolsPanel
+                                                    key={i}
+                                                    pretext={panel.pretext}
+                                                    tools={panel.tools}
+                                                    isActive={false}
+                                                />
+                                            ))}
+                                            {item.blocks.length === 0 ? (
+                                                <ToolsPanel
+                                                    pretext=""
+                                                    tools={[]}
+                                                    isActive
+                                                />
+                                            ) : null}
+                                        </Box>
+                                    ) : null}
                                     <ChatMessageBubble
                                         role="assistant"
                                         content=""
                                         isStreaming
                                         blocks={
-                                            streamingBlocks.length > 0
-                                                ? streamingBlocks
+                                            item.blocks.length > 0
+                                                ? item.blocks
                                                 : null
                                         }
                                         activeBlockType={
-                                            lastStreamingBlock?.type ?? null
+                                            lastBlock?.type ?? null
                                         }
                                         isAuthenticated={isAuthenticated}
                                     />
-                                ) : null}
-                            </Box>
-                        </>
-                    ) : null}
+                                </Box>
+                            );
+                        }}
+                    />
 
                     {slots?.aboveInput}
 
@@ -585,8 +641,6 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                             </Box>
                         </Stack>
                     </Box>
-
-                    <div ref={messagesEndRef} />
                 </CardContent>
             </Card>
         );
