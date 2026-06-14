@@ -32,20 +32,29 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
     return (
         <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogContent>
-                <DialogContentText>{message}</DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onCancel}>Cancel</Button>
-                <Button
-                    onClick={onConfirm}
-                    color={confirmColor}
-                    variant="contained"
-                >
-                    {confirmLabel}
-                </Button>
-            </DialogActions>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    onConfirm();
+                }}
+            >
+                <DialogTitle>{title}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>{message}</DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button type="button" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        color={confirmColor}
+                        variant="contained"
+                    >
+                        {confirmLabel}
+                    </Button>
+                </DialogActions>
+            </form>
         </Dialog>
     );
 }

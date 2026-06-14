@@ -78,9 +78,16 @@ export default function DataTable<T extends { id: number | string }>({
     return (
         <Card>
             <TableContainer
-                sx={{ maxHeight: stickyHeader ? "70vh" : undefined }}
+                sx={{
+                    maxHeight: stickyHeader ? "70vh" : undefined,
+                    overflowX: "auto",
+                }}
             >
-                <Table size={size} stickyHeader={stickyHeader}>
+                <Table
+                    size={size}
+                    stickyHeader={stickyHeader}
+                    sx={{ minWidth: 500 }}
+                >
                     <TableHead>
                         <TableRow>
                             {columns.map((col) => (

@@ -378,7 +378,7 @@ export default function Show({
             <Box
                 sx={{
                     position: "sticky",
-                    top: { xs: 56, md: 64 },
+                    top: 0,
                     zIndex: 10,
                     mb: 2,
                     display: "flex",

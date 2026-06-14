@@ -1,11 +1,9 @@
-import SendIcon from "@mui/icons-material/Send";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import {
     useCallback,
     useEffect,
@@ -21,8 +19,9 @@ import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { ReactNode, KeyboardEvent } from "react";
 
 import { api } from "@/api";
+import ChatInputArea from "@/components/ChatInputArea";
 import ChatMessageBubble from "@/components/ChatMessageBubble";
-import ResponsiveButton from "@/components/ResponsiveButton";
+import ModelStatusDisplay from "@/components/ModelStatusDisplay";
 import ToolsPanel from "@/components/ToolsPanel";
 
 export interface ChatMessage {
@@ -140,6 +139,9 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         },
         ref,
     ) {
+        const theme = useTheme();
+        const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
         const [messages, setMessages] =
             useState<ChatMessage[]>(initialMessages);
         const [streamingBlocks, setStreamingBlocks] = useState<MessageBlock[]>(
@@ -441,8 +443,6 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             }
         };
 
-        const isUnavailable = modelStatus?.state === "unavailable";
-
         // Build the virtual item list: past messages + optional live streaming item
         const virtualItems: VirtualItem[] = messages.map((msg, msgIndex) => ({
             _kind: "message",
@@ -457,11 +457,22 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             });
         }
 
+        const virtuosoHeight = isMobile
+            ? "calc(100dvh - 320px)"
+            : "calc(100vh - 480px)";
+        const virtuosoMinHeight = isMobile ? 200 : 300;
+
         return (
             <Card>
                 <CardContent sx={{ p: 0 }}>
                     {slots?.aboveMessages ? (
-                        <Box sx={{ px: 3, pt: 2.5, pb: 1 }}>
+                        <Box
+                            sx={{
+                                px: { xs: 1.5, md: 3 },
+                                pt: 2.5,
+                                pb: 1,
+                            }}
+                        >
                             {slots.aboveMessages}
                         </Box>
                     ) : null}
@@ -469,8 +480,8 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                     <Virtuoso<VirtualItem>
                         ref={virtuosoRef}
                         style={{
-                            height: "calc(100vh - 480px)",
-                            minHeight: 300,
+                            height: virtuosoHeight,
+                            minHeight: virtuosoMinHeight,
                         }}
                         data={virtualItems}
                         followOutput="smooth"
@@ -481,7 +492,12 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                         itemContent={(_, item) => {
                             if (item._kind === "message") {
                                 return (
-                                    <Box sx={{ px: 3, py: 1.5 }}>
+                                    <Box
+                                        sx={{
+                                            px: { xs: 1.5, md: 3 },
+                                            py: 1.5,
+                                        }}
+                                    >
                                         <ChatMessageBubble
                                             role={item.msg.role}
                                             content={item.msg.content}
@@ -502,7 +518,12 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                     ? item.blocks[item.blocks.length - 1]
                                     : null;
                             return (
-                                <Box sx={{ px: 3, py: 1.5 }}>
+                                <Box
+                                    sx={{
+                                        px: { xs: 1.5, md: 3 },
+                                        py: 1.5,
+                                    }}
+                                >
                                     {item.toolPanels.length > 0 ? (
                                         <Box
                                             sx={{
@@ -550,97 +571,31 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                     {slots?.aboveInput}
 
                     <Divider />
-                    <Box
-                        component="form"
-                        sx={{ px: 3, py: 2.5 }}
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            void sendMessage();
+
+                    <ModelStatusDisplay
+                        isCheckingModelStatus={isCheckingModelStatus}
+                        isWarmingModel={isWarmingModel}
+                        loadingMessage={loadingMessage}
+                        modelStatus={modelStatus}
+                        error={error}
+                    />
+
+                    <ChatInputArea
+                        messageText={messageText}
+                        onChange={setMessageText}
+                        onKeyDown={handleKeyDown}
+                        onSubmit={() => void sendMessage()}
+                        disabled={
+                            isStreaming ||
+                            isCheckingModelStatus ||
+                            isWarmingModel ||
+                            modelStatus?.state === "unavailable"
+                        }
+                        slots={{
+                            beforeSend: slots?.beforeSend,
+                            afterSend: slots?.afterSend,
                         }}
-                    >
-                        <Stack spacing={2}>
-                            {slots?.beforeSend}
-
-                            <TextField
-                                label="Your message"
-                                multiline
-                                minRows={3}
-                                value={messageText}
-                                onChange={(e) => {
-                                    setMessageText(e.target.value);
-                                }}
-                                onKeyDown={handleKeyDown}
-                                fullWidth
-                            />
-
-                            {isCheckingModelStatus ? (
-                                <Alert severity="info">
-                                    Checking model status...
-                                </Alert>
-                            ) : null}
-
-                            {isWarmingModel || loadingMessage ? (
-                                <Alert severity="info">
-                                    {loadingMessage ||
-                                        "Loading model. This can take a little while..."}
-                                </Alert>
-                            ) : null}
-
-                            {modelStatus?.state === "loaded" &&
-                            !isWarmingModel &&
-                            !isCheckingModelStatus ? (
-                                <Alert severity="success">
-                                    Model is ready.
-                                </Alert>
-                            ) : null}
-
-                            {modelStatus?.state === "not_loaded" &&
-                            !isWarmingModel ? (
-                                <Alert severity="warning">
-                                    {modelStatus.message}
-                                </Alert>
-                            ) : null}
-
-                            {error ? (
-                                <Alert severity="error">{error}</Alert>
-                            ) : null}
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    alignItems: "center",
-                                    gap: 2,
-                                }}
-                            >
-                                {slots?.afterSend}
-                                <ResponsiveButton
-                                    type="submit"
-                                    icon={<SendIcon />}
-                                    color="primary"
-                                    variant="contained"
-                                    disabled={
-                                        isStreaming ||
-                                        isCheckingModelStatus ||
-                                        isWarmingModel ||
-                                        isUnavailable
-                                    }
-                                    label="Send Message"
-                                    onClick={() => {
-                                        if (
-                                            isStreaming ||
-                                            isCheckingModelStatus ||
-                                            isWarmingModel ||
-                                            isUnavailable
-                                        ) {
-                                            return;
-                                        }
-                                        void sendMessage();
-                                    }}
-                                />
-                            </Box>
-                        </Stack>
-                    </Box>
+                    />
                 </CardContent>
             </Card>
         );

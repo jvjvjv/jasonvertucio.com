@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ChatMessage } from "@/components/ChatInterface";
 import type { SharedProps } from "@/types";
 
+import BotHeaderCard from "@/chat/components/BotHeaderCard";
 import ChatInterface from "@/components/ChatInterface";
 
 interface HistoryItem {
@@ -152,6 +153,7 @@ export default function ChatBot({
                 alignSelf: "center",
                 fontStyle: "italic",
                 flexGrow: 1,
+                display: { xs: "none", sm: "block" },
             }}
         >
             Chatbots are experimental. Responses may be inaccurate or fail to
@@ -160,37 +162,7 @@ export default function ChatBot({
     );
 
     const botHeaderCard = (
-        <Card variant="outlined">
-            <CardContent>
-                <Stack
-                    direction={{ xs: "column", md: "row" }}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", md: "flex-start" }}
-                    spacing={2}
-                >
-                    <Box>
-                        <Typography
-                            variant="overline"
-                            color="text.secondary"
-                            sx={{ letterSpacing: "0.18em" }}
-                        >
-                            AI Chat Bot
-                        </Typography>
-                        <Typography variant="h3" sx={{ mt: 0.25 }}>
-                            {bot.name}
-                        </Typography>
-                        {bot.description ? (
-                            <Typography
-                                sx={{ mt: 1, maxWidth: 840 }}
-                                color="text.secondary"
-                            >
-                                {bot.description}
-                            </Typography>
-                        ) : null}
-                    </Box>
-                </Stack>
-            </CardContent>
-        </Card>
+        <BotHeaderCard name={bot.name} description={bot.description} />
     );
 
     const [badgeColor, setBadgeColor] = useState<
@@ -201,13 +173,19 @@ export default function ChatBot({
         <>
             <Head title={bot.name} />
             <Box
-                sx={{ mx: "auto", width: "100%", maxWidth: 1200, px: 2, py: 4 }}
+                sx={{
+                    mx: "auto",
+                    width: "100%",
+                    maxWidth: 1200,
+                    px: { xs: 1, md: 2 },
+                    py: { xs: 1, md: 4 },
+                }}
             >
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <Box
                         sx={{
                             position: "sticky",
-                            top: { xs: 56, md: 64 },
+                            top: 0,
                             zIndex: 10,
                             display: "flex",
                             alignItems: "center",

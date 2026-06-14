@@ -104,11 +104,6 @@ class ChatBotController extends PackageChatBotController
             ? '/chat/' . $aiChatBot->slug . '/' . $chatHash
             : null;
 
-        Log::info('ChatBotController@show', [
-            'conversation_id' => $conversation?->id,
-            'bot' => $aiChatBot,
-        ]);
-
         return Inertia::render('ai/ChatBot', [
             'bot' => [
                 'name' => $aiChatBot->name,
