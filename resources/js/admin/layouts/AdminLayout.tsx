@@ -320,7 +320,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             </AppBar>
 
             <Box component="main" sx={{ flexGrow: 1, py: { xs: 2, md: 4 } }}>
-                <Container maxWidth="lg">
+                <Container maxWidth={false}>
                     {title && (
                         <Typography
                             variant="h4"

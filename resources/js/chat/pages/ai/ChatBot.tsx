@@ -176,9 +176,7 @@ export default function ChatBot({
                 sx={{
                     mx: "auto",
                     width: "100%",
-                    maxWidth: 1200,
                     px: { xs: 1, md: 2 },
-                    py: { xs: 1, md: 4 },
                 }}
             >
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -243,7 +241,7 @@ export default function ChatBot({
                             isAuthenticated={!!authUser}
                             extraPayload={extraPayload}
                             slots={{
-                                aboveMessages: botHeaderCard,
+                                header: botHeaderCard,
                                 beforeSend: identityForm,
                                 afterSend: disclaimer,
                             }}
