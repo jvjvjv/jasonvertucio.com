@@ -122,10 +122,33 @@ export default function ChatMessageBubble({
         "& p:first-of-type": { mt: 0 },
     };
 
+    const [wordWrap, setWordWrap] = useState(true);
+
+    const preWrapSx = {
+        "& pre": {
+            ...markdownSx["& pre"],
+            whiteSpace: wordWrap ? "pre-wrap" : "pre",
+            overflowX: wordWrap ? "hidden" : undefined,
+            cursor: "pointer",
+            userSelect: "all",
+        },
+    };
+
+    const handlePreDblClick = (e: React.MouseEvent<HTMLElement>) => {
+        let el = e.target as HTMLElement | null;
+        while (el && el !== e.currentTarget) {
+            if (el.tagName === "PRE") {
+                setWordWrap((prev) => !prev);
+                break;
+            }
+            el = el.parentElement;
+        }
+    };
+
     // ── Block-based rendering ──────────────────────────────────────────────
     if (!isUser && blocks && blocks.length > 0) {
         return (
-            <Box sx={baseBubbleSx}>
+            <Box sx={baseBubbleSx} onDoubleClick={handlePreDblClick}>
                 {blocks.map((block, i) => {
                     const isLastBlock = i === blocks.length - 1;
                     const isActiveBlock = isStreaming && isLastBlock;
@@ -151,6 +174,7 @@ export default function ChatMessageBubble({
                             key={i}
                             sx={{
                                 ...markdownSx,
+                                ...preWrapSx,
                                 mt: i > 0 ? 1 : 0,
                             }}
                         >
@@ -202,7 +226,10 @@ export default function ChatMessageBubble({
     const hasLegacyReasoning = !isUser && !!reasoningContent && isAuthenticated;
 
     return (
-        <Box sx={{ ...baseBubbleSx, position: "relative" }}>
+        <Box
+            sx={{ ...baseBubbleSx, position: "relative" }}
+            onDoubleClick={handlePreDblClick}
+        >
             {/* Collapsed brain icon for legacy reasoning */}
             {hasLegacyReasoning && !isStreaming ? (
                 <Tooltip
@@ -250,6 +277,7 @@ export default function ChatMessageBubble({
             <Box
                 sx={{
                     ...markdownSx,
+                    ...preWrapSx,
                     ...(isChatVariant && isUser ? userMarkdownOverrides : {}),
                     pr: hasLegacyReasoning && !isStreaming ? 3 : 0,
                 }}
