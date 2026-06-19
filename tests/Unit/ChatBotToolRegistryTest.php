@@ -2,11 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Contracts\ResumeDataServiceContract;
-use App\Models\AiConversation;
-use App\Services\AiMemoryService;
-use App\Services\Mcp\ChatBotToolRegistry;
-use App\Services\TargetedResumeService;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
 use Tests\TestCase;
 
 class ChatBotToolRegistryTest extends TestCase
@@ -15,9 +12,6 @@ class ChatBotToolRegistryTest extends TestCase
     {
         $registry = new ChatBotToolRegistry(
             new AiConversation(['user_id' => null, 'context' => []]),
-            $this->mockResumeDataService(),
-            $this->mockAiMemoryService(),
-            $this->mockTargetedResumeService(),
             ['get_recent_blog_posts'],
         );
 
@@ -30,27 +24,9 @@ class ChatBotToolRegistryTest extends TestCase
     {
         $registry = new ChatBotToolRegistry(
             new AiConversation(['user_id' => null, 'context' => []]),
-            $this->mockResumeDataService(),
-            $this->mockAiMemoryService(),
-            $this->mockTargetedResumeService(),
             null,
         );
 
         $this->assertSame([], $registry->toApiTools());
-    }
-
-    private function mockResumeDataService(): ResumeDataServiceContract
-    {
-        return $this->createMock(ResumeDataServiceContract::class);
-    }
-
-    private function mockAiMemoryService(): AiMemoryService
-    {
-        return $this->createMock(AiMemoryService::class);
-    }
-
-    private function mockTargetedResumeService(): TargetedResumeService
-    {
-        return $this->createMock(TargetedResumeService::class);
     }
 }

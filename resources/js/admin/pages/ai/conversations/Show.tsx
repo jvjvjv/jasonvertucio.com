@@ -104,7 +104,9 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                         backgroundColor:
                                             message.role === "system"
                                                 ? "action.hover"
-                                                : "background.paper",
+                                                : message.role === "user"
+                                                  ? "#1b587c1a"
+                                                  : "background.paper",
                                     }}
                                 >
                                     <Box

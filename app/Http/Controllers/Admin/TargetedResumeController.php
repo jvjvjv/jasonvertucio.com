@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
 use App\Models\AiConversation;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\CoverLetter;
 use App\Models\JobUrl;
 use App\Models\ResumeVersion;
@@ -123,16 +123,27 @@ class TargetedResumeController extends Controller
      */
     public function create(): InertiaResponse
     {
-        $systems = AiSystem::active()->orderBy('name')->get()->map(fn ($s) => [
-            'id' => $s->id,
-            'name' => $s->name,
-            'model' => $s->model,
-        ]);
+        // Only show systems that have a system prompt assigned OR are feature defaults
+        $systems = AiSystem::active()
+            ->where(function ($q) {
+                $q->whereNotNull('system_prompt_id')
+                    ->orWhereHas('featureDefaults');
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'model' => $s->model,
+            ]);
+
         $defaultSystemId = AiSystem::defaultForFeature('targeted-resume')?->id;
+        $coverLetterDefaultId = AiSystem::defaultForFeature('cover-letter')?->id;
 
         return Inertia::render('resume/targeted/Create', [
             'systems' => $systems,
             'defaultSystemId' => $defaultSystemId,
+            'coverLetterDefaultId' => $coverLetterDefaultId,
         ]);
     }
 
@@ -141,6 +152,15 @@ class TargetedResumeController extends Controller
      */
     public function start(StartTargetedResumeRequest $request): JsonResponse
     {
+        $resumeDefault = AiSystem::defaultForFeature('targeted-resume');
+        $coverLetterDefault = AiSystem::defaultForFeature('cover-letter');
+
+        if ($resumeDefault && $coverLetterDefault && $resumeDefault->id !== $coverLetterDefault->id) {
+            return response()->json([
+                'error' => 'Separate models for Targeted Resume and Cover Letter are unsupported at this time.',
+            ], 422);
+        }
+
         $system = AiSystem::findOrFail($request->validated('ai_system_id'));
         $resumeVersion = ResumeVersion::current()->firstOrFail();
 
@@ -198,6 +218,7 @@ class TargetedResumeController extends Controller
                 'status' => $conversation->status->value,
                 'title' => $conversation->title,
                 'context' => $conversation->context,
+                'ai_system_id' => $conversation->aiSystem?->id,
                 'ai_system_name' => $conversation->aiSystem?->name,
                 'usage' => [
                     'input_tokens' => $conversation->usage_input_tokens,
@@ -254,13 +275,34 @@ class TargetedResumeController extends Controller
         }
 
         return response()->stream(function () use ($request, $conversation) {
+            set_time_limit(0);
+
+            echo 'data: ' . json_encode([
+                'type' => 'status',
+                'message' => 'Preparing analysis...',
+            ]) . "\n\n";
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
+            flush();
+
             $generator = $this->targetedResumeService->continueConversation(
                 $conversation,
                 $request->input('message'),
             );
 
-            foreach ($generator as $chunk) {
-                echo $chunk;
+            try {
+                foreach ($generator as $chunk) {
+                    echo $chunk;
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Targeted resume stream failed', ['error' => $e->getMessage()]);
+                echo 'data: ' . json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.']) . "\n\n";
+                echo "data: [DONE]\n\n";
                 if (ob_get_level() > 0) {
                     ob_flush();
                 }
@@ -407,18 +449,21 @@ class TargetedResumeController extends Controller
         $targetedResume = $conversation->targetedResume;
 
         if (! $targetedResume) {
-            $fitScore = $conversation->context['fit_score'] ?? null;
-            if (! $fitScore) {
-                return response()->json(['message' => 'A fit score is required before logging an application status. Ask the AI to analyze the job posting first.'], 422);
+            $resumeVersionId = $conversation->context['resume_version_id'] ?? ResumeVersion::query()->orderByDesc('id')->value('id');
+
+            if (!$resumeVersionId) {
+                return response()->json(['message' => 'A resume version is required before logging an application status.'], 422);
             }
+
             $targetedResume = TargetedResume::create([
-                'resume_version_id' => $conversation->context['resume_version_id'] ?? null,
+                'resume_version_id' => $resumeVersionId,
                 'ai_conversation_id' => $conversation->id,
                 'job_url_id' => $conversation->context['job_url_id'] ?? null,
                 'company_name' => $conversation->context['company_name'] ?? 'Unknown Company',
                 'position' => $conversation->context['job_title'] ?? 'Unknown Position',
-                'job_description' => $conversation->context['job_description'] ?? null,
-                'fit_score' => $fitScore,
+                'job_description' => $conversation->context['job_description'] ?? '',
+                'tailored_data' => null,
+                'fit_score' => $conversation->context['fit_score'] ?? null,
                 'status' => TargetedResumeStatus::Draft,
                 'base_resume' => true,
             ]);
@@ -444,17 +489,94 @@ class TargetedResumeController extends Controller
 
         $targetedResume->load('statusUpdates');
 
+        return $this->statusUpdateResponse($targetedResume, $newStatus);
+    }
+
+    /**
+     * Update notes/date for an existing application status history row.
+     */
+    public function updateStatusUpdate(Request $request, AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse {
+        $request->validate([
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'occurred_at' => ['required', 'date'],
+        ]);
+
+        $targetedResume = $conversation->targetedResume;
+
+        if (!$targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
+            return response()->json(['message' => 'Status update not found for this conversation.'], 404);
+        }
+
+        $statusUpdate->update([
+            'notes' => $request->input('notes'),
+            'occurred_at' => now()->parse($request->input('occurred_at')),
+        ]);
+
+        $targetedResume->refresh()->load('statusUpdates');
+
+        return $this->statusUpdateResponse($targetedResume, TargetedResumeApplicationStatus::from($targetedResume->status->value));
+    }
+
+    /**
+     * Delete an application status history row.
+     */
+    public function deleteStatusUpdate(AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse {
+        $targetedResume = $conversation->targetedResume;
+
+        if (!$targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
+            return response()->json(['message' => 'Status update not found for this conversation.'], 404);
+        }
+
+        $statusUpdate->delete();
+
+        $targetedResume->refresh()->load('statusUpdates');
+
+        $latestStatus = $targetedResume->statusUpdates->last()?->status;
+
+        if ($latestStatus instanceof TargetedResumeApplicationStatus) {
+            $targetedResume->update(['status' => TargetedResumeStatus::from($latestStatus->value)]);
+            $targetedResume->refresh()->load('statusUpdates');
+
+            return $this->statusUpdateResponse($targetedResume, $latestStatus);
+        }
+
+        $fallbackStatus = $targetedResume->tailored_data !== null
+            ? TargetedResumeStatus::Finalized
+            : TargetedResumeStatus::Draft;
+
+        $targetedResume->update(['status' => $fallbackStatus]);
+        $targetedResume->refresh()->load('statusUpdates');
+
         return response()->json([
             'success' => true,
-            'status' => $newStatus->value,
-            'status_updates' => $targetedResume->statusUpdates->map(fn ($u) => [
-                'id' => $u->id,
-                'status' => $u->status->value,
-                'notes' => $u->notes,
-                'occurred_at' => $u->occurred_at?->toIso8601String(),
-            ])->values()->toArray(),
-            'allowed_next_statuses' => $this->getAllowedNextStatuses(TargetedResumeStatus::from($newStatus->value)),
+            'status' => $fallbackStatus->value,
+            'status_updates' => $this->serializeStatusUpdates($targetedResume),
+            'allowed_next_statuses' => $this->getAllowedNextStatuses($fallbackStatus),
         ]);
+    }
+
+    /**
+     * @return JsonResponse
+     */
+    private function statusUpdateResponse(TargetedResume $targetedResume, TargetedResumeApplicationStatus $status): JsonResponse {
+        return response()->json([
+            'success' => true,
+            'status' => $status->value,
+            'status_updates' => $this->serializeStatusUpdates($targetedResume),
+            'allowed_next_statuses' => $this->getAllowedNextStatuses(TargetedResumeStatus::from($status->value)),
+        ]);
+    }
+
+    /**
+     * @return array<int, array{id: int, status: string, notes: string|null, occurred_at: string|null}>
+     */
+    private function serializeStatusUpdates(TargetedResume $targetedResume): array {
+        return $targetedResume->statusUpdates->map(fn($u) => [
+            'id' => $u->id,
+            'status' => $u->status->value,
+            'notes' => $u->notes,
+            'occurred_at' => $u->occurred_at?->toIso8601String(),
+        ])->values()->toArray();
     }
 
     /**

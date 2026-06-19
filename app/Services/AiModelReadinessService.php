@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Contracts\CanLoadModels;
-use App\Enums\AiProvider;
-use App\Models\AiChatBot;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Throwable;
 
 class AiModelReadinessService

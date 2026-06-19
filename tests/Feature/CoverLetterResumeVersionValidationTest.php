@@ -5,14 +5,14 @@ namespace Tests\Feature;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class CoverLetterResumeVersionValidationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $admin;
 
@@ -25,7 +25,7 @@ class CoverLetterResumeVersionValidationTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        Permission::findOrCreate('manage-unauthenticated-viewers', 'web');
+        Permission::firstOrCreate(['name' => 'manage-unauthenticated-viewers']);
         $this->admin->givePermissionTo('manage-unauthenticated-viewers');
     }
 

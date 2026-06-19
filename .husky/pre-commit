@@ -1,2 +1,3 @@
 # npm test
+npx update-browserslist-db@latest
 npm run lint

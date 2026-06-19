@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiMemoryControllerTest extends TestCase
@@ -15,7 +15,7 @@ class AiMemoryControllerTest extends TestCase
 
     private function authenticatedUser(): User
     {
-        Permission::findOrCreate('manage-ai-tools', 'web');
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
         $user = User::factory()->create();
         $user->givePermissionTo('manage-ai-tools');
 

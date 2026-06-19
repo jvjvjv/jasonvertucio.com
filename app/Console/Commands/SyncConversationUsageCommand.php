@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\AiConversationStatus;
-use App\Models\AiConversation;
-use App\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use Illuminate\Console\Command;
 
 class SyncConversationUsageCommand extends Command

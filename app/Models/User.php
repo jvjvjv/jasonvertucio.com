@@ -61,6 +61,16 @@ class User extends Authenticatable implements HasPasskeys
     ];
 
     /**
+     * Get the names of the roles assigned to the user.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    public function getRoleNames(): \Illuminate\Support\Collection
+    {
+        return $this->roles->pluck('name');
+    }
+
+    /**
      * Canvas compatibility: Check if user is an Admin.
      *
      * @return bool

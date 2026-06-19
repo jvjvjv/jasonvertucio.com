@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

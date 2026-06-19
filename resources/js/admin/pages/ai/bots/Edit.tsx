@@ -41,7 +41,6 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         prompt_template: bot.prompt_template ?? "",
         allowed_roles: bot.allowed_roles,
         is_active: bot.is_active,
-        is_public: bot.is_public,
         require_visitor_identity: bot.require_visitor_identity,
         tools_enabled: bot.tools_enabled,
     });

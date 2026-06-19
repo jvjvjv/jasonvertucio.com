@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Generator;
-use Illuminate\Support\Facades\Http;
+use OpenAI\Client as OpenAIClient;
+use OpenAI\Responses\Chat\CreateStreamedResponseToolCall;
 
 class GrokService implements AiClientContract
 {
-    private string $apiKey;
+    private OpenAIClient $client;
     private string $defaultModel;
     private int $defaultMaxTokens;
-    private string $baseUrl;
 
     private ?string $system = null;
     private ?string $model = null;
@@ -27,10 +27,19 @@ class GrokService implements AiClientContract
         ?int $maxTokens = null,
         ?string $baseUrl = null,
     ) {
-        $this->apiKey = $apiKey ?? '';
-        $this->defaultModel = $model ?? config('grok.model', 'grok-3-mini');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('grok.max_tokens', 1024);
-        $this->baseUrl = rtrim($baseUrl ?? config('grok.base_url', 'https://api.x.ai/v1'), '/');
+        $this->defaultModel = $model ?? config('code-talker.providers.grok.model', 'grok-3-mini');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.grok.max_tokens', 1024);
+
+        $resolvedBaseUrl = rtrim($baseUrl ?? config('code-talker.providers.grok.base_url', 'https://api.x.ai/v1'), '/');
+        $resolvedApiKey = $apiKey ?? '';
+
+        $factory = \OpenAI::factory()->withBaseUri($resolvedBaseUrl);
+
+        if ($resolvedApiKey !== '') {
+            $factory = $factory->withApiKey($resolvedApiKey);
+        }
+
+        $this->client = $factory->make();
     }
 
     public function withSystem(string $system): self
@@ -70,186 +79,132 @@ class GrokService implements AiClientContract
 
     public function message(array $messages): array
     {
-        $payload = $this->buildPayload($messages, false);
+        $params = $this->buildParams($messages, false);
 
-        $response = Http::withHeaders($this->headers())
-            ->timeout(600)
-            ->post($this->baseUrl . '/chat/completions', $payload);
+        $response = $this->client->chat()->create($params);
 
         $this->reset();
 
-        $response->throw();
-
-        $data = $response->json();
-        $choice = $data['choices'][0] ?? [];
-        $content = $choice['message']['content'] ?? '';
-
-        if (is_array($content)) {
-            $content = collect($content)
-                ->map(static fn (array $part): string => (string) ($part['text'] ?? ''))
-                ->implode('');
-        }
+        $choice = $response->choices[0] ?? null;
+        $content = $choice?->message->content ?? '';
 
         return [
-            'id' => (string) ($data['id'] ?? ''),
+            'id' => $response->id ?? '',
             'type' => 'message',
             'role' => 'assistant',
             'content' => [
-                [
-                    'type' => 'text',
-                    'text' => (string) $content,
-                ],
+                ['type' => 'text', 'text' => (string) $content],
             ],
-            'reasoning_content' => $choice['message']['reasoning_content'] ?? null,
-            'model' => (string) ($data['model'] ?? ($this->model ?? $this->defaultModel)),
-            'stop_reason' => (string) ($choice['finish_reason'] ?? 'stop'),
+            'reasoning_content' => $choice?->message->reasoningContent ?? null,
+            'model' => $response->model ?? ($this->model ?? $this->defaultModel),
+            'stop_reason' => (string) ($choice?->finishReason ?? 'stop'),
             'usage' => [
-                'input_tokens' => (int) ($data['usage']['prompt_tokens'] ?? 0),
-                'output_tokens' => (int) ($data['usage']['completion_tokens'] ?? 0),
+                'input_tokens' => (int) ($response->usage?->promptTokens ?? 0),
+                'output_tokens' => (int) ($response->usage?->completionTokens ?? 0),
             ],
         ];
     }
 
     public function stream(array $messages): Generator
     {
-        $payload = $this->buildPayload($messages, true);
+        $params = $this->buildParams($messages, true);
 
-        $response = Http::withHeaders($this->headers())
-            ->withOptions(['stream' => true])
-            ->timeout(600)
-            ->post($this->baseUrl . '/chat/completions', $payload);
+        $sdkStream = $this->client->chat()->createStreamed($params);
 
         $this->reset();
 
-        $response->throw();
-
-        $body = $response->toPsrResponse()->getBody();
-        $buffer = '';
         $inputTokens = null;
         $outputTokens = null;
         $started = false;
+        $finishReason = null;
 
-        while (!$body->eof()) {
-            $buffer .= $body->read(1024);
+        foreach ($sdkStream as $response) {
+            if ($response->usage !== null) {
+                $inputTokens = $response->usage->promptTokens ?? $inputTokens;
+                $outputTokens = $response->usage->completionTokens ?? $outputTokens;
+            }
 
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = trim(substr($buffer, 0, $pos));
-                $buffer = substr($buffer, $pos + 1);
+            if (!$started) {
+                $started = true;
+                yield [
+                    'type' => 'message_start',
+                    'message' => [
+                        'usage' => ['input_tokens' => $inputTokens],
+                    ],
+                ];
+            }
 
-                if ($line === '' || !str_starts_with($line, 'data: ')) {
-                    continue;
-                }
+            $choice = $response->choices[0] ?? null;
 
-                $rawData = substr($line, 6);
+            if ($choice === null) {
+                continue;
+            }
 
-                if ($rawData === '[DONE]') {
-                    break 2;
-                }
+            $delta = $choice->delta;
+            $text = $delta->content;
+            $reasoning = $delta->reasoningContent;
 
-                $chunk = json_decode($rawData, true);
+            if (is_string($reasoning) && $reasoning !== '') {
+                yield [
+                    'type' => 'reasoning_block_delta',
+                    'delta' => ['reasoning' => $reasoning],
+                ];
+            }
 
-                if (!is_array($chunk)) {
-                    continue;
-                }
+            if (is_string($text) && $text !== '') {
+                yield [
+                    'type' => 'content_block_delta',
+                    'delta' => ['text' => $text],
+                ];
+            }
 
-                if (isset($chunk['usage'])) {
-                    $inputTokens = isset($chunk['usage']['prompt_tokens']) ? (int) $chunk['usage']['prompt_tokens'] : $inputTokens;
-                    $outputTokens = isset($chunk['usage']['completion_tokens']) ? (int) $chunk['usage']['completion_tokens'] : $outputTokens;
-                }
+            if ($choice->finishReason !== null) {
+                $stopReason = match ($choice->finishReason) {
+                    'tool_calls' => 'tool_use',
+                    'length' => 'max_tokens',
+                    default => 'end_turn',
+                };
 
-                if (!$started) {
-                    $started = true;
+                yield [
+                    'type' => 'message_delta',
+                    'delta' => ['stop_reason' => $stopReason],
+                    'usage' => ['output_tokens' => $outputTokens],
+                ];
 
-                    yield [
-                        'type' => 'message_start',
-                        'message' => [
-                            'usage' => [
-                                'input_tokens' => $inputTokens,
-                            ],
-                        ],
-                    ];
-                }
+                yield ['type' => 'message_stop'];
 
-                $choice = $chunk['choices'][0] ?? [];
-                $delta = $choice['delta'] ?? [];
-                $text = $delta['content'] ?? null;
-                $reasoning = $delta['reasoning_content'] ?? null;
-
-                if (is_string($reasoning) && $reasoning !== '') {
-                    yield [
-                        'type' => 'reasoning_block_delta',
-                        'delta' => [
-                            'reasoning' => $reasoning,
-                        ],
-                    ];
-                }
-
-                if (is_string($text) && $text !== '') {
-                    yield [
-                        'type' => 'content_block_delta',
-                        'delta' => [
-                            'text' => $text,
-                        ],
-                    ];
-                }
-
-                if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
-                    yield [
-                        'type' => 'message_delta',
-                        'usage' => [
-                            'output_tokens' => $outputTokens,
-                        ],
-                    ];
-
-                    yield [
-                        'type' => 'message_stop',
-                    ];
-                }
+                $finishReason = $choice->finishReason;
             }
         }
 
-        if ($started === false) {
+        if (!$started) {
             yield [
                 'type' => 'message_start',
                 'message' => [
-                    'usage' => [
-                        'input_tokens' => $inputTokens,
-                    ],
+                    'usage' => ['input_tokens' => $inputTokens],
                 ],
             ];
         }
 
-        yield [
-            'type' => 'message_delta',
-            'usage' => [
-                'output_tokens' => $outputTokens,
-            ],
-        ];
+        if ($finishReason === null) {
+            yield [
+                'type' => 'message_delta',
+                'usage' => ['output_tokens' => $outputTokens],
+            ];
 
-        yield [
-            'type' => 'message_stop',
-        ];
+            yield ['type' => 'message_stop'];
+        }
     }
 
     public function listModels(): array
     {
-        $response = Http::withHeaders($this->headers())
-            ->timeout(15)
-            ->get($this->baseUrl . '/models');
+        $response = $this->client->models()->list();
 
-        $response->throw();
-
-        $models = $response->json('data', []);
-
-        if (!is_array($models)) {
-            return [];
-        }
-
-        return collect($models)
-            ->filter(static fn (mixed $model): bool => is_array($model) && isset($model['id']))
-            ->map(static fn (array $model): array => [
-                'id' => (string) $model['id'],
-                'display_name' => (string) ($model['id'] ?? ''),
+        return collect($response->data)
+            ->filter(static fn (mixed $model): bool => isset($model->id))
+            ->map(static fn ($model): array => [
+                'id' => (string) $model->id,
+                'display_name' => (string) $model->id,
             ])
             ->values()
             ->toArray();
@@ -296,26 +251,27 @@ class GrokService implements AiClientContract
 
     /**
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @return array<string, mixed>
      */
-    private function buildPayload(array $messages, bool $streaming): array
+    private function buildParams(array $messages, bool $streaming): array
     {
-        $payload = [
+        $params = [
             'model' => $this->model ?? $this->defaultModel,
             'max_tokens' => $this->maxTokens ?? $this->defaultMaxTokens,
             'messages' => $this->buildMessages($messages),
         ];
 
         if ($this->temperature !== null) {
-            $payload['temperature'] = $this->temperature;
+            $params['temperature'] = $this->temperature;
         }
 
         if ($streaming) {
-            $payload['stream'] = true;
-            $payload['stream_options'] = ['include_usage' => true];
+            $params['stream'] = true;
+            $params['stream_options'] = ['include_usage' => true];
         }
 
         if ($this->tools !== []) {
-            $payload['tools'] = collect($this->tools)
+            $params['tools'] = collect($this->tools)
                 ->map(static fn (array $tool): array => [
                     'type' => 'function',
                     'function' => [
@@ -328,7 +284,7 @@ class GrokService implements AiClientContract
                 ->toArray();
         }
 
-        return $payload;
+        return $params;
     }
 
     /**
@@ -344,21 +300,6 @@ class GrokService implements AiClientContract
         return [
             ['role' => 'system', 'content' => $this->system],
             ...$messages,
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function headers(): array
-    {
-        if ($this->apiKey === '') {
-            return ['content-type' => 'application/json'];
-        }
-
-        return [
-            'Authorization' => 'Bearer ' . $this->apiKey,
-            'content-type' => 'application/json',
         ];
     }
 

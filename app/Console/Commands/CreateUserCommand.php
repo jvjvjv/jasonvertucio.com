@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Canvas\Models\User as CanvasUser;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Illuminate\Support\Facades\Hash;
 
 class CreateUserCommand extends Command
@@ -72,10 +72,10 @@ class CreateUserCommand extends Command
         // Role assignment
         if ($roleName) {
             try {
-                $role = Role::findByName($roleName);
+                $role = Role::where('name', $roleName)->firstOrFail();
                 $user->assignRole($role);
                 $this->info("Role '{$roleName}' assigned.");
-            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
                 $this->warn("Role '{$roleName}' does not exist. User created without role.");
                 $availableRoles = Role::pluck('name')->toArray();
                 $this->info("Available roles: " . implode(', ', $availableRoles));

@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Admin\AiChatBotController;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiSystemController;
+use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
@@ -23,21 +24,33 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
     ->prefix('api/admin/ai')
     ->group(function () {
         Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools']);
+        Route::put('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'apiUpdate']);
         Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels']);
+        Route::get('/systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
+        Route::post('/systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
         Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview']);
     });
 
 Route::middleware(['auth', 'can:edit-resume'])
     ->prefix('api/admin/resume')
     ->group(function () {
-        Route::post('/editor', [ResumeEditorController::class, 'update']);
-        Route::post('/targeted-builder/start', [TargetedResumeController::class, 'start']);
-        Route::post('/targeted-builder/{conversation}/chat', [TargetedResumeController::class, 'chat']);
-        Route::post('/targeted-builder/{conversation}/finalize', [TargetedResumeController::class, 'finalize']);
-        Route::post('/targeted-builder/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter']);
-        Route::post('/targeted-builder/{conversation}/status-update', [TargetedResumeController::class, 'addStatusUpdate']);
-        Route::post('/targeted-builder/parse-url', [JobUrlParseController::class, 'parse']);
-        Route::post('/targeted-builder/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse']);
+        Route::post('/editor', [ResumeEditorController::class, 'update'])->name('admin.resume.editor.save');
+
+        Route::prefix('targeted-builder')
+            ->name('admin.resume.targeted.')
+            ->group(function () {
+                Route::get('/ai-systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
+                Route::post('/ai-systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
+                Route::post('/start', [TargetedResumeController::class, 'start'])->name('start');
+                Route::post('/{conversation}/chat', [TargetedResumeController::class, 'chat'])->name('chat');
+                Route::post('/{conversation}/finalize', [TargetedResumeController::class, 'finalize']);
+                Route::post('/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter']);
+                Route::post('/{conversation}/status-update', [TargetedResumeController::class, 'addStatusUpdate'])->name('status-update');
+                Route::put('/{conversation}/status-update/{statusUpdate}', [TargetedResumeController::class, 'updateStatusUpdate'])->name('status-update.update');
+                Route::delete('/{conversation}/status-update/{statusUpdate}', [TargetedResumeController::class, 'deleteStatusUpdate'])->name('status-update.delete');
+                Route::post('/parse-url', [JobUrlParseController::class, 'parse'])->name('parse-url');
+                Route::post('/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse'])->name('parser.reparse');
+            });
     });
 
 Route::middleware(['auth', 'can:manage-unauthenticated-viewers'])

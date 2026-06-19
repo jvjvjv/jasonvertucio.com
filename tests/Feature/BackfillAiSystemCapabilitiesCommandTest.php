@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AiProvider;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

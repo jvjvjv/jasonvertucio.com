@@ -2,9 +2,9 @@
 
 namespace App\Observers;
 
-use App\Enums\AiConversationStatus;
-use App\Jobs\ProcessAiMemoryJob;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 
 class AiConversationObserver
 {

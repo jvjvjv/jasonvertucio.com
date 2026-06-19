@@ -2,16 +2,20 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Gemini\Client as GeminiClient;
+use Gemini\Data\Content;
+use Gemini\Data\GenerationConfig;
+use Gemini\Data\Part;
+use Gemini\Enums\FinishReason;
+use Gemini\Enums\Role;
 use Generator;
-use Illuminate\Support\Facades\Http;
 
 class GeminiService implements AiClientContract
 {
-    private string $apiKey;
+    private GeminiClient $client;
     private string $defaultModel;
     private int $defaultMaxTokens;
-    private string $baseUrl;
 
     private ?string $system = null;
     private ?string $model = null;
@@ -27,10 +31,20 @@ class GeminiService implements AiClientContract
         ?int $maxTokens = null,
         ?string $baseUrl = null,
     ) {
-        $this->apiKey = $apiKey ?? '';
-        $this->defaultModel = $model ?? config('gemini.model', 'gemini-2.5-flash');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('gemini.max_tokens', 1024);
-        $this->baseUrl = rtrim($baseUrl ?? config('gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+        $this->defaultModel = $model ?? config('code-talker.providers.gemini.model', 'gemini-2.5-flash');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.gemini.max_tokens', 1024);
+
+        $resolvedApiKey = $apiKey ?? '';
+        $resolvedBaseUrl = rtrim(
+            $baseUrl ?? config('code-talker.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'),
+            '/'
+        );
+
+        $factory = \Gemini::factory()
+            ->withApiKey($resolvedApiKey)
+            ->withBaseUrl($resolvedBaseUrl);
+
+        $this->client = $factory->make();
     }
 
     public function withSystem(string $system): self
@@ -70,174 +84,141 @@ class GeminiService implements AiClientContract
 
     public function message(array $messages): array
     {
-        $payload = $this->buildPayload($messages);
+        $resolvedModel = $this->model ?? $this->defaultModel;
+        $contents = $this->mapToContents($messages);
 
-        $response = Http::withHeaders($this->headers())
-            ->timeout(600)
-            ->post($this->urlForModel($this->activeModel()) . ':generateContent', $payload + $this->authQuery());
+        $model = $this->client->generativeModel($resolvedModel)
+            ->withGenerationConfig($this->buildGenerationConfig());
+
+        if ($this->system !== null && $this->system !== '') {
+            $model = $model->withSystemInstruction(
+                new Content(parts: [new Part(text: $this->system)])
+            );
+        }
+
+        $response = $model->generateContent(...$contents);
 
         $this->reset();
 
-        $response->throw();
-
-        $data = $response->json();
-        $candidate = $data['candidates'][0] ?? [];
-        $reasoning = $this->candidateThoughtText($candidate);
+        $candidate = $response->candidates[0] ?? null;
+        $parts = $candidate?->content?->parts ?? [];
+        $reasoning = $this->extractThoughtText($parts);
+        $text = $this->extractResponseText($parts);
 
         return [
-            'id' => (string) ($data['responseId'] ?? ''),
+            'id' => '',
             'type' => 'message',
             'role' => 'assistant',
             'content' => [
-                [
-                    'type' => 'text',
-                    'text' => $this->candidateResponseText($candidate),
-                ],
+                ['type' => 'text', 'text' => $text],
             ],
             'reasoning_content' => $reasoning !== '' ? $reasoning : null,
-            'model' => $this->activeModel(),
-            'stop_reason' => (string) ($candidate['finishReason'] ?? 'stop'),
+            'model' => $resolvedModel,
+            'stop_reason' => $this->mapFinishReason($candidate?->finishReason),
             'usage' => [
-                'input_tokens' => (int) ($data['usageMetadata']['promptTokenCount'] ?? 0),
-                'output_tokens' => (int) ($data['usageMetadata']['candidatesTokenCount'] ?? 0),
+                'input_tokens' => (int) ($response->usageMetadata->promptTokenCount ?? 0),
+                'output_tokens' => (int) ($response->usageMetadata->candidatesTokenCount ?? 0),
             ],
         ];
     }
 
     public function stream(array $messages): Generator
     {
-        $payload = $this->buildPayload($messages);
+        $resolvedModel = $this->model ?? $this->defaultModel;
+        $contents = $this->mapToContents($messages);
 
-        $response = Http::withHeaders($this->headers())
-            ->withOptions(['stream' => true])
-            ->timeout(600)
-            ->post($this->urlForModel($this->activeModel()) . ':streamGenerateContent', $payload + ['alt' => 'sse'] + $this->authQuery());
+        $model = $this->client->generativeModel($resolvedModel)
+            ->withGenerationConfig($this->buildGenerationConfig());
+
+        if ($this->system !== null && $this->system !== '') {
+            $model = $model->withSystemInstruction(
+                new Content(parts: [new Part(text: $this->system)])
+            );
+        }
+
+        $sdkStream = $model->streamGenerateContent(...$contents);
 
         $this->reset();
 
-        $response->throw();
-
-        $body = $response->toPsrResponse()->getBody();
-        $buffer = '';
         $started = false;
         $outputTokens = null;
 
-        while (!$body->eof()) {
-            $buffer .= $body->read(1024);
-
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = trim(substr($buffer, 0, $pos));
-                $buffer = substr($buffer, $pos + 1);
-
-                if ($line === '' || !str_starts_with($line, 'data: ')) {
-                    continue;
-                }
-
-                $chunk = json_decode(substr($line, 6), true);
-
-                if (!is_array($chunk)) {
-                    continue;
-                }
-
-                if (!$started) {
-                    $started = true;
-                    yield [
-                        'type' => 'message_start',
-                        'message' => [
-                            'usage' => [
-                                'input_tokens' => (int) ($chunk['usageMetadata']['promptTokenCount'] ?? 0),
-                            ],
-                        ],
-                    ];
-                }
-
-                $candidate = $chunk['candidates'][0] ?? [];
-                $reasoning = $this->candidateThoughtText($candidate);
-                $text = $this->candidateResponseText($candidate);
-
-                if ($reasoning !== '') {
-                    yield [
-                        'type' => 'reasoning_block_delta',
-                        'delta' => [
-                            'reasoning' => $reasoning,
-                        ],
-                    ];
-                }
-
-                if ($text !== '') {
-                    yield [
-                        'type' => 'content_block_delta',
-                        'delta' => [
-                            'text' => $text,
-                        ],
-                    ];
-                }
-
-                if (isset($chunk['usageMetadata']['candidatesTokenCount'])) {
-                    $outputTokens = (int) $chunk['usageMetadata']['candidatesTokenCount'];
-                }
-
-                if (isset($candidate['finishReason']) && $candidate['finishReason'] !== null) {
-                    yield [
-                        'type' => 'message_delta',
+        foreach ($sdkStream as $chunk) {
+            if (!$started) {
+                $started = true;
+                yield [
+                    'type' => 'message_start',
+                    'message' => [
                         'usage' => [
-                            'output_tokens' => $outputTokens,
+                            'input_tokens' => (int) ($chunk->usageMetadata->promptTokenCount ?? 0),
                         ],
-                    ];
+                    ],
+                ];
+            }
 
-                    yield [
-                        'type' => 'message_stop',
-                    ];
-                }
+            $candidate = $chunk->candidates[0] ?? null;
+            $parts = $candidate?->content?->parts ?? [];
+            $reasoning = $this->extractThoughtText($parts);
+            $text = $this->extractResponseText($parts);
+
+            if ($reasoning !== '') {
+                yield [
+                    'type' => 'reasoning_block_delta',
+                    'delta' => ['reasoning' => $reasoning],
+                ];
+            }
+
+            if ($text !== '') {
+                yield [
+                    'type' => 'content_block_delta',
+                    'delta' => ['text' => $text],
+                ];
+            }
+
+            if (isset($chunk->usageMetadata->candidatesTokenCount)) {
+                $outputTokens = (int) $chunk->usageMetadata->candidatesTokenCount;
+            }
+
+            if ($candidate?->finishReason !== null) {
+                yield [
+                    'type' => 'message_delta',
+                    'delta' => ['stop_reason' => $this->mapFinishReason($candidate->finishReason)],
+                    'usage' => ['output_tokens' => $outputTokens],
+                ];
+
+                yield ['type' => 'message_stop'];
             }
         }
 
-        if ($started === false) {
+        if (!$started) {
             yield [
                 'type' => 'message_start',
                 'message' => [
-                    'usage' => [
-                        'input_tokens' => 0,
-                    ],
+                    'usage' => ['input_tokens' => 0],
                 ],
             ];
         }
 
         yield [
             'type' => 'message_delta',
-            'usage' => [
-                'output_tokens' => $outputTokens,
-            ],
+            'usage' => ['output_tokens' => $outputTokens],
         ];
 
-        yield [
-            'type' => 'message_stop',
-        ];
+        yield ['type' => 'message_stop'];
     }
 
     public function listModels(): array
     {
-        $response = Http::withHeaders($this->headers())
-            ->timeout(15)
-            ->get($this->baseUrl . '/models', $this->authQuery());
+        $response = $this->client->models()->list();
 
-        $response->throw();
-
-        $models = $response->json('models', []);
-
-        if (!is_array($models)) {
-            return [];
-        }
-
-        return collect($models)
-            ->filter(static fn (mixed $model): bool => is_array($model) && isset($model['name']))
-            ->map(static function (array $model): array {
-                $name = (string) ($model['name'] ?? '');
+        return collect($response->models)
+            ->map(static function ($model): array {
+                $name = $model->name;
                 $modelId = str_starts_with($name, 'models/') ? substr($name, 7) : $name;
 
                 return [
                     'id' => $modelId,
-                    'display_name' => (string) ($model['displayName'] ?? $modelId),
+                    'display_name' => $model->displayName,
                 ];
             })
             ->values()
@@ -285,118 +266,64 @@ class GeminiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
-     * @return array<string, mixed>
+     * Map internal message format to Gemini Content objects.
+     *
+     * @param array<int, array<string, mixed>> $messages
+     * @return array<int, Content>
      */
-    private function buildPayload(array $messages): array
+    private function mapToContents(array $messages): array
     {
-        $payload = [
-            'contents' => $this->mapMessages($messages),
-            'generationConfig' => [
-                'maxOutputTokens' => $this->maxTokens ?? $this->defaultMaxTokens,
-            ],
-        ];
+        return array_map(function (array $message): Content {
+            // Already in Gemini API format (from formatAssistantToolCallTurn / formatToolResultTurn)
+            if (isset($message['parts'])) {
+                return Content::from($message);
+            }
 
-        if ($this->system !== null && $this->system !== '') {
-            $payload['systemInstruction'] = [
-                'parts' => [
-                    ['text' => $this->system],
-                ],
-            ];
-        }
+            // Standard {role, content} format
+            $role = $message['role'] === 'assistant' ? Role::MODEL : Role::USER;
+            $content = $message['content'];
+            $text = is_string($content) ? $content : (json_encode($content, JSON_UNESCAPED_SLASHES) ?: '');
 
-        if ($this->temperature !== null) {
-            $payload['generationConfig']['temperature'] = $this->temperature;
-        }
+            return new Content(parts: [new Part(text: $text)], role: $role);
+        }, $messages);
+    }
 
-        return $payload;
+    private function buildGenerationConfig(): GenerationConfig
+    {
+        return new GenerationConfig(
+            maxOutputTokens: $this->maxTokens ?? $this->defaultMaxTokens,
+            temperature: $this->temperature,
+        );
     }
 
     /**
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
-     * @return array<int, array{role: string, parts: array<int, array{text: string}>}>
+     * @param array<int, Part> $parts
      */
-    private function mapMessages(array $messages): array
+    private function extractResponseText(array $parts): string
     {
-        return collect($messages)
-            ->map(function (array $message): array {
-                $role = $message['role'] === 'assistant' ? 'model' : 'user';
-                $content = $message['content'];
-                $text = is_string($content) ? $content : (json_encode($content, JSON_UNESCAPED_SLASHES) ?: '');
-
-                return [
-                    'role' => $role,
-                    'parts' => [
-                        ['text' => $text],
-                    ],
-                ];
-            })
-            ->values()
-            ->toArray();
-    }
-
-    /**
-     * @param array<string, mixed> $candidate
-     */
-    private function candidateResponseText(array $candidate): string
-    {
-        $parts = $candidate['content']['parts'] ?? [];
-
-        if (!is_array($parts)) {
-            return '';
-        }
-
         return collect($parts)
-            ->filter(static fn (mixed $part): bool => is_array($part) && empty($part['thought']))
-            ->map(static fn (mixed $part): string => is_array($part) ? (string) ($part['text'] ?? '') : '')
+            ->filter(static fn (Part $part): bool => empty($part->thought))
+            ->map(static fn (Part $part): string => $part->text ?? '')
             ->implode('');
     }
 
     /**
-     * @param array<string, mixed> $candidate
+     * @param array<int, Part> $parts
      */
-    private function candidateThoughtText(array $candidate): string
+    private function extractThoughtText(array $parts): string
     {
-        $parts = $candidate['content']['parts'] ?? [];
-
-        if (!is_array($parts)) {
-            return '';
-        }
-
         return collect($parts)
-            ->filter(static fn (mixed $part): bool => is_array($part) && !empty($part['thought']))
-            ->map(static fn (mixed $part): string => is_array($part) ? (string) ($part['text'] ?? '') : '')
+            ->filter(static fn (Part $part): bool => !empty($part->thought))
+            ->map(static fn (Part $part): string => $part->text ?? '')
             ->implode('');
     }
 
-    private function activeModel(): string
+    private function mapFinishReason(?FinishReason $reason): string
     {
-        return $this->model ?? $this->defaultModel;
-    }
-
-    private function urlForModel(string $model): string
-    {
-        return $this->baseUrl . '/models/' . $model;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function headers(): array
-    {
-        return [
-            'content-type' => 'application/json',
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function authQuery(): array
-    {
-        return [
-            'key' => $this->apiKey,
-        ];
+        return match ($reason) {
+            FinishReason::MAX_TOKENS => 'max_tokens',
+            default => 'end_turn',
+        };
     }
 
     private function reset(): void

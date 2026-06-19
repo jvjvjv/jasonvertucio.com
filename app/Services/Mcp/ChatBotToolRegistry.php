@@ -2,11 +2,11 @@
 
 namespace App\Services\Mcp;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
-use App\Contracts\Mcp\AiToolRegistryContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
 use App\Contracts\ResumeDataServiceContract;
-use App\Models\AiConversation;
-use App\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use App\Services\TargetedResumeService;
 
 class ChatBotToolRegistry implements AiToolRegistryContract

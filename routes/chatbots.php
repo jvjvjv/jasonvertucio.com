@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChatBotController;
+use App\Http\Middleware\CheckChatBotAccess;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,9 +23,7 @@ Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
     ->get('/chats/statuses', [ChatBotController::class, 'statuses'])
     ->name('chat-bots.statuses');
 
-// Hash/UUID-based conversation links — a single static route replaces the old
-// per-bot dynamic routes registered in RouteServiceProvider.
-// The bot is resolved from the conversation; the slug is informational only.
+// Hash/UUID-based conversation links
 Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
     ->prefix('chat')
     ->group(function () {
@@ -33,7 +32,7 @@ Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
             ->name('chat-bot.by-hash');
     });
 
-// Shared route group for chat bot endpoints (used in two places below)
+// Shared route group for per-bot endpoints — access control enforced by middleware.
 $chatBotRoutes = function () {
     Route::get('/{aiChatBot:slug}', [ChatBotController::class, 'show'])->name('show');
     Route::get('/{aiChatBot:slug}/new', [ChatBotController::class, 'newChat'])->name('new');
@@ -45,13 +44,16 @@ $chatBotRoutes = function () {
 };
 
 // /chat/{slug} prefixed routes
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
     ->prefix('chat')
     ->name('chat-bots.chat.')
     ->group($chatBotRoutes);
 
 // Root-level /{slug} routes — must be last so the wildcard does not match
 // literal paths registered before this file is loaded.
-Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware([\App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
     ->name('chat-bots.root.')
     ->group($chatBotRoutes);
+
+// TEMP DEBUG
+Route::get('/debug-chatbots-loaded', function () { return 'yes'; })->name('debug.chatbots.loaded');

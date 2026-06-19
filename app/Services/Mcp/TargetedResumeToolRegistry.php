@@ -2,16 +2,16 @@
 
 namespace App\Services\Mcp;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
-use App\Contracts\Mcp\AiToolRegistryContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
 use App\Contracts\ResumeDataServiceContract;
-use App\Models\AiConversation;
-use App\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use App\Services\TargetedResumeService;
 
 class TargetedResumeToolRegistry implements AiToolRegistryContract
 {
-    use DiscoversAiToolHandlers;
+    use \Jvjvjv\CodeTalker\Services\Mcp\DiscoversAiToolHandlers;
 
     /** @var array<string, AiToolHandlerContract> */
     private array $handlers = [];
@@ -23,7 +23,7 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
         TargetedResumeService $targetedResumeService,
     ) {
         $this->handlers = $this->discoverHandlers([
-            app_path('Services/Mcp/Tools/TargetedResume'),
+            app_path('Services/Mcp/Tools/TargetedResume') => 'App\\Services\\Mcp\\Tools\\TargetedResume\\',
         ], [
             'conversation' => $conversation,
             'resumeDataService' => $resumeDataService,

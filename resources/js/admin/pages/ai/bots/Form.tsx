@@ -28,7 +28,6 @@ export interface FormData {
     prompt_template: string;
     allowed_roles: string[];
     is_active: boolean;
-    is_public: boolean;
     require_visitor_identity: boolean;
     tools_enabled: boolean;
 }
@@ -267,7 +266,7 @@ export default function Form({
                     }}
                     helperText={
                         errors.allowed_roles ??
-                        "Leave empty to allow any authenticated role when the bot is not public."
+                        "Leave empty to allow public access (no authentication required)."
                     }
                 >
                     <MenuItem value="">Select a role</MenuItem>
@@ -278,7 +277,7 @@ export default function Form({
                     ))}
                 </TextField>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-                    {data.allowed_roles.map((role) => (
+                    {data.allowed_roles?.map((role) => (
                         <Chip
                             key={role}
                             label={role}
@@ -310,17 +309,6 @@ export default function Form({
                 <FormControlLabel
                     control={
                         <Checkbox
-                            checked={data.is_public}
-                            onChange={(event) => {
-                                setData("is_public", event.target.checked);
-                            }}
-                        />
-                    }
-                    label="Public"
-                />
-                <FormControlLabel
-                    control={
-                        <Checkbox
                             checked={data.require_visitor_identity}
                             onChange={(event) => {
                                 setData(
@@ -331,6 +319,22 @@ export default function Form({
                         />
                     }
                     label="Require visitor name and email before the first message"
+                />
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={data.tools_enabled}
+                            disabled={toolsEnabledBySystem}
+                            onChange={(event) => {
+                                setData("tools_enabled", event.target.checked);
+                            }}
+                        />
+                    }
+                    label={
+                        toolsEnabledBySystem
+                            ? "Enable MCP tools for this bot (provided by the selected system)"
+                            : "Enable MCP tools for this bot"
+                    }
                 />
                 <FormControlLabel
                     control={

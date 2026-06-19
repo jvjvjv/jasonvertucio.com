@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\AiClientContract;
-use App\Contracts\CanLoadModels;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
 use App\Contracts\ResumeDataServiceContract;
-use App\Models\AiChatBot;
-use App\Models\AiSystem;
-use App\Services\AiChatBotConversationService;
-use App\Services\AiClientFactory;
-use App\Services\AiMemoryService;
-use App\Services\AiModelReadinessService;
-use App\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Services\TargetedResumeService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;

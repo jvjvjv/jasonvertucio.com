@@ -6,7 +6,7 @@ use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class JobUrlParserControllerTest extends TestCase
@@ -15,7 +15,7 @@ class JobUrlParserControllerTest extends TestCase
 
     private function authenticatedUser(): User
     {
-        Permission::findOrCreate('manage-ai-tools', 'web');
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
         $user = User::factory()->create();
         $user->givePermissionTo('manage-ai-tools');
 

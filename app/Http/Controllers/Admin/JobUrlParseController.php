@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ParseJobUrlRequest;
 use App\Http\Requests\ReparseJobUrlRequest;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\JobUrlParser;
 use App\Services\JobUrlParseService;
 use Illuminate\Http\JsonResponse;

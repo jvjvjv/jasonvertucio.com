@@ -37,7 +37,6 @@ export default function Create({ systems, roles }: CreateProps) {
         prompt_template: "You are {{bot_name}}. {{bot_description}}",
         allowed_roles: [],
         is_active: true,
-        is_public: false,
         require_visitor_identity: false,
         tools_enabled: false,
     });

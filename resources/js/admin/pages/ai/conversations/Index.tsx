@@ -4,24 +4,17 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 
+import type { ColumnDef } from "@/admin/components/DataTable";
 import type { Conversation, PaginatedResponse } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import DataTable from "@/admin/components/DataTable";
 import PageHeader from "@/admin/components/PageHeader";
-import Pagination from "@/admin/components/Pagination";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
@@ -42,6 +35,61 @@ interface IndexProps {
     bots: { id: number; name: string }[];
     filters: Filters;
 }
+
+const columns: ColumnDef<Conversation>[] = [
+    {
+        key: "title",
+        label: "Conversation",
+        render: (row) => (
+            <Link
+                component={InertiaLink}
+                href={`/admin/ai/conversations/${row.id}`}
+                style={{ fontWeight: 500 }}
+                underline="hover"
+            >
+                {row.title ?? `Conversation #${row.id}`}
+            </Link>
+        ),
+    },
+    { key: "feature", label: "Feature" },
+    {
+        key: "participant",
+        label: "Participant",
+        render: (row) => row.user_name ?? row.visitor_name ?? "Unknown",
+    },
+    {
+        key: "system_bot",
+        label: "System / Bot",
+        render: (row) => (
+            <Box>
+                <Box>{row.ai_system_name ?? "-"}</Box>
+                <Box sx={{ color: "text.secondary", fontSize: 12 }}>
+                    {row.ai_chat_bot_name ?? "No bot"}
+                </Box>
+            </Box>
+        ),
+    },
+    {
+        key: "status",
+        label: "Status",
+        render: (row) => <StatusChip status={row.status} />,
+    },
+    {
+        key: "usage",
+        label: "Usage",
+        render: (row) => <UsageChip usage={row.usage} />,
+    },
+    {
+        key: "messages_count",
+        label: "Messages",
+        render: (row) => row.messages_count ?? 0,
+    },
+    {
+        key: "updated_at",
+        label: "Updated",
+        render: (row) => row.updated_at ?? "-",
+    },
+];
 
 export default function Index({
     conversations,
@@ -210,143 +258,57 @@ export default function Index({
                 </TextField>
             </Box>
 
-            <Card>
-                <TableContainer>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Conversation</TableCell>
-                                <TableCell>Feature</TableCell>
-                                <TableCell>Participant</TableCell>
-                                <TableCell>System / Bot</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Usage</TableCell>
-                                <TableCell>Messages</TableCell>
-                                <TableCell>Updated</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {conversations.data.length === 0 ? (
-                                <EmptyTableRow
-                                    colSpan={9}
-                                    message="No AI conversations found."
-                                />
-                            ) : (
-                                conversations.data.map((conversation) => (
-                                    <TableRow key={conversation.id} hover>
-                                        <TableCell>
-                                            <Link
-                                                component={InertiaLink}
-                                                href={`/admin/ai/conversations/${conversation.id}`}
-                                                style={{
-                                                    fontWeight: 500,
-                                                }}
-                                                underline="hover"
-                                            >
-                                                {conversation.title ??
-                                                    `Conversation #${conversation.id}`}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            {conversation.feature}
-                                        </TableCell>
-                                        <TableCell>
-                                            {conversation.user_name ??
-                                                conversation.visitor_name ??
-                                                "Unknown"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Box>
-                                                <Box>
-                                                    {conversation.ai_system_name ??
-                                                        "-"}
-                                                </Box>
-                                                <Box
-                                                    sx={{
-                                                        color: "text.secondary",
-                                                        fontSize: 12,
-                                                    }}
-                                                >
-                                                    {conversation.ai_chat_bot_name ??
-                                                        "No bot"}
-                                                </Box>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            <StatusChip
-                                                status={conversation.status}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <UsageChip
-                                                usage={conversation.usage}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            {conversation.messages_count ?? 0}
-                                        </TableCell>
-                                        <TableCell>
-                                            {conversation.updated_at ?? "-"}
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    justifyContent: "flex-end",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                {conversation.chat_hash && (
-                                                    <IconButton
-                                                        component={InertiaLink}
-                                                        href={`/chat/${conversation.ai_chat_bot_slug}/${conversation.chat_hash}`}
-                                                        size="small"
-                                                        color="success"
-                                                        title="Continue Chat"
-                                                        aria-label="Continue Chat"
-                                                        target="_blank"
-                                                    >
-                                                        <ChatIcon fontSize="small" />
-                                                    </IconButton>
-                                                )}
-                                                <IconButton
-                                                    component={InertiaLink}
-                                                    href={`/admin/ai/conversations/${conversation.id}`}
-                                                    size="small"
-                                                    color="primary"
-                                                    title="View Details"
-                                                    aria-label="View Details"
-                                                >
-                                                    <OpenInNewIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => {
-                                                        handleDelete(
-                                                            conversation,
-                                                        );
-                                                    }}
-                                                    title="Delete"
-                                                    aria-label="Delete"
-                                                >
-                                                    <DeleteOutlineIcon fontSize="small" />
-                                                </IconButton>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+            <DataTable
+                columns={columns}
+                data={conversations.data}
+                emptyMessage="No AI conversations found."
+                pagination={conversations}
+                rowActions={(conversation) => (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                        }}
+                    >
+                        {conversation.chat_hash && (
+                            <IconButton
+                                component={InertiaLink}
+                                href={`/chat/${conversation.ai_chat_bot_slug}/${conversation.chat_hash}`}
+                                size="small"
+                                color="success"
+                                title="Continue Chat"
+                                aria-label="Continue Chat"
+                                target="_blank"
+                            >
+                                <ChatIcon fontSize="small" />
+                            </IconButton>
+                        )}
+                        <IconButton
+                            component={InertiaLink}
+                            href={`/admin/ai/conversations/${conversation.id}`}
+                            size="small"
+                            color="primary"
+                            title="View Details"
+                            aria-label="View Details"
+                        >
+                            <OpenInNewIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                                handleDelete(conversation);
+                            }}
+                            title="Delete"
+                            aria-label="Delete"
+                        >
+                            <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                )}
+            />
 
-                <Pagination
-                    links={conversations.links}
-                    lastPage={conversations.last_page}
-                />
-            </Card>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

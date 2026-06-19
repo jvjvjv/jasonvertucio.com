@@ -7,6 +7,7 @@ import CardContent from "@mui/material/CardContent";
 import AiSystemForm from "./Form";
 
 import type { FormData } from "./Form";
+import type { AiSystemPrompt } from "@/types";
 import type { SyntheticEvent } from "react";
 
 import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
@@ -15,9 +16,13 @@ import AdminLayout from "@/admin/layouts/AdminLayout";
 
 interface CreateProps {
     existingDefaults: string[];
+    systemPrompts: AiSystemPrompt[];
 }
 
-export default function Create({ existingDefaults }: CreateProps) {
+export default function Create({
+    existingDefaults,
+    systemPrompts,
+}: CreateProps) {
     const form = useForm<FormData>({
         name: "",
         provider: "anthropic",
@@ -29,7 +34,8 @@ export default function Create({ existingDefaults }: CreateProps) {
         max_tokens: 4096,
         context_length: null,
         temperature: "",
-        system_prompt: "",
+        system_prompt_id: null,
+        custom_system_prompt: "",
         config: "",
         credentials: "",
         auth_type: "",
@@ -39,6 +45,7 @@ export default function Create({ existingDefaults }: CreateProps) {
         supports_tools: false,
         allowed_tools: [],
         supports_json_mode: false,
+        enable_thinking: false,
         is_local_endpoint: false,
         pricing_profile: "",
         is_active: true,
@@ -67,6 +74,7 @@ export default function Create({ existingDefaults }: CreateProps) {
                             setData={form.setData}
                             errors={form.errors}
                             existingDefaults={existingDefaults}
+                            systemPrompts={systemPrompts}
                         />
 
                         <Box

@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
 use App\Http\Requests\StoreAiSystemRequest;
 use App\Http\Requests\UpdateAiSystemRequest;
-use App\Models\AiInteractionLog;
-use App\Models\AiSystem;
-use App\Models\AiSystemFeatureDefault;
-use App\Services\ClaudeService;
-use App\Services\GeminiService;
-use App\Services\GrokService;
-use App\Services\AiSystemCapabilityService;
-use App\Services\LmStudioService;
-use App\Services\OpenAiService;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemFeatureDefault;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\GeminiService;
+use Jvjvjv\CodeTalker\Services\GrokService;
+use Jvjvjv\CodeTalker\Services\AiSystemCapabilityService;
+use Jvjvjv\CodeTalker\Services\LmStudioService;
+use Jvjvjv\CodeTalker\Services\OpenAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +26,10 @@ use Inertia\Response as InertiaResponse;
 
 class AiSystemController extends Controller
 {
-    public function __construct(private AiSystemCapabilityService $aiSystemCapabilityService) {
+    public function __construct(
+        private AiSystemCapabilityService $aiSystemCapabilityService,
+        private AiModelReadinessService $aiModelReadinessService,
+    ) {
     }
 
     /**
@@ -55,6 +60,7 @@ class AiSystemController extends Controller
 
         return Inertia::render('ai/systems/Create', [
             'existingDefaults' => $existingDefaults,
+            'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
         ]);
     }
 
@@ -67,6 +73,7 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
+        $this->resolveCustomSystemPrompt($data);
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
         $this->aiSystemCapabilityService->hydrateForPersistence($data);
@@ -95,6 +102,7 @@ class AiSystemController extends Controller
         return Inertia::render('ai/systems/Edit', [
             'aiSystem' => $aiSystem,
             'existingDefaults' => $existingDefaults,
+            'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
         ]);
     }
 
@@ -107,6 +115,7 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
+        $this->resolveCustomSystemPrompt($data);
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
         $data['provider'] = $aiSystem->provider;
         $data['model'] = $aiSystem->model;
@@ -237,6 +246,26 @@ class AiSystemController extends Controller
     }
 
     /**
+     * Return the readiness status of the model for an AI system.
+     */
+    public function modelStatus(AiSystem $aiSystem): JsonResponse
+    {
+        return response()->json([
+            'status' => $this->aiModelReadinessService->statusForSystem($aiSystem),
+        ]);
+    }
+
+    /**
+     * Warm up (pre-load) the model for an AI system.
+     */
+    public function modelWarmup(AiSystem $aiSystem): JsonResponse
+    {
+        return response()->json([
+            'status' => $this->aiModelReadinessService->warmUpSystem($aiSystem),
+        ]);
+    }
+
+    /**
      * Duplicate an existing AI system.
      */
     public function duplicate(AiSystem $aiSystem): RedirectResponse
@@ -247,6 +276,26 @@ class AiSystemController extends Controller
 
         return redirect()->route('admin.ai.systems.edit', $clone)
             ->with('success', "AI system duplicated. Update the name and settings as needed.");
+    }
+
+    /**
+     * If no system_prompt_id was provided but custom_system_prompt text was, create a new prompt record.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function resolveCustomSystemPrompt(array &$data): void
+    {
+        $customText = $data['custom_system_prompt'] ?? null;
+        unset($data['custom_system_prompt']);
+
+        if (empty($data['system_prompt_id']) && !empty($customText)) {
+            $prompt = AiSystemPrompt::create([
+                'title' => mb_substr(($data['name'] ?? 'AI System') . ' Custom Prompt', 0, 64),
+                'description' => 'Custom prompt',
+                'content' => $customText,
+            ]);
+            $data['system_prompt_id'] = $prompt->id;
+        }
     }
 
     /**

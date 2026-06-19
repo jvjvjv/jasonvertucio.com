@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
-use App\Contracts\CanLoadModels;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -33,12 +33,13 @@ class LmStudioService implements AiClientContract, CanLoadModels
         ?int $maxTokens = null,
         ?int $contextLength = null,
         ?string $apiKey = null,
+        private bool $enableThinking = false,
     ) {
         $this->serverUrl = $this->normalizeServerUrl(
-            $serverUrl ?? config('lmstudio.server_url', 'http://localhost:1234'),
+            $serverUrl ?? config('code-talker.providers.lm-studio.server_url', 'http://localhost:1234'),
         );
-        $this->defaultModel = $model ?? config('lmstudio.model', '');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('lmstudio.max_tokens', 1024);
+        $this->defaultModel = $model ?? config('code-talker.providers.lm-studio.model', '');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.lm-studio.max_tokens', 1024);
         $this->defaultContextLength = $contextLength;
         $this->apiKey = $apiKey;
     }
@@ -284,12 +285,17 @@ class LmStudioService implements AiClientContract, CanLoadModels
             ];
         }
 
-        $stopReason = $finishReason === 'tool_calls' ? 'tool_use' : 'end_turn';
+        $stopReason = match ($finishReason) {
+            'tool_calls' => 'tool_use',
+            'length' => 'max_tokens',
+            default => 'end_turn',
+        };
 
         yield [
             'type' => 'message_delta',
             'delta' => ['stop_reason' => $stopReason],
             'usage' => [
+                'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
             ],
         ];
@@ -463,6 +469,8 @@ class LmStudioService implements AiClientContract, CanLoadModels
             $payload['stream'] = true;
             $payload['stream_options'] = ['include_usage' => true];
         }
+
+        $payload['enable_thinking'] = $this->enableThinking;
 
         if ($this->tools !== []) {
             $payload['tools'] = collect($this->tools)

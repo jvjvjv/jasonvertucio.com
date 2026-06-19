@@ -5,27 +5,20 @@ import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import EmptyTableRow from "../../../components/EmptyTableRow";
+import DataTable from "../../../components/DataTable";
 import PageHeader from "../../../components/PageHeader";
-import Pagination from "../../../components/Pagination";
 import AdminLayout from "../../../layouts/AdminLayout";
 
+import type { ColumnDef } from "../../../components/DataTable";
 import type { PaginatedResponse } from "@/types";
 
 import useConfirmDialog from "@/hooks/useConfirmDialog";
@@ -51,6 +44,81 @@ interface IndexProps {
     };
     domains: string[];
 }
+
+const columns: ColumnDef<ParserRow>[] = [
+    { key: "id", label: "ID", render: (row) => `#${row.id}` },
+    {
+        key: "domain",
+        label: "Domain",
+        render: (row) => (
+            <Link
+                component={InertiaLink}
+                href={`/admin/ai/job-url-parsers/${row.id}`}
+                underline="hover"
+                color="inherit"
+                sx={{ fontWeight: 500 }}
+            >
+                {row.domain}
+            </Link>
+        ),
+    },
+    {
+        key: "status",
+        label: "Status",
+        render: (row) => (
+            <Chip
+                size="small"
+                color={row.status === "active" ? "success" : "default"}
+                label={row.status}
+            />
+        ),
+    },
+    {
+        key: "selectors",
+        label: "Selectors & Reasoning",
+        render: (row) => (
+            <>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: "monospace" }}
+                >
+                    title: {row.job_title_selector ?? "-"}
+                </Typography>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: "monospace" }}
+                >
+                    company: {row.company_name_selector ?? "-"}
+                </Typography>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: "monospace" }}
+                >
+                    location: {row.job_location_selector ?? "-"}
+                </Typography>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: "monospace" }}
+                >
+                    description: {row.job_description_selector ?? "-"}
+                </Typography>
+                {row.reasoning_preview && (
+                    <Typography
+                        variant="body2"
+                        color="text.disabled"
+                        sx={{ mt: 0.5, fontStyle: "italic" }}
+                    >
+                        {row.reasoning_preview}
+                    </Typography>
+                )}
+            </>
+        ),
+    },
+];
 
 export default function Index({ parsers, filters, domains }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
@@ -169,226 +237,99 @@ export default function Index({ parsers, filters, domains }: IndexProps) {
                 />
             </Box>
 
-            <Card>
-                <TableContainer>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>ID</TableCell>
-                                <TableCell>Domain</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Selectors &amp; Reasoning</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {parsers.data.length === 0 ? (
-                                <EmptyTableRow
-                                    colSpan={5}
-                                    message="No job URL parsers found."
-                                />
-                            ) : (
-                                parsers.data.map((parser) => {
-                                    const isActive = parser.status === "active";
-                                    const isInactive =
-                                        parser.status === "inactive";
+            <DataTable
+                columns={columns}
+                data={parsers.data}
+                emptyMessage="No job URL parsers found."
+                pagination={parsers}
+                rowActions={(parser) => {
+                    const isActive = parser.status === "active";
+                    const isInactive = parser.status === "inactive";
+                    return (
+                        <Box
+                            sx={{ display: "flex", justifyContent: "flex-end" }}
+                        >
+                            <Tooltip title="Edit">
+                                <IconButton
+                                    size="small"
+                                    component={InertiaLink}
+                                    href={`/admin/ai/job-url-parsers/${parser.id}`}
+                                >
+                                    <EditIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
 
-                                    return (
-                                        <TableRow key={parser.id} hover>
-                                            <TableCell>#{parser.id}</TableCell>
-                                            <TableCell>
-                                                <Link
-                                                    component={InertiaLink}
-                                                    href={`/admin/ai/job-url-parsers/${parser.id}`}
-                                                    underline="hover"
-                                                    color="inherit"
-                                                    sx={{ fontWeight: 500 }}
-                                                >
-                                                    {parser.domain}
-                                                </Link>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    size="small"
-                                                    color={
-                                                        isActive
-                                                            ? "success"
-                                                            : "default"
-                                                    }
-                                                    label={parser.status}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
-                                                    title:{" "}
-                                                    {parser.job_title_selector ??
-                                                        "-"}
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
-                                                    company:{" "}
-                                                    {parser.company_name_selector ??
-                                                        "-"}
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
-                                                    location:{" "}
-                                                    {parser.job_location_selector ??
-                                                        "-"}
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
-                                                    description:{" "}
-                                                    {parser.job_description_selector ??
-                                                        "-"}
-                                                </Typography>
-                                                {parser.reasoning_preview && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="text.disabled"
-                                                        sx={{
-                                                            mt: 0.5,
-                                                            fontStyle: "italic",
-                                                        }}
-                                                    >
-                                                        {
-                                                            parser.reasoning_preview
-                                                        }
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "flex-end",
-                                                    }}
-                                                >
-                                                    <Tooltip title="Edit">
-                                                        <IconButton
-                                                            size="small"
-                                                            component={
-                                                                InertiaLink
-                                                            }
-                                                            href={`/admin/ai/job-url-parsers/${parser.id}`}
-                                                        >
-                                                            <EditIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
+                            <Tooltip
+                                title={
+                                    isActive ? "Already approved" : "Approve"
+                                }
+                            >
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        color="success"
+                                        disabled={isActive}
+                                        onClick={() => {
+                                            handleApprove(
+                                                parser.id,
+                                                parser.domain,
+                                            );
+                                        }}
+                                    >
+                                        <ThumbUpIcon fontSize="small" />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
 
-                                                    <Tooltip
-                                                        title={
-                                                            isActive
-                                                                ? "Already approved"
-                                                                : "Approve"
-                                                        }
-                                                    >
-                                                        <span>
-                                                            <IconButton
-                                                                size="small"
-                                                                color="success"
-                                                                disabled={
-                                                                    isActive
-                                                                }
-                                                                onClick={() => {
-                                                                    handleApprove(
-                                                                        parser.id,
-                                                                        parser.domain,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <ThumbUpIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </span>
-                                                    </Tooltip>
+                            <Tooltip
+                                title={
+                                    isInactive ? "Already inactive" : "Reject"
+                                }
+                            >
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        color="warning"
+                                        disabled={isInactive}
+                                        onClick={() => {
+                                            handleReject(
+                                                parser.id,
+                                                parser.domain,
+                                            );
+                                        }}
+                                    >
+                                        <ThumbDownIcon fontSize="small" />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
 
-                                                    <Tooltip
-                                                        title={
-                                                            isInactive
-                                                                ? "Already inactive"
-                                                                : "Reject"
-                                                        }
-                                                    >
-                                                        <span>
-                                                            <IconButton
-                                                                size="small"
-                                                                color="warning"
-                                                                disabled={
-                                                                    isInactive
-                                                                }
-                                                                onClick={() => {
-                                                                    handleReject(
-                                                                        parser.id,
-                                                                        parser.domain,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <ThumbDownIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </span>
-                                                    </Tooltip>
-
-                                                    <Tooltip
-                                                        title={
-                                                            isActive
-                                                                ? "Reject or supersede before deleting"
-                                                                : "Delete"
-                                                        }
-                                                    >
-                                                        <span>
-                                                            <IconButton
-                                                                size="small"
-                                                                color="error"
-                                                                disabled={
-                                                                    isActive
-                                                                }
-                                                                onClick={() => {
-                                                                    handleDelete(
-                                                                        parser.id,
-                                                                        parser.domain,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <DeleteIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </span>
-                                                    </Tooltip>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-                <Pagination
-                    links={parsers.links}
-                    lastPage={parsers.last_page}
-                />
-            </Card>
+                            <Tooltip
+                                title={
+                                    isActive
+                                        ? "Reject or supersede before deleting"
+                                        : "Delete"
+                                }
+                            >
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        color="error"
+                                        disabled={isActive}
+                                        onClick={() => {
+                                            handleDelete(
+                                                parser.id,
+                                                parser.domain,
+                                            );
+                                        }}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        </Box>
+                    );
+                }}
+            />
 
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>

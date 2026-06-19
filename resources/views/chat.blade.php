@@ -26,7 +26,7 @@
 </head>
 
 <body id="page-top" class="flex min-h-screen flex-col bg-gray-50 font-body">
-    <nav id="navbarTop" class="sticky top-0 z-50 bg-primary shadow-md">
+    <nav id="navbarTop" class="bg-primary shadow-md">
         <div class="mx-auto max-w-7xl px-4">
             <div class="flex h-16 items-center justify-between">
                 <div class="flex items-center">

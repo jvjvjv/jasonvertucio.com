@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiSystem;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\TargetedResumeStatusUpdate;
@@ -14,7 +14,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class TargetedResumeFilterTest extends TestCase
@@ -28,7 +28,7 @@ class TargetedResumeFilterTest extends TestCase
         parent::setUp();
 
         $this->admin = User::factory()->create();
-        Permission::findOrCreate('edit-resume', 'web');
+        Permission::firstOrCreate(['name' => 'edit-resume']);
         $this->admin->givePermissionTo('edit-resume');
     }
 

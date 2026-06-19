@@ -27,15 +27,11 @@ Route::get('/about/{any?}', function () {
 Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
 
 
-// Chatbot routes must be at the end so they don't swallow other valid routes
 require base_path('routes/auth.php');
 require base_path('routes/admin.php');
-require base_path('routes/admin-ai.php');
 require base_path('routes/admin-resume.php');
 require base_path('routes/resume.php');
 require base_path('routes/blog.php');
 require base_path('routes/honeypots.php');
 
 require base_path('routes/api-web.php');
-
-require base_path('routes/chatbots.php');

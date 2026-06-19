@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AiToolsController;
 use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiConversationController;
 use App\Http\Controllers\Admin\AiSystemController;
+use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\AiMemoryController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 
@@ -24,6 +25,14 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::delete('/systems/{aiSystem}', [AiSystemController::class, 'destroy'])->name('systems.destroy');
         Route::get('/systems/{aiSystem}/logs', [AiSystemController::class, 'logs'])->name('systems.logs');
 
+        // AI System Prompts CRUD
+        Route::get('/system-prompts', [AiSystemPromptController::class, 'index'])->name('system-prompts.index');
+        Route::get('/system-prompts/new', [AiSystemPromptController::class, 'create'])->name('system-prompts.create');
+        Route::post('/system-prompts', [AiSystemPromptController::class, 'store'])->name('system-prompts.store');
+        Route::get('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'edit'])->name('system-prompts.edit');
+        Route::put('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'update'])->name('system-prompts.update');
+        Route::delete('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'destroy'])->name('system-prompts.destroy');
+
         // AI Memories CRUD
         Route::get('/memories', [AiMemoryController::class, 'index'])->name('memories.index');
         Route::get('/memories/new', [AiMemoryController::class, 'create'])->name('memories.create');
@@ -40,8 +49,11 @@ Route::middleware(['auth', 'can:manage-ai-tools', \App\Http\Middleware\HandleIne
         Route::delete('/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
 
         // AI Chat Bots CRUD
+        // The literal mcp-tools route must precede the {aiChatBot} wildcard so
+        // it is not matched as a bot slug.
         Route::get('/chat-bots', [AiChatBotController::class, 'index'])->name('bots.index');
         Route::get('/chat-bots/new', [AiChatBotController::class, 'create'])->name('bots.create');
+        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools'])->name('bots.mcp-tools');
 
         Route::post('/chat-bots', [AiChatBotController::class, 'store'])->name('bots.store');
         Route::get('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'edit'])->name('bots.edit');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -24,7 +25,7 @@ class AiSystem extends Model
         'temperature',
         'is_active',
         'config',
-        'system_prompt',
+        'system_prompt_id',
         'credentials',
         'auth_type',
         'endpoint_type',
@@ -33,6 +34,7 @@ class AiSystem extends Model
         'supports_tools',
         'allowed_tools',
         'supports_json_mode',
+        'enable_thinking',
         'is_local_endpoint',
         'pricing_profile',
     ];
@@ -52,6 +54,7 @@ class AiSystem extends Model
             'supports_tools' => 'boolean',
             'allowed_tools' => 'array',
             'supports_json_mode' => 'boolean',
+            'enable_thinking' => 'boolean',
             'is_local_endpoint' => 'boolean',
             'temperature' => 'decimal:2',
             'max_tokens' => 'integer',
@@ -75,6 +78,11 @@ class AiSystem extends Model
         $default = AiSystemFeatureDefault::where('feature', $feature)->first();
 
         return $default?->aiSystem;
+    }
+
+    public function systemPrompt(): BelongsTo
+    {
+        return $this->belongsTo(AiSystemPrompt::class, 'system_prompt_id');
     }
 
     public function featureDefaults(): HasMany

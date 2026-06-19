@@ -16,6 +16,7 @@ class ResumeExperience extends Model
     protected $fillable = [
         'version_id',
         'job_title',
+        'job_title_label',
         'company',
         'location',
         'date_start',
@@ -47,5 +48,10 @@ class ResumeExperience extends Model
     public function bullets(): HasMany
     {
         return $this->hasMany(ResumeExperienceBullet::class, 'experience_id')->orderBy('sort_order');
+    }
+
+    public function getDisplayJobTitleAttribute(): string
+    {
+        return $this->job_title_label ?: $this->job_title;
     }
 }

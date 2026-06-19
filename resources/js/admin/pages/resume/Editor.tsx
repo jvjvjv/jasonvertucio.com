@@ -153,10 +153,10 @@ export default function Editor({
         } catch (error) {
             if (error instanceof ApiError) {
                 const result = error.data as SaveErrorResponse;
-                if (result?.errors) {
+                if (result.errors) {
                     setErrors(Object.values(result.errors).flat());
                 } else {
-                    setErrors([result?.message ?? "Failed to save"]);
+                    setErrors([result.message ?? "Failed to save"]);
                 }
             } else {
                 setErrors(["Network error: " + (error as Error).message]);
