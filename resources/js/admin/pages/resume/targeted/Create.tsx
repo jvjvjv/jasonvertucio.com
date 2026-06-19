@@ -2,15 +2,14 @@ import { Head } from "@inertiajs/react";
 import NotStartedIcon from "@mui/icons-material/NotStarted";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import CircularProgress from "@mui/material/CircularProgress";
-import MenuItem from "@mui/material/MenuItem";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import { marked } from "marked";
 import { useEffect, useState } from "react";
+
+import AISystemWarmupDetector from "./AISystemWarmupDetector";
+import JobDetailsForm from "./JobDetailsForm";
+import JobURLInputSection from "./JobURLInputSection";
+import ParseResultsDisplay from "./ParseResultsDisplay";
 
 import type { AiSystem } from "@/types";
 import type { SyntheticEvent } from "react";
@@ -103,7 +102,6 @@ export default function Create({
                     }>(
                         `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-warmup`,
                     );
-                    if (!mounted) return;
                     setModelState(
                         warmupRes.status?.state === "loaded"
                             ? "ready"
@@ -253,211 +251,57 @@ export default function Create({
             <Card>
                 <CardContent>
                     <Box component="form" onSubmit={handleSubmit}>
-                        <TextField
-                            label="AI System"
-                            select
-                            required
-                            size="small"
-                            fullWidth
-                            value={aiSystemId}
-                            onChange={(e) => {
-                                setAiSystemId(Number(e.target.value));
-                            }}
-                            sx={{ mb: modelState === "idle" ? 3 : 1 }}
-                        >
-                            {systems.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>
-                                    {s.name} ({s.model})
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                        {modelState === "checking" && (
-                            <Alert severity="info" sx={{ mb: 3 }}>
-                                Checking model status...
-                            </Alert>
-                        )}
-                        {modelState === "warming" && (
-                            <Alert severity="info" sx={{ mb: 3 }}>
-                                Loading model in the background. This may take a
-                                moment.
-                            </Alert>
-                        )}
-                        {modelState === "ready" && (
-                            <Alert severity="success" sx={{ mb: 3 }}>
-                                Model is ready.
-                            </Alert>
-                        )}
-                        {modelState === "unavailable" && (
-                            <Alert severity="warning" sx={{ mb: 3 }}>
-                                Model may not be available. You can still start
-                                the session.
-                            </Alert>
-                        )}
-
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mb: 1 }}
-                        >
-                            Paste a job URL to auto-extract the description, or
-                            enter it manually below.
-                        </Typography>
-                        <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-                            <TextField
-                                label="Job URL"
-                                size="small"
-                                fullWidth
-                                value={jobUrl}
-                                onChange={(e) => {
-                                    setJobUrl(e.target.value);
-                                }}
-                                placeholder="https://..."
-                            />
-                            <Button
-                                variant="outlined"
-                                onClick={handleParseUrl}
-                                disabled={isParsing || !jobUrl.trim()}
-                                sx={{ whiteSpace: "nowrap" }}
-                            >
-                                {isParsing ? (
-                                    <CircularProgress size={20} />
-                                ) : (
-                                    "Parse"
-                                )}
-                            </Button>
-                        </Box>
-                        {parseError && (
-                            <Alert severity="warning" sx={{ mb: 2 }}>
-                                {parseError}
-                            </Alert>
-                        )}
-
-                        {jobUrlId && !parseError && (
-                            <Alert severity="success" sx={{ mb: 2 }}>
-                                Parsed job URL attached to this session.
-                            </Alert>
-                        )}
-
-                        {parseReasoning && (
-                            <Alert severity="info" sx={{ mb: 2 }}>
-                                <Typography
-                                    variant="subtitle2"
-                                    sx={{ mb: 0.5 }}
-                                >
-                                    Parser reasoning
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    dangerouslySetInnerHTML={{
-                                        __html: marked.parse(parseReasoning, {
-                                            breaks: true,
-                                        }) as string,
-                                    }}
-                                ></Typography>
-                                <Typography
-                                    variant="caption"
-                                    sx={{ mt: 1, display: "block" }}
-                                ></Typography>
-                                {usedExistingParser && (
-                                    <Typography
-                                        variant="caption"
-                                        color="secondary.main"
-                                    >
-                                        <strong>
-                                            Note: This URL was parsed using an
-                                            existing parser (id:{parserId}) for
-                                            this domain. If any information was
-                                            extracted incorrectly, please
-                                            provide feedback and re-parse to
-                                            help improve the parser.
-                                        </strong>
-                                    </Typography>
-                                )}
-                            </Alert>
-                        )}
-
-                        {parserId && (
-                            <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-                                <TextField
-                                    label="Re-parse feedback"
-                                    size="small"
-                                    fullWidth
-                                    value={reparseFeedback}
-                                    onChange={(e) => {
-                                        setReparseFeedback(e.target.value);
-                                    }}
-                                    placeholder="Describe what was extracted incorrectly..."
-                                />
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleReparse}
-                                    disabled={
-                                        isReparsing || !reparseFeedback.trim()
-                                    }
-                                    sx={{ whiteSpace: "nowrap" }}
-                                >
-                                    {isReparsing ? (
-                                        <CircularProgress size={20} />
-                                    ) : (
-                                        "Re-parse"
-                                    )}
-                                </Button>
-                            </Box>
-                        )}
-
-                        <TextField
-                            label="Job Title"
-                            size="small"
-                            fullWidth
-                            value={jobTitle}
-                            onChange={(e) => {
-                                setJobTitle(e.target.value);
-                                setParseReasoning("");
-                            }}
-                            placeholder="(optional)"
-                            sx={{ mb: 3 }}
+                        <AISystemWarmupDetector
+                            systems={systems}
+                            aiSystemId={aiSystemId}
+                            modelState={modelState}
+                            onAiSystemChange={setAiSystemId}
                         />
 
-                        <TextField
-                            label="Company Name"
-                            size="small"
-                            fullWidth
-                            value={companyName}
-                            onChange={(e) => {
-                                setCompanyName(e.target.value);
-                                setParseReasoning("");
+                        <JobURLInputSection
+                            jobUrl={jobUrl}
+                            isParsing={isParsing}
+                            onJobUrlChange={setJobUrl}
+                            onParseUrl={() => {
+                                void handleParseUrl();
                             }}
-                            placeholder="(optional)"
-                            sx={{ mb: 3 }}
                         />
 
-                        <TextField
-                            label="Job Location"
-                            size="small"
-                            fullWidth
-                            value={jobLocation}
-                            onChange={(e) => {
-                                setJobLocation(e.target.value);
-                                setParseReasoning("");
+                        <ParseResultsDisplay
+                            parseError={parseError}
+                            jobUrlId={jobUrlId}
+                            parseReasoning={parseReasoning}
+                            usedExistingParser={usedExistingParser}
+                            parserId={parserId}
+                            reparseFeedback={reparseFeedback}
+                            isReparsing={isReparsing}
+                            onReparseFeedbackChange={setReparseFeedback}
+                            onReparse={() => {
+                                void handleReparse();
                             }}
-                            placeholder="(optional)"
-                            sx={{ mb: 3 }}
                         />
 
-                        <TextField
-                            label="Job Description"
-                            required
-                            size="small"
-                            fullWidth
-                            multiline
-                            rows={12}
-                            value={jobDescription}
-                            onChange={(e) => {
-                                setJobDescription(e.target.value);
+                        <JobDetailsForm
+                            jobTitle={jobTitle}
+                            companyName={companyName}
+                            jobLocation={jobLocation}
+                            jobDescription={jobDescription}
+                            onJobTitleChange={(value) => {
+                                setJobTitle(value);
                                 setParseReasoning("");
                             }}
-                            placeholder="Paste or type the full job description here..."
-                            sx={{ mb: 3 }}
+                            onCompanyNameChange={(value) => {
+                                setCompanyName(value);
+                                setParseReasoning("");
+                            }}
+                            onJobLocationChange={(value) => {
+                                setJobLocation(value);
+                                setParseReasoning("");
+                            }}
+                            onJobDescriptionChange={(value) => {
+                                setJobDescription(value);
+                                setParseReasoning("");
+                            }}
                         />
 
                         <Box

@@ -293,4 +293,66 @@ class TargetedResumeStatusUpdateTest extends TestCase
         $this->assertSame('applied', $statusUpdates[0]['status']);
         $this->assertSame('interviewing', $statusUpdates[1]['status']);
     }
+
+    public function test_can_edit_status_update_date_and_notes(): void {
+        $conversation = AiConversation::factory()->completed()->create();
+        $targetedResume = TargetedResume::factory()->applied()->create([
+            'ai_conversation_id' => $conversation->id,
+        ]);
+
+        $statusUpdate = TargetedResumeStatusUpdate::create([
+            'targeted_resume_id' => $targetedResume->id,
+            'status' => 'applied',
+            'notes' => 'Initial note',
+            'occurred_at' => '2026-06-10 00:00:00',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->putJson("/api/admin/resume/targeted-builder/{$conversation->id}/status-update/{$statusUpdate->id}", [
+                'notes' => 'Updated note',
+                'occurred_at' => '2026-06-12',
+            ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('success', true);
+
+        $statusUpdate->refresh();
+
+        $this->assertSame('Updated note', $statusUpdate->notes);
+        $this->assertSame('2026-06-12', $statusUpdate->occurred_at?->toDateString());
+    }
+
+    public function test_can_delete_status_update_and_recalculate_latest_status(): void {
+        $conversation = AiConversation::factory()->completed()->create();
+        $targetedResume = TargetedResume::factory()->create([
+            'ai_conversation_id' => $conversation->id,
+            'status' => TargetedResumeStatus::Interviewing,
+        ]);
+
+        TargetedResumeStatusUpdate::create([
+            'targeted_resume_id' => $targetedResume->id,
+            'status' => 'applied',
+            'occurred_at' => '2026-06-10 00:00:00',
+        ]);
+
+        $latestStatusUpdate = TargetedResumeStatusUpdate::create([
+            'targeted_resume_id' => $targetedResume->id,
+            'status' => 'interviewing',
+            'occurred_at' => '2026-06-12 00:00:00',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->deleteJson("/api/admin/resume/targeted-builder/{$conversation->id}/status-update/{$latestStatusUpdate->id}");
+
+        $response->assertOk();
+        $response->assertJsonPath('success', true);
+        $response->assertJsonPath('status', 'applied');
+
+        $this->assertDatabaseMissing('targeted_resume_status_updates', [
+            'id' => $latestStatusUpdate->id,
+        ]);
+
+        $targetedResume->refresh();
+        $this->assertSame(TargetedResumeStatus::Applied, $targetedResume->status);
+    }
 }
