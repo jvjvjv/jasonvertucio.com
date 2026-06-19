@@ -185,6 +185,7 @@ export interface ConversationUsage {
 export interface Conversation {
     id: number;
     status: string;
+    ai_system_id?: number | null;
     title?: string | null;
     job_url?: string | null;
     last_message_at?: string;

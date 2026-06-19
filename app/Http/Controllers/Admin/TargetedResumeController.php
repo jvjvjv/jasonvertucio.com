@@ -489,17 +489,94 @@ class TargetedResumeController extends Controller
 
         $targetedResume->load('statusUpdates');
 
+        return $this->statusUpdateResponse($targetedResume, $newStatus);
+    }
+
+    /**
+     * Update notes/date for an existing application status history row.
+     */
+    public function updateStatusUpdate(Request $request, AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse {
+        $request->validate([
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'occurred_at' => ['required', 'date'],
+        ]);
+
+        $targetedResume = $conversation->targetedResume;
+
+        if (!$targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
+            return response()->json(['message' => 'Status update not found for this conversation.'], 404);
+        }
+
+        $statusUpdate->update([
+            'notes' => $request->input('notes'),
+            'occurred_at' => now()->parse($request->input('occurred_at')),
+        ]);
+
+        $targetedResume->refresh()->load('statusUpdates');
+
+        return $this->statusUpdateResponse($targetedResume, TargetedResumeApplicationStatus::from($targetedResume->status->value));
+    }
+
+    /**
+     * Delete an application status history row.
+     */
+    public function deleteStatusUpdate(AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse {
+        $targetedResume = $conversation->targetedResume;
+
+        if (!$targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
+            return response()->json(['message' => 'Status update not found for this conversation.'], 404);
+        }
+
+        $statusUpdate->delete();
+
+        $targetedResume->refresh()->load('statusUpdates');
+
+        $latestStatus = $targetedResume->statusUpdates->last()?->status;
+
+        if ($latestStatus instanceof TargetedResumeApplicationStatus) {
+            $targetedResume->update(['status' => TargetedResumeStatus::from($latestStatus->value)]);
+            $targetedResume->refresh()->load('statusUpdates');
+
+            return $this->statusUpdateResponse($targetedResume, $latestStatus);
+        }
+
+        $fallbackStatus = $targetedResume->tailored_data !== null
+            ? TargetedResumeStatus::Finalized
+            : TargetedResumeStatus::Draft;
+
+        $targetedResume->update(['status' => $fallbackStatus]);
+        $targetedResume->refresh()->load('statusUpdates');
+
         return response()->json([
             'success' => true,
-            'status' => $newStatus->value,
-            'status_updates' => $targetedResume->statusUpdates->map(fn ($u) => [
-                'id' => $u->id,
-                'status' => $u->status->value,
-                'notes' => $u->notes,
-                'occurred_at' => $u->occurred_at?->toIso8601String(),
-            ])->values()->toArray(),
-            'allowed_next_statuses' => $this->getAllowedNextStatuses(TargetedResumeStatus::from($newStatus->value)),
+            'status' => $fallbackStatus->value,
+            'status_updates' => $this->serializeStatusUpdates($targetedResume),
+            'allowed_next_statuses' => $this->getAllowedNextStatuses($fallbackStatus),
         ]);
+    }
+
+    /**
+     * @return JsonResponse
+     */
+    private function statusUpdateResponse(TargetedResume $targetedResume, TargetedResumeApplicationStatus $status): JsonResponse {
+        return response()->json([
+            'success' => true,
+            'status' => $status->value,
+            'status_updates' => $this->serializeStatusUpdates($targetedResume),
+            'allowed_next_statuses' => $this->getAllowedNextStatuses(TargetedResumeStatus::from($status->value)),
+        ]);
+    }
+
+    /**
+     * @return array<int, array{id: int, status: string, notes: string|null, occurred_at: string|null}>
+     */
+    private function serializeStatusUpdates(TargetedResume $targetedResume): array {
+        return $targetedResume->statusUpdates->map(fn($u) => [
+            'id' => $u->id,
+            'status' => $u->status->value,
+            'notes' => $u->notes,
+            'occurred_at' => $u->occurred_at?->toIso8601String(),
+        ])->values()->toArray();
     }
 
     /**

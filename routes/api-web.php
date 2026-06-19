@@ -46,6 +46,8 @@ Route::middleware(['auth', 'can:edit-resume'])
                 Route::post('/{conversation}/finalize', [TargetedResumeController::class, 'finalize']);
                 Route::post('/{conversation}/finalize-cover-letter', [TargetedResumeController::class, 'finalizeCoverLetter']);
                 Route::post('/{conversation}/status-update', [TargetedResumeController::class, 'addStatusUpdate'])->name('status-update');
+                Route::put('/{conversation}/status-update/{statusUpdate}', [TargetedResumeController::class, 'updateStatusUpdate'])->name('status-update.update');
+                Route::delete('/{conversation}/status-update/{statusUpdate}', [TargetedResumeController::class, 'deleteStatusUpdate'])->name('status-update.delete');
                 Route::post('/parse-url', [JobUrlParseController::class, 'parse'])->name('parse-url');
                 Route::post('/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse'])->name('parser.reparse');
             });

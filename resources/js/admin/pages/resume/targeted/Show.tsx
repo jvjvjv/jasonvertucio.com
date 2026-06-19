@@ -8,13 +8,20 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import SaveIcon from "@mui/icons-material/Save";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import UpdateIcon from "@mui/icons-material/Update";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -111,6 +118,14 @@ export default function Show({
     const [statusOccurredAt, setStatusOccurredAt] = useState("");
     const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
+    const [editingStatusId, setEditingStatusId] = useState<number | null>(null);
+    const [editingStatusNotes, setEditingStatusNotes] = useState("");
+    const [editingStatusOccurredAt, setEditingStatusOccurredAt] = useState("");
+    const [isSavingStatusEdit, setIsSavingStatusEdit] = useState(false);
+    const [isDeletingStatusId, setIsDeletingStatusId] = useState<number | null>(
+        null,
+    );
+    const [showStatusUpdateForm, setShowStatusUpdateForm] = useState(false);
 
     // Mirror of ChatInterface's message list, used to scan for resume/cover letter blocks
     const [liveMessages, setLiveMessages] = useState<ChatMessage[]>(
@@ -345,11 +360,164 @@ export default function Show({
             setSelectedNextStatus("");
             setStatusNotes("");
             setStatusOccurredAt("");
-        } catch {
-            setStatusError("Failed to update status.");
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as {
+                    message?: string;
+                    errors?: { [key: string]: string[] };
+                };
+                const firstValidationError = data.errors
+                    ? Object.values(data.errors)[0]?.[0]
+                    : null;
+
+                setStatusError(
+                    data.message ??
+                        firstValidationError ??
+                        "Failed to update status.",
+                );
+            } else {
+                setStatusError("Failed to update status.");
+            }
         } finally {
             setIsSubmittingStatus(false);
         }
+    };
+
+    const toDateInputValue = (isoDate: string): string => {
+        return isoDate.slice(0, 10);
+    };
+
+    const startEditingStatus = (statusUpdate: StatusUpdate) => {
+        setEditingStatusId(statusUpdate.id);
+        setEditingStatusNotes(statusUpdate.notes ?? "");
+        setEditingStatusOccurredAt(toDateInputValue(statusUpdate.occurred_at));
+        setStatusError(null);
+    };
+
+    const cancelEditingStatus = () => {
+        setEditingStatusId(null);
+        setEditingStatusNotes("");
+        setEditingStatusOccurredAt("");
+    };
+
+    const handleSaveStatusEdit = async (statusUpdateId: number) => {
+        if (!editingStatusOccurredAt) {
+            setStatusError("Date is required.");
+            return;
+        }
+
+        setIsSavingStatusEdit(true);
+        setStatusError(null);
+
+        try {
+            const data = await api.put<{
+                success?: boolean;
+                message?: string;
+                status_updates?: StatusUpdate[];
+                allowed_next_statuses?: string[];
+            }>(
+                `/api/admin/resume/targeted-builder/${conversation.id}/status-update/${statusUpdateId}`,
+                {
+                    notes: editingStatusNotes || null,
+                    occurred_at: editingStatusOccurredAt,
+                },
+            );
+
+            if (!data.success) {
+                setStatusError(
+                    data.message ?? "Failed to update status entry.",
+                );
+                return;
+            }
+
+            setStatusUpdates(data.status_updates ?? []);
+            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            cancelEditingStatus();
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as {
+                    message?: string;
+                    errors?: { [key: string]: string[] };
+                };
+                const firstValidationError = data.errors
+                    ? Object.values(data.errors)[0]?.[0]
+                    : null;
+
+                setStatusError(
+                    data.message ??
+                        firstValidationError ??
+                        "Failed to update status entry.",
+                );
+            } else {
+                setStatusError("Failed to update status entry.");
+            }
+        } finally {
+            setIsSavingStatusEdit(false);
+        }
+    };
+
+    const handleDeleteStatusUpdate = (statusUpdateId: number) => {
+        confirm(
+            "Delete this status update entry?",
+            () => {
+                void (async () => {
+                    setIsDeletingStatusId(statusUpdateId);
+                    setStatusError(null);
+
+                    try {
+                        const data = await api.del<{
+                            success?: boolean;
+                            message?: string;
+                            status_updates?: StatusUpdate[];
+                            allowed_next_statuses?: string[];
+                        }>(
+                            `/api/admin/resume/targeted-builder/${conversation.id}/status-update/${statusUpdateId}`,
+                        );
+
+                        if (!data.success) {
+                            setStatusError(
+                                data.message ??
+                                    "Failed to delete status update entry.",
+                            );
+                            return;
+                        }
+
+                        setStatusUpdates(data.status_updates ?? []);
+                        setAllowedNextStatuses(
+                            data.allowed_next_statuses ?? [],
+                        );
+                        if (editingStatusId === statusUpdateId) {
+                            cancelEditingStatus();
+                        }
+
+                        router.reload({ only: ["targetedResume"] });
+                    } catch (error) {
+                        if (error instanceof ApiError) {
+                            const data = error.data as {
+                                message?: string;
+                                errors?: { [key: string]: string[] };
+                            };
+                            const firstValidationError = data.errors
+                                ? Object.values(data.errors)[0]?.[0]
+                                : null;
+
+                            setStatusError(
+                                data.message ??
+                                    firstValidationError ??
+                                    "Failed to delete status update entry.",
+                            );
+                        } else {
+                            setStatusError(
+                                "Failed to delete status update entry.",
+                            );
+                        }
+                    } finally {
+                        setIsDeletingStatusId(null);
+                    }
+                })();
+            },
+            { confirmLabel: "Delete", confirmColor: "error" },
+        );
     };
 
     const handleMetadataSave = (e: SyntheticEvent) => {
@@ -818,40 +986,194 @@ export default function Show({
                                                 <Box
                                                     sx={{
                                                         display: "flex",
-                                                        gap: 1,
                                                         alignItems:
                                                             "flex-start",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        gap: 1,
                                                     }}
                                                 >
-                                                    <StatusChip
-                                                        status={u.status}
-                                                    />
-                                                    <Box>
-                                                        <Typography
-                                                            variant="caption"
-                                                            color="text.secondary"
-                                                        >
-                                                            {new Date(
-                                                                u.occurred_at,
-                                                            ).toLocaleDateString(
-                                                                undefined,
-                                                                {
-                                                                    year: "numeric",
-                                                                    month: "short",
-                                                                    day: "numeric",
-                                                                },
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            gap: 1,
+                                                            alignItems:
+                                                                "flex-start",
+                                                        }}
+                                                    >
+                                                        <StatusChip
+                                                            status={u.status}
+                                                        />
+                                                        <Box>
+                                                            {editingStatusId ===
+                                                            u.id ? (
+                                                                <TextField
+                                                                    label="Date"
+                                                                    type="date"
+                                                                    size="small"
+                                                                    value={
+                                                                        editingStatusOccurredAt
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        setEditingStatusOccurredAt(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        );
+                                                                    }}
+                                                                    slotProps={{
+                                                                        inputLabel:
+                                                                            {
+                                                                                shrink: true,
+                                                                            },
+                                                                    }}
+                                                                    sx={{
+                                                                        mb: 1,
+                                                                        minWidth: 180,
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="text.secondary"
+                                                                >
+                                                                    {new Date(
+                                                                        u.occurred_at,
+                                                                    ).toLocaleDateString(
+                                                                        undefined,
+                                                                        {
+                                                                            year: "numeric",
+                                                                            month: "short",
+                                                                            day: "numeric",
+                                                                        },
+                                                                    )}
+                                                                </Typography>
                                                             )}
-                                                        </Typography>
-                                                        {u.notes && (
-                                                            <Typography
-                                                                variant="body2"
-                                                                sx={{
-                                                                    mt: 0.25,
+                                                            {editingStatusId ===
+                                                            u.id ? (
+                                                                <TextField
+                                                                    label="Notes (optional)"
+                                                                    size="small"
+                                                                    fullWidth
+                                                                    multiline
+                                                                    rows={2}
+                                                                    value={
+                                                                        editingStatusNotes
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        setEditingStatusNotes(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        );
+                                                                    }}
+                                                                    sx={{
+                                                                        mt: 0.25,
+                                                                        minWidth:
+                                                                            {
+                                                                                xs: 200,
+                                                                                sm: 320,
+                                                                            },
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                u.notes && (
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        sx={{
+                                                                            mt: 0.25,
+                                                                        }}
+                                                                    >
+                                                                        {
+                                                                            u.notes
+                                                                        }
+                                                                    </Typography>
+                                                                )
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 0.5,
+                                                            ml: 1,
+                                                        }}
+                                                    >
+                                                        {editingStatusId ===
+                                                        u.id ? (
+                                                            <>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    title="Save status update"
+                                                                    color="primary"
+                                                                    onClick={() => {
+                                                                        void handleSaveStatusEdit(
+                                                                            u.id,
+                                                                        );
+                                                                    }}
+                                                                    disabled={
+                                                                        isSavingStatusEdit ||
+                                                                        isDeletingStatusId ===
+                                                                            u.id
+                                                                    }
+                                                                >
+                                                                    <SaveIcon fontSize="small" />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    title="Cancel editing"
+                                                                    onClick={
+                                                                        cancelEditingStatus
+                                                                    }
+                                                                    disabled={
+                                                                        isSavingStatusEdit ||
+                                                                        isDeletingStatusId ===
+                                                                            u.id
+                                                                    }
+                                                                >
+                                                                    <CloseIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </>
+                                                        ) : (
+                                                            <IconButton
+                                                                size="small"
+                                                                title="Edit date and notes"
+                                                                onClick={() => {
+                                                                    startEditingStatus(
+                                                                        u,
+                                                                    );
                                                                 }}
+                                                                disabled={
+                                                                    isDeletingStatusId ===
+                                                                    u.id
+                                                                }
                                                             >
-                                                                {u.notes}
-                                                            </Typography>
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
                                                         )}
+                                                        <IconButton
+                                                            size="small"
+                                                            title="Delete status update"
+                                                            color="error"
+                                                            onClick={() => {
+                                                                handleDeleteStatusUpdate(
+                                                                    u.id,
+                                                                );
+                                                            }}
+                                                            disabled={
+                                                                isDeletingStatusId ===
+                                                                    u.id ||
+                                                                isSavingStatusEdit
+                                                            }
+                                                        >
+                                                            <DeleteOutlineIcon fontSize="small" />
+                                                        </IconButton>
                                                     </Box>
                                                 </Box>
                                             </Box>
@@ -859,99 +1181,119 @@ export default function Show({
                                     </Box>
                                 )}
                                 {allowedNextStatuses.length > 0 && (
-                                    <Box
-                                        component="form"
-                                        onSubmit={(e) => {
-                                            void handleAddStatusUpdate(e);
+                                    <Accordion
+                                        expanded={showStatusUpdateForm}
+                                        onChange={(_, expanded) => {
+                                            setShowStatusUpdateForm(expanded);
                                         }}
-                                        sx={{ mt: 2 }}
                                     >
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{ display: "block", mb: 1 }}
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
                                         >
-                                            Log Status Update
-                                        </Typography>
-                                        <FormControl
-                                            size="small"
-                                            fullWidth
-                                            sx={{ mb: 1 }}
-                                        >
-                                            <InputLabel id="next-status-label">
-                                                Status
-                                            </InputLabel>
-                                            <Select
-                                                labelId="next-status-label"
-                                                label="Status"
-                                                value={selectedNextStatus}
-                                                onChange={(e) => {
-                                                    setSelectedNextStatus(
-                                                        e.target.value,
+                                            <Typography variant="caption">
+                                                Log Status Update
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <Box
+                                                component="form"
+                                                onSubmit={(e) => {
+                                                    void handleAddStatusUpdate(
+                                                        e,
                                                     );
                                                 }}
                                             >
-                                                {allowedNextStatuses.map(
-                                                    (s) => (
-                                                        <MenuItem
-                                                            key={s}
-                                                            value={s}
-                                                        >
-                                                            {s
-                                                                .charAt(0)
-                                                                .toUpperCase() +
-                                                                s.slice(1)}
-                                                        </MenuItem>
-                                                    ),
-                                                )}
-                                            </Select>
-                                        </FormControl>
-                                        <TextField
-                                            label={
-                                                selectedNextStatus ===
-                                                "interviewing"
-                                                    ? "Scheduled date"
-                                                    : "Date (optional)"
-                                            }
-                                            type="date"
-                                            size="small"
-                                            fullWidth
-                                            value={statusOccurredAt}
-                                            onChange={(e) => {
-                                                setStatusOccurredAt(
-                                                    e.target.value,
-                                                );
-                                            }}
-                                            slotProps={{
-                                                inputLabel: { shrink: true },
-                                            }}
-                                            sx={{ mb: 1 }}
-                                        />
-                                        <TextField
-                                            label="Notes (optional)"
-                                            size="small"
-                                            fullWidth
-                                            multiline
-                                            rows={2}
-                                            value={statusNotes}
-                                            onChange={(e) => {
-                                                setStatusNotes(e.target.value);
-                                            }}
-                                            sx={{ mb: 1 }}
-                                        />
-                                        <Button
-                                            type="submit"
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={<UpdateIcon />}
-                                            disabled={
-                                                !selectedNextStatus ||
-                                                isSubmittingStatus
-                                            }
-                                        >
-                                            Log Status
-                                        </Button>
-                                    </Box>
+                                                <FormControl
+                                                    size="small"
+                                                    fullWidth
+                                                    sx={{ mb: 1 }}
+                                                >
+                                                    <InputLabel id="next-status-label">
+                                                        Status
+                                                    </InputLabel>
+                                                    <Select
+                                                        labelId="next-status-label"
+                                                        label="Status"
+                                                        value={
+                                                            selectedNextStatus
+                                                        }
+                                                        onChange={(e) => {
+                                                            setSelectedNextStatus(
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                    >
+                                                        {allowedNextStatuses.map(
+                                                            (s) => (
+                                                                <MenuItem
+                                                                    key={s}
+                                                                    value={s}
+                                                                >
+                                                                    {s
+                                                                        .charAt(
+                                                                            0,
+                                                                        )
+                                                                        .toUpperCase() +
+                                                                        s.slice(
+                                                                            1,
+                                                                        )}
+                                                                </MenuItem>
+                                                            ),
+                                                        )}
+                                                    </Select>
+                                                </FormControl>
+                                                <TextField
+                                                    label={
+                                                        selectedNextStatus ===
+                                                        "interviewing"
+                                                            ? "Scheduled date"
+                                                            : "Date (optional)"
+                                                    }
+                                                    type="date"
+                                                    size="small"
+                                                    fullWidth
+                                                    value={statusOccurredAt}
+                                                    onChange={(e) => {
+                                                        setStatusOccurredAt(
+                                                            e.target.value,
+                                                        );
+                                                    }}
+                                                    slotProps={{
+                                                        inputLabel: {
+                                                            shrink: true,
+                                                        },
+                                                    }}
+                                                    sx={{ mb: 1 }}
+                                                />
+                                                <TextField
+                                                    label="Notes (optional)"
+                                                    size="small"
+                                                    fullWidth
+                                                    multiline
+                                                    rows={2}
+                                                    value={statusNotes}
+                                                    onChange={(e) => {
+                                                        setStatusNotes(
+                                                            e.target.value,
+                                                        );
+                                                    }}
+                                                    sx={{ mb: 1 }}
+                                                />
+                                                <Button
+                                                    type="submit"
+                                                    variant="outlined"
+                                                    size="small"
+                                                    startIcon={<UpdateIcon />}
+                                                    disabled={
+                                                        !selectedNextStatus ||
+                                                        isSubmittingStatus
+                                                    }
+                                                >
+                                                    Log Status
+                                                </Button>
+                                            </Box>
+                                        </AccordionDetails>
+                                    </Accordion>
                                 )}
                             </Box>
                         )}
