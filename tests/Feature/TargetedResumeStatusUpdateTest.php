@@ -178,16 +178,35 @@ class TargetedResumeStatusUpdateTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_cannot_add_status_update_without_finalized_resume(): void
+    public function test_can_add_status_update_without_existing_targeted_resume(): void
     {
-        $conversation = AiConversation::factory()->completed()->create();
+        $resumeVersion = ResumeVersion::factory()->create();
+        $conversation = AiConversation::factory()->completed()->create([
+            'context' => [
+                'resume_version_id' => $resumeVersion->id,
+                'company_name' => 'Example Company',
+                'job_title' => 'Senior Engineer',
+                'job_description' => 'Role details',
+            ],
+        ]);
 
-        $response = $this->actingAs($this->admin)
+        $this->actingAs($this->admin)
             ->postJson(route('admin.resume.targeted.status-update', $conversation), [
                 'status' => 'applied',
-            ]);
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('status', 'applied');
 
-        $response->assertStatus(422);
+        $createdTargetedResume = TargetedResume::query()
+            ->where('ai_conversation_id', $conversation->id)
+            ->first();
+
+        $this->assertNotNull($createdTargetedResume);
+        $this->assertSame($resumeVersion->id, $createdTargetedResume->resume_version_id);
+        $this->assertNull($createdTargetedResume->tailored_data);
+        $this->assertTrue($createdTargetedResume->base_resume);
+        $this->assertSame(TargetedResumeStatus::Applied, $createdTargetedResume->status);
     }
 
     public function test_invalid_status_value_is_rejected(): void

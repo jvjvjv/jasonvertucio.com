@@ -290,8 +290,24 @@ export default function Show({
                             data.allowed_next_statuses ?? [],
                         );
                         router.reload({ only: ["targetedResume"] });
-                    } catch {
-                        setStatusError("Failed to mark as applied.");
+                    } catch (error) {
+                        if (error instanceof ApiError) {
+                            const data = error.data as {
+                                message?: string;
+                                errors?: { [key: string]: string[] };
+                            };
+                            const firstValidationError = data.errors
+                                ? Object.values(data.errors)[0]?.[0]
+                                : null;
+
+                            setStatusError(
+                                data.message ??
+                                    firstValidationError ??
+                                    "Failed to mark as applied.",
+                            );
+                        } else {
+                            setStatusError("Failed to mark as applied.");
+                        }
                     } finally {
                         setIsSubmittingStatus(false);
                     }
@@ -472,7 +488,9 @@ export default function Show({
                 </Box>
             </Box>
 
-            {(finalizeError !== null || finalizeCoverLetterError !== null) && (
+            {(finalizeError !== null ||
+                finalizeCoverLetterError !== null ||
+                statusError !== null) && (
                 <Box
                     sx={{
                         mb: 2,
@@ -488,6 +506,9 @@ export default function Show({
                         <Alert severity="error">
                             {finalizeCoverLetterError}
                         </Alert>
+                    )}
+                    {statusError && (
+                        <Alert severity="error">{statusError}</Alert>
                     )}
                 </Box>
             )}
@@ -918,14 +939,6 @@ export default function Show({
                                             }}
                                             sx={{ mb: 1 }}
                                         />
-                                        {statusError && (
-                                            <Alert
-                                                severity="error"
-                                                sx={{ mb: 1 }}
-                                            >
-                                                {statusError}
-                                            </Alert>
-                                        )}
                                         <Button
                                             type="submit"
                                             variant="outlined"
