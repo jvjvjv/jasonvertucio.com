@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Mcp\Tools\TargetedResume;
+namespace App\Services\Mcp\Tools\ChatBot;
 
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use App\Contracts\ResumeDataServiceContract;
