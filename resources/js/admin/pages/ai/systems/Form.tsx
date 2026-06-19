@@ -1,23 +1,21 @@
 import EditIcon from "@mui/icons-material/Edit";
-import HandymanIcon from "@mui/icons-material/Handyman";
-import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+
+import FeatureDefaultsCheckboxes from "./FeatureDefaultsCheckboxes";
+import JSONConfigEditor from "./JSONConfigEditor";
+import ModelCapabilitiesCheckboxes from "./ModelCapabilitiesCheckboxes";
+import ProviderModelSelector from "./ProviderModelSelector";
 
 import type { AiSystemPrompt } from "@/types";
 
@@ -380,281 +378,71 @@ export default function AiSystemForm({
 
     return (
         <>
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+            <ProviderModelSelector
+                data={data}
+                errors={errors}
+                providers={PROVIDERS}
+                availableModels={availableModels}
+                selectedModelCapabilities={selectedModelCapabilities}
+                selectedModelLoaded={!!selectedModel?.loaded}
+                fetchingModels={fetchingModels}
+                fetchError={fetchError}
+                isEdit={isEdit}
+                apiKeyRequired={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
+                apiKeyHelperText={apiKeyHelperText}
+                modelPlaceholder={modelPlaceholder}
+                baseUrlPlaceholder={baseUrlPlaceholder}
+                apiVersionPlaceholder={apiVersionPlaceholder}
+                supportsContextLength={supportsContextLength}
+                onNameChange={(value) => {
+                    setData("name", value);
                 }}
-            >
-                <TextField
-                    label="Name"
-                    required
-                    size="small"
-                    value={data.name}
-                    onChange={(e) => {
-                        setData("name", e.target.value);
-                    }}
-                    error={!!errors.name}
-                    helperText={errors.name}
-                    placeholder="My Claude System"
-                />
-                <TextField
-                    label="Provider"
-                    select
-                    required
-                    size="small"
-                    value={data.provider}
-                    onChange={(e) => {
-                        handleProviderChange(e.target.value);
-                    }}
-                    disabled={isEdit}
-                    error={!!errors.provider}
-                    helperText={
-                        errors.provider ??
-                        (isEdit
-                            ? "Provider cannot be changed after creation."
-                            : undefined)
-                    }
-                >
-                    {PROVIDERS.map((p) => (
-                        <MenuItem key={p.value} value={p.value}>
-                            {p.label}
-                        </MenuItem>
-                    ))}
-                </TextField>
-            </Box>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+                onProviderChange={handleProviderChange}
+                onApiKeyChange={(value) => {
+                    setData("api_key", value);
                 }}
-            >
-                <TextField
-                    label="API Key"
-                    type="password"
-                    required={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
-                    size="small"
-                    value={data.api_key}
-                    onChange={(e) => {
-                        setData("api_key", e.target.value);
-                    }}
-                    disabled={isEdit}
-                    onBlur={fetchModels}
-                    error={!!errors.api_key}
-                    helperText={
-                        isEdit
-                            ? "API key is stored securely and can only be changed by duplicating this system."
-                            : apiKeyHelperText
-                    }
-                />
-
-                <Box>
-                    <TextField
-                        label="Model"
-                        select={availableModels.length > 0}
-                        required
-                        size="small"
-                        fullWidth
-                        value={data.model}
-                        onChange={(e) => {
-                            const nextModel = availableModels.find(
-                                (model) => model.id === e.target.value,
-                            );
-
-                            setData("model", e.target.value);
-                            setData(
-                                "model_capabilities",
-                                nextModel
-                                    ? {
-                                          ...(nextModel.capabilities ?? {}),
-                                          max_context_length:
-                                              nextModel.max_context_length ??
-                                              null,
-                                      }
-                                    : null,
-                            );
-                        }}
-                        disabled={isEdit}
-                        error={!!errors.model}
-                        placeholder={modelPlaceholder}
-                        helperText={
-                            (errors.model ?? fetchError) ||
-                            (isEdit
-                                ? "Model cannot be changed after creation."
-                                : undefined)
-                        }
-                        slotProps={{
-                            input: {
-                                endAdornment: fetchingModels ? (
-                                    <CircularProgress size={20} />
-                                ) : undefined,
-                            },
-                        }}
-                    >
-                        {availableModels.map((m) => (
-                            <MenuItem key={m.id} value={m.id}>
-                                {m.name} ({m.id})
-                            </MenuItem>
-                        ))}
-                    </TextField>
-
-                    {selectedModelCapabilities && (
-                        <Box
-                            sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 1,
-                                mt: 1,
-                            }}
-                        >
-                            {selectedModelCapabilities.reasoning && (
-                                <Chip
-                                    size="small"
-                                    icon={<PsychologyAltIcon />}
-                                    label="Reasoning"
-                                    variant="outlined"
-                                />
-                            )}
-                            {selectedModelCapabilities.vision && (
-                                <Chip
-                                    size="small"
-                                    icon={<VisibilityIcon />}
-                                    label="Vision"
-                                    variant="outlined"
-                                />
-                            )}
-                            {selectedModelCapabilities.tools && (
-                                <Chip
-                                    size="small"
-                                    icon={<HandymanIcon />}
-                                    label="Tool Use"
-                                    variant="outlined"
-                                />
-                            )}
-                            {selectedModelCapabilities.max_context_length && (
-                                <Chip
-                                    size="small"
-                                    label={`Max context ${selectedModelCapabilities.max_context_length.toLocaleString()}`}
-                                    variant="outlined"
-                                />
-                            )}
-                            {selectedModel?.loaded && (
-                                <Chip
-                                    size="small"
-                                    color="success"
-                                    label="Loaded"
-                                    variant="outlined"
-                                />
-                            )}
-                        </Box>
-                    )}
-                </Box>
-            </Box>
-
-            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                Provider Settings
-            </Typography>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+                onApiKeyBlur={() => {
+                    void fetchModels();
                 }}
-            >
-                <TextField
-                    label="Base URL"
-                    size="small"
-                    value={data.base_url}
-                    onChange={(e) => {
-                        setData("base_url", e.target.value);
-                        fetchModelOnFieldChange();
-                    }}
-                    error={!!errors.base_url}
-                    helperText={errors.base_url}
-                    placeholder={baseUrlPlaceholder}
-                />
+                onModelChange={(value) => {
+                    const nextModel = availableModels.find(
+                        (model) => model.id === value,
+                    );
 
-                <TextField
-                    label="API Version"
-                    size="small"
-                    value={data.api_version}
-                    onChange={(e) => {
-                        setData("api_version", e.target.value);
-                        fetchModelOnFieldChange();
-                    }}
-                    error={!!errors.api_version}
-                    helperText={errors.api_version}
-                    placeholder={apiVersionPlaceholder}
-                />
-            </Box>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+                    setData("model", value);
+                    setData(
+                        "model_capabilities",
+                        nextModel
+                            ? {
+                                  ...(nextModel.capabilities ?? {}),
+                                  max_context_length:
+                                      nextModel.max_context_length ?? null,
+                              }
+                            : null,
+                    );
                 }}
-            >
-                <TextField
-                    label="Max Tokens"
-                    type="number"
-                    required
-                    size="small"
-                    value={data.max_tokens}
-                    onChange={(e) => {
-                        setData("max_tokens", parseInt(e.target.value) || 0);
-                    }}
-                    error={!!errors.max_tokens}
-                    helperText={errors.max_tokens}
-                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
-                />
-                <TextField
-                    label="Context Length"
-                    type="number"
-                    size="small"
-                    value={data.context_length ?? ""}
-                    onChange={(e) => {
-                        const value = e.target.value.trim();
-                        setData(
-                            "context_length",
-                            value === "" ? null : parseInt(value) || null,
-                        );
-                    }}
-                    disabled={!supportsContextLength}
-                    error={!!errors.context_length}
-                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
-                />
-            </Box>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+                onBaseUrlChange={(value) => {
+                    setData("base_url", value);
+                    fetchModelOnFieldChange();
                 }}
-            >
-                <TextField
-                    label="Temperature"
-                    type="number"
-                    size="small"
-                    value={data.temperature}
-                    onChange={(e) => {
-                        setData("temperature", e.target.value);
-                    }}
-                    error={!!errors.temperature}
-                    helperText={errors.temperature}
-                    slotProps={{ htmlInput: { min: 0, max: 1, step: 0.01 } }}
-                />
-            </Box>
+                onApiVersionChange={(value) => {
+                    setData("api_version", value);
+                    fetchModelOnFieldChange();
+                }}
+                onMaxTokensChange={(value) => {
+                    setData("max_tokens", parseInt(value) || 0);
+                }}
+                onContextLengthChange={(value) => {
+                    const trimmedValue = value.trim();
+                    setData(
+                        "context_length",
+                        trimmedValue === "" ? null : parseInt(value) || null,
+                    );
+                }}
+                onTemperatureChange={(value) => {
+                    setData("temperature", value);
+                }}
+            />
 
             {/* System Prompt selector */}
             <Box sx={{ mb: 2 }}>
@@ -831,268 +619,65 @@ export default function AiSystemForm({
                 </DialogActions>
             </Dialog>
 
-            <TextField
-                label="Config (JSON)"
-                size="small"
-                fullWidth
-                multiline
-                rows={4}
-                value={data.config}
-                onChange={(e) => {
-                    setData("config", e.target.value);
+            <JSONConfigEditor
+                data={data}
+                errors={errors}
+                authTypes={AUTH_TYPES}
+                endpointTypes={ENDPOINT_TYPES}
+                streamProtocols={STREAM_PROTOCOLS}
+                systemPromptModes={SYSTEM_PROMPT_MODES}
+                onConfigChange={(value) => {
+                    setData("config", value);
                 }}
-                error={!!errors.config}
-                helperText={errors.config ?? "Optional JSON configuration"}
-                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
-                sx={{ mb: 2 }}
+                onCredentialsChange={(value) => {
+                    setData("credentials", value);
+                }}
+                onPricingProfileChange={(value) => {
+                    setData("pricing_profile", value);
+                }}
+                onAuthTypeChange={(value) => {
+                    setData("auth_type", value);
+                }}
+                onEndpointTypeChange={(value) => {
+                    setData("endpoint_type", value);
+                }}
+                onStreamProtocolChange={(value) => {
+                    setData("stream_protocol", value);
+                }}
+                onSystemPromptModeChange={(value) => {
+                    setData("system_prompt_mode", value);
+                }}
             />
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+            <ModelCapabilitiesCheckboxes
+                supportsTools={data.supports_tools}
+                supportsJsonMode={data.supports_json_mode}
+                enableThinking={data.enable_thinking}
+                isLocalEndpoint={data.is_local_endpoint}
+                isActive={data.is_active}
+                onSupportsToolsChange={(checked) => {
+                    setData("supports_tools", checked);
                 }}
-            >
-                <TextField
-                    label="Auth Type"
-                    select
-                    size="small"
-                    value={data.auth_type}
-                    onChange={(e) => {
-                        setData("auth_type", e.target.value);
-                    }}
-                    error={!!errors.auth_type}
-                    helperText={
-                        errors.auth_type ?? "Optional provider auth mode"
-                    }
-                >
-                    <MenuItem value="">Default</MenuItem>
-                    {AUTH_TYPES.map((value) => (
-                        <MenuItem key={value} value={value}>
-                            {value}
-                        </MenuItem>
-                    ))}
-                </TextField>
-
-                <TextField
-                    label="Endpoint Type"
-                    select
-                    size="small"
-                    value={data.endpoint_type}
-                    onChange={(e) => {
-                        setData("endpoint_type", e.target.value);
-                    }}
-                    error={!!errors.endpoint_type}
-                    helperText={
-                        errors.endpoint_type ??
-                        "Optional endpoint classification"
-                    }
-                >
-                    <MenuItem value="">Default</MenuItem>
-                    {ENDPOINT_TYPES.map((value) => (
-                        <MenuItem key={value} value={value}>
-                            {value}
-                        </MenuItem>
-                    ))}
-                </TextField>
-            </Box>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+                onSupportsJsonModeChange={(checked) => {
+                    setData("supports_json_mode", checked);
                 }}
-            >
-                <TextField
-                    label="Stream Protocol"
-                    select
-                    size="small"
-                    value={data.stream_protocol}
-                    onChange={(e) => {
-                        setData("stream_protocol", e.target.value);
-                    }}
-                    error={!!errors.stream_protocol}
-                    helperText={
-                        errors.stream_protocol ?? "Optional stream parser hint"
-                    }
-                >
-                    <MenuItem value="">Default</MenuItem>
-                    {STREAM_PROTOCOLS.map((value) => (
-                        <MenuItem key={value} value={value}>
-                            {value}
-                        </MenuItem>
-                    ))}
-                </TextField>
-
-                <TextField
-                    label="System Prompt Mode"
-                    select
-                    size="small"
-                    value={data.system_prompt_mode}
-                    onChange={(e) => {
-                        setData("system_prompt_mode", e.target.value);
-                    }}
-                    error={!!errors.system_prompt_mode}
-                    helperText={
-                        errors.system_prompt_mode ??
-                        "How provider expects system prompts"
-                    }
-                >
-                    <MenuItem value="">Default</MenuItem>
-                    {SYSTEM_PROMPT_MODES.map((value) => (
-                        <MenuItem key={value} value={value}>
-                            {value}
-                        </MenuItem>
-                    ))}
-                </TextField>
-            </Box>
-
-            <TextField
-                label="Credentials (JSON)"
-                size="small"
-                fullWidth
-                multiline
-                rows={4}
-                value={data.credentials}
-                onChange={(e) => {
-                    setData("credentials", e.target.value);
+                onEnableThinkingChange={(checked) => {
+                    setData("enable_thinking", checked);
                 }}
-                error={!!errors.credentials}
-                helperText={
-                    errors.credentials ??
-                    "Optional encrypted credential payload for provider-specific keys"
-                }
-                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
-                sx={{ mb: 2 }}
+                onIsLocalEndpointChange={(checked) => {
+                    setData("is_local_endpoint", checked);
+                }}
+                onIsActiveChange={(checked) => {
+                    setData("is_active", checked);
+                }}
             />
 
-            <TextField
-                label="Pricing Profile (JSON)"
-                size="small"
-                fullWidth
-                multiline
-                rows={4}
-                value={data.pricing_profile}
-                onChange={(e) => {
-                    setData("pricing_profile", e.target.value);
-                }}
-                error={!!errors.pricing_profile}
-                helperText={
-                    errors.pricing_profile ??
-                    "Optional per-system pricing override"
-                }
-                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
-                sx={{ mb: 2 }}
+            <FeatureDefaultsCheckboxes
+                allFeatures={ALL_FEATURES}
+                existingDefaults={existingDefaults}
+                selectedDefaults={data.feature_defaults}
+                onToggle={handleFeatureToggle}
             />
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 1,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
-                }}
-            >
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={data.supports_tools}
-                            onChange={(e) => {
-                                setData("supports_tools", e.target.checked);
-                            }}
-                        />
-                    }
-                    label="Supports Tools"
-                />
-
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={data.supports_json_mode}
-                            onChange={(e) => {
-                                setData("supports_json_mode", e.target.checked);
-                            }}
-                        />
-                    }
-                    label="Supports JSON Mode"
-                />
-
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={data.enable_thinking}
-                            onChange={(e) => {
-                                setData("enable_thinking", e.target.checked);
-                            }}
-                        />
-                    }
-                    label="Enable Thinking (reasoning models)"
-                />
-
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={data.is_local_endpoint}
-                            onChange={(e) => {
-                                setData("is_local_endpoint", e.target.checked);
-                            }}
-                        />
-                    }
-                    label="Local Endpoint"
-                />
-            </Box>
-
-            <FormControlLabel
-                control={
-                    <Checkbox
-                        checked={data.is_active}
-                        onChange={(e) => {
-                            setData("is_active", e.target.checked);
-                        }}
-                    />
-                }
-                label="Active"
-                sx={{ mb: 2 }}
-            />
-
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    Feature Defaults
-                </Typography>
-                <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    sx={{ mb: 1 }}
-                >
-                    Select features this system should be the default for.
-                    Greyed-out features are already assigned to another system.
-                </Typography>
-                {ALL_FEATURES.map((feature) => {
-                    const takenByOther = existingDefaults.includes(feature);
-                    return (
-                        <FormControlLabel
-                            key={feature}
-                            control={
-                                <Checkbox
-                                    checked={data.feature_defaults.includes(
-                                        feature,
-                                    )}
-                                    onChange={() => {
-                                        handleFeatureToggle(feature);
-                                    }}
-                                    disabled={takenByOther}
-                                />
-                            }
-                            label={feature}
-                        />
-                    );
-                })}
-            </Box>
         </>
     );
 }
