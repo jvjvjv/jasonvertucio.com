@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\BackfillConversationUsageJob;
+use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Schedule;
 

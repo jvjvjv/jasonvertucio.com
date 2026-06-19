@@ -3,7 +3,6 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -11,22 +10,16 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
+import type { ColumnDef } from "@/admin/components/DataTable";
 import type { Memory, PaginatedResponse } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import DataTable from "@/admin/components/DataTable";
 import PageHeader from "@/admin/components/PageHeader";
-import Pagination from "@/admin/components/Pagination";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
@@ -41,6 +34,33 @@ interface IndexProps {
     features: string[];
     filters: Filters;
 }
+
+const columns: ColumnDef<Memory>[] = [
+    {
+        key: "key",
+        label: "Key",
+        render: (row) => (
+            <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
+                {row.key}
+            </Typography>
+        ),
+    },
+    { key: "feature", label: "Feature" },
+    { key: "category", label: "Category" },
+    { key: "confidence", label: "Confidence" },
+    {
+        key: "is_active",
+        label: "Status",
+        render: (row) => (
+            <Chip
+                label={row.is_active ? "Active" : "Inactive"}
+                size="small"
+                color={row.is_active ? "success" : "default"}
+                variant="outlined"
+            />
+        ),
+    },
+];
 
 export default function Index({ memories, features, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
@@ -177,107 +197,45 @@ export default function Index({ memories, features, filters }: IndexProps) {
                 </Button>
             </Box>
 
-            <Card>
-                <TableContainer>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Key</TableCell>
-                                <TableCell>Feature</TableCell>
-                                <TableCell>Category</TableCell>
-                                <TableCell>Confidence</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {memories.data.length === 0 ? (
-                                <EmptyTableRow
-                                    colSpan={6}
-                                    message="No memory entries found."
-                                />
-                            ) : (
-                                memories.data.map((memory) => (
-                                    <TableRow
-                                        key={memory.id}
-                                        hover
-                                        sx={{
-                                            opacity: memory.is_active ? 1 : 0.5,
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Typography
-                                                variant="body2"
-                                                fontFamily="monospace"
-                                                fontWeight={600}
-                                            >
-                                                {memory.key}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>{memory.feature}</TableCell>
-                                        <TableCell>{memory.category}</TableCell>
-                                        <TableCell>
-                                            {memory.confidence}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={
-                                                    memory.is_active
-                                                        ? "Active"
-                                                        : "Inactive"
-                                                }
-                                                size="small"
-                                                color={
-                                                    memory.is_active
-                                                        ? "success"
-                                                        : "default"
-                                                }
-                                                variant="outlined"
-                                            />
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    justifyContent: "flex-end",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <IconButton
-                                                    component={InertiaLink}
-                                                    href={`/admin/ai/memories/${memory.id}`}
-                                                    size="small"
-                                                    color="primary"
-                                                    title="Edit"
-                                                    aria-label="Edit"
-                                                >
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => {
-                                                        handleDelete(memory.id);
-                                                    }}
-                                                    title="Delete"
-                                                    aria-label="Delete"
-                                                >
-                                                    <DeleteOutlineIcon fontSize="small" />
-                                                </IconButton>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+            <DataTable
+                columns={columns}
+                data={memories.data}
+                emptyMessage="No memory entries found."
+                pagination={memories}
+                rowSx={(memory) => ({ opacity: memory.is_active ? 1 : 0.5 })}
+                rowActions={(memory) => (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                        }}
+                    >
+                        <IconButton
+                            component={InertiaLink}
+                            href={`/admin/ai/memories/${memory.id}`}
+                            size="small"
+                            color="primary"
+                            title="Edit"
+                            aria-label="Edit"
+                        >
+                            <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                                handleDelete(memory.id);
+                            }}
+                            title="Delete"
+                            aria-label="Delete"
+                        >
+                            <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                )}
+            />
 
-                <Pagination
-                    links={memories.links}
-                    lastPage={memories.last_page}
-                />
-            </Card>
             <ConfirmDialog {...dialogProps} />
 
             <Dialog

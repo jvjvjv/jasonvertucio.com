@@ -21,6 +21,7 @@ class ResumeExperienceFactory extends Factory
         return [
             'version_id' => ResumeVersion::factory(),
             'job_title' => fake()->jobTitle(),
+            'job_title_label' => fake()->optional(0.3)->sentence(3),
             'company' => fake()->company(),
             'location' => fake()->optional()->passthrough(fake()->city() . ', ' . fake()->stateAbbr()),
             'date_start' => fake()->optional()->year(),

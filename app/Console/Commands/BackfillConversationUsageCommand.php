@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AiConversation;
-use App\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use Illuminate\Console\Command;
 
 class BackfillConversationUsageCommand extends Command

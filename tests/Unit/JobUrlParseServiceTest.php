@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\JobUrlParseService;
-use App\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use PHPUnit\Framework\TestCase;
 
 class JobUrlParseServiceTest extends TestCase

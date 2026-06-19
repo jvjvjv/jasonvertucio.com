@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 
 class SyncRolesCommand extends Command
 {
@@ -29,8 +29,8 @@ class SyncRolesCommand extends Command
         $roles = collect();
         foreach ($roleNames as $roleName) {
             try {
-                $roles->push(Role::findByName($roleName));
-            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+                $roles->push(Role::where('name', $roleName)->firstOrFail());
+            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
                 $this->error("Role '{$roleName}' does not exist.");
                 $availableRoles = Role::pluck('name')->toArray();
                 $this->info("Available roles: " . implode(', ', $availableRoles));

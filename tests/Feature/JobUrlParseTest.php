@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use App\Models\User;
-use App\Services\AiClientFactory;
-use App\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Mockery;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Tests\TestCase;
 
 class JobUrlParseTest extends TestCase
@@ -32,9 +32,9 @@ class JobUrlParseTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        Role::findOrCreate('admin', 'web');
+        Role::firstOrCreate(['name' => 'admin']);
         $this->admin->assignRole('admin');
-        Permission::findOrCreate('edit-resume', 'web');
+        Permission::firstOrCreate(['name' => 'edit-resume']);
         $this->admin->givePermissionTo('edit-resume');
 
         $this->aiSystem = AiSystem::factory()->create(['is_active' => true]);

@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Models\AiConversation;
-use App\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 

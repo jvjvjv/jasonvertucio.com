@@ -2,18 +2,26 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
+use Anthropic\Client as AnthropicClient;
+use Anthropic\Messages\InputJSONDelta;
+use Anthropic\Messages\RawContentBlockDeltaEvent;
+use Anthropic\Messages\RawContentBlockStartEvent;
+use Anthropic\Messages\RawContentBlockStopEvent;
+use Anthropic\Messages\RawMessageDeltaEvent;
+use Anthropic\Messages\RawMessageStartEvent;
+use Anthropic\Messages\RawMessageStopEvent;
+use Anthropic\Messages\TextBlock;
+use Anthropic\Messages\TextDelta;
+use Anthropic\Messages\ThinkingDelta;
+use Anthropic\Messages\ToolUseBlock;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Generator;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Http;
 
 class ClaudeService implements AiClientContract
 {
-    private string $apiKey;
+    private AnthropicClient $client;
     private string $defaultModel;
     private int $defaultMaxTokens;
-    private string $apiVersion;
-    private string $baseUrl;
 
     /** @var string|null Per-request system prompt */
     private ?string $system = null;
@@ -37,11 +45,13 @@ class ClaudeService implements AiClientContract
         ?string $apiVersion = null,
         ?string $baseUrl = null,
     ) {
-        $this->apiKey = $apiKey ?? '';
-        $this->defaultModel = $model ?? config('claude.model', 'claude-sonnet-4-6');
-        $this->defaultMaxTokens = $maxTokens ?? (int) config('claude.max_tokens', 1024);
-        $this->apiVersion = $apiVersion ?? config('claude.api_version', '2023-06-01');
-        $this->baseUrl = $baseUrl ?? config('claude.base_url', 'https://api.anthropic.com/v1');
+        $this->defaultModel = $model ?? config('code-talker.providers.anthropic.model', 'claude-sonnet-4-6');
+        $this->defaultMaxTokens = $maxTokens ?? (int) config('code-talker.providers.anthropic.max_tokens', 1024);
+
+        $this->client = new AnthropicClient(
+            apiKey: $apiKey ?? '',
+            baseUrl: $baseUrl ?? config('code-talker.providers.anthropic.base_url', 'https://api.anthropic.com'),
+        );
     }
 
     /**
@@ -120,26 +130,48 @@ class ClaudeService implements AiClientContract
      *
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
      * @return array{id: string, type: string, role: string, content: array<int, mixed>, model: string, stop_reason: string, usage: array{input_tokens: int, output_tokens: int}}
-     *
-     * @throws \RuntimeException
      */
     public function message(array $messages): array
     {
-        $payload = $this->buildPayload($messages);
+        $resolvedModel = $this->model ?? $this->defaultModel;
 
-        $response = Http::withHeaders($this->headers())
-            ->timeout(600)
-            ->post($this->baseUrl . '/messages', $payload);
+        $response = $this->client->messages->create(
+            maxTokens: $this->maxTokens ?? $this->defaultMaxTokens,
+            messages: $messages,
+            model: $resolvedModel,
+            system: $this->system,
+            temperature: ($this->temperature !== null && $resolvedModel !== 'claude-opus-4-7') ? $this->temperature : null,
+            tools: $this->tools !== [] ? $this->tools : null,
+        );
 
         $this->reset();
 
-        if (!$response->ok()) {
-            $body = $response->json();
-            $errorMessage = $body['error']['message'] ?? "HTTP {$response->status()}";
-            throw new \RuntimeException("Anthropic API error: {$errorMessage}");
+        $content = [];
+        foreach ($response->content as $block) {
+            if ($block instanceof TextBlock) {
+                $content[] = ['type' => 'text', 'text' => $block->text];
+            } elseif ($block instanceof ToolUseBlock) {
+                $content[] = [
+                    'type' => 'tool_use',
+                    'id' => $block->id,
+                    'name' => $block->name,
+                    'input' => $block->input,
+                ];
+            }
         }
 
-        return $response->json();
+        return [
+            'id' => $response->id,
+            'type' => $response->type,
+            'role' => $response->role,
+            'content' => $content,
+            'model' => $response->model,
+            'stop_reason' => $response->stopReason ?? 'end_turn',
+            'usage' => [
+                'input_tokens' => $response->usage->inputTokens,
+                'output_tokens' => $response->usage->outputTokens,
+            ],
+        ];
     }
 
     /**
@@ -150,94 +182,75 @@ class ClaudeService implements AiClientContract
      *
      * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
      * @return Generator<int, array<string, mixed>>
-     *
-     * @throws RequestException
      */
     public function stream(array $messages): Generator
     {
-        $payload = $this->buildPayload($messages, streaming: true);
+        $resolvedModel = $this->model ?? $this->defaultModel;
 
-        $response = Http::withHeaders($this->headers())
-            ->withOptions(['stream' => true])
-            ->timeout(600)
-            ->post($this->baseUrl . '/messages', $payload);
+        $sdkStream = $this->client->messages->createStream(
+            maxTokens: $this->maxTokens ?? $this->defaultMaxTokens,
+            messages: $messages,
+            model: $resolvedModel,
+            system: $this->system,
+            temperature: ($this->temperature !== null && $resolvedModel !== 'claude-opus-4-7') ? $this->temperature : null,
+            tools: $this->tools !== [] ? $this->tools : null,
+        );
 
         $this->reset();
 
-        if (!$response->ok()) {
-            $body = $response->json();
-            $errorMessage = $body['error']['message'] ?? "HTTP {$response->status()}";
-            throw new \RuntimeException("Anthropic API error: {$errorMessage}");
-        }
-
-        $body = $response->toPsrResponse()->getBody();
-        $buffer = '';
-
-        while (!$body->eof()) {
-            $buffer .= $body->read(1024);
-
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
-
-                if (str_starts_with($line, 'data: ')) {
-                    $data = json_decode(substr($line, 6), true);
-
-                    if ($data !== null) {
-                        yield $data;
-                    }
+        foreach ($sdkStream as $event) {
+            if ($event instanceof RawMessageStartEvent) {
+                yield [
+                    'type' => 'message_start',
+                    'message' => [
+                        'usage' => ['input_tokens' => $event->message->usage->inputTokens],
+                    ],
+                ];
+            } elseif ($event instanceof RawContentBlockStartEvent) {
+                $block = $event->contentBlock;
+                if ($block instanceof ToolUseBlock) {
+                    yield [
+                        'type' => 'content_block_start',
+                        'content_block' => [
+                            'type' => 'tool_use',
+                            'id' => $block->id,
+                            'name' => $block->name,
+                        ],
+                    ];
                 }
+            } elseif ($event instanceof RawContentBlockDeltaEvent) {
+                $delta = $event->delta;
+                if ($delta instanceof TextDelta) {
+                    yield [
+                        'type' => 'content_block_delta',
+                        'delta' => ['text' => $delta->text],
+                    ];
+                } elseif ($delta instanceof ThinkingDelta) {
+                    yield [
+                        'type' => 'reasoning_block_delta',
+                        'delta' => ['reasoning' => $delta->thinking],
+                    ];
+                } elseif ($delta instanceof InputJSONDelta) {
+                    yield [
+                        'type' => 'content_block_delta',
+                        'delta' => [
+                            'type' => 'input_json_delta',
+                            'partial_json' => $delta->partialJSON,
+                        ],
+                    ];
+                }
+            } elseif ($event instanceof RawContentBlockStopEvent) {
+                yield ['type' => 'content_block_stop'];
+            } elseif ($event instanceof RawMessageDeltaEvent) {
+                yield [
+                    'type' => 'message_delta',
+                    'delta' => ['stop_reason' => $event->delta->stopReason],
+                    'usage' => ['output_tokens' => $event->usage->outputTokens],
+                ];
+            } elseif ($event instanceof RawMessageStopEvent) {
+                yield ['type' => 'message_stop'];
             }
         }
-    }
-
-    /**
-     * Build the request payload from current state.
-     *
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
-     */
-    private function buildPayload(array $messages, bool $streaming = false): array
-    {
-        $resolvedModel = $this->model ?? $this->defaultModel;
-
-        $payload = [
-            'model' => $resolvedModel,
-            'max_tokens' => $this->maxTokens ?? $this->defaultMaxTokens,
-            'messages' => $messages,
-        ];
-
-        if ($this->system !== null) {
-            $payload['system'] = $this->system;
-        }
-
-        if ($this->tools !== []) {
-            $payload['tools'] = $this->tools;
-        }
-
-        // claude-opus-4-7 removed sampling parameters (temperature, top_p, top_k)
-        if ($this->temperature !== null && $resolvedModel !== 'claude-opus-4-7') {
-            $payload['temperature'] = $this->temperature;
-        }
-
-        if ($streaming) {
-            $payload['stream'] = true;
-        }
-
-        return $payload;
-    }
-
-    /**
-     * Get configured HTTP headers for the Anthropic API.
-     *
-     * @return array{x-api-key: string, anthropic-version: string, content-type: string}
-     */
-    private function headers(): array
-    {
-        return [
-            'x-api-key' => $this->apiKey,
-            'anthropic-version' => $this->apiVersion,
-            'content-type' => 'application/json',
-        ];
     }
 
     /**
@@ -247,13 +260,59 @@ class ClaudeService implements AiClientContract
      */
     public function listModels(): array
     {
-        $response = Http::withHeaders($this->headers())
-            ->timeout(15)
-            ->get($this->baseUrl . '/models', ['limit' => 100]);
+        $page = $this->client->models->list(limit: 100);
 
-        $response->throw();
+        return collect($page->data)
+            ->map(static fn($model): array => [
+                'id' => $model->id,
+                'display_name' => $model->displayName,
+                'created_at' => $model->createdAt->format(\DateTimeInterface::ATOM),
+            ])
+            ->values()
+            ->toArray();
+    }
 
-        return $response->json('data', []);
+    /**
+     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @return array{role: string, content: array<int, mixed>}
+     */
+    public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+    {
+        $content = [];
+
+        if ($textContent !== '') {
+            $content[] = ['type' => 'text', 'text' => $textContent];
+        }
+
+        foreach ($toolCalls as $toolCall) {
+            $content[] = [
+                'type' => 'tool_use',
+                'id' => $toolCall['id'],
+                'name' => $toolCall['name'],
+                'input' => (object) $toolCall['input'],
+            ];
+        }
+
+        return ['role' => 'assistant', 'content' => $content];
+    }
+
+    /**
+     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @return array<int, array{role: string, content: array<int, mixed>}>
+     */
+    public function formatToolResultTurn(array $toolResults): array
+    {
+        $content = [];
+
+        foreach ($toolResults as $result) {
+            $content[] = [
+                'type' => 'tool_result',
+                'tool_use_id' => $result['id'],
+                'content' => json_encode($result['result']),
+            ];
+        }
+
+        return [['role' => 'user', 'content' => $content]];
     }
 
     /**

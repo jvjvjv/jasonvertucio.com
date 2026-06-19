@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\AiChatBot;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiChatBotControllerTest extends TestCase
@@ -16,7 +16,7 @@ class AiChatBotControllerTest extends TestCase
 
     private function authenticatedUser(): User
     {
-        Permission::findOrCreate('manage-ai-tools', 'web');
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
         $user = User::factory()->create();
         $user->givePermissionTo('manage-ai-tools');
 
@@ -72,7 +72,6 @@ class AiChatBotControllerTest extends TestCase
             'prompt_template' => 'You are {{bot_name}}.',
             'allowed_roles' => ['admin'],
             'is_active' => true,
-            'is_public' => false,
             'require_visitor_identity' => true,
         ]);
 
@@ -84,7 +83,6 @@ class AiChatBotControllerTest extends TestCase
             'ai_system_id' => $system->id,
             'context_length' => 8192,
             'temperature' => '0.45',
-            'is_public' => false,
             'require_visitor_identity' => true,
         ]);
     }
@@ -103,7 +101,6 @@ class AiChatBotControllerTest extends TestCase
             'prompt_template' => 'You are {{bot_name}}.',
             'allowed_roles' => [],
             'is_active' => true,
-            'is_public' => true,
             'require_visitor_identity' => false,
         ]);
 
@@ -127,7 +124,11 @@ class AiChatBotControllerTest extends TestCase
         ]);
         $response->assertJsonFragment([
             'name' => 'get_recent_blog_posts',
-            'description' => 'Load recent blog posts with titles, summaries, and URLs.',
+            'description' => 'Load recent blog posts with titles, summaries, and URLs. Supports search by keyword in title, summary, or body.',
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'fetch_web_page',
+            'description' => 'Fetch a web page by URL and return its readable text content using the JayScraper research user agent.',
         ]);
         $response->assertJsonFragment([
             'name' => 'get_resume_data',

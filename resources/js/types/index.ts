@@ -41,6 +41,15 @@ export interface SharedProps extends PageProps {
     flash: FlashMessages;
 }
 
+// AI System Prompts
+
+export interface AiSystemPrompt {
+    id: number;
+    title: string;
+    description: string;
+    content: string;
+}
+
 // AI Systems
 
 export interface AiSystem {
@@ -65,11 +74,13 @@ export interface AiSystem {
     auth_type?: string | null;
     endpoint_type?: string | null;
     stream_protocol?: string | null;
-    system_prompt?: string | null;
+    system_prompt_id?: number | null;
+    system_prompt?: AiSystemPrompt | null;
     system_prompt_mode?: string | null;
     supports_tools?: boolean;
     allowed_tools?: string[] | null;
     supports_json_mode?: boolean;
+    enable_thinking?: boolean | null;
     is_local_endpoint?: boolean;
     pricing_profile?: { [key: string]: unknown } | null;
     is_active: boolean;
@@ -88,9 +99,8 @@ export interface AiChatBot {
     context_length?: number | null;
     temperature?: number | null;
     prompt_template?: string;
-    allowed_roles: string[];
+    allowed_roles?: string[];
     is_active: boolean;
-    is_public: boolean;
     require_visitor_identity: boolean;
     tools_enabled: boolean;
     conversations_count?: number;
@@ -175,6 +185,7 @@ export interface ConversationUsage {
 export interface Conversation {
     id: number;
     status: string;
+    ai_system_id?: number | null;
     title?: string | null;
     job_url?: string | null;
     last_message_at?: string;

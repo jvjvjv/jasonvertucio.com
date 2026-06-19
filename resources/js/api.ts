@@ -15,6 +15,17 @@ function csrfToken(): string {
     );
 }
 
+async function refreshCsrfToken(): Promise<void> {
+    await fetch("/sanctum/csrf-cookie", { credentials: "same-origin" });
+    const match = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(document.cookie);
+    if (match) {
+        const token = decodeURIComponent(match[1]);
+        document
+            .querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+            ?.setAttribute("content", token);
+    }
+}
+
 function baseHeaders(extra: { [key: string]: string } = {}): {
     [key: string]: string;
 } {
@@ -30,6 +41,7 @@ async function request<T>(
     url: string,
     body?: unknown,
     signal?: AbortSignal,
+    retry = true,
 ): Promise<T> {
     const res = await fetch(url, {
         method,
@@ -38,6 +50,11 @@ async function request<T>(
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal,
     });
+
+    if (res.status === 419 && retry) {
+        await refreshCsrfToken();
+        return request<T>(method, url, body, signal, false);
+    }
 
     if (!res.ok) {
         const data: unknown = await res.json().catch(() => null);
@@ -92,6 +109,7 @@ async function* stream(
     url: string,
     body?: unknown,
     onResponse?: (res: Response) => void,
+    retry = true,
 ): AsyncGenerator<string> {
     const res = await fetch(url, {
         method: "POST",
@@ -99,6 +117,12 @@ async function* stream(
         headers: baseHeaders({ "Content-Type": "application/json" }),
         body: body !== undefined ? JSON.stringify(body) : undefined,
     });
+
+    if (res.status === 419 && retry) {
+        await refreshCsrfToken();
+        yield* stream(url, body, onResponse, false);
+        return;
+    }
 
     if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);

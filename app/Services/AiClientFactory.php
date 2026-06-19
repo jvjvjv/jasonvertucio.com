@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Contracts\AiClientContract;
-use App\Enums\AiProvider;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 class AiClientFactory
 {
@@ -39,6 +39,7 @@ class AiClientFactory
                 maxTokens: $system->max_tokens,
                 contextLength: $system->context_length,
                 apiKey: $system->api_key,
+                enableThinking: (bool) $system->enable_thinking,
             ),
             AiProvider::Gemini => new GeminiService(
                 apiKey: $system->api_key,

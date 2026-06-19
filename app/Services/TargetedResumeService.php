@@ -2,15 +2,19 @@
 
 namespace App\Services;
 
-use App\Concerns\ExecutesAiTools;
+use Jvjvjv\CodeTalker\Concerns\ExecutesAiTools;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Contracts\ResumeDataServiceContract;
-use App\Enums\AiConversationStatus;
-use App\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
-use App\Models\AiInteractionLog;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
@@ -22,6 +26,13 @@ use Illuminate\Support\Facades\Log;
 class TargetedResumeService
 {
     use ExecutesAiTools;
+
+    public const int PROMPT_ID_DEFAULT = 1;
+    public const int PROMPT_ID_CREATIVE = 2;
+    public const int PROMPT_ID_TECHNICAL = 3;
+    public const int PROMPT_ID_TARGETED_RESUME = 4;
+    public const int PROMPT_ID_COVER_LETTER = 5;
+
     public function __construct(
         private AiClientFactory $clientFactory,
         private ResumeDataServiceContract $resumeDataService,
@@ -60,8 +71,19 @@ class TargetedResumeService
             ],
         ]);
 
-        // Store the system prompt as the first message
-        $systemPrompt = $this->buildSystemPrompt();
+        // Build system prompt based on which features this system is default for
+        $system->loadMissing('featureDefaults');
+        $features = $system->featureDefaults->pluck('feature');
+        $parts = [];
+        if ($features->contains('targeted-resume')) {
+            $parts[] = AiSystemPrompt::find(self::PROMPT_ID_TARGETED_RESUME)?->content ?? $this->buildResumePortionPrompt();
+        }
+        if ($features->contains('cover-letter')) {
+            $parts[] = AiSystemPrompt::find(self::PROMPT_ID_COVER_LETTER)?->content ?? $this->buildCoverLetterPortionPrompt();
+        }
+        $systemPrompt = !empty($parts)
+            ? implode("\n\n---\n\n## Cover Letter Guidelines\n\n", $parts)
+            : ($system->systemPrompt?->content ?? $this->buildSystemPrompt());
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'system',
@@ -85,6 +107,8 @@ class TargetedResumeService
      */
     public function continueConversation(AiConversation $conversation, ?string $userMessage = null): Generator
     {
+        yield ": heartbeat\n\n";
+
         $conversation->load('aiSystem');
 
         if ($userMessage === null) {
@@ -138,7 +162,7 @@ class TargetedResumeService
         $loopResult = null;
 
         try {
-            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult);
+            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult, conversation: $conversation);
 
             yield "data: [DONE]\n\n";
 
@@ -446,6 +470,14 @@ class TargetedResumeService
      */
     public function buildSystemPrompt(): string
     {
+        return $this->buildResumePortionPrompt() . "\n\n---\n\n## Cover Letter Guidelines\n\n" . $this->buildCoverLetterPortionPrompt();
+    }
+
+    /**
+     * Build the resume-portion of the system prompt (steps 0–6, excluding cover letter guidelines).
+     */
+    public function buildResumePortionPrompt(): string
+    {
         return <<<PROMPT
 # Targeted Resume & Cover Letter
 
@@ -569,6 +601,45 @@ Also offer to help with any other application questions the candidate may encoun
 
 ## Cover Letter Guidelines
 
+### Voice & Tone
+
+- Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.
+- No corporate jargon. No filler. No padding.
+- Sentence fragments are fine when they create natural rhythm, the way a speaker pauses for emphasis.
+- Occasional personality is encouraged. Jay has a dry wit and a pragmatic worldview. Let that come through when appropriate.
+- Never sycophantic. Never desperate. The tone is: "I'm good at what I do, here's why I'd be good at what you do."
+
+### Structure
+
+- Three paragraphs preferred. Four if absolutely necessary. Never five.
+- No greeting beyond "Hi [name]" or "Hello [name]" when a name is available. No "Dear Hiring Manager" unless there is truly no alternative.
+- No "Sincerely" or "Best regards" closings. End with something human — a forward-looking statement, a direct ask, or a short closer that sounds like Jay.
+- The cover letter does NOT summarize the resume. It provides motivation, fit, and voice. If a bullet point on the resume already says it, the cover letter should not repeat it. It can reference the same work, but only to frame it differently — why it mattered, what it taught him, how it connects to the role.
+
+### What to Avoid
+
+- Em dashes where a comma would work. Absolutely no hyphens pretending to be em dashes.
+- The word "actually" used as a pivot ("It's not X, it's actually Y").
+- "I believe," "I am passionate about," "I am excited to," or any other filler openers that signal template usage.
+- Gerund-heavy constructions ("Leveraging my experience in..." / "Utilizing my skills to...").
+- Mirroring the job posting's language back verbatim. Paraphrase. Show understanding, not copy-paste.
+- Any phrase that reads like it came from a LinkedIn influencer post.
+- Over-qualifying or being apologetic about gaps. If React experience is 1 year vs. 6 years of Vue, frame it as pattern transfer and current production work, not as a weakness to explain away.
+
+### What to Include
+
+- A specific reason Jay wants THIS job at THIS company. Not generic "mission-driven" language — something concrete that connects his experience or values to the company's work.
+- One or two concrete examples from his career that demonstrate relevant capability. These should be framed as stories or outcomes, not resume bullets reworded into prose.
+- An honest self-assessment of fit. If the role stretches into areas where Jay has less depth, acknowledge it briefly and pivot to why that's manageable.
+PROMPT;
+    }
+
+    /**
+     * Build the cover letter portion of the system prompt (voice, structure, and guidelines).
+     */
+    public function buildCoverLetterPortionPrompt(): string
+    {
+        return <<<PROMPT
 ### Voice & Tone
 
 - Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.

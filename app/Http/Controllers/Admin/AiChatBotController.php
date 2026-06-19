@@ -2,24 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Contracts\ResumeDataServiceContract;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\AiSystem;
-use App\Services\AiMemoryService;
-use App\Services\Mcp\ChatBotToolRegistry;
-use App\Services\TargetedResumeService;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
+use BSPDX\Keystone\Models\KeystoneRole;
+
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Spatie\Permission\Models\Role;
 
-class AiChatBotController extends Controller
+class AiChatBotController extends BaseAdminController
 {
     /**
      * Display a list of AI chat bots.
@@ -43,10 +41,9 @@ class AiChatBotController extends Controller
                 'slug' => $bot->slug,
                 'access_path' => $bot->access_path,
                 'public_url' => $bot->publicPath(),
-                'description' => $bot->description,
                 'allowed_roles' => $bot->allowed_roles ?? [],
+                'description' => $bot->description,
                 'is_active' => $bot->is_active,
-                'is_public' => $bot->is_public,
                 'ai_system' => $bot->aiSystem,
                 'require_visitor_identity' => $bot->require_visitor_identity,
                 'conversations_count' => $bot->conversations_count,
@@ -64,6 +61,7 @@ class AiChatBotController extends Controller
         return Inertia::render('ai/bots/Index', [
             'bots' => $bots,
             'filters' => ['ai_system_id' => $aiSystemId],
+            'navBlocks' => $this->navBlocksFor('/admin/ai/chat-bots', $request),
         ]);
     }
 
@@ -74,7 +72,7 @@ class AiChatBotController extends Controller
     {
         return Inertia::render('ai/bots/Create', [
             'systems' => $this->systems(),
-            'roles' => $this->roles(),
+            'roles'   => $this->roles(),
         ]);
     }
 
@@ -97,9 +95,52 @@ class AiChatBotController extends Controller
         $aiChatBot->loadCount('conversations');
 
         return Inertia::render('ai/bots/Edit', [
-            'bot' => $aiChatBot,
+            'bot'     => $aiChatBot,
             'systems' => $this->systems(),
-            'roles' => $this->roles(),
+            'roles'   => $this->roles(),
+        ]);
+    }
+
+    /**
+     * Return the currently available MCP tools for admin UI display.
+     */
+    public function mcpTools(
+        Request $request,
+        AiMemoryService $memoryService,
+    ): JsonResponse {
+        $request->validate([
+            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
+            'include_all' => ['nullable', 'boolean'],
+        ]);
+
+        $conversation = new AiConversation([
+            'user_id' => $request->user()?->getKey(),
+            'context' => [],
+        ]);
+
+        $allowedTools = null;
+        $includeAllTools = $request->boolean('include_all');
+
+        if (!$includeAllTools && $request->filled('ai_system_id')) {
+            $allowedTools = AiSystem::query()
+                ->whereKey($request->integer('ai_system_id'))
+                ->value('allowed_tools');
+        }
+
+        $registry = new ChatBotToolRegistry(
+            $conversation,
+            $allowedTools,
+            $includeAllTools,
+        );
+
+        return response()->json([
+            'tools' => array_map(
+                static fn (array $tool): array => [
+                    'name' => $tool['name'],
+                    'description' => $tool['description'],
+                ],
+                $registry->toApiTools(),
+            ),
         ]);
     }
 
@@ -175,6 +216,14 @@ class AiChatBotController extends Controller
     }
 
     /**
+     * @return array<int, string>
+     */
+    private function roles(): array
+    {
+        return KeystoneRole::query()->orderBy('name')->pluck('name')->all();
+    }
+
+    /**
     * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
      */
     private function systems(): array
@@ -194,11 +243,4 @@ class AiChatBotController extends Controller
             ->all();
     }
 
-    /**
-     * @return array<int, string>
-     */
-    private function roles(): array
-    {
-        return Role::query()->orderBy('name')->pluck('name')->all();
-    }
 }

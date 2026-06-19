@@ -178,7 +178,6 @@ return [
         App\Providers\BladeServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
         App\Providers\ResumeServiceProvider::class,
-        App\Providers\ClaudeServiceProvider::class,
 
     ],
 

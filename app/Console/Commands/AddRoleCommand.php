@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 
 class AddRoleCommand extends Command
 {
@@ -43,8 +43,8 @@ class AddRoleCommand extends Command
         } else {
             // Role provided - validate it exists
             try {
-                Role::findByName($roleName);
-            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+                Role::where('name', $roleName)->firstOrFail();
+            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
                 // Invalid role - show choices from database
                 $this->error("Role '{$roleName}' does not exist.");
                 $availableRoles = Role::pluck('name')->toArray();

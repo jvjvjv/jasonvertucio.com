@@ -9,19 +9,10 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
 import DoneIcon from "@mui/icons-material/Done";
-import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import StickyNote2Icon from "@mui/icons-material/StickyNote2";
-import UpdateIcon from "@mui/icons-material/Update";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
-import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
@@ -29,13 +20,14 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
-import BuilderStatusCard from "./BuilderStatusCard";
+import BuilderChatPanel from "./BuilderChatPanel";
+import BuilderMetadataForm from "./BuilderMetadataForm";
 import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
 
+import type { MetadataFormData } from "./BuilderMetadataForm";
+import type { ChatMessage } from "@/components/ChatInterface";
 import type {
     Conversation,
     CoverLetter,
@@ -44,31 +36,13 @@ import type {
     StatusUpdate,
     TargetedResume,
 } from "@/types";
-import type { SyntheticEvent } from "react";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
-import StatusChip from "@/admin/components/StatusChip";
-import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { api, ApiError } from "@/api";
-import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ResponsiveButton from "@/components/ResponsiveButton";
-import ToolsPanel from "@/components/ToolsPanel";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-
-interface StreamEvent {
-    type: string;
-    delta?: { text?: string };
-    message?: string;
-    text?: string;
-    tools?: string[];
-}
-
-interface ToolPanel {
-    pretext: string;
-    tools: string[];
-}
 
 interface FinalizeResponse {
     message?: string;
@@ -93,10 +67,6 @@ export default function Show({
     const authUser = page.props.auth.user;
 
     const [activeTab, setActiveTab] = useState(0);
-    const [messages, setMessages] = useState<Message[]>(initialMessages);
-    const [userInput, setUserInput] = useState("");
-    const [isStreaming, setIsStreaming] = useState(false);
-    const [streamingContent, setStreamingContent] = useState("");
     const [isFinalizing, setIsFinalizing] = useState(false);
     const [finalizeError, setFinalizeError] = useState<string | null>(null);
     const [isFinalizingCoverLetter, setIsFinalizingCoverLetter] =
@@ -104,13 +74,8 @@ export default function Show({
     const [finalizeCoverLetterError, setFinalizeCoverLetterError] = useState<
         string | null
     >(null);
-    const [streamingToolPanels, setStreamingToolPanels] = useState<ToolPanel[]>(
-        [],
-    );
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const hasAutoStarted = useRef(false);
 
-    const metadataForm = useForm({
+    const metadataForm = useForm<MetadataFormData>({
         title: conversation.title ?? "",
         company_name:
             targetedResume?.company_name ??
@@ -133,127 +98,19 @@ export default function Show({
     const [statusOccurredAt, setStatusOccurredAt] = useState("");
     const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
     const [statusError, setStatusError] = useState<string | null>(null);
-
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, streamingContent, scrollToBottom]);
-
-    const sendMessage = useCallback(
-        async (messageText?: string) => {
-            const text = messageText ?? userInput.trim();
-            if (!text && !shouldAutoStart) return;
-
-            if (text) {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        role: "user",
-                        content: text,
-                        created_at: new Date().toISOString(),
-                    },
-                ]);
-                setUserInput("");
-            }
-
-            setIsStreaming(true);
-            setStreamingContent("");
-
-            try {
-                let accumulated = "";
-                let preambleText = "";
-
-                for await (const jsonStr of api.stream(
-                    `/api/admin/resume/targeted-builder/${conversation.id}/chat`,
-                    { message: text || null },
-                )) {
-                    try {
-                        const event = JSON.parse(jsonStr) as StreamEvent;
-
-                        if (
-                            event.type === "content_block_delta" &&
-                            event.delta?.text
-                        ) {
-                            accumulated += event.delta.text;
-                            setStreamingContent(accumulated);
-                        } else if (event.type === "tool_use_progress") {
-                            // Move preamble text into a tool panel; reset main stream.
-                            // Save accumulated text so it survives the reset and ends
-                            // up in the final message even if the follow-up iteration
-                            // produces no additional text.
-                            if (accumulated) {
-                                preambleText +=
-                                    (preambleText ? "\n\n" : "") + accumulated;
-                            }
-                            setStreamingToolPanels((prev) => [
-                                ...prev,
-                                {
-                                    pretext: event.text ?? "",
-                                    tools: event.tools ?? [],
-                                },
-                            ]);
-                            accumulated = "";
-                            setStreamingContent("");
-                        } else if (event.type === "page_reload") {
-                            router.reload({
-                                only: [
-                                    "targetedResume",
-                                    "coverLetter",
-                                    "conversation",
-                                ],
-                            });
-                        } else if (event.type === "error") {
-                            accumulated += `\n\n**Error:** ${event.message ?? "Unknown error"}`;
-                            setStreamingContent(accumulated);
-                        }
-                    } catch {
-                        // Skip malformed JSON lines
-                        console.warn(jsonStr);
-                    }
-                }
-
-                const finalContent = preambleText
-                    ? preambleText + (accumulated ? "\n\n" + accumulated : "")
-                    : accumulated;
-
-                if (finalContent) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            role: "assistant",
-                            content: finalContent,
-                            created_at: new Date().toISOString(),
-                        },
-                    ]);
-                }
-            } catch (err) {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        role: "assistant",
-                        content: `**Error:** ${(err as Error).message}`,
-                        created_at: new Date().toISOString(),
-                    },
-                ]);
-            } finally {
-                setIsStreaming(false);
-                setStreamingContent("");
-                setStreamingToolPanels([]);
-            }
-        },
-        [userInput, conversation.id, shouldAutoStart],
+    const [editingStatusId, setEditingStatusId] = useState<number | null>(null);
+    const [editingStatusNotes, setEditingStatusNotes] = useState("");
+    const [editingStatusOccurredAt, setEditingStatusOccurredAt] = useState("");
+    const [isSavingStatusEdit, setIsSavingStatusEdit] = useState(false);
+    const [isDeletingStatusId, setIsDeletingStatusId] = useState<number | null>(
+        null,
     );
+    const [showStatusUpdateForm, setShowStatusUpdateForm] = useState(false);
 
-    // Auto-start initial analysis
-    useEffect(() => {
-        if (shouldAutoStart && !hasAutoStarted.current) {
-            hasAutoStarted.current = true;
-            void sendMessage("");
-        }
-    }, [shouldAutoStart, sendMessage]);
+    // Mirror of ChatInterface's message list, used to scan for resume/cover letter blocks
+    const [liveMessages, setLiveMessages] = useState<ChatMessage[]>(
+        initialMessages as ChatMessage[],
+    );
 
     // --- Resume/Cover Letter parsing helpers ---
 
@@ -270,7 +127,7 @@ export default function Show({
         };
     }
 
-    function getLatestTailoredResumeData(msgs: Message[]) {
+    function getLatestTailoredResumeData(msgs: ChatMessage[]) {
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
@@ -294,7 +151,7 @@ export default function Show({
         return null;
     }
 
-    function getLatestCoverLetterContent(msgs: Message[]): string | null {
+    function getLatestCoverLetterContent(msgs: ChatMessage[]): string | null {
         for (let i = msgs.length - 1; i >= 0; i--) {
             const msg = msgs[i];
             if (msg.role !== "assistant") continue;
@@ -306,8 +163,8 @@ export default function Show({
         return null;
     }
 
-    const latestResumeData = getLatestTailoredResumeData(messages);
-    const latestCoverLetterContent = getLatestCoverLetterContent(messages);
+    const latestResumeData = getLatestTailoredResumeData(liveMessages);
+    const latestCoverLetterContent = getLatestCoverLetterContent(liveMessages);
 
     // Compute fit score from either targeted resume or conversation context.
     // Fit scores are always 1-100, so we can use falsy checks to simplify logic.
@@ -333,7 +190,6 @@ export default function Show({
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const handleFinalizeResume = async () => {
-        // If already finalized and no new resume block in conversation, just regenerate docs
         if (!canFinalizeResume && targetedResume) {
             router.post(
                 `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
@@ -356,7 +212,7 @@ export default function Show({
             if (error instanceof ApiError) {
                 const data = error.data as FinalizeResponse;
                 setFinalizeError(
-                    data?.message ?? "Failed to save targeted resume.",
+                    data.message ?? "Failed to save targeted resume.",
                 );
             } else {
                 setFinalizeError("Network error. Please try again.");
@@ -380,20 +236,13 @@ export default function Show({
             if (error instanceof ApiError) {
                 const data = error.data as FinalizeResponse;
                 setFinalizeCoverLetterError(
-                    data?.message ?? "Failed to save cover letter.",
+                    data.message ?? "Failed to save cover letter.",
                 );
             } else {
                 setFinalizeCoverLetterError("Network error. Please try again.");
             }
         } finally {
             setIsFinalizingCoverLetter(false);
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-            e.preventDefault();
-            void sendMessage();
         }
     };
 
@@ -444,8 +293,24 @@ export default function Show({
                             data.allowed_next_statuses ?? [],
                         );
                         router.reload({ only: ["targetedResume"] });
-                    } catch {
-                        setStatusError("Failed to mark as applied.");
+                    } catch (error) {
+                        if (error instanceof ApiError) {
+                            const data = error.data as {
+                                message?: string;
+                                errors?: { [key: string]: string[] };
+                            };
+                            const firstValidationError = data.errors
+                                ? Object.values(data.errors)[0]?.[0]
+                                : null;
+
+                            setStatusError(
+                                data.message ??
+                                    firstValidationError ??
+                                    "Failed to mark as applied.",
+                            );
+                        } else {
+                            setStatusError("Failed to mark as applied.");
+                        }
                     } finally {
                         setIsSubmittingStatus(false);
                     }
@@ -455,11 +320,8 @@ export default function Show({
         );
     };
 
-    const handleAddStatusUpdate = async (e: SyntheticEvent) => {
-        e.preventDefault();
-        if (!selectedNextStatus || !targetedResume) {
-            return;
-        }
+    const handleAddStatusUpdate = async () => {
+        if (!selectedNextStatus || !targetedResume) return;
         setIsSubmittingStatus(true);
         setStatusError(null);
         try {
@@ -485,15 +347,167 @@ export default function Show({
             setSelectedNextStatus("");
             setStatusNotes("");
             setStatusOccurredAt("");
-        } catch {
-            setStatusError("Failed to update status.");
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as {
+                    message?: string;
+                    errors?: { [key: string]: string[] };
+                };
+                const firstValidationError = data.errors
+                    ? Object.values(data.errors)[0]?.[0]
+                    : null;
+
+                setStatusError(
+                    data.message ??
+                        firstValidationError ??
+                        "Failed to update status.",
+                );
+            } else {
+                setStatusError("Failed to update status.");
+            }
         } finally {
             setIsSubmittingStatus(false);
         }
     };
 
-    const handleMetadataSave = (e: SyntheticEvent) => {
-        e.preventDefault();
+    const toDateInputValue = (isoDate: string): string => {
+        return isoDate.slice(0, 10);
+    };
+
+    const startEditingStatus = (statusUpdate: StatusUpdate) => {
+        setEditingStatusId(statusUpdate.id);
+        setEditingStatusNotes(statusUpdate.notes ?? "");
+        setEditingStatusOccurredAt(toDateInputValue(statusUpdate.occurred_at));
+        setStatusError(null);
+    };
+
+    const cancelEditingStatus = () => {
+        setEditingStatusId(null);
+        setEditingStatusNotes("");
+        setEditingStatusOccurredAt("");
+    };
+
+    const handleSaveStatusEdit = async (statusUpdateId: number) => {
+        if (!editingStatusOccurredAt) {
+            setStatusError("Date is required.");
+            return;
+        }
+
+        setIsSavingStatusEdit(true);
+        setStatusError(null);
+
+        try {
+            const data = await api.put<{
+                success?: boolean;
+                message?: string;
+                status_updates?: StatusUpdate[];
+                allowed_next_statuses?: string[];
+            }>(
+                `/api/admin/resume/targeted-builder/${conversation.id}/status-update/${statusUpdateId}`,
+                {
+                    notes: editingStatusNotes || null,
+                    occurred_at: editingStatusOccurredAt,
+                },
+            );
+
+            if (!data.success) {
+                setStatusError(
+                    data.message ?? "Failed to update status entry.",
+                );
+                return;
+            }
+
+            setStatusUpdates(data.status_updates ?? []);
+            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            cancelEditingStatus();
+        } catch (error) {
+            if (error instanceof ApiError) {
+                const data = error.data as {
+                    message?: string;
+                    errors?: { [key: string]: string[] };
+                };
+                const firstValidationError = data.errors
+                    ? Object.values(data.errors)[0]?.[0]
+                    : null;
+
+                setStatusError(
+                    data.message ??
+                        firstValidationError ??
+                        "Failed to update status entry.",
+                );
+            } else {
+                setStatusError("Failed to update status entry.");
+            }
+        } finally {
+            setIsSavingStatusEdit(false);
+        }
+    };
+
+    const handleDeleteStatusUpdate = (statusUpdateId: number) => {
+        confirm(
+            "Delete this status update entry?",
+            () => {
+                void (async () => {
+                    setIsDeletingStatusId(statusUpdateId);
+                    setStatusError(null);
+
+                    try {
+                        const data = await api.del<{
+                            success?: boolean;
+                            message?: string;
+                            status_updates?: StatusUpdate[];
+                            allowed_next_statuses?: string[];
+                        }>(
+                            `/api/admin/resume/targeted-builder/${conversation.id}/status-update/${statusUpdateId}`,
+                        );
+
+                        if (!data.success) {
+                            setStatusError(
+                                data.message ??
+                                    "Failed to delete status update entry.",
+                            );
+                            return;
+                        }
+
+                        setStatusUpdates(data.status_updates ?? []);
+                        setAllowedNextStatuses(
+                            data.allowed_next_statuses ?? [],
+                        );
+                        if (editingStatusId === statusUpdateId) {
+                            cancelEditingStatus();
+                        }
+
+                        router.reload({ only: ["targetedResume"] });
+                    } catch (error) {
+                        if (error instanceof ApiError) {
+                            const data = error.data as {
+                                message?: string;
+                                errors?: { [key: string]: string[] };
+                            };
+                            const firstValidationError = data.errors
+                                ? Object.values(data.errors)[0]?.[0]
+                                : null;
+
+                            setStatusError(
+                                data.message ??
+                                    firstValidationError ??
+                                    "Failed to delete status update entry.",
+                            );
+                        } else {
+                            setStatusError(
+                                "Failed to delete status update entry.",
+                            );
+                        }
+                    } finally {
+                        setIsDeletingStatusId(null);
+                    }
+                })();
+            },
+            { confirmLabel: "Delete", confirmColor: "error" },
+        );
+    };
+
+    const handleMetadataSave = () => {
         metadataForm.put(
             `/admin/resume/targeted-builder/${conversation.id}/metadata`,
         );
@@ -511,6 +525,15 @@ export default function Show({
         conversation.title ??
         (position ? `${companyName} - ${position}` : companyName);
     const jobUrl = conversation.job_url;
+
+    const aiSystemId = conversation.ai_system_id as number | undefined;
+    const statusUrl = aiSystemId
+        ? `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-status`
+        : "";
+    const warmupUrl = aiSystemId
+        ? `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-warmup`
+        : "";
+
     return (
         <AdminLayout>
             <Head title={`${pageTitle} | Targeted Resumes`} />
@@ -525,7 +548,7 @@ export default function Show({
             <Box
                 sx={{
                     position: "sticky",
-                    top: { xs: 56, md: 64 },
+                    top: 0,
                     zIndex: 10,
                     mb: 2,
                     display: "flex",
@@ -608,9 +631,6 @@ export default function Show({
                             label="Job URL"
                             title="Open Job URL in new tab"
                             onClick={() => {
-                                if (!jobUrl) {
-                                    return;
-                                }
                                 window.open(
                                     jobUrl,
                                     "_blank",
@@ -622,7 +642,9 @@ export default function Show({
                 </Box>
             </Box>
 
-            {(finalizeError !== null || finalizeCoverLetterError !== null) && (
+            {(finalizeError !== null ||
+                finalizeCoverLetterError !== null ||
+                statusError !== null) && (
                 <Box
                     sx={{
                         mb: 2,
@@ -639,572 +661,70 @@ export default function Show({
                             {finalizeCoverLetterError}
                         </Alert>
                     )}
+                    {statusError && (
+                        <Alert severity="error">{statusError}</Alert>
+                    )}
                 </Box>
             )}
 
-            {activeTab === 0 && (
-                <>
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gap: 2,
-                            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                            mb: 2,
-                        }}
-                    >
-                        <BuilderStatusCard
-                            label="Resume"
-                            isFinalized={!!targetedResume}
-                            color="success"
-                            canFinalize={canFinalizeResume || !!targetedResume}
-                            isFinalizing={isFinalizing}
-                            hasUpdate={hasNewerResume}
-                            finalizeTitle={
-                                hasNewerResume
-                                    ? "Update resume and regenerate documents"
-                                    : canFinalizeResume
-                                      ? "Save the tailored resume and generate documents"
-                                      : targetedResume
-                                        ? "Regenerate DOCX and PDF from saved content"
-                                        : "Finalize is available after the assistant returns a tailored resume block"
-                            }
-                            onFinalize={handleFinalizeResume}
-                            caption={
-                                targetedResume
-                                    ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
-                                    : undefined
-                            }
-                            extraActions={
-                                targetedResume ? (
-                                    <>
-                                        {targetedResume.docx_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
-                                                title="Download resume DOCX"
-                                                color="success"
-                                            >
-                                                <StickyNote2Icon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                        {targetedResume.pdf_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
-                                                title="Download resume PDF"
-                                                color="success"
-                                            >
-                                                <PictureAsPdfIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                    </>
-                                ) : undefined
-                            }
-                        />
-                        <BuilderStatusCard
-                            label="Cover Letter"
-                            isFinalized={!!coverLetter}
-                            color="secondary"
-                            canFinalize={canFinalizeCoverLetter}
-                            isFinalizing={isFinalizingCoverLetter}
-                            hasUpdate={!!coverLetter}
-                            finalizeTitle={
-                                !latestCoverLetterContent
-                                    ? "Finalize is available after the assistant returns a cover letter block"
-                                    : coverLetter
-                                      ? "Update the cover letter from the latest chat content"
-                                      : "Extract and save the cover letter from the conversation"
-                            }
-                            onFinalize={handleFinalizeCoverLetter}
-                            caption={
-                                coverLetter
-                                    ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
-                                      "Cover letter saved"
-                                    : undefined
-                            }
-                            extraActions={
-                                coverLetter ? (
-                                    <>
-                                        {coverLetter.docx_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
-                                                title="Download cover letter DOCX"
-                                                color="secondary"
-                                            >
-                                                <StickyNote2Icon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                        {coverLetter.pdf_path && (
-                                            <IconButton
-                                                size="small"
-                                                component="a"
-                                                href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
-                                                title="Download cover letter PDF"
-                                                color="secondary"
-                                            >
-                                                <PictureAsPdfIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
-                                        <IconButton
-                                            size="small"
-                                            component={InertiaLink}
-                                            href={`/admin/cover-letters/${coverLetter.id}`}
-                                            title="Edit cover letter"
-                                        >
-                                            <EditIcon fontSize="small" />
-                                        </IconButton>
-                                    </>
-                                ) : undefined
-                            }
-                        />
-                    </Box>
-                    <Card>
-                        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-                            <Box
-                                sx={{
-                                    height: "60vh",
-                                    overflowY: "auto",
-                                    p: 2,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                    code: { textWrapMode: "wrap" },
-                                }}
-                            >
-                                {messages.length === 0 && !isStreaming && (
-                                    <Typography
-                                        color="text.secondary"
-                                        align="center"
-                                        sx={{ py: 4 }}
-                                    >
-                                        {shouldAutoStart
-                                            ? "Starting analysis..."
-                                            : "Send a message to begin the conversation."}
-                                    </Typography>
-                                )}
-                                {messages.map((msg, idx) => (
-                                    <ChatMessageBubble
-                                        key={idx}
-                                        role={msg.role}
-                                        content={msg.content}
-                                        variant="chat"
-                                        sentAt={msg.created_at ?? null}
-                                        isAuthenticated={!!authUser}
-                                    />
-                                ))}
-                                {streamingToolPanels.map((panel, idx) => (
-                                    <ToolsPanel
-                                        key={idx}
-                                        pretext={panel.pretext}
-                                        tools={panel.tools}
-                                        isActive={false}
-                                    />
-                                ))}
-                                {isStreaming && !streamingContent && (
-                                    <ToolsPanel
-                                        pretext=""
-                                        tools={[]}
-                                        isActive
-                                    />
-                                )}
-                                {isStreaming && streamingContent && (
-                                    <ChatMessageBubble
-                                        role="assistant"
-                                        content={streamingContent}
-                                        variant="chat"
-                                        isStreaming
-                                        isAuthenticated={!!authUser}
-                                    />
-                                )}
-                                <div ref={messagesEndRef} />
-                            </Box>
-                            <Box
-                                sx={{
-                                    p: 2,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                    display: "flex",
-                                    gap: 1,
-                                }}
-                            >
-                                <TextField
-                                    fullWidth
-                                    size="small"
-                                    multiline
-                                    maxRows={4}
-                                    placeholder="Type a message... (Ctrl+Enter to send)"
-                                    value={userInput}
-                                    onChange={(e) => {
-                                        setUserInput(e.target.value);
-                                    }}
-                                    onKeyDown={handleKeyDown}
-                                    disabled={isStreaming}
-                                />
-                                <Button
-                                    variant="contained"
-                                    onClick={() => sendMessage()}
-                                    disabled={isStreaming || !userInput.trim()}
-                                    sx={{ alignSelf: "flex-end" }}
-                                >
-                                    Send
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </>
-            )}
+            <Box sx={{ display: activeTab === 0 ? undefined : "none" }}>
+                <BuilderChatPanel
+                    authUser={authUser}
+                    conversation={conversation}
+                    targetedResume={targetedResume}
+                    coverLetter={coverLetter}
+                    initialMessages={initialMessages as ChatMessage[]}
+                    shouldAutoStart={shouldAutoStart}
+                    canFinalizeResume={canFinalizeResume}
+                    isFinalizing={isFinalizing}
+                    hasNewerResume={hasNewerResume}
+                    onFinalizeResume={handleFinalizeResume}
+                    canFinalizeCoverLetter={canFinalizeCoverLetter}
+                    isFinalizingCoverLetter={isFinalizingCoverLetter}
+                    hasCoverLetterUpdate={!!coverLetter}
+                    onFinalizeCoverLetter={handleFinalizeCoverLetter}
+                    statusUrl={statusUrl}
+                    warmupUrl={warmupUrl}
+                    onMessagesChange={setLiveMessages}
+                />
+            </Box>
 
-            {activeTab === 1 && (
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            Conversation Details
-                        </Typography>
-                        <Box component="form" onSubmit={handleMetadataSave}>
-                            <TextField
-                                label="Title"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.title}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "title",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.title}
-                                helperText={metadataForm.errors.title}
-                                sx={{ mb: 2 }}
-                            />
-                            <Box sx={{ mb: 2 }}>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ display: "block" }}
-                                >
-                                    AI System
-                                </Typography>
-                                <Typography variant="body2">
-                                    {conversation.ai_system_name ?? "Unknown"}
-                                </Typography>
-                            </Box>
-                            <TextField
-                                label="Company Name"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.company_name}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "company_name",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.company_name}
-                                helperText={metadataForm.errors.company_name}
-                                sx={{ mb: 2 }}
-                            />
-                            <TextField
-                                label="Job Title"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.job_title}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "job_title",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.job_title}
-                                helperText={metadataForm.errors.job_title}
-                                sx={{ mb: 3 }}
-                            />
-                            {conversation.job_url && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                        sx={{ display: "block" }}
-                                    >
-                                        Parsed Job URL
-                                    </Typography>
-                                    <Link
-                                        href={conversation.job_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        underline="hover"
-                                        sx={{ wordBreak: "break-all" }}
-                                    >
-                                        {conversation.job_url}
-                                    </Link>
-                                </Box>
-                            )}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                }}
-                            >
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    disabled={metadataForm.processing}
-                                >
-                                    Save Details
-                                </Button>
-                            </Box>
-                        </Box>
-                        {targetedResume && (
-                            <Box
-                                sx={{
-                                    mt: 4,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Targeted Resume
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        gap: 2,
-                                        alignItems: "center",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <StatusChip
-                                        status={targetedResume.status}
-                                    />
-                                    <Typography variant="body2">
-                                        {targetedResume.company_name} —{" "}
-                                        {targetedResume.position}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        )}
-                        {targetedResume && (
-                            <Box
-                                sx={{
-                                    mt: 3,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Application Status History
-                                </Typography>
-                                {statusUpdates.length === 0 ? (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        No status updates yet.
-                                    </Typography>
-                                ) : (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        {statusUpdates.map((u, i) => (
-                                            <Box key={u.id}>
-                                                {i > 0 && (
-                                                    <Divider sx={{ mb: 1 }} />
-                                                )}
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        gap: 1,
-                                                        alignItems:
-                                                            "flex-start",
-                                                    }}
-                                                >
-                                                    <StatusChip
-                                                        status={u.status}
-                                                    />
-                                                    <Box>
-                                                        <Typography
-                                                            variant="caption"
-                                                            color="text.secondary"
-                                                        >
-                                                            {new Date(
-                                                                u.occurred_at,
-                                                            ).toLocaleDateString(
-                                                                undefined,
-                                                                {
-                                                                    year: "numeric",
-                                                                    month: "short",
-                                                                    day: "numeric",
-                                                                },
-                                                            )}
-                                                        </Typography>
-                                                        {u.notes && (
-                                                            <Typography
-                                                                variant="body2"
-                                                                sx={{
-                                                                    mt: 0.25,
-                                                                }}
-                                                            >
-                                                                {u.notes}
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
-                                {allowedNextStatuses.length > 0 && (
-                                    <Box
-                                        component="form"
-                                        onSubmit={(e) => {
-                                            void handleAddStatusUpdate(e);
-                                        }}
-                                        sx={{ mt: 2 }}
-                                    >
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{ display: "block", mb: 1 }}
-                                        >
-                                            Log Status Update
-                                        </Typography>
-                                        <FormControl
-                                            size="small"
-                                            fullWidth
-                                            sx={{ mb: 1 }}
-                                        >
-                                            <InputLabel id="next-status-label">
-                                                Status
-                                            </InputLabel>
-                                            <Select
-                                                labelId="next-status-label"
-                                                label="Status"
-                                                value={selectedNextStatus}
-                                                onChange={(e) => {
-                                                    setSelectedNextStatus(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                            >
-                                                {allowedNextStatuses.map(
-                                                    (s) => (
-                                                        <MenuItem
-                                                            key={s}
-                                                            value={s}
-                                                        >
-                                                            {s
-                                                                .charAt(0)
-                                                                .toUpperCase() +
-                                                                s.slice(1)}
-                                                        </MenuItem>
-                                                    ),
-                                                )}
-                                            </Select>
-                                        </FormControl>
-                                        <TextField
-                                            label={
-                                                selectedNextStatus ===
-                                                "interviewing"
-                                                    ? "Scheduled date"
-                                                    : "Date (optional)"
-                                            }
-                                            type="date"
-                                            size="small"
-                                            fullWidth
-                                            value={statusOccurredAt}
-                                            onChange={(e) => {
-                                                setStatusOccurredAt(
-                                                    e.target.value,
-                                                );
-                                            }}
-                                            slotProps={{
-                                                inputLabel: { shrink: true },
-                                            }}
-                                            sx={{ mb: 1 }}
-                                        />
-                                        <TextField
-                                            label="Notes (optional)"
-                                            size="small"
-                                            fullWidth
-                                            multiline
-                                            rows={2}
-                                            value={statusNotes}
-                                            onChange={(e) => {
-                                                setStatusNotes(e.target.value);
-                                            }}
-                                            sx={{ mb: 1 }}
-                                        />
-                                        {statusError && (
-                                            <Alert
-                                                severity="error"
-                                                sx={{ mb: 1 }}
-                                            >
-                                                {statusError}
-                                            </Alert>
-                                        )}
-                                        <Button
-                                            type="submit"
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={<UpdateIcon />}
-                                            disabled={
-                                                !selectedNextStatus ||
-                                                isSubmittingStatus
-                                            }
-                                        >
-                                            Log Status
-                                        </Button>
-                                    </Box>
-                                )}
-                            </Box>
-                        )}
-                        <Box
-                            sx={{
-                                mt: 3,
-                                pt: 3,
-                                borderTop: 1,
-                                borderColor: "divider",
-                            }}
-                        >
-                            <Typography variant="subtitle2" gutterBottom>
-                                Chat Usage
-                            </Typography>
-                            <UsageChip usage={conversation.usage} />
-                        </Box>
-                        {coverLetter && (
-                            <Box
-                                sx={{
-                                    mt: 3,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Cover Letter
-                                </Typography>
-                                <Button
-                                    component={InertiaLink}
-                                    href={`/admin/cover-letters/${coverLetter.id}`}
-                                    size="small"
-                                    variant="outlined"
-                                >
-                                    View Cover Letter
-                                </Button>
-                            </Box>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
+            <Box sx={{ display: activeTab === 1 ? undefined : "none" }}>
+                <BuilderMetadataForm
+                    conversation={conversation}
+                    metadataForm={metadataForm}
+                    onMetadataSave={handleMetadataSave}
+                    targetedResume={targetedResume}
+                    statusUpdates={statusUpdates}
+                    allowedNextStatuses={allowedNextStatuses}
+                    selectedNextStatus={selectedNextStatus}
+                    statusOccurredAt={statusOccurredAt}
+                    statusNotes={statusNotes}
+                    isSubmittingStatus={isSubmittingStatus}
+                    showStatusUpdateForm={showStatusUpdateForm}
+                    editingStatusId={editingStatusId}
+                    editingStatusOccurredAt={editingStatusOccurredAt}
+                    editingStatusNotes={editingStatusNotes}
+                    isSavingStatusEdit={isSavingStatusEdit}
+                    isDeletingStatusId={isDeletingStatusId}
+                    coverLetter={coverLetter}
+                    onShowStatusUpdateFormChange={setShowStatusUpdateForm}
+                    onSelectedNextStatusChange={setSelectedNextStatus}
+                    onStatusOccurredAtChange={setStatusOccurredAt}
+                    onStatusNotesChange={setStatusNotes}
+                    onAddStatusUpdate={() => {
+                        void handleAddStatusUpdate();
+                    }}
+                    onStartEditingStatus={startEditingStatus}
+                    onCancelEditingStatus={cancelEditingStatus}
+                    onEditingStatusOccurredAtChange={setEditingStatusOccurredAt}
+                    onEditingStatusNotesChange={setEditingStatusNotes}
+                    onSaveStatusEdit={(statusUpdateId) => {
+                        void handleSaveStatusEdit(statusUpdateId);
+                    }}
+                    onDeleteStatusUpdate={handleDeleteStatusUpdate}
+                />
+            </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

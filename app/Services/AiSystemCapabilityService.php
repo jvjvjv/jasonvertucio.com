@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\AiProvider;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 class AiSystemCapabilityService
 {

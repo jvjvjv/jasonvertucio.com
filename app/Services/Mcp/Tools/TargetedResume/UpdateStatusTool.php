@@ -2,10 +2,10 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use App\Contracts\Mcp\AiToolHandlerContract;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
-use App\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Models\TargetedResumeStatusUpdate;
 
 class UpdateStatusTool implements AiToolHandlerContract
@@ -72,7 +72,9 @@ class UpdateStatusTool implements AiToolHandlerContract
         }
 
         $occurredAt = isset($input['occurred_at']) && $input['occurred_at'] !== ''
-            ? now()->parse($input['occurred_at'])
+            ? $input['occurred_at']
+            ? stripos($input['occurred_at'], ' ') || stripos($input['occurred_at'], 'T')
+            : now()->parse($input['occurred_at'] . ' 12:00:00')
             : now();
 
         TargetedResumeStatusUpdate::create([

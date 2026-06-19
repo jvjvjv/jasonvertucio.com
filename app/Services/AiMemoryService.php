@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Enums\AiConversationStatus;
-use App\Models\AiConversation;
-use App\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

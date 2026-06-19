@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Enums\AiProvider;
-use App\Models\AiSystem;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiSystemCapabilityPersistenceTest extends TestCase
@@ -16,7 +16,7 @@ class AiSystemCapabilityPersistenceTest extends TestCase
 
     private function authenticatedUser(): User
     {
-        Permission::findOrCreate('manage-ai-tools', 'web');
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
         $user = User::factory()->create();
         $user->givePermissionTo('manage-ai-tools');
 

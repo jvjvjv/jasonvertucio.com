@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\BackfillConversationUsageJob;
-use App\Models\AiChatBot;
-use App\Models\AiConversation;
-use App\Models\AiConversationMessage;
-use App\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
-use Spatie\Permission\Models\Permission;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiConversationControllerTest extends TestCase
@@ -20,7 +20,7 @@ class AiConversationControllerTest extends TestCase
 
     private function authenticatedUser(): User
     {
-        Permission::findOrCreate('manage-ai-tools', 'web');
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
         $user = User::factory()->create();
         $user->givePermissionTo('manage-ai-tools');
 

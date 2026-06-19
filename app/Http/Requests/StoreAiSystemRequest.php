@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -43,7 +43,8 @@ class StoreAiSystemRequest extends FormRequest
             'context_length' => ['nullable', 'integer', 'min:1', 'max:200000'],
             'temperature' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'is_active'   => ['boolean'],
-            'system_prompt' => ['nullable', 'string'],
+            'system_prompt_id' => ['nullable', 'integer', 'exists:ai_system_prompts,id'],
+            'custom_system_prompt' => ['nullable', 'string'],
             'config'      => ['nullable', 'json'],
             'credentials' => ['nullable', 'json'],
             'auth_type' => ['nullable', 'string', 'max:50'],
@@ -54,6 +55,7 @@ class StoreAiSystemRequest extends FormRequest
             'allowed_tools' => ['nullable', 'array'],
             'allowed_tools.*' => ['string', 'max:255'],
             'supports_json_mode' => ['boolean'],
+            'enable_thinking' => ['nullable', 'boolean'],
             'is_local_endpoint' => ['boolean'],
             'pricing_profile' => ['nullable', 'json'],
             'feature_defaults'   => ['nullable', 'array'],

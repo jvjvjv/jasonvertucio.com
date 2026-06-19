@@ -5,13 +5,16 @@ namespace Tests\Feature;
 use App\Mail\ResumeShareCodeCreated;
 use App\Models\ResumeShareCode;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Tests\TestCase;
 
 class ResumeShareCodeEmailTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected User $admin;
 
     protected function setUp(): void
@@ -25,8 +28,8 @@ class ResumeShareCodeEmailTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        Role::findOrCreate('admin', 'web');
-        Permission::findOrCreate('manage-unauthenticated-viewers', 'web');
+        Role::firstOrCreate(['name' => 'admin']);
+        Permission::firstOrCreate(['name' => 'manage-unauthenticated-viewers']);
         $this->admin->assignRole('admin');
         $this->admin->givePermissionTo('manage-unauthenticated-viewers');
     }

@@ -1,17 +1,12 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
 import Link from "@mui/material/Link";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
+
+import type { ColumnDef } from "@/admin/components/DataTable";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import DataTable from "@/admin/components/DataTable";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
@@ -27,6 +22,40 @@ interface CoverLetter {
 interface IndexProps {
     coverLetters: CoverLetter[];
 }
+
+const columns: ColumnDef<CoverLetter>[] = [
+    {
+        key: "company_name",
+        label: "Company",
+        render: (row) => (
+            <Link
+                component={InertiaLink}
+                href={`/admin/cover-letters/${row.id}/preview`}
+                underline="hover"
+                color="primary"
+                sx={{ fontWeight: 600 }}
+            >
+                {row.company_name}
+            </Link>
+        ),
+    },
+    {
+        key: "position",
+        label: "Position",
+        render: (row) => (
+            <Link
+                component={InertiaLink}
+                href={`/admin/cover-letters/${row.id}/preview`}
+                underline="hover"
+                color="inherit"
+            >
+                {row.position}
+            </Link>
+        ),
+    },
+    { key: "resume_version_label", label: "Resume Version" },
+    { key: "date_formatted", label: "Date" },
+];
 
 export default function Index({ coverLetters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
@@ -56,89 +85,48 @@ export default function Index({ coverLetters }: IndexProps) {
                 </Button>
             </Box>
 
-            <Card>
-                <TableContainer>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Company</TableCell>
-                                <TableCell>Position</TableCell>
-                                <TableCell>Resume Version</TableCell>
-                                <TableCell>Date</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {coverLetters.length === 0 ? (
-                                <EmptyTableRow
-                                    colSpan={5}
-                                    message="No cover letters yet."
-                                    actionLabel="Add your first one"
-                                    actionHref="/admin/cover-letters/new"
-                                />
-                            ) : (
-                                coverLetters.map((cl) => (
-                                    <TableRow key={cl.id} hover>
-                                        <TableCell>
-                                            <Link
-                                                component={InertiaLink}
-                                                href={`/admin/cover-letters/${cl.id}/preview`}
-                                                underline="hover"
-                                                color="primary"
-                                                sx={{ fontWeight: 600 }}
-                                            >
-                                                {cl.company_name}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Link
-                                                component={InertiaLink}
-                                                href={`/admin/cover-letters/${cl.id}/preview`}
-                                                underline="hover"
-                                                color="inherit"
-                                            >
-                                                {cl.position}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            {cl.resume_version_label}
-                                        </TableCell>
-                                        <TableCell>
-                                            {cl.date_formatted}
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    justifyContent: "flex-end",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <Button
-                                                    component={InertiaLink}
-                                                    href={`/admin/cover-letters/${cl.id}`}
-                                                    size="small"
-                                                >
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => {
-                                                        handleDelete(cl.id);
-                                                    }}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Card>
+            <DataTable
+                columns={columns}
+                data={coverLetters}
+                emptyState={
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                        <Link
+                            component={InertiaLink}
+                            href="/admin/cover-letters/new"
+                            underline="hover"
+                        >
+                            Add your first one
+                        </Link>
+                    </Box>
+                }
+                rowActions={(cl) => (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                        }}
+                    >
+                        <Button
+                            component={InertiaLink}
+                            href={`/admin/cover-letters/${cl.id}`}
+                            size="small"
+                        >
+                            Edit
+                        </Button>
+                        <Button
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                                handleDelete(cl.id);
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </Box>
+                )}
+            />
+
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

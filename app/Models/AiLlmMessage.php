@@ -19,6 +19,7 @@ class AiLlmMessage extends Model
         'turn_number',
         'request_data',
         'response_data',
+        'raw_response',
         'duration_ms',
         'created_at',
     ];
@@ -31,6 +32,7 @@ class AiLlmMessage extends Model
         return [
             'request_data' => 'array',
             'response_data' => 'array',
+            'raw_response' => 'array',
             'duration_ms' => 'integer',
             'created_at' => 'datetime',
         ];

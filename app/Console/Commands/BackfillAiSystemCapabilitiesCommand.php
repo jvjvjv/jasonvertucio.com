@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AiSystem;
-use App\Services\AiSystemCapabilityService;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiSystemCapabilityService;
 use Illuminate\Console\Command;
 
 class BackfillAiSystemCapabilitiesCommand extends Command

@@ -242,7 +242,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 minHeight: "100vh",
             }}
         >
-            <AppBar position="sticky" sx={{ boxShadow: "none" }}>
+            <AppBar position="static" sx={{ boxShadow: "none" }}>
                 <Toolbar
                     sx={{
                         maxWidth: "1280px",
@@ -319,8 +319,8 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 </Toolbar>
             </AppBar>
 
-            <Box component="main" sx={{ flexGrow: 1, py: 4 }}>
-                <Container maxWidth="lg">
+            <Box component="main" sx={{ flexGrow: 1, py: { xs: 2, md: 4 } }}>
+                <Container maxWidth={false}>
                     {title && (
                         <Typography
                             variant="h4"
