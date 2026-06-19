@@ -34,7 +34,10 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
+        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
+
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
 
         $conversation = $service->startConversation($bot);
 
@@ -72,7 +75,10 @@ class AiChatBotConversationServiceTest extends TestCase
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService());
+        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
+        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
+
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
 
         $conversation = $service->startConversation($bot->fresh());
 
