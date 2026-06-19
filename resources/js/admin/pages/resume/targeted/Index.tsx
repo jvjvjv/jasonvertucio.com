@@ -31,6 +31,7 @@ import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
+import { formatCalendarDate } from "@/utils/date";
 
 interface StatusOption {
     value: string;
@@ -243,17 +244,10 @@ export default function Index({
                                                         resume
                                                             ?.latest_status_update
                                                             ?.occurred_at &&
-                                                        new Date(
+                                                        formatCalendarDate(
                                                             resume
                                                                 .latest_status_update
                                                                 .occurred_at,
-                                                        ).toLocaleDateString(
-                                                            undefined,
-                                                            {
-                                                                year: "numeric",
-                                                                month: "short",
-                                                                day: "numeric",
-                                                            },
                                                         )
                                                     }
                                                 />

@@ -5,6 +5,7 @@ import type { Conversation, StatusUpdate, TargetedResume } from "@/types";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
+import { formatCalendarDate } from "@/utils/date";
 
 interface TargetedBuilderStatusBarProps {
     conversation: Conversation;
@@ -50,11 +51,7 @@ export default function TargetedBuilderStatusBar({
                 <Typography variant="caption" color="text.secondary">
                     {latestUpdate.status.charAt(0).toUpperCase() +
                         latestUpdate.status.slice(1)}
-                    :{" "}
-                    {new Date(latestUpdate.occurred_at).toLocaleDateString(
-                        undefined,
-                        { year: "numeric", month: "short", day: "numeric" },
-                    )}
+                    : {formatCalendarDate(latestUpdate.occurred_at)}
                 </Typography>
             )}
         </Box>
