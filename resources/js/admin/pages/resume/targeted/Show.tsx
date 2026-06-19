@@ -8,41 +8,21 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DoneIcon from "@mui/icons-material/Done";
-import EditIcon from "@mui/icons-material/Edit";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import SaveIcon from "@mui/icons-material/Save";
-import StickyNote2Icon from "@mui/icons-material/StickyNote2";
-import UpdateIcon from "@mui/icons-material/Update";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
-import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
-import InputLabel from "@mui/material/InputLabel";
-import Link from "@mui/material/Link";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
-import BuilderStatusCard from "./BuilderStatusCard";
+import BuilderChatPanel from "./BuilderChatPanel";
+import BuilderMetadataForm from "./BuilderMetadataForm";
 import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
 
+import type { MetadataFormData } from "./BuilderMetadataForm";
 import type { ChatMessage } from "@/components/ChatInterface";
 import type {
     Conversation,
@@ -52,15 +32,11 @@ import type {
     StatusUpdate,
     TargetedResume,
 } from "@/types";
-import type { SyntheticEvent } from "react";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
-import StatusChip from "@/admin/components/StatusChip";
-import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { api, ApiError } from "@/api";
-import ChatInterface from "@/components/ChatInterface";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
@@ -95,7 +71,7 @@ export default function Show({
         string | null
     >(null);
 
-    const metadataForm = useForm({
+    const metadataForm = useForm<MetadataFormData>({
         title: conversation.title ?? "",
         company_name:
             targetedResume?.company_name ??
@@ -332,8 +308,7 @@ export default function Show({
         );
     };
 
-    const handleAddStatusUpdate = async (e: SyntheticEvent) => {
-        e.preventDefault();
+    const handleAddStatusUpdate = async () => {
         if (!selectedNextStatus || !targetedResume) return;
         setIsSubmittingStatus(true);
         setStatusError(null);
@@ -520,8 +495,7 @@ export default function Show({
         );
     };
 
-    const handleMetadataSave = (e: SyntheticEvent) => {
-        e.preventDefault();
+    const handleMetadataSave = () => {
         metadataForm.put(
             `/admin/resume/targeted-builder/${conversation.id}/metadata`,
         );
@@ -682,658 +656,62 @@ export default function Show({
             )}
 
             <Box sx={{ display: activeTab === 0 ? undefined : "none" }}>
-                <Box
-                    sx={{
-                        display: "grid",
-                        gap: 2,
-                        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    }}
-                >
-                    <BuilderStatusCard
-                        label="Resume"
-                        isFinalized={!!targetedResume}
-                        color="success"
-                        canFinalize={canFinalizeResume || !!targetedResume}
-                        isFinalizing={isFinalizing}
-                        hasUpdate={hasNewerResume}
-                        finalizeTitle={
-                            hasNewerResume
-                                ? "Update resume and regenerate documents"
-                                : canFinalizeResume
-                                  ? "Save the tailored resume and generate documents"
-                                  : targetedResume
-                                    ? "Regenerate DOCX and PDF from saved content"
-                                    : "Finalize is available after the assistant returns a tailored resume block"
-                        }
-                        onFinalize={handleFinalizeResume}
-                        caption={
-                            targetedResume
-                                ? `${targetedResume.company_name} — ${targetedResume.position}${targetedResume.fit_score != null ? ` · Fit: ${targetedResume.fit_score}%` : ""}`
-                                : undefined
-                        }
-                        extraActions={
-                            targetedResume ? (
-                                <>
-                                    {targetedResume.docx_path && (
-                                        <IconButton
-                                            size="small"
-                                            component="a"
-                                            href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
-                                            title="Download resume DOCX"
-                                            color="success"
-                                        >
-                                            <StickyNote2Icon fontSize="small" />
-                                        </IconButton>
-                                    )}
-                                    {targetedResume.pdf_path && (
-                                        <IconButton
-                                            size="small"
-                                            component="a"
-                                            href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
-                                            title="Download resume PDF"
-                                            color="success"
-                                        >
-                                            <PictureAsPdfIcon fontSize="small" />
-                                        </IconButton>
-                                    )}
-                                </>
-                            ) : undefined
-                        }
-                    />
-                    <BuilderStatusCard
-                        label="Cover Letter"
-                        isFinalized={!!coverLetter}
-                        color="secondary"
-                        canFinalize={canFinalizeCoverLetter}
-                        isFinalizing={isFinalizingCoverLetter}
-                        hasUpdate={!!coverLetter}
-                        finalizeTitle={
-                            !latestCoverLetterContent
-                                ? "Finalize is available after the assistant returns a cover letter block"
-                                : coverLetter
-                                  ? "Update the cover letter from the latest chat content"
-                                  : "Extract and save the cover letter from the conversation"
-                        }
-                        onFinalize={handleFinalizeCoverLetter}
-                        caption={
-                            coverLetter
-                                ? `${coverLetter.company_name ?? ""} ${coverLetter.position ?? ""}`.trim() ||
-                                  "Cover letter saved"
-                                : undefined
-                        }
-                        extraActions={
-                            coverLetter ? (
-                                <>
-                                    {coverLetter.docx_path && (
-                                        <IconButton
-                                            size="small"
-                                            component="a"
-                                            href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
-                                            title="Download cover letter DOCX"
-                                            color="secondary"
-                                        >
-                                            <StickyNote2Icon fontSize="small" />
-                                        </IconButton>
-                                    )}
-                                    {coverLetter.pdf_path && (
-                                        <IconButton
-                                            size="small"
-                                            component="a"
-                                            href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
-                                            title="Download cover letter PDF"
-                                            color="secondary"
-                                        >
-                                            <PictureAsPdfIcon fontSize="small" />
-                                        </IconButton>
-                                    )}
-                                    <IconButton
-                                        size="small"
-                                        component={InertiaLink}
-                                        href={`/admin/cover-letters/${coverLetter.id}`}
-                                        title="Edit cover letter"
-                                    >
-                                        <EditIcon fontSize="small" />
-                                    </IconButton>
-                                </>
-                            ) : undefined
-                        }
-                    />
-                </Box>
-
-                <ChatInterface
-                    chatEndpoint={`/api/admin/resume/targeted-builder/${conversation.id}/chat`}
+                <BuilderChatPanel
+                    authUser={authUser}
+                    conversation={conversation}
+                    targetedResume={targetedResume}
+                    coverLetter={coverLetter}
+                    initialMessages={initialMessages as ChatMessage[]}
+                    shouldAutoStart={shouldAutoStart}
+                    canFinalizeResume={canFinalizeResume}
+                    isFinalizing={isFinalizing}
+                    hasNewerResume={hasNewerResume}
+                    onFinalizeResume={handleFinalizeResume}
+                    canFinalizeCoverLetter={canFinalizeCoverLetter}
+                    isFinalizingCoverLetter={isFinalizingCoverLetter}
+                    hasCoverLetterUpdate={!!coverLetter}
+                    onFinalizeCoverLetter={handleFinalizeCoverLetter}
                     statusUrl={statusUrl}
                     warmupUrl={warmupUrl}
-                    initialMessages={initialMessages as ChatMessage[]}
-                    isAuthenticated={!!authUser}
-                    shouldAutoStart={shouldAutoStart}
-                    onEvent={(event) => {
-                        if (event.type === "page_reload") {
-                            router.reload({
-                                only: [
-                                    "targetedResume",
-                                    "coverLetter",
-                                    "conversation",
-                                ],
-                            });
-                        }
-                    }}
                     onMessagesChange={setLiveMessages}
                 />
             </Box>
 
             <Box sx={{ display: activeTab === 1 ? undefined : "none" }}>
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            Conversation Details
-                        </Typography>
-                        <Box component="form" onSubmit={handleMetadataSave}>
-                            <TextField
-                                label="Title"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.title}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "title",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.title}
-                                helperText={metadataForm.errors.title}
-                                sx={{ mb: 2 }}
-                            />
-                            <Box sx={{ mb: 2 }}>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{ display: "block" }}
-                                >
-                                    AI System
-                                </Typography>
-                                <Typography variant="body2">
-                                    {conversation.ai_system_name ?? "Unknown"}
-                                </Typography>
-                            </Box>
-                            <TextField
-                                label="Company Name"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.company_name}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "company_name",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.company_name}
-                                helperText={metadataForm.errors.company_name}
-                                sx={{ mb: 2 }}
-                            />
-                            <TextField
-                                label="Job Title"
-                                size="small"
-                                fullWidth
-                                value={metadataForm.data.job_title}
-                                onChange={(e) => {
-                                    metadataForm.setData(
-                                        "job_title",
-                                        e.target.value,
-                                    );
-                                }}
-                                error={!!metadataForm.errors.job_title}
-                                helperText={metadataForm.errors.job_title}
-                                sx={{ mb: 3 }}
-                            />
-                            {conversation.job_url && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                        sx={{ display: "block" }}
-                                    >
-                                        Parsed Job URL
-                                    </Typography>
-                                    <Link
-                                        href={conversation.job_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        underline="hover"
-                                        sx={{ wordBreak: "break-all" }}
-                                    >
-                                        {conversation.job_url}
-                                    </Link>
-                                </Box>
-                            )}
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                }}
-                            >
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    disabled={metadataForm.processing}
-                                >
-                                    Save Details
-                                </Button>
-                            </Box>
-                        </Box>
-                        {targetedResume && (
-                            <Box
-                                sx={{
-                                    mt: 4,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Targeted Resume
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        gap: 2,
-                                        alignItems: "center",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <StatusChip
-                                        status={targetedResume.status}
-                                    />
-                                    <Typography variant="body2">
-                                        {targetedResume.company_name} —{" "}
-                                        {targetedResume.position}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        )}
-                        {targetedResume && (
-                            <Box
-                                sx={{
-                                    mt: 3,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Application Status History
-                                </Typography>
-                                {statusUpdates.length === 0 ? (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        No status updates yet.
-                                    </Typography>
-                                ) : (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        {statusUpdates.map((u, i) => (
-                                            <Box key={u.id}>
-                                                {i > 0 && (
-                                                    <Divider sx={{ mb: 1 }} />
-                                                )}
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        alignItems:
-                                                            "flex-start",
-                                                        justifyContent:
-                                                            "space-between",
-                                                        gap: 1,
-                                                    }}
-                                                >
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            gap: 1,
-                                                            alignItems:
-                                                                "flex-start",
-                                                        }}
-                                                    >
-                                                        <StatusChip
-                                                            status={u.status}
-                                                        />
-                                                        <Box>
-                                                            {editingStatusId ===
-                                                            u.id ? (
-                                                                <TextField
-                                                                    label="Date"
-                                                                    type="date"
-                                                                    size="small"
-                                                                    value={
-                                                                        editingStatusOccurredAt
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) => {
-                                                                        setEditingStatusOccurredAt(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        );
-                                                                    }}
-                                                                    slotProps={{
-                                                                        inputLabel:
-                                                                            {
-                                                                                shrink: true,
-                                                                            },
-                                                                    }}
-                                                                    sx={{
-                                                                        mb: 1,
-                                                                        minWidth: 180,
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <Typography
-                                                                    variant="caption"
-                                                                    color="text.secondary"
-                                                                >
-                                                                    {new Date(
-                                                                        u.occurred_at,
-                                                                    ).toLocaleDateString(
-                                                                        undefined,
-                                                                        {
-                                                                            year: "numeric",
-                                                                            month: "short",
-                                                                            day: "numeric",
-                                                                        },
-                                                                    )}
-                                                                </Typography>
-                                                            )}
-                                                            {editingStatusId ===
-                                                            u.id ? (
-                                                                <TextField
-                                                                    label="Notes (optional)"
-                                                                    size="small"
-                                                                    fullWidth
-                                                                    multiline
-                                                                    rows={2}
-                                                                    value={
-                                                                        editingStatusNotes
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) => {
-                                                                        setEditingStatusNotes(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        );
-                                                                    }}
-                                                                    sx={{
-                                                                        mt: 0.25,
-                                                                        minWidth:
-                                                                            {
-                                                                                xs: 200,
-                                                                                sm: 320,
-                                                                            },
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                u.notes && (
-                                                                    <Typography
-                                                                        variant="body2"
-                                                                        sx={{
-                                                                            mt: 0.25,
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            u.notes
-                                                                        }
-                                                                    </Typography>
-                                                                )
-                                                            )}
-                                                        </Box>
-                                                    </Box>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            alignItems:
-                                                                "center",
-                                                            gap: 0.5,
-                                                            ml: 1,
-                                                        }}
-                                                    >
-                                                        {editingStatusId ===
-                                                        u.id ? (
-                                                            <>
-                                                                <IconButton
-                                                                    size="small"
-                                                                    title="Save status update"
-                                                                    color="primary"
-                                                                    onClick={() => {
-                                                                        void handleSaveStatusEdit(
-                                                                            u.id,
-                                                                        );
-                                                                    }}
-                                                                    disabled={
-                                                                        isSavingStatusEdit ||
-                                                                        isDeletingStatusId ===
-                                                                            u.id
-                                                                    }
-                                                                >
-                                                                    <SaveIcon fontSize="small" />
-                                                                </IconButton>
-                                                                <IconButton
-                                                                    size="small"
-                                                                    title="Cancel editing"
-                                                                    onClick={
-                                                                        cancelEditingStatus
-                                                                    }
-                                                                    disabled={
-                                                                        isSavingStatusEdit ||
-                                                                        isDeletingStatusId ===
-                                                                            u.id
-                                                                    }
-                                                                >
-                                                                    <CloseIcon fontSize="small" />
-                                                                </IconButton>
-                                                            </>
-                                                        ) : (
-                                                            <IconButton
-                                                                size="small"
-                                                                title="Edit date and notes"
-                                                                onClick={() => {
-                                                                    startEditingStatus(
-                                                                        u,
-                                                                    );
-                                                                }}
-                                                                disabled={
-                                                                    isDeletingStatusId ===
-                                                                    u.id
-                                                                }
-                                                            >
-                                                                <EditIcon fontSize="small" />
-                                                            </IconButton>
-                                                        )}
-                                                        <IconButton
-                                                            size="small"
-                                                            title="Delete status update"
-                                                            color="error"
-                                                            onClick={() => {
-                                                                handleDeleteStatusUpdate(
-                                                                    u.id,
-                                                                );
-                                                            }}
-                                                            disabled={
-                                                                isDeletingStatusId ===
-                                                                    u.id ||
-                                                                isSavingStatusEdit
-                                                            }
-                                                        >
-                                                            <DeleteOutlineIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
-                                {allowedNextStatuses.length > 0 && (
-                                    <Accordion
-                                        expanded={showStatusUpdateForm}
-                                        onChange={(_, expanded) => {
-                                            setShowStatusUpdateForm(expanded);
-                                        }}
-                                    >
-                                        <AccordionSummary
-                                            expandIcon={<ExpandMoreIcon />}
-                                        >
-                                            <Typography variant="caption">
-                                                Log Status Update
-                                            </Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails>
-                                            <Box
-                                                component="form"
-                                                onSubmit={(e) => {
-                                                    void handleAddStatusUpdate(
-                                                        e,
-                                                    );
-                                                }}
-                                            >
-                                                <FormControl
-                                                    size="small"
-                                                    fullWidth
-                                                    sx={{ mb: 1 }}
-                                                >
-                                                    <InputLabel id="next-status-label">
-                                                        Status
-                                                    </InputLabel>
-                                                    <Select
-                                                        labelId="next-status-label"
-                                                        label="Status"
-                                                        value={
-                                                            selectedNextStatus
-                                                        }
-                                                        onChange={(e) => {
-                                                            setSelectedNextStatus(
-                                                                e.target.value,
-                                                            );
-                                                        }}
-                                                    >
-                                                        {allowedNextStatuses.map(
-                                                            (s) => (
-                                                                <MenuItem
-                                                                    key={s}
-                                                                    value={s}
-                                                                >
-                                                                    {s
-                                                                        .charAt(
-                                                                            0,
-                                                                        )
-                                                                        .toUpperCase() +
-                                                                        s.slice(
-                                                                            1,
-                                                                        )}
-                                                                </MenuItem>
-                                                            ),
-                                                        )}
-                                                    </Select>
-                                                </FormControl>
-                                                <TextField
-                                                    label={
-                                                        selectedNextStatus ===
-                                                        "interviewing"
-                                                            ? "Scheduled date"
-                                                            : "Date (optional)"
-                                                    }
-                                                    type="date"
-                                                    size="small"
-                                                    fullWidth
-                                                    value={statusOccurredAt}
-                                                    onChange={(e) => {
-                                                        setStatusOccurredAt(
-                                                            e.target.value,
-                                                        );
-                                                    }}
-                                                    slotProps={{
-                                                        inputLabel: {
-                                                            shrink: true,
-                                                        },
-                                                    }}
-                                                    sx={{ mb: 1 }}
-                                                />
-                                                <TextField
-                                                    label="Notes (optional)"
-                                                    size="small"
-                                                    fullWidth
-                                                    multiline
-                                                    rows={2}
-                                                    value={statusNotes}
-                                                    onChange={(e) => {
-                                                        setStatusNotes(
-                                                            e.target.value,
-                                                        );
-                                                    }}
-                                                    sx={{ mb: 1 }}
-                                                />
-                                                <Button
-                                                    type="submit"
-                                                    variant="outlined"
-                                                    size="small"
-                                                    startIcon={<UpdateIcon />}
-                                                    disabled={
-                                                        !selectedNextStatus ||
-                                                        isSubmittingStatus
-                                                    }
-                                                >
-                                                    Log Status
-                                                </Button>
-                                            </Box>
-                                        </AccordionDetails>
-                                    </Accordion>
-                                )}
-                            </Box>
-                        )}
-                        <Box
-                            sx={{
-                                mt: 3,
-                                pt: 3,
-                                borderTop: 1,
-                                borderColor: "divider",
-                            }}
-                        >
-                            <Typography variant="subtitle2" gutterBottom>
-                                Chat Usage
-                            </Typography>
-                            <UsageChip usage={conversation.usage} />
-                        </Box>
-                        {coverLetter && (
-                            <Box
-                                sx={{
-                                    mt: 3,
-                                    pt: 3,
-                                    borderTop: 1,
-                                    borderColor: "divider",
-                                }}
-                            >
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Cover Letter
-                                </Typography>
-                                <Button
-                                    component={InertiaLink}
-                                    href={`/admin/cover-letters/${coverLetter.id}`}
-                                    size="small"
-                                    variant="outlined"
-                                >
-                                    View Cover Letter
-                                </Button>
-                            </Box>
-                        )}
-                    </CardContent>
-                </Card>
+                <BuilderMetadataForm
+                    conversation={conversation}
+                    metadataForm={metadataForm}
+                    onMetadataSave={handleMetadataSave}
+                    targetedResume={targetedResume}
+                    statusUpdates={statusUpdates}
+                    allowedNextStatuses={allowedNextStatuses}
+                    selectedNextStatus={selectedNextStatus}
+                    statusOccurredAt={statusOccurredAt}
+                    statusNotes={statusNotes}
+                    isSubmittingStatus={isSubmittingStatus}
+                    showStatusUpdateForm={showStatusUpdateForm}
+                    editingStatusId={editingStatusId}
+                    editingStatusOccurredAt={editingStatusOccurredAt}
+                    editingStatusNotes={editingStatusNotes}
+                    isSavingStatusEdit={isSavingStatusEdit}
+                    isDeletingStatusId={isDeletingStatusId}
+                    coverLetter={coverLetter}
+                    onShowStatusUpdateFormChange={setShowStatusUpdateForm}
+                    onSelectedNextStatusChange={setSelectedNextStatus}
+                    onStatusOccurredAtChange={setStatusOccurredAt}
+                    onStatusNotesChange={setStatusNotes}
+                    onAddStatusUpdate={() => {
+                        void handleAddStatusUpdate();
+                    }}
+                    onStartEditingStatus={startEditingStatus}
+                    onCancelEditingStatus={cancelEditingStatus}
+                    onEditingStatusOccurredAtChange={setEditingStatusOccurredAt}
+                    onEditingStatusNotesChange={setEditingStatusNotes}
+                    onSaveStatusEdit={(statusUpdateId) => {
+                        void handleSaveStatusEdit(statusUpdateId);
+                    }}
+                    onDeleteStatusUpdate={handleDeleteStatusUpdate}
+                />
             </Box>
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
