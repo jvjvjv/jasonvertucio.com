@@ -343,7 +343,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     color: "white",
                 }}
             >
-                <Container maxWidth="lg">
+                <Container>
                     <Typography variant="body2" align="right">
                         Copyright &copy; {new Date().getFullYear()}, Jason
                         Vertucio.

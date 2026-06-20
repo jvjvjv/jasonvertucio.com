@@ -26,6 +26,8 @@ export function statusColor(status: string): ChipColor {
             return "secondary";
         case "rejected":
             return "error";
+        case "ghosted":
+            return "default";
         default:
             return "default";
     }

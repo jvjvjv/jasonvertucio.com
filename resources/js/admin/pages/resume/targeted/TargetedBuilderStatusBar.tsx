@@ -5,6 +5,7 @@ import type { Conversation, StatusUpdate, TargetedResume } from "@/types";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
 import { formatCalendarDate } from "@/utils/date";
 
 interface TargetedBuilderStatusBarProps {
@@ -25,10 +26,11 @@ export default function TargetedBuilderStatusBar({
     const latestUpdate =
         updates.length > 0 ? updates[updates.length - 1] : null;
 
-    const displayStatus =
-        targetedResume?.status && !["draft"].includes(targetedResume.status)
-            ? targetedResume.status
-            : conversation.status;
+    const displayStatus = resolveTargetedResumeDisplayStatus({
+        conversationStatus: conversation.status,
+        resumeStatus: targetedResume?.status,
+        latestStatusOccurredAt: latestUpdate?.occurred_at,
+    });
 
     return (
         <Box

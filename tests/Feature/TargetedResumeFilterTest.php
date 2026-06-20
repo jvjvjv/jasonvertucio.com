@@ -259,6 +259,27 @@ class TargetedResumeFilterTest extends TestCase
         );
     }
 
+    public function test_filter_by_active_excludes_interviewing_targeted_resume(): void
+    {
+        $activeWithoutResume = AiConversation::factory()->active()->create();
+
+        $activeWithInterviewingResume = AiConversation::factory()->active()->create();
+        TargetedResume::factory()->create([
+            'ai_conversation_id' => $activeWithInterviewingResume->id,
+            'status' => TargetedResumeStatus::Interviewing,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.resume.targeted.index', ['status' => ['active']]));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('resume/targeted/Index', false)
+            ->where('conversations', fn ($conversations) => collect($conversations)->count() === 1
+                && collect($conversations)->first()['id'] === $activeWithoutResume->id)
+        );
+    }
+
     public function test_filter_by_multiple_statuses(): void
     {
         $active = AiConversation::factory()->active()->create();

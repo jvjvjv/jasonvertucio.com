@@ -20,6 +20,7 @@ import type { InertiaFormProps } from "@inertiajs/react";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
 
 export interface MetadataFormData {
     title: string;
@@ -88,6 +89,20 @@ export default function BuilderMetadataForm({
     onSaveStatusEdit,
     onDeleteStatusUpdate,
 }: BuilderMetadataFormProps) {
+    const latestStatusUpdate =
+        statusUpdates.length > 0
+            ? statusUpdates[statusUpdates.length - 1]
+            : null;
+
+    const displayStatus =
+        targetedResume != null
+            ? resolveTargetedResumeDisplayStatus({
+                  conversationStatus: targetedResume.status,
+                  resumeStatus: targetedResume.status,
+                  latestStatusOccurredAt: latestStatusUpdate?.occurred_at,
+              })
+            : "draft";
+
     return (
         <Card>
             <CardContent>
@@ -208,7 +223,7 @@ export default function BuilderMetadataForm({
                                 mb: 1,
                             }}
                         >
-                            <StatusChip status={targetedResume.status} />
+                            <StatusChip status={displayStatus} />
                             <Typography variant="body2">
                                 {targetedResume.company_name} —{" "}
                                 {targetedResume.position}

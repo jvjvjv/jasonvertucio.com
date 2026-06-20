@@ -52,7 +52,13 @@ class TargetedResumeController extends Controller
 
             $query->where(function ($q) use ($conversationStatuses, $resumeStatuses) {
                 if (! empty($conversationStatuses)) {
-                    $q->whereIn('status', $conversationStatuses);
+                    $q->where(function ($conversationQuery) use ($conversationStatuses) {
+                        $conversationQuery->whereIn('status', $conversationStatuses)
+                            ->where(function ($resumeScope) {
+                                $resumeScope->whereDoesntHave('targetedResume')
+                                    ->orWhereHas('targetedResume', fn ($resumeQuery) => $resumeQuery->where('status', TargetedResumeStatus::Draft->value));
+                            });
+                    });
                 }
                 if (! empty($resumeStatuses)) {
                     $q->orWhereHas('targetedResume', fn ($sub) => $sub->whereIn('status', $resumeStatuses));
