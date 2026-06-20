@@ -129,6 +129,6 @@ return new class extends Migration
     {
         // This migration is not easily reversible
         // You would need to convert UUIDs back to integers
-        throw new \Exception('This migration cannot be reversed. Restore from backup if needed.');
+        throw new Exception('This migration cannot be reversed. Restore from backup if needed.');
     }
 };

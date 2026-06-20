@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Collection;
 use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Illuminate\Support\Collection;
 
 class ConversationUsageService
 {
@@ -94,7 +94,7 @@ class ConversationUsageService
     }
 
     /**
-     * @param Collection<int, AiInteractionLog> $logs
+     * @param  Collection<int, AiInteractionLog>  $logs
      */
     private function estimateCostUsd(Collection $logs): ?float
     {
@@ -169,7 +169,7 @@ class ConversationUsageService
     }
 
     /**
-     * @param array<string, mixed> $pricingProfile
+     * @param  array<string, mixed>  $pricingProfile
      * @return array<string, mixed>|null
      */
     private function effectivePricingConfig(string $provider, array $pricingProfile): ?array
@@ -194,7 +194,7 @@ class ConversationUsageService
     }
 
     /**
-     * @param array<string, mixed> $pricingConfig
+     * @param  array<string, mixed>  $pricingConfig
      * @return array{input_rate: ?float, output_rate: ?float}
      */
     private function pricingRatesForConfig(array $pricingConfig, string $model): array
@@ -222,7 +222,7 @@ class ConversationUsageService
     }
 
     /**
-     * @param array<string, mixed> $pricingConfig
+     * @param  array<string, mixed>  $pricingConfig
      * @return array<string, mixed>
      */
     private function normalizePricingConfig(array $pricingConfig): array
@@ -258,7 +258,8 @@ class ConversationUsageService
     /**
      * @return array<string, mixed>|null
      */
-    private function pricingConfigForProvider(string $provider): ?array {
+    private function pricingConfigForProvider(string $provider): ?array
+    {
         return match ($provider) {
             'anthropic' => (array) config('code-talker.providers.anthropic.pricing', []),
             'openai', 'openai-compatible' => (array) config('code-talker.providers.openai.pricing', []),

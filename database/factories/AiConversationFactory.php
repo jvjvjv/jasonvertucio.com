@@ -2,17 +2,18 @@
 
 namespace Database\Factories;
 
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Jvjvjv\CodeTalker\Models\AiConversation>
+ * @extends Factory<AiConversation>
  */
 class AiConversationFactory extends Factory
 {
-    protected $model = \Jvjvjv\CodeTalker\Models\AiConversation::class;
+    protected $model = AiConversation::class;
 
     /**
      * Define the model's default state.

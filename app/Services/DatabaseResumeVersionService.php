@@ -41,8 +41,8 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
      */
     public function setVersion(string $version): void
     {
-        if (!preg_match('/^\d{4}\.\d+\.\d+$/', $version)) {
-            throw new RuntimeException("Invalid version format. Expected YYYY.X.X (e.g., 2026.1.0)");
+        if (! preg_match('/^\d{4}\.\d+\.\d+$/', $version)) {
+            throw new RuntimeException('Invalid version format. Expected YYYY.X.X (e.g., 2026.1.0)');
         }
 
         // Unset all current versions
@@ -65,7 +65,7 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
         return ResumeVersion::orderByDesc('version')
             ->get()
             ->map(function ($version) {
-                $docxPath = $this->savedDocumentsPath . '/' . $this->getDocxFilename($version->version);
+                $docxPath = $this->savedDocumentsPath.'/'.$this->getDocxFilename($version->version);
 
                 return [
                     'version' => $version->version,

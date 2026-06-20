@@ -2,10 +2,10 @@
 
 namespace App\Jobs;
 
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 
 class ProcessAiMemoryJob implements ShouldQueue
 {
@@ -22,8 +22,7 @@ class ProcessAiMemoryJob implements ShouldQueue
         public AiConversation $conversation,
         protected ?string $userId = null,
         protected ?string $visitorEmail = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the job with user identity for memory scoping.

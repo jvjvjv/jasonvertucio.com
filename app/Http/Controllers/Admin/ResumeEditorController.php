@@ -10,6 +10,7 @@ use App\Models\ResumeShareCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -19,8 +20,7 @@ class ResumeEditorController extends Controller
     public function __construct(
         protected ResumeDataServiceContract $dataService,
         protected ResumeVersionServiceContract $versionService,
-    ) {
-    }
+    ) {}
 
     /**
      * Check if mail is properly configured.
@@ -30,7 +30,7 @@ class ResumeEditorController extends Controller
         $host = config('mail.host');
         $username = config('mail.username');
 
-        return !empty($host) && !empty($username);
+        return ! empty($host) && ! empty($username);
     }
 
     /**
@@ -91,11 +91,11 @@ class ResumeEditorController extends Controller
                 $pdfResult = $this->versionService->generatePdf();
                 $documentsRegenerated = true;
 
-                if (!$pdfResult['success']) {
-                    $regenerationWarning = 'PDF generation failed: ' . ($pdfResult['error'] ?? 'Unknown error');
+                if (! $pdfResult['success']) {
+                    $regenerationWarning = 'PDF generation failed: '.($pdfResult['error'] ?? 'Unknown error');
                 }
             } else {
-                $regenerationWarning = 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error');
+                $regenerationWarning = 'DOCX generation failed: '.($docxResult['error'] ?? 'Unknown error');
             }
 
             // Send update notifications if requested and mail is configured
@@ -105,7 +105,7 @@ class ResumeEditorController extends Controller
             if ($documentsRegenerated) {
                 $successMessage .= ' Documents automatically regenerated.';
                 if ($regenerationWarning) {
-                    $successMessage .= ' Warning: ' . $regenerationWarning;
+                    $successMessage .= ' Warning: '.$regenerationWarning;
                 }
             }
 
@@ -117,7 +117,7 @@ class ResumeEditorController extends Controller
                         try {
                             Mail::to($code->email)->queue(new ResumeUpdated($code, $validated['version']));
                         } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::error('Failed to queue resume update email', [
+                            Log::error('Failed to queue resume update email', [
                                 'code' => $code->id,
                                 'email' => $code->email,
                                 'error' => $e->getMessage(),

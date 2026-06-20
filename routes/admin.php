@@ -2,12 +2,13 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CoverLetterController;
-use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\MailPreviewController;
+use App\Http\Controllers\Admin\ResumeShareCodeController;
 use App\Http\Controllers\Admin\SiteSettingsController;
+use App\Http\Middleware\HandleInertiaRequests;
 
 // Admin routes - requires auth + manage-unauthenticated-viewers permission
-Route::middleware(['auth', 'can:manage-unauthenticated-viewers', \App\Http\Middleware\HandleInertiaRequests::class])
+Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRequests::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

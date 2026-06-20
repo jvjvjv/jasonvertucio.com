@@ -5,10 +5,10 @@ namespace Tests\Feature;
 use App\Mail\ResumeUpdated;
 use App\Models\ResumeShareCode;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Mail;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ResumeUpdateEmailTest extends TestCase
@@ -24,7 +24,7 @@ class ResumeUpdateEmailTest extends TestCase
         // Create admin user with unique email
         $this->admin = User::create([
             'name' => 'Admin User',
-            'email' => 'admin-' . uniqid() . '@test.com',
+            'email' => 'admin-'.uniqid().'@test.com',
             'password' => bcrypt('password'),
         ]);
 
@@ -239,7 +239,7 @@ class ResumeUpdateEmailTest extends TestCase
                     [
                         'title' => 'Languages',
                         'list' => ['PHP', 'JavaScript'],
-                    ]
+                    ],
                 ],
                 'other' => [],
             ],
@@ -250,7 +250,7 @@ class ResumeUpdateEmailTest extends TestCase
                     'location' => 'New York',
                     'dates' => ['2020', '2024'],
                     'bullets' => ['Built APIs', 'Mentored juniors'],
-                ]
+                ],
             ],
             'education' => [
                 [
@@ -258,14 +258,14 @@ class ResumeUpdateEmailTest extends TestCase
                     'degree' => 'BS Computer Science',
                     'dates' => ['2016', '2020'],
                     'description' => 'Good standing',
-                ]
+                ],
             ],
             'projects' => [
                 [
                     'projectName' => 'My Project',
                     'description' => 'An awesome project',
                     'bullets' => ['Built with PHP', 'Used Laravel'],
-                ]
+                ],
             ],
         ];
     }

@@ -149,20 +149,20 @@ interface AiToolHandlerContract
      * use this tool. The $input array contains the parameters the AI model
      * determined based on the conversation context and the tool's schema.
      *
-     * @param array<string, mixed> $input Tool parameters as determined by the AI model.
-     *                                    Keys match the 'properties' keys from schema().
-     *                                    Values are coerced to the types specified in schema().
-     *                                    Example: ['query' => 'weather today', 'max_results' => 5]
+     * @param  array<string, mixed>  $input  Tool parameters as determined by the AI model.
+     *                                       Keys match the 'properties' keys from schema().
+     *                                       Values are coerced to the types specified in schema().
+     *                                       Example: ['query' => 'weather today', 'max_results' => 5]
      * @return array<string, mixed> Result data that gets JSON-encoded and returned
      *                              to the AI model. Use 'error' key for failure cases.
      *                              Recommended structure:
      *                              [
-     *                                  'result' => [...],     // Primary success output
-     *                                  'metadata' => [...],  // Optional extra info
+     *                              'result' => [...],     // Primary success output
+     *                              'metadata' => [...],  // Optional extra info
      *                              ]
      *                              Or on error:
      *                              [
-     *                                  'error' => 'Description of what went wrong',
+     *                              'error' => 'Description of what went wrong',
      *                              ]
      */
     public function handle(array $input): array;

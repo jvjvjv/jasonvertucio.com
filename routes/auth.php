@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginMethodsController;
+use Illuminate\Support\Facades\Auth;
 
 // Fortify auto-registers these routes:
 // POST /login - Login handler
@@ -22,5 +22,6 @@ Route::get('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
+
     return redirect('/');
 })->name('logout.get');

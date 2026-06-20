@@ -12,8 +12,7 @@ class AiModelReadinessService
 {
     public function __construct(
         private AiClientFactory $clientFactory,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{state: string, provider: string, model: string, message: string, checked_at: string}
@@ -75,7 +74,7 @@ class AiModelReadinessService
             return $this->statusPayload(
                 state: 'unavailable',
                 system: $system,
-                message: 'Provider is unavailable: ' . $exception->getMessage(),
+                message: 'Provider is unavailable: '.$exception->getMessage(),
             );
         }
     }
@@ -113,7 +112,7 @@ class AiModelReadinessService
                 return $this->statusPayload(
                     state: 'unavailable',
                     system: $system,
-                    message: 'Model load failed: ' . $exception->getMessage(),
+                    message: 'Model load failed: '.$exception->getMessage(),
                 ) + ['warmup_attempted' => true];
             }
         }
@@ -134,7 +133,7 @@ class AiModelReadinessService
             return $this->statusPayload(
                 state: 'unavailable',
                 system: $system,
-                message: 'Warmup failed: ' . $exception->getMessage(),
+                message: 'Warmup failed: '.$exception->getMessage(),
             ) + ['warmup_attempted' => true];
         }
     }
@@ -186,7 +185,7 @@ class AiModelReadinessService
                 return $this->statusPayload(
                     state: 'unavailable',
                     system: $bot->aiSystem,
-                    message: 'Model load failed: ' . $exception->getMessage(),
+                    message: 'Model load failed: '.$exception->getMessage(),
                 ) + ['warmup_attempted' => true];
             }
         }
@@ -207,7 +206,7 @@ class AiModelReadinessService
             return $this->statusPayload(
                 state: 'unavailable',
                 system: $bot->aiSystem,
-                message: 'Warmup failed: ' . $exception->getMessage(),
+                message: 'Warmup failed: '.$exception->getMessage(),
             ) + ['warmup_attempted' => true];
         }
     }
@@ -226,4 +225,3 @@ class AiModelReadinessService
         ];
     }
 }
-

@@ -15,7 +15,7 @@ class PhoneMessageFactory extends Factory
     {
         return [
             'message' => $this->faker->sentence(),
-            'sid' => 'SM' . Str::random(32),
+            'sid' => 'SM'.Str::random(32),
             'from_phone_id' => PhoneNumber::factory(),
             'to_phone_id' => PhoneNumber::factory(),
         ];

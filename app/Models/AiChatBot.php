@@ -74,7 +74,7 @@ class AiChatBot extends BaseAiChatBot
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      */
     public function scopeActive(Builder $query): Builder
     {

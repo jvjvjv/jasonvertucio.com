@@ -21,7 +21,7 @@ class LoginMethodsController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'user_exists' => false,
                 'methods' => ['password'],
@@ -34,7 +34,7 @@ class LoginMethodsController extends Controller
         $methods = $user->getAvailableAuthMethods();
 
         // Check if blocked (no methods and no password required)
-        if (empty($methods) && !$user->require_password) {
+        if (empty($methods) && ! $user->require_password) {
             return response()->json([
                 'user_exists' => true,
                 'methods' => [],

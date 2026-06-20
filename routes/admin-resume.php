@@ -3,14 +3,14 @@
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\TargetedResumeController;
+use App\Http\Middleware\HandleInertiaRequests;
 
 // Resume editor routes - requires auth + edit-resume permission
-Route::middleware(['auth', 'can:edit-resume', \App\Http\Middleware\HandleInertiaRequests::class])
+Route::middleware(['auth', 'can:edit-resume', HandleInertiaRequests::class])
     ->prefix('admin/resume')
     ->name('admin.resume.')
     ->group(function () {
         Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
-
 
         // Targeted Resume Builder
         Route::get('/targeted-builder', [TargetedResumeController::class, 'index'])->name('targeted.index');

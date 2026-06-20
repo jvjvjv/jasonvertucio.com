@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use App\Models\User;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Http;
-use Mockery;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Http;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Mockery;
 use Tests\TestCase;
 
 class JobUrlParseTest extends TestCase
@@ -20,6 +20,7 @@ class JobUrlParseTest extends TestCase
     use DatabaseTransactions;
 
     protected User $admin;
+
     protected AiSystem $aiSystem;
 
     protected function setUp(): void
@@ -28,7 +29,7 @@ class JobUrlParseTest extends TestCase
 
         $this->admin = User::create([
             'name' => 'Test Admin',
-            'email' => 'admin-' . uniqid() . '@test.com',
+            'email' => 'admin-'.uniqid().'@test.com',
             'password' => bcrypt('password'),
         ]);
 
@@ -40,7 +41,7 @@ class JobUrlParseTest extends TestCase
         $this->aiSystem = AiSystem::factory()->create(['is_active' => true]);
     }
 
-    public function testParseUrlRequiresAuthentication(): void
+    public function test_parse_url_requires_authentication(): void
     {
         $response = $this->postJson(route('admin.resume.targeted.parse-url'), [
             'url' => 'https://example.com/job',
@@ -50,7 +51,7 @@ class JobUrlParseTest extends TestCase
         $response->assertUnauthorized();
     }
 
-    public function testParseUrlValidatesRequiredFields(): void
+    public function test_parse_url_validates_required_fields(): void
     {
         $response = $this->actingAs($this->admin)
             ->postJson(route('admin.resume.targeted.parse-url'), []);
@@ -59,7 +60,7 @@ class JobUrlParseTest extends TestCase
         $response->assertJsonValidationErrors(['url', 'ai_system_id']);
     }
 
-    public function testParseUrlValidatesUrlFormat(): void
+    public function test_parse_url_validates_url_format(): void
     {
         $response = $this->actingAs($this->admin)
             ->postJson(route('admin.resume.targeted.parse-url'), [
@@ -71,7 +72,7 @@ class JobUrlParseTest extends TestCase
         $response->assertJsonValidationErrors(['url']);
     }
 
-    public function testParseUrlWithActiveParserUsesSelectors(): void
+    public function test_parse_url_with_active_parser_uses_selectors(): void
     {
         $html = '<html><body><h1 class="job-title">Senior Engineer</h1><span class="company">Acme Corporation</span><div class="description">We are looking for a Senior Engineer to join our team and help build amazing products for our customers worldwide.</div></body></html>';
 
@@ -101,7 +102,7 @@ class JobUrlParseTest extends TestCase
         ]);
     }
 
-    public function testConfirmParserSetsStatusActive(): void
+    public function test_confirm_parser_sets_status_active(): void
     {
         $parser = JobUrlParser::factory()->create([
             'domain' => 'example.com',
@@ -118,7 +119,7 @@ class JobUrlParseTest extends TestCase
         ]);
     }
 
-    public function testConfirmParserDeactivatesOthersForSameDomain(): void
+    public function test_confirm_parser_deactivates_others_for_same_domain(): void
     {
         $existing = JobUrlParser::factory()->active()->create([
             'domain' => 'example.com',
@@ -151,7 +152,7 @@ class JobUrlParseTest extends TestCase
         ]);
     }
 
-    public function testRejectParserKeepsInactive(): void
+    public function test_reject_parser_keeps_inactive(): void
     {
         $parser = JobUrlParser::factory()->create([
             'domain' => 'example.com',
@@ -170,7 +171,7 @@ class JobUrlParseTest extends TestCase
         ]);
     }
 
-    public function testReparseValidatesFeedback(): void
+    public function test_reparse_validates_feedback(): void
     {
         $parser = JobUrlParser::factory()->create([
             'domain' => 'example.com',
@@ -186,7 +187,7 @@ class JobUrlParseTest extends TestCase
         $response->assertJsonValidationErrors(['feedback']);
     }
 
-    public function testParseUrlHandlesHttpTimeout(): void
+    public function test_parse_url_handles_http_timeout(): void
     {
         Http::fake([
             '*' => Http::response('', 500),
@@ -201,7 +202,7 @@ class JobUrlParseTest extends TestCase
         $response->assertUnprocessable();
     }
 
-    public function testParseUrlHandlesNonHtmlResponse(): void
+    public function test_parse_url_handles_non_html_response(): void
     {
         Http::fake([
             '*' => Http::response('{"data": "json"}', 200, ['Content-Type' => 'application/json']),
@@ -217,14 +218,14 @@ class JobUrlParseTest extends TestCase
         $response->assertJsonFragment(['message' => 'The URL did not return an HTML page.']);
     }
 
-    public function testParseUrlStoresJobUrlWhenUsingActiveParser(): void
+    public function test_parse_url_stores_job_url_when_using_active_parser(): void
     {
         $html = '<html><body>'
-            . '<h1 class="job-title">Senior Engineer</h1>'
-            . '<span class="company">Acme Corporation</span>'
-            . '<div class="location">New York, NY — Hybrid</div>'
-            . '<div class="description">We are looking for a Senior Engineer to join our team and help build amazing products for our customers worldwide.</div>'
-            . '</body></html>';
+            .'<h1 class="job-title">Senior Engineer</h1>'
+            .'<span class="company">Acme Corporation</span>'
+            .'<div class="location">New York, NY — Hybrid</div>'
+            .'<div class="description">We are looking for a Senior Engineer to join our team and help build amazing products for our customers worldwide.</div>'
+            .'</body></html>';
 
         Http::fake([
             'example.com/*' => Http::response($html, 200, ['Content-Type' => 'text/html']),
@@ -257,7 +258,7 @@ class JobUrlParseTest extends TestCase
         $this->assertSame('Acme Corporation', $contents['company_name']);
     }
 
-    public function testParseUrlStoresJobUrlWhenUsingAiExtraction(): void
+    public function test_parse_url_stores_job_url_when_using_ai_extraction(): void
     {
         $html = str_repeat('<p>We are a great company hiring talented engineers for our growing team.</p>', 5);
 

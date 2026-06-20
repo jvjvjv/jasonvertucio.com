@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use Tests\TestCase;
 
 class AiSystemPromptTest extends TestCase
@@ -56,8 +56,7 @@ class AiSystemPromptTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('ai/system-prompts/Index', false)
-            ->where('prompts', fn ($prompts) =>
-                collect($prompts)->contains(fn ($p) => $p['id'] === $prompt->id && $p['title'] === 'Test Prompt')
+            ->where('prompts', fn ($prompts) => collect($prompts)->contains(fn ($p) => $p['id'] === $prompt->id && $p['title'] === 'Test Prompt')
             )
         );
     }

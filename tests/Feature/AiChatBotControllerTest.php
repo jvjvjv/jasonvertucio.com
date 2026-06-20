@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\AiChatBot;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
 
 class AiChatBotControllerTest extends TestCase
@@ -136,7 +136,8 @@ class AiChatBotControllerTest extends TestCase
         ]);
     }
 
-    public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void {
+    public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void
+    {
         $user = $this->authenticatedUser();
         $system = AiSystem::factory()->create([
             'allowed_tools' => ['get-recent-blog-posts'],

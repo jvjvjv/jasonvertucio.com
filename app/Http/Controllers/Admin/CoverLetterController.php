@@ -17,8 +17,7 @@ class CoverLetterController extends Controller
 {
     public function __construct(
         protected CoverLetterDocumentService $documentService,
-    ) {
-    }
+    ) {}
 
     /**
      * GET /admin/cover-letters
@@ -93,7 +92,7 @@ class CoverLetterController extends Controller
     {
         $coverLetter->load('resumeVersion.personalInfo');
 
-        $converter = new CommonMarkConverter();
+        $converter = new CommonMarkConverter;
         $messageBodyHtml = $coverLetter->message_body
             ? $converter->convert($coverLetter->message_body)->getContent()
             : '';
@@ -158,13 +157,13 @@ class CoverLetterController extends Controller
      */
     public function downloadDocx(CoverLetter $coverLetter): BinaryFileResponse|RedirectResponse
     {
-        if (!$coverLetter->docxExists()) {
+        if (! $coverLetter->docxExists()) {
             return redirect()
                 ->route('admin.cover-letters.edit', $coverLetter)
                 ->with('error', 'DOCX file not found. Save the cover letter to regenerate it.');
         }
 
-        $filename = $coverLetter->generateFilename() . '.docx';
+        $filename = $coverLetter->generateFilename().'.docx';
 
         return response()->download(
             $coverLetter->docx_path,
@@ -178,13 +177,13 @@ class CoverLetterController extends Controller
      */
     public function downloadPdf(CoverLetter $coverLetter): BinaryFileResponse|RedirectResponse
     {
-        if (!$coverLetter->pdfExists()) {
+        if (! $coverLetter->pdfExists()) {
             return redirect()
                 ->route('admin.cover-letters.edit', $coverLetter)
                 ->with('error', 'PDF file not found. Save the cover letter to regenerate it.');
         }
 
-        $filename = $coverLetter->generateFilename() . '.pdf';
+        $filename = $coverLetter->generateFilename().'.pdf';
 
         return response()->download(
             $coverLetter->pdf_path,

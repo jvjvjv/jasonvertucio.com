@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Canvas\Models\Post;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,11 +29,13 @@ class Comment extends Model
     /**
      * Get the post that this comment belongs to.
      */
-    public function post(): BelongsTo {
-        return $this->belongsTo(\Canvas\Models\Post::class);
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
     }
 
-    public function user(): BelongsTo {
-        return $this->belongsTo(\App\Models\User::class);
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

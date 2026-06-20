@@ -3,23 +3,23 @@
 namespace Tests\Feature;
 
 use App\Contracts\ResumeDataServiceContract;
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
-use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiInteractionLog;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
-use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Services\CoverLetterDocumentService;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use Mockery;
 use Tests\TestCase;
 
@@ -27,7 +27,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function testSaveTailoredResumeUpdatesExistingFinalizedResumeForConversation(): void
+    public function test_save_tailored_resume_updates_existing_finalized_resume_for_conversation(): void
     {
         $resumeVersion = ResumeVersion::factory()->create();
         $conversation = AiConversation::factory()->create([
@@ -55,7 +55,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
             $this->createMock(AiMemoryService::class),
-            new ConversationUsageService(),
+            new ConversationUsageService,
         );
 
         $firstResume = $service->saveTailoredResume($conversation, "Title: Full Stack Engineer\n\n# Summary\nOriginal content", 72);
@@ -90,7 +90,8 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         $this->assertSame("# Summary\nUpdated content", data_get($reloadedResume->tailored_data, 'markdown'));
     }
 
-    public function testSaveTailoredResumeFallsBackToSummaryForTitleWhenExplicitTitleIsMissing(): void {
+    public function test_save_tailored_resume_falls_back_to_summary_for_title_when_explicit_title_is_missing(): void
+    {
         $resumeVersion = ResumeVersion::factory()->create();
         $conversation = AiConversation::factory()->create([
             'status' => AiConversationStatus::Active,
@@ -116,7 +117,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
             $this->createMock(AiMemoryService::class),
-            new ConversationUsageService(),
+            new ConversationUsageService,
         );
 
         $resume = $service->saveTailoredResume(
@@ -129,7 +130,8 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         $this->assertSame('Senior Frontend Engineer', data_get($resume->tailored_data, 'title'));
     }
 
-    public function testContinueConversationSyncsUsageAfterSuccessfulResponse(): void {
+    public function test_continue_conversation_syncs_usage_after_successful_response(): void
+    {
         $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);
         $resumeVersion = ResumeVersion::factory()->create();
 
@@ -150,7 +152,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             $this->createMock(TargetedResumeDocumentService::class),
             $this->createMock(CoverLetterDocumentService::class),
             $this->createMock(AiMemoryService::class),
-            new ConversationUsageService(),
+            new ConversationUsageService,
         );
 
         $conversation = $service->startConversation(
@@ -180,7 +182,8 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         ]);
     }
 
-    private function usageAwareStream(): Generator {
+    private function usageAwareStream(): Generator
+    {
         yield [
             'type' => 'message_start',
             'message' => [
@@ -198,7 +201,8 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         yield ['type' => 'message_stop'];
     }
 
-    protected function tearDown(): void {
+    protected function tearDown(): void
+    {
         Mockery::close();
 
         parent::tearDown();

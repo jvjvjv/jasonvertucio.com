@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use BSPDX\Keystone\Services\PermissionRegistrar;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -11,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Permission::firstOrCreate(['name' => 'manage-ai-tools', 'guard_name' => 'web']);
 
@@ -31,7 +32,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Permission::where('name', 'manage-ai-tools')->delete();
     }

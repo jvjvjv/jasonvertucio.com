@@ -12,7 +12,8 @@ class HandleChatInertiaRequests extends Middleware
     public function version(Request $request): ?string
     {
         $base = parent::version($request);
-        return 'chat:' . ($base ?? 'default');
+
+        return 'chat:'.($base ?? 'default');
     }
 
     /**
@@ -30,8 +31,8 @@ class HandleChatInertiaRequests extends Middleware
                 ] : null,
             ],
             'flash' => [
-                'success' => fn() => $request->hasSession() ? $request->session()->get('success') : null,
-                'error' => fn() => $request->hasSession() ? $request->session()->get('error') : null,
+                'success' => fn () => $request->hasSession() ? $request->session()->get('success') : null,
+                'error' => fn () => $request->hasSession() ? $request->session()->get('error') : null,
             ],
         ];
     }

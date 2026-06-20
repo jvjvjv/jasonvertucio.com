@@ -5,9 +5,9 @@ namespace Tests\Feature;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class CoverLetterResumeVersionValidationTest extends TestCase
@@ -16,12 +16,13 @@ class CoverLetterResumeVersionValidationTest extends TestCase
 
     protected User $admin;
 
-    protected function setUp(): void {
+    protected function setUp(): void
+    {
         parent::setUp();
 
         $this->admin = User::create([
             'name' => 'Admin User',
-            'email' => 'cover-letter-admin-' . uniqid() . '@test.com',
+            'email' => 'cover-letter-admin-'.uniqid().'@test.com',
             'password' => bcrypt('password'),
         ]);
 
@@ -29,7 +30,8 @@ class CoverLetterResumeVersionValidationTest extends TestCase
         $this->admin->givePermissionTo('manage-unauthenticated-viewers');
     }
 
-    public function test_store_requires_resume_version_id(): void {
+    public function test_store_requires_resume_version_id(): void
+    {
         ResumeVersion::factory()->create(['is_current' => true]);
 
         $payload = $this->validPayload();
@@ -44,7 +46,8 @@ class CoverLetterResumeVersionValidationTest extends TestCase
         ]);
     }
 
-    public function test_store_requires_resume_version_id_to_exist(): void {
+    public function test_store_requires_resume_version_id_to_exist(): void
+    {
         ResumeVersion::factory()->create(['is_current' => true]);
 
         $payload = $this->validPayload([
@@ -60,7 +63,8 @@ class CoverLetterResumeVersionValidationTest extends TestCase
         ]);
     }
 
-    public function test_update_requires_resume_version_id(): void {
+    public function test_update_requires_resume_version_id(): void
+    {
         $version = ResumeVersion::factory()->create(['is_current' => true]);
 
         $coverLetter = CoverLetter::create($this->validPayload([
@@ -82,7 +86,8 @@ class CoverLetterResumeVersionValidationTest extends TestCase
         $this->assertSame('Existing Company', $coverLetter->company_name);
     }
 
-    public function test_update_requires_resume_version_id_to_exist(): void {
+    public function test_update_requires_resume_version_id_to_exist(): void
+    {
         $version = ResumeVersion::factory()->create(['is_current' => true]);
 
         $coverLetter = CoverLetter::create($this->validPayload([
@@ -143,7 +148,7 @@ class CoverLetterResumeVersionValidationTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $overrides
+     * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
     protected function validPayload(array $overrides = []): array

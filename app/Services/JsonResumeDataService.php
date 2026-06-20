@@ -2,6 +2,4 @@
 
 namespace App\Services;
 
-class JsonResumeDataService extends DatabaseResumeDataService
-{
-}
+class JsonResumeDataService extends DatabaseResumeDataService {}

@@ -34,7 +34,7 @@ return new class extends Migration
      * leaving any host-app tool names untouched. Idempotent: applying it twice
      * is a no-op because only exact source names are rewritten.
      *
-     * @param array<string, string> $map
+     * @param  array<string, string>  $map
      */
     private function remap(array $map): void
     {
@@ -44,7 +44,7 @@ return new class extends Migration
             ->each(function (object $system) use ($map): void {
                 $tools = json_decode((string) $system->allowed_tools, true);
 
-                if (!is_array($tools)) {
+                if (! is_array($tools)) {
                     return;
                 }
 

@@ -2,17 +2,17 @@
 
 namespace App\Services\Mcp;
 
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Illuminate\Support\Facades\File;
+use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use ReflectionClass;
 use SplFileInfo;
 
 trait DiscoversAiToolHandlers
 {
     /**
-     * @param array<int, string> $toolDirectories
-     * @param array<string, mixed> $parameterOverrides
-     * @param array<int, string> $preferredRelativePrefixes
+     * @param  array<int, string>  $toolDirectories
+     * @param  array<string, mixed>  $parameterOverrides
+     * @param  array<int, string>  $preferredRelativePrefixes
      * @return array<string, AiToolHandlerContract>
      */
     private function discoverHandlers(
@@ -23,7 +23,7 @@ trait DiscoversAiToolHandlers
         $toolFiles = [];
 
         foreach ($toolDirectories as $toolDirectory) {
-            if (!File::isDirectory($toolDirectory)) {
+            if (! File::isDirectory($toolDirectory)) {
                 continue;
             }
 
@@ -45,20 +45,20 @@ trait DiscoversAiToolHandlers
         foreach ($toolFiles as $toolFile) {
             $className = $this->classNameFromToolFile($toolFile);
 
-            if ($className === null || !class_exists($className)) {
+            if ($className === null || ! class_exists($className)) {
                 continue;
             }
 
             $reflection = new ReflectionClass($className);
 
-            if ($reflection->isAbstract() || !$reflection->implementsInterface(AiToolHandlerContract::class)) {
+            if ($reflection->isAbstract() || ! $reflection->implementsInterface(AiToolHandlerContract::class)) {
                 continue;
             }
 
             $handler = app()->makeWith($className, $parameterOverrides);
             $handlerName = $handler->name();
 
-            if (!isset($handlers[$handlerName])) {
+            if (! isset($handlers[$handlerName])) {
                 $handlers[$handlerName] = $handler;
             }
         }
@@ -67,7 +67,7 @@ trait DiscoversAiToolHandlers
     }
 
     /**
-     * @param array<int, string> $preferredRelativePrefixes
+     * @param  array<int, string>  $preferredRelativePrefixes
      */
     private function toolDiscoverySortKey(SplFileInfo $toolFile, array $preferredRelativePrefixes): string
     {
@@ -78,7 +78,7 @@ trait DiscoversAiToolHandlers
         foreach ($preferredRelativePrefixes as $index => $prefix) {
             $normalizedPrefix = trim(str_replace(DIRECTORY_SEPARATOR, '/', $prefix), '/');
 
-            if (str_starts_with($normalizedPath, $normalizedPrefix . '/')) {
+            if (str_starts_with($normalizedPath, $normalizedPrefix.'/')) {
                 $priority = $index;
 
                 break;
@@ -96,7 +96,7 @@ trait DiscoversAiToolHandlers
             return null;
         }
 
-        return 'App\\' . str_replace(
+        return 'App\\'.str_replace(
             [DIRECTORY_SEPARATOR, '.php'],
             ['\\', ''],
             $relativePath,
@@ -105,10 +105,10 @@ trait DiscoversAiToolHandlers
 
     private function relativeToolPath(SplFileInfo $toolFile): string
     {
-        $appRoot = app_path() . DIRECTORY_SEPARATOR;
+        $appRoot = app_path().DIRECTORY_SEPARATOR;
         $pathName = $toolFile->getPathname();
 
-        if (!str_starts_with($pathName, $appRoot)) {
+        if (! str_starts_with($pathName, $appRoot)) {
             return '';
         }
 

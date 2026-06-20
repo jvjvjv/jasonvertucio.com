@@ -21,31 +21,31 @@ class AiSystemCapabilityService
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function normalizeForPersistence(array &$data): void
     {
         $provider = $data['provider'] ?? null;
 
-        if (!is_string($provider)) {
+        if (! is_string($provider)) {
             return;
         }
 
         if (in_array($provider, [AiProvider::LmStudio->value, AiProvider::OpenAICompatible->value], true)
-            && (!array_key_exists('api_key', $data) || $data['api_key'] === null)) {
+            && (! array_key_exists('api_key', $data) || $data['api_key'] === null)) {
             $data['api_key'] = '';
         }
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function hydrateForPersistence(array &$data): void
     {
         $provider = $data['provider'] ?? null;
         $model = $data['model'] ?? null;
 
-        if (!is_string($provider) || !is_string($model) || blank($model) || !$this->supportsProvider($provider)) {
+        if (! is_string($provider) || ! is_string($model) || blank($model) || ! $this->supportsProvider($provider)) {
             return;
         }
 
@@ -99,7 +99,7 @@ class AiSystemCapabilityService
         $matchingModel = collect($service->listModels())
             ->first(static fn (array $listedModel): bool => ($listedModel['id'] ?? null) === $model);
 
-        if (!is_array($matchingModel)) {
+        if (! is_array($matchingModel)) {
             return null;
         }
 

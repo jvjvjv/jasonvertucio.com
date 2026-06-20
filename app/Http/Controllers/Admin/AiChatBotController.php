@@ -7,15 +7,14 @@ use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
 use BSPDX\Keystone\Models\KeystoneRole;
-
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
 
 class AiChatBotController extends BaseAdminController
 {
@@ -72,7 +71,7 @@ class AiChatBotController extends BaseAdminController
     {
         return Inertia::render('ai/bots/Create', [
             'systems' => $this->systems(),
-            'roles'   => $this->roles(),
+            'roles' => $this->roles(),
         ]);
     }
 
@@ -95,9 +94,9 @@ class AiChatBotController extends BaseAdminController
         $aiChatBot->loadCount('conversations');
 
         return Inertia::render('ai/bots/Edit', [
-            'bot'     => $aiChatBot,
+            'bot' => $aiChatBot,
             'systems' => $this->systems(),
-            'roles'   => $this->roles(),
+            'roles' => $this->roles(),
         ]);
     }
 
@@ -121,7 +120,7 @@ class AiChatBotController extends BaseAdminController
         $allowedTools = null;
         $includeAllTools = $request->boolean('include_all');
 
-        if (!$includeAllTools && $request->filled('ai_system_id')) {
+        if (! $includeAllTools && $request->filled('ai_system_id')) {
             $allowedTools = AiSystem::query()
                 ->whereKey($request->integer('ai_system_id'))
                 ->value('allowed_tools');
@@ -176,7 +175,7 @@ class AiChatBotController extends BaseAdminController
     }
 
     /**
-    * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
+     * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
      */
     private function systems(): array
     {
@@ -194,5 +193,4 @@ class AiChatBotController extends BaseAdminController
             ])
             ->all();
     }
-
 }

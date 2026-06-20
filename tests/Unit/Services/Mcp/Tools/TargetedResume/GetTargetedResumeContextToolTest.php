@@ -27,7 +27,7 @@ class GetTargetedResumeContextToolTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     private function handle(GetTargetedResumeContextTool $tool, array $input): array

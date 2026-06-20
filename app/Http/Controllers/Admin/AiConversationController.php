@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
-use Jvjvjv\CodeTalker\Models\AiChatBot;
 use App\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
+use Jvjvjv\CodeTalker\Models\AiChatBot;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 class AiConversationController extends Controller
 {
@@ -45,20 +45,20 @@ class AiConversationController extends Controller
             $search = trim((string) $request->input('search'));
 
             $query->where(function ($builder) use ($search) {
-                $builder->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('visitor_name', 'like', '%' . $search . '%')
-                    ->orWhere('visitor_email', 'like', '%' . $search . '%')
+                $builder->where('title', 'like', '%'.$search.'%')
+                    ->orWhere('visitor_name', 'like', '%'.$search.'%')
+                    ->orWhere('visitor_email', 'like', '%'.$search.'%')
                     ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('email', 'like', '%' . $search . '%');
+                        $userQuery->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('email', 'like', '%'.$search.'%');
                     })
                     ->orWhereHas('aiChatBot', function ($botQuery) use ($search) {
-                        $botQuery->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('slug', 'like', '%' . $search . '%');
+                        $botQuery->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('slug', 'like', '%'.$search.'%');
                     })
                     ->orWhereHas('messages', function ($messageQuery) use ($search) {
                         $messageQuery->where('role', '!=', 'system')
-                            ->where('content', 'like', '%' . $search . '%');
+                            ->where('content', 'like', '%'.$search.'%');
                     });
             });
         }

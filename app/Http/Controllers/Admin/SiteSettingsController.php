@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use BSPDX\Keystone\Models\KeystonePermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class SiteSettingsController extends Controller
     public function edit(): InertiaResponse
     {
         $config = $this->readConfig();
-        $permissions = \BSPDX\Keystone\Models\KeystonePermission::orderBy('name')->pluck('name')->all();
+        $permissions = KeystonePermission::orderBy('name')->pluck('name')->all();
 
         return Inertia::render('site-settings/Editor', [
             'links' => $config['links'] ?? [],
@@ -50,18 +51,18 @@ class SiteSettingsController extends Controller
      */
     public function update(Request $request): JsonResponse|RedirectResponse
     {
-        $permissionNames = \BSPDX\Keystone\Models\KeystonePermission::pluck('name')->all();
+        $permissionNames = KeystonePermission::pluck('name')->all();
         $allowedCan = array_merge(['authenticated'], $permissionNames);
 
         $validated = $request->validate([
-            'links'              => ['required', 'array'],
-            'links.*.divider'    => ['nullable', 'string'],
-            'links.*.href'       => ['nullable', 'string', 'max:500'],
-            'links.*.label'      => ['nullable', 'string', 'max:100'],
-            'links.*.ariaLabel'  => ['nullable', 'string', 'max:200'],
-            'links.*.hover'      => ['nullable', 'string', 'max:500'],
-            'links.*.target'     => ['nullable', 'string', 'in:_blank,_self'],
-            'links.*.can'        => ['nullable', 'string', 'in:' . implode(',', $allowedCan)],
+            'links' => ['required', 'array'],
+            'links.*.divider' => ['nullable', 'string'],
+            'links.*.href' => ['nullable', 'string', 'max:500'],
+            'links.*.label' => ['nullable', 'string', 'max:100'],
+            'links.*.ariaLabel' => ['nullable', 'string', 'max:200'],
+            'links.*.hover' => ['nullable', 'string', 'max:500'],
+            'links.*.target' => ['nullable', 'string', 'in:_blank,_self'],
+            'links.*.can' => ['nullable', 'string', 'in:'.implode(',', $allowedCan)],
         ]);
 
         try {
@@ -73,25 +74,25 @@ class SiteSettingsController extends Controller
 
             $config['links'] = array_values(array_map(function (array $link): array {
                 // Divider items are stored as { "divider": true }
-                if (!empty($link['divider'])) {
+                if (! empty($link['divider'])) {
                     return ['divider' => true];
                 }
 
                 $clean = [
-                    'href'  => $link['href'] ?? '',
+                    'href' => $link['href'] ?? '',
                     'label' => $link['label'] ?? '',
                 ];
 
-                if (!empty($link['ariaLabel'])) {
+                if (! empty($link['ariaLabel'])) {
                     $clean['ariaLabel'] = $link['ariaLabel'];
                 }
-                if (!empty($link['hover'])) {
+                if (! empty($link['hover'])) {
                     $clean['hover'] = $link['hover'];
                 }
-                if (!empty($link['target'])) {
+                if (! empty($link['target'])) {
                     $clean['target'] = $link['target'];
                 }
-                if (!empty($link['can'])) {
+                if (! empty($link['can'])) {
                     $clean['can'] = $link['can'];
                 }
 

@@ -5,10 +5,10 @@ namespace Tests\Feature;
 use App\Mail\ResumeShareCodeCreated;
 use App\Models\ResumeShareCode;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Mail;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ResumeShareCodeEmailTest extends TestCase
@@ -24,7 +24,7 @@ class ResumeShareCodeEmailTest extends TestCase
         // Create admin user with unique email
         $this->admin = User::create([
             'name' => 'Admin User',
-            'email' => 'admin-' . uniqid() . '@test.com',
+            'email' => 'admin-'.uniqid().'@test.com',
             'password' => bcrypt('password'),
         ]);
 

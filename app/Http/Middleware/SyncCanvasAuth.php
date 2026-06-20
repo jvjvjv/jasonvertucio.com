@@ -17,7 +17,7 @@ class SyncCanvasAuth
      */
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::guard('web')->check() && !Auth::guard('canvas')->check()) {
+        if (Auth::guard('web')->check() && ! Auth::guard('canvas')->check()) {
             Auth::guard('canvas')->setUser(Auth::guard('web')->user());
         }
 

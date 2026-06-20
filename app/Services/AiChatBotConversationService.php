@@ -3,6 +3,10 @@
 namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Models\User;
+use Generator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
@@ -11,11 +15,7 @@ use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiLlmMessage;
-use App\Models\User;
 use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
-use Generator;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class AiChatBotConversationService
 {
@@ -25,8 +25,7 @@ class AiChatBotConversationService
         private ConversationUsageService $conversationUsageService,
         private ResumeDataServiceContract $resumeDataService,
         private TargetedResumeService $targetedResumeService,
-    ) {
-    }
+    ) {}
 
     /**
      * Start a new generic bot conversation.
@@ -159,11 +158,11 @@ class AiChatBotConversationService
         };
 
         try {
-            yield 'data: ' . json_encode([
+            yield 'data: '.json_encode([
                 'type' => 'status',
                 'phase' => 'model_loading',
                 'message' => 'Waiting for model response...',
-            ]) . "\n\n";
+            ])."\n\n";
 
             for ($iteration = 0; $iteration < 6; $iteration++) {
                 // Re-apply client settings every iteration — clients reset state after each stream() call
@@ -226,7 +225,7 @@ class AiChatBotConversationService
                         'event_type' => $event['type'] ?? null,
                     ]);
 
-                    if (!isset($event['type'])) {
+                    if (! isset($event['type'])) {
                         continue;
                     }
 
@@ -243,7 +242,7 @@ class AiChatBotConversationService
                                     'inputJson' => '',
                                 ];
                             } else {
-                                yield 'data: ' . json_encode($event) . "\n\n";
+                                yield 'data: '.json_encode($event)."\n\n";
                             }
                             break;
 
@@ -251,7 +250,7 @@ class AiChatBotConversationService
                             if (isset($event['delta']['reasoning'])) {
                                 $appendToBlocks('reasoning', $event['delta']['reasoning']);
                             }
-                            yield 'data: ' . json_encode($event) . "\n\n";
+                            yield 'data: '.json_encode($event)."\n\n";
                             break;
 
                         case 'content_block_delta':
@@ -271,7 +270,7 @@ class AiChatBotConversationService
                             ) {
                                 $pendingToolCalls[$currentToolBlockIndex]['inputJson'] .= $event['delta']['partial_json'];
                             } else {
-                                yield 'data: ' . json_encode($event) . "\n\n";
+                                yield 'data: '.json_encode($event)."\n\n";
                             }
                             break;
 
@@ -279,7 +278,7 @@ class AiChatBotConversationService
                             if ($currentToolBlockIndex !== null && ($event['index'] ?? null) === $currentToolBlockIndex) {
                                 $currentToolBlockIndex = null;
                             } else {
-                                yield 'data: ' . json_encode($event) . "\n\n";
+                                yield 'data: '.json_encode($event)."\n\n";
                             }
                             break;
 
@@ -287,7 +286,7 @@ class AiChatBotConversationService
                             if (isset($event['message']['usage'])) {
                                 $iterationInputTokens = $event['message']['usage']['input_tokens'] ?? null;
                             }
-                            yield 'data: ' . json_encode($event) . "\n\n";
+                            yield 'data: '.json_encode($event)."\n\n";
                             break;
 
                         case 'message_delta':
@@ -295,11 +294,11 @@ class AiChatBotConversationService
                                 $iterationOutputTokens = $event['usage']['output_tokens'] ?? null;
                             }
                             $iterationStopReason = $event['delta']['stop_reason'] ?? $event['stop_reason'] ?? null;
-                            yield 'data: ' . json_encode($event) . "\n\n";
+                            yield 'data: '.json_encode($event)."\n\n";
                             break;
 
                         case 'message_stop':
-                            yield 'data: ' . json_encode($event) . "\n\n";
+                            yield 'data: '.json_encode($event)."\n\n";
                             break;
 
                         case 'ping':
@@ -307,7 +306,7 @@ class AiChatBotConversationService
                             break;
 
                         default:
-                            yield 'data: ' . json_encode($event) . "\n\n";
+                            yield 'data: '.json_encode($event)."\n\n";
                     }
                 }
 
@@ -362,6 +361,7 @@ class AiChatBotConversationService
                     $accumulatedText = collect($blocks)->where('type', 'text')->pluck('content')->implode('');
                     $iterationMessages[] = ['role' => 'assistant', 'content' => $accumulatedText];
                     $iterationMessages[] = ['role' => 'user', 'content' => 'Continue.'];
+
                     continue;
                 }
 
@@ -439,7 +439,7 @@ class AiChatBotConversationService
                 'error_message' => $exception->getMessage(),
             ]);
 
-            yield 'data: ' . json_encode(['type' => 'error', 'message' => $exception->getMessage()]) . "\n\n";
+            yield 'data: '.json_encode(['type' => 'error', 'message' => $exception->getMessage()])."\n\n";
         }
     }
 
@@ -453,7 +453,7 @@ class AiChatBotConversationService
             ->max('turn_number');
 
         // Handle string comparison for turn numbers (e.g., "1", "2", "10")
-        if ($maxTurn === null || !is_numeric($maxTurn)) {
+        if ($maxTurn === null || ! is_numeric($maxTurn)) {
             return 1;
         }
 

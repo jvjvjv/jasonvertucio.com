@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeStatus;
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\TargetedResumeStatusUpdate;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
 
 class TargetedResumeFilterTest extends TestCase
@@ -111,7 +111,7 @@ class TargetedResumeFilterTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
             ->component('resume/targeted/Index', false)
-                ->where('conversations', fn($conversations) => collect($conversations)->pluck('id')->sort()->values()->all() === collect([$active->id, $completed->id, $pass->id, $applied->id])->sort()->values()->all())
+            ->where('conversations', fn ($conversations) => collect($conversations)->pluck('id')->sort()->values()->all() === collect([$active->id, $completed->id, $pass->id, $applied->id])->sort()->values()->all())
         );
     }
 
@@ -142,7 +142,8 @@ class TargetedResumeFilterTest extends TestCase
         );
     }
 
-    public function test_filter_by_applied_resume_status_and_exposes_latest_status_update(): void {
+    public function test_filter_by_applied_resume_status_and_exposes_latest_status_update(): void
+    {
         Carbon::setTestNow('2026-05-03 09:30:00');
 
         $finalized = AiConversation::factory()->completed()->create();
@@ -156,7 +157,7 @@ class TargetedResumeFilterTest extends TestCase
             'ai_conversation_id' => $applied->id,
             'company_name' => 'AppliedCo',
         ]);
-        \App\Models\TargetedResumeStatusUpdate::create([
+        TargetedResumeStatusUpdate::create([
             'targeted_resume_id' => $appliedResume->id,
             'status' => 'applied',
             'occurred_at' => now(),
@@ -167,9 +168,9 @@ class TargetedResumeFilterTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('resume/targeted/Index', false)
-                ->where('conversations', fn($conversations) => collect($conversations)->count() === 1
+                ->where('conversations', fn ($conversations) => collect($conversations)->count() === 1
                     && data_get(collect($conversations)->first(), 'targeted_resume.company_name') === 'AppliedCo'
                     && data_get(collect($conversations)->first(), 'targeted_resume.latest_status_update.occurred_at') === '2026-05-03')
         );
@@ -177,7 +178,8 @@ class TargetedResumeFilterTest extends TestCase
         Carbon::setTestNow();
     }
 
-    public function test_logging_applied_status_update_sets_status_and_creates_history(): void {
+    public function test_logging_applied_status_update_sets_status_and_creates_history(): void
+    {
         Carbon::setTestNow('2026-05-03 14:15:00');
 
         $conversation = AiConversation::factory()->completed()->create();

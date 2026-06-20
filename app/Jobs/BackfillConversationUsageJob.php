@@ -4,9 +4,9 @@ namespace App\Jobs;
 
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Foundation\Queue\Queueable;
 
 class BackfillConversationUsageJob implements ShouldQueue
 {
@@ -22,8 +22,7 @@ class BackfillConversationUsageJob implements ShouldQueue
     public function __construct(
         public bool $all = false,
         public int $chunk = 200,
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the job.
@@ -32,7 +31,7 @@ class BackfillConversationUsageJob implements ShouldQueue
     {
         $lock = Cache::lock('ai:backfill-conversation-usage:job', 3600);
 
-        if (!$lock->get()) {
+        if (! $lock->get()) {
             return;
         }
 
@@ -46,7 +45,8 @@ class BackfillConversationUsageJob implements ShouldQueue
         }
     }
 
-    private function releaseLock(Lock $lock): void {
+    private function releaseLock(Lock $lock): void
+    {
         try {
             $lock->release();
         } catch (\Throwable) {

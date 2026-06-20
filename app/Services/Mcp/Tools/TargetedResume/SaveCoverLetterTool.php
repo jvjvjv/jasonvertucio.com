@@ -4,6 +4,7 @@ namespace App\Services\Mcp\Tools\TargetedResume;
 
 use App\Services\TargetedResumeService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -23,7 +24,7 @@ class SaveCoverLetterTool extends AuthorizedResumeTool
     }
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

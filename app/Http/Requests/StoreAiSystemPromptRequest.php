@@ -17,9 +17,9 @@ class StoreAiSystemPromptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'       => ['required', 'string', 'max:64'],
+            'title' => ['required', 'string', 'max:64'],
             'description' => ['required', 'string', 'max:200'],
-            'content'     => ['required', 'string'],
+            'content' => ['required', 'string'],
         ];
     }
 }

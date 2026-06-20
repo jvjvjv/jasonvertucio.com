@@ -3,34 +3,33 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Jvjvjv\CodeTalker\Enums\AiProvider;
 use App\Http\Requests\StoreAiSystemRequest;
 use App\Http\Requests\UpdateAiSystemRequest;
-use Jvjvjv\CodeTalker\Models\AiInteractionLog;
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Models\AiSystemFeatureDefault;
-use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
-use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
-use Jvjvjv\CodeTalker\Services\GeminiService;
-use Jvjvjv\CodeTalker\Services\GrokService;
-use Jvjvjv\CodeTalker\Services\AiSystemCapabilityService;
-use Jvjvjv\CodeTalker\Services\LmStudioService;
-use Jvjvjv\CodeTalker\Services\OpenAiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemFeatureDefault;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\AiSystemCapabilityService;
+use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\GeminiService;
+use Jvjvjv\CodeTalker\Services\GrokService;
+use Jvjvjv\CodeTalker\Services\LmStudioService;
+use Jvjvjv\CodeTalker\Services\OpenAiService;
 
 class AiSystemController extends Controller
 {
     public function __construct(
         private AiSystemCapabilityService $aiSystemCapabilityService,
         private AiModelReadinessService $aiModelReadinessService,
-    ) {
-    }
+    ) {}
 
     /**
      * Display a list of all AI systems.
@@ -120,7 +119,7 @@ class AiSystemController extends Controller
         $data['provider'] = $aiSystem->provider;
         $data['model'] = $aiSystem->model;
 
-        if (!array_key_exists('base_url', $data) || blank($data['base_url'])) {
+        if (! array_key_exists('base_url', $data) || blank($data['base_url'])) {
             $data['base_url'] = $aiSystem->base_url;
         }
 
@@ -226,7 +225,7 @@ class AiSystemController extends Controller
 
             $models = $client->listModels();
 
-            $formatted = collect($models)->map(fn(array $m) => [
+            $formatted = collect($models)->map(fn (array $m) => [
                 'id' => $m['id'],
                 'name' => $m['display_name'] ?? $m['id'],
                 'loaded' => (bool) ($m['loaded'] ?? false),
@@ -241,7 +240,7 @@ class AiSystemController extends Controller
             return response()->json(['models' => $formatted]);
 
         } catch (\Exception $e) {
-            return response()->json(['models' => [], 'error' => 'Failed to fetch models: ' . $e->getMessage()], 422);
+            return response()->json(['models' => [], 'error' => 'Failed to fetch models: '.$e->getMessage()], 422);
         }
     }
 
@@ -271,26 +270,26 @@ class AiSystemController extends Controller
     public function duplicate(AiSystem $aiSystem): RedirectResponse
     {
         $clone = $aiSystem->replicate(['id']);
-        $clone->name = $aiSystem->name . ' (copy)';
+        $clone->name = $aiSystem->name.' (copy)';
         $clone->save();
 
         return redirect()->route('admin.ai.systems.edit', $clone)
-            ->with('success', "AI system duplicated. Update the name and settings as needed.");
+            ->with('success', 'AI system duplicated. Update the name and settings as needed.');
     }
 
     /**
      * If no system_prompt_id was provided but custom_system_prompt text was, create a new prompt record.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     private function resolveCustomSystemPrompt(array &$data): void
     {
         $customText = $data['custom_system_prompt'] ?? null;
         unset($data['custom_system_prompt']);
 
-        if (empty($data['system_prompt_id']) && !empty($customText)) {
+        if (empty($data['system_prompt_id']) && ! empty($customText)) {
             $prompt = AiSystemPrompt::create([
-                'title' => mb_substr(($data['name'] ?? 'AI System') . ' Custom Prompt', 0, 64),
+                'title' => mb_substr(($data['name'] ?? 'AI System').' Custom Prompt', 0, 64),
                 'description' => 'Custom prompt',
                 'content' => $customText,
             ]);
@@ -301,7 +300,7 @@ class AiSystemController extends Controller
     /**
      * Sync feature defaults for an AI system.
      *
-     * @param array<int, string> $features
+     * @param  array<int, string>  $features
      */
     private function syncFeatureDefaults(AiSystem $system, array $features): void
     {
@@ -309,7 +308,7 @@ class AiSystemController extends Controller
         AiSystemFeatureDefault::where('ai_system_id', $system->id)->delete();
 
         // Remove any existing defaults for these features (from other systems)
-        if (!empty($features)) {
+        if (! empty($features)) {
             AiSystemFeatureDefault::whereIn('feature', $features)->delete();
         }
 
@@ -323,12 +322,13 @@ class AiSystemController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, string> $fields
+     * @param  array<string, mixed>  $data
+     * @param  array<int, string>  $fields
      */
-    private function decodeJsonFields(array &$data, array $fields): void {
+    private function decodeJsonFields(array &$data, array $fields): void
+    {
         foreach ($fields as $field) {
-            if (!array_key_exists($field, $data) || $data[$field] === null || $data[$field] === '') {
+            if (! array_key_exists($field, $data) || $data[$field] === null || $data[$field] === '') {
                 continue;
             }
 
@@ -337,5 +337,4 @@ class AiSystemController extends Controller
             }
         }
     }
-
 }

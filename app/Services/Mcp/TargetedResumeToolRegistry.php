@@ -8,6 +8,7 @@ use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\Mcp\DiscoversAiToolHandlers;
 use Jvjvjv\CodeTalker\Services\Mcp\ToolResultConverter;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Request;
@@ -15,7 +16,7 @@ use Laravel\Mcp\Server\Tool;
 
 class TargetedResumeToolRegistry implements AiToolRegistryContract
 {
-    use \Jvjvjv\CodeTalker\Services\Mcp\DiscoversAiToolHandlers;
+    use DiscoversAiToolHandlers;
 
     /** @var array<string, Tool|AiToolHandlerContract> */
     private array $handlers = [];
@@ -69,12 +70,12 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
     }
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     public function dispatch(string $toolName, array $input): array
     {
-        if (!isset($this->handlers[$toolName])) {
+        if (! isset($this->handlers[$toolName])) {
             return ['error' => "Unknown tool: {$toolName}"];
         }
 

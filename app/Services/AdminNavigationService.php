@@ -44,9 +44,9 @@ class AdminNavigationService
         return array_values(
             array_map(
                 fn (array $item) => [
-                    'href'        => $item['href'],
-                    'icon'        => $item['icon'],
-                    'label'       => $item['label'],
+                    'href' => $item['href'],
+                    'icon' => $item['icon'],
+                    'label' => $item['label'],
                     'description' => $item['description'],
                 ],
                 array_filter(
@@ -73,11 +73,11 @@ class AdminNavigationService
 
         return array_values(array_map(
             fn (array $entry) => [
-                'href'     => $entry['route'],
-                'label'    => $entry['name'],
+                'href' => $entry['route'],
+                'label' => $entry['name'],
                 'children' => array_values(array_map(
                     fn (array $item) => [
-                        'href'  => $item['href'],
+                        'href' => $item['href'],
                         'label' => $item['label'],
                     ],
                     array_filter(

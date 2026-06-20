@@ -1,18 +1,22 @@
 <?php
 
+use App\Http\Middleware\HandleChatInertiaRequests;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\User;
+
 return [
-    'user_model' => \App\Models\User::class,
+    'user_model' => User::class,
 
     'middleware' => [
         'web',
-        \App\Http\Middleware\HandleChatInertiaRequests::class,
+        HandleChatInertiaRequests::class,
     ],
 
     'admin_middleware' => [
         'web',
         'auth',
         'can:manage-ai-tools',
-        \App\Http\Middleware\HandleInertiaRequests::class,
+        HandleInertiaRequests::class,
     ],
 
     'reserved_slugs' => [

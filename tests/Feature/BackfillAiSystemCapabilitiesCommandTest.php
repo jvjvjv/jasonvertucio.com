@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Enums\AiProvider;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
 
 class BackfillAiSystemCapabilitiesCommandTest extends TestCase

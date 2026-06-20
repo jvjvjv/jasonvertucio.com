@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use BSPDX\Keystone\Http\Controllers\TwoFactorAuthController;
+use BSPDX\Keystone\Http\Controllers\LoginController;
 use BSPDX\Keystone\Http\Controllers\PasskeyAuthController;
 use BSPDX\Keystone\Http\Controllers\ProfileController;
-use BSPDX\Keystone\Http\Controllers\LoginController;
+use BSPDX\Keystone\Http\Controllers\TwoFactorAuthController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,13 +18,12 @@ use BSPDX\Keystone\Http\Controllers\LoginController;
 |
 */
 
-
 // Profile Routes
 Route::middleware(config('keystone.profile.middleware', ['web', 'auth']))->group(function () {
     Route::get(config('keystone.profile.path', '/profile'), [ProfileController::class, 'show'])
         ->name('keystone.profile.show');
 
-    Route::put(config('keystone.profile.path', '/profile') . '/auth-preferences', [ProfileController::class, 'updateAuthPreferences'])
+    Route::put(config('keystone.profile.path', '/profile').'/auth-preferences', [ProfileController::class, 'updateAuthPreferences'])
         ->name('keystone.profile.auth-preferences.update');
 });
 

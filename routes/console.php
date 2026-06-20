@@ -1,8 +1,8 @@
 <?php
 
-use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Schedule;
+use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
 
 /*
 |--------------------------------------------------------------------------

@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\ResumeExperience;
+use App\Models\ResumeExperienceBullet;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ResumeExperienceBullet>
+ * @extends Factory<ResumeExperienceBullet>
  */
 class ResumeExperienceBulletFactory extends Factory
 {

@@ -2,7 +2,8 @@
 
 namespace App\Services\Resume;
 
-class MarkdownToOpenXmlConverter {
+class MarkdownToOpenXmlConverter
+{
     protected const NAMESPACE_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 
     protected const BULLET_NUM_ID = '6';
@@ -33,7 +34,8 @@ class MarkdownToOpenXmlConverter {
     /**
      * Convert a markdown string into an OpenXML fragment.
      */
-    public function convert(string $markdown): string {
+    public function convert(string $markdown): string
+    {
         $markdown = $this->stripCodeFences($markdown);
 
         // Remove any leading newlines that could cause blank first paragraph
@@ -66,7 +68,8 @@ class MarkdownToOpenXmlConverter {
     /**
      * Process each line and build the corresponding XML, handling section changes and special cases.
      */
-    protected function processLine(array $line): string {
+    protected function processLine(array $line): string
+    {
         // Initialize $xml
         $xml = '';
         // Check for section changes
@@ -98,7 +101,8 @@ class MarkdownToOpenXmlConverter {
     /**
      * Build XML for a single parsed line.
      */
-    protected function buildLineXml(array $line): string {
+    protected function buildLineXml(array $line): string
+    {
         $styleId = $this->resolveStyleId($line['type'], $line['text']);
         $extraPpr = $line['type'] === 'bullet' ? $this->buildBulletNumPr() : null;
 
@@ -113,7 +117,8 @@ class MarkdownToOpenXmlConverter {
     /**
      * Strip ```tailored-resume``` code fences from the markdown.
      */
-    protected function stripCodeFences(string $markdown): string {
+    protected function stripCodeFences(string $markdown): string
+    {
         $markdown = preg_replace('/^```tailored-resume\s*\n/m', '', $markdown);
         $markdown = preg_replace('/^```\s*$/m', '', $markdown);
 
@@ -125,7 +130,8 @@ class MarkdownToOpenXmlConverter {
      *
      * @return array<int, array{type: string, text: string}>
      */
-    protected function parseLines(string $markdown): array {
+    protected function parseLines(string $markdown): array
+    {
         $lines = explode("\n", $markdown);
         $parsed = [];
 
@@ -156,7 +162,8 @@ class MarkdownToOpenXmlConverter {
     /**
      * Resolve the style ID based on line type and current section context.
      */
-    protected function resolveStyleId(string $lineType, string $text): string {
+    protected function resolveStyleId(string $lineType, string $text): string
+    {
         if ($this->currentSection !== null && isset(self::CONTEXTUAL_STYLES[$this->currentSection][$lineType])) {
             return self::CONTEXTUAL_STYLES[$this->currentSection][$lineType];
         }
@@ -167,8 +174,9 @@ class MarkdownToOpenXmlConverter {
     /**
      * Build a <w:p> XML element with the given style and text content.
      */
-    protected function buildParagraphXml(string $styleId, string $text, ?string $extraPpr = null): string {
-        $ppr = '<w:pPr><w:pStyle w:val="' . $this->xmlEscape($styleId) . '"/>';
+    protected function buildParagraphXml(string $styleId, string $text, ?string $extraPpr = null): string
+    {
+        $ppr = '<w:pPr><w:pStyle w:val="'.$this->xmlEscape($styleId).'"/>';
         if ($extraPpr !== null) {
             $ppr .= $extraPpr;
         }
@@ -176,13 +184,14 @@ class MarkdownToOpenXmlConverter {
 
         $runs = $this->buildRunsXml($text);
 
-        return '<w:p xmlns:w="' . self::NAMESPACE_W . '">' . $ppr . $runs . '</w:p>';
+        return '<w:p xmlns:w="'.self::NAMESPACE_W.'">'.$ppr.$runs.'</w:p>';
     }
 
     /**
      * Build <w:r> elements from text, handling **bold** inline formatting.
      */
-    protected function buildRunsXml(string $text): string {
+    protected function buildRunsXml(string $text): string
+    {
         $parts = preg_split('/(\*\*[^*]+\*\*)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
         if ($parts === false || empty($parts)) {
@@ -193,12 +202,12 @@ class MarkdownToOpenXmlConverter {
         foreach ($parts as $part) {
             if (preg_match('/^\*\*(.+)\*\*$/', $part, $matches)) {
                 $xml .= '<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">'
-                    . $this->xmlEscape($matches[1])
-                    . '</w:t></w:r>';
+                    .$this->xmlEscape($matches[1])
+                    .'</w:t></w:r>';
             } else {
                 $xml .= '<w:r><w:t xml:space="preserve">'
-                    . $this->xmlEscape($part)
-                    . '</w:t></w:r>';
+                    .$this->xmlEscape($part)
+                    .'</w:t></w:r>';
             }
         }
 
@@ -208,31 +217,34 @@ class MarkdownToOpenXmlConverter {
     /**
      * Build a continuous section break paragraph that switches column count.
      */
-    protected function buildColumnBreak(int $columns): string {
+    protected function buildColumnBreak(int $columns): string
+    {
         $ns = self::NAMESPACE_W;
 
-        return '<w:p xmlns:w="' . $ns . '">'
-            . '<w:pPr>'
-            . '<w:sectPr>'
-            . '<w:pgMar w:top="1037" w:right="720" w:bottom="547" w:left="720"/>'
-            . '<w:cols w:num="' . $columns . '" w:space="360"/>'
-            . '<w:type w:val="continuous"/>'
-            . '</w:sectPr>'
-            . '</w:pPr>'
-            . '</w:p>';
+        return '<w:p xmlns:w="'.$ns.'">'
+            .'<w:pPr>'
+            .'<w:sectPr>'
+            .'<w:pgMar w:top="1037" w:right="720" w:bottom="547" w:left="720"/>'
+            .'<w:cols w:num="'.$columns.'" w:space="360"/>'
+            .'<w:type w:val="continuous"/>'
+            .'</w:sectPr>'
+            .'</w:pPr>'
+            .'</w:p>';
     }
 
     /**
      * Build the <w:numPr> element for bullet list items.
      */
-    protected function buildBulletNumPr(): string {
-        return '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="' . self::BULLET_NUM_ID . '"/></w:numPr>';
+    protected function buildBulletNumPr(): string
+    {
+        return '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="'.self::BULLET_NUM_ID.'"/></w:numPr>';
     }
 
     /**
      * Escape text for safe XML insertion.
      */
-    protected function xmlEscape(string $text): string {
+    protected function xmlEscape(string $text): string
+    {
         return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 }

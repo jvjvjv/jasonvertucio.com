@@ -16,7 +16,7 @@ class CreatePhoneMessagesTable extends Migration
         Schema::create('phone_messages', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->text('message');
-            $table->string('sid',64);
+            $table->string('sid', 64);
             $table->unsignedBigInteger('from_phone_id');
             $table->unsignedBigInteger('to_phone_id');
             $table->timestamps();

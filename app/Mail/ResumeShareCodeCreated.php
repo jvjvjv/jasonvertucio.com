@@ -16,16 +16,16 @@ class ResumeShareCodeCreated extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public ResumeShareCode $code, public string $version)
-    {
-    }
+    public function __construct(public ResumeShareCode $code, public string $version) {}
 
     /**
      * Create a preview instance for mail testing.
      */
-    public static function preview(): self {
+    public static function preview(): self
+    {
         $code = ResumeShareCode::factory()->make();
         $version = json_decode(file_get_contents(resource_path('resume/version.json')));
+
         return new static($code, $version);
     }
 
@@ -49,7 +49,7 @@ class ResumeShareCodeCreated extends Mailable
             with: [
                 'code' => $this->code,
                 'version' => $this->version,
-                'shareUrl' => url('/resume?code=' . $this->code->id),
+                'shareUrl' => url('/resume?code='.$this->code->id),
             ],
         );
     }

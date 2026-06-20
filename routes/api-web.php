@@ -1,6 +1,5 @@
 <?php
 
-use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\JobUrlParseController;
@@ -8,6 +7,7 @@ use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\TargetedResumeController;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 
 /*
 |--------------------------------------------------------------------------

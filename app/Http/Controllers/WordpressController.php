@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\IpBan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-
-use App\Models\IpBan;
 
 class WordpressController extends Controller
 {
     public function index(Request $request)
     {
         $action = $request->input('action');
+
         return view('wp-login', ['action' => $action]);
     }
 

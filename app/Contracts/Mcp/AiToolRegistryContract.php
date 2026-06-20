@@ -10,7 +10,7 @@ interface AiToolRegistryContract
     public function toApiTools(): array;
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     public function dispatch(string $toolName, array $input): array;

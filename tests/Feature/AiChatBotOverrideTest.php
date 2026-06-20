@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\ResumeDataServiceContract;
+use App\Services\TargetedResumeService;
+use Generator;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
-use App\Contracts\ResumeDataServiceContract;
 use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
@@ -12,9 +15,6 @@ use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
-use App\Services\TargetedResumeService;
-use Generator;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Mockery;
 use Tests\TestCase;
 
@@ -69,7 +69,7 @@ class AiChatBotOverrideTest extends TestCase
         $service = new AiChatBotConversationService(
             $clientFactory,
             $memoryService,
-            new ConversationUsageService(),
+            new ConversationUsageService,
             $resumeDataService,
             $targetedResumeService,
         );
@@ -94,22 +94,71 @@ class AiChatBotOverrideTest extends TestCase
         ]);
         $bot->setRelation('aiSystem', $system);
 
-        $client = new class implements AiClientContract, CanLoadModels {
+        $client = new class implements AiClientContract, CanLoadModels
+        {
             public bool $loaded = false;
+
             public ?int $loadedContextLength = null;
 
-            public function withSystem(string $system): self { return $this; }
-            public function withModel(string $model): self { return $this; }
-            public function withMaxTokens(int $maxTokens): self { return $this; }
-            public function withTemperature(float $temperature): self { return $this; }
-            public function withTools(array $tools): self { return $this; }
-            public function message(array $messages): array { return []; }
-            public function stream(array $messages): Generator { if (false) { yield []; } }
-            public function listModels(): array { return []; }
-            public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array { return []; }
-            public function formatToolResultTurn(array $toolResults): array { return []; }
-            public function isModelLoaded(string $model): bool { return $this->loaded; }
-            public function loadModel(string $model, ?int $contextLength = null): array {
+            public function withSystem(string $system): self
+            {
+                return $this;
+            }
+
+            public function withModel(string $model): self
+            {
+                return $this;
+            }
+
+            public function withMaxTokens(int $maxTokens): self
+            {
+                return $this;
+            }
+
+            public function withTemperature(float $temperature): self
+            {
+                return $this;
+            }
+
+            public function withTools(array $tools): self
+            {
+                return $this;
+            }
+
+            public function message(array $messages): array
+            {
+                return [];
+            }
+
+            public function stream(array $messages): Generator
+            {
+                if (false) {
+                    yield [];
+                }
+            }
+
+            public function listModels(): array
+            {
+                return [];
+            }
+
+            public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
+            {
+                return [];
+            }
+
+            public function formatToolResultTurn(array $toolResults): array
+            {
+                return [];
+            }
+
+            public function isModelLoaded(string $model): bool
+            {
+                return $this->loaded;
+            }
+
+            public function loadModel(string $model, ?int $contextLength = null): array
+            {
                 $this->loaded = true;
                 $this->loadedContextLength = $contextLength;
 

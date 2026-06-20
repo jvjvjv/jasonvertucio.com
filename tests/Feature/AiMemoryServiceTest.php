@@ -3,13 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\ClaudeService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class AiMemoryServiceTest extends TestCase

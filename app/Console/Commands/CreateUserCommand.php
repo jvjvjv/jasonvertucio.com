@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Canvas\Models\User as CanvasUser;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Canvas\Models\User as CanvasUser;
+use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Hash;
 
 class CreateUserCommand extends Command
@@ -36,8 +37,6 @@ class CreateUserCommand extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return int
      */
     public function handle(): int
     {
@@ -49,6 +48,7 @@ class CreateUserCommand extends Command
         // Validate user doesn't exist
         if (User::where('email', $email)->exists()) {
             $this->error("User with email '{$email}' already exists.");
+
             return 1;
         }
 
@@ -57,6 +57,7 @@ class CreateUserCommand extends Command
             $password_confirm = $this->secret('Enter password again to confirm');
             if ($password != $password_confirm) {
                 $this->error("Passwords don't match!");
+
                 return 1;
             }
         }
@@ -67,7 +68,7 @@ class CreateUserCommand extends Command
             'password' => Hash::make($password),
         ]);
 
-        $this->info("User created successfully!");
+        $this->info('User created successfully!');
 
         // Role assignment
         if ($roleName) {
@@ -75,15 +76,15 @@ class CreateUserCommand extends Command
                 $role = Role::where('name', $roleName)->firstOrFail();
                 $user->assignRole($role);
                 $this->info("Role '{$roleName}' assigned.");
-            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            } catch (ModelNotFoundException $e) {
                 $this->warn("Role '{$roleName}' does not exist. User created without role.");
                 $availableRoles = Role::pluck('name')->toArray();
-                $this->info("Available roles: " . implode(', ', $availableRoles));
+                $this->info('Available roles: '.implode(', ', $availableRoles));
             }
         }
 
         $this->line("Email: {$email}");
-        $this->line("Roles: " . ($user->getRoleNames()->join(', ') ?: '<none>'));
+        $this->line('Roles: '.($user->getRoleNames()->join(', ') ?: '<none>'));
 
         return 0;
     }

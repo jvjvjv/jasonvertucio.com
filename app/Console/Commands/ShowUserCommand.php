@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
+use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ShowUserCommand extends Command
 {
@@ -19,8 +20,9 @@ class ShowUserCommand extends Command
             $user = User::with(['roles.permissions', 'passkeys'])
                 ->where('email', $email)
                 ->firstOrFail();
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             $this->error("User with email '{$email}' not found.");
+
             return 1;
         }
 
@@ -29,18 +31,18 @@ class ShowUserCommand extends Command
         $this->line("ID: {$user->id}");
         $this->line("Name: {$user->name}");
         $this->line("Email: {$user->email}");
-        $this->line("Email Verified: " . ($user->email_verified_at ? "Yes ({$user->email_verified_at->format('Y-m-d H:i:s')})" : "No"));
+        $this->line('Email Verified: '.($user->email_verified_at ? "Yes ({$user->email_verified_at->format('Y-m-d H:i:s')})" : 'No'));
         $this->line("Created: {$user->created_at->format('Y-m-d H:i:s')}");
         $this->line("Updated: {$user->updated_at->format('Y-m-d H:i:s')}");
 
         // Roles
         $this->info("\n=== Roles ===");
         if ($user->roles->isEmpty()) {
-            $this->warn("No roles assigned");
+            $this->warn('No roles assigned');
         } else {
-            $this->table(['Role', 'Guard'], $user->roles->map(fn($role) => [
+            $this->table(['Role', 'Guard'], $user->roles->map(fn ($role) => [
                 $role->name,
-                $role->guard_name
+                $role->guard_name,
             ]));
         }
 
@@ -48,7 +50,7 @@ class ShowUserCommand extends Command
         $this->info("\n=== Permissions (via roles) ===");
         $permissions = $user->getAllPermissions();
         if ($permissions->isEmpty()) {
-            $this->warn("No permissions");
+            $this->warn('No permissions');
         } else {
             $this->line($permissions->pluck('name')->sort()->join(', '));
         }
@@ -62,21 +64,22 @@ class ShowUserCommand extends Command
 
         // Authentication methods
         $this->info("\n=== Authentication ===");
-        $this->line("Password: Yes");
-        $this->line("2FA Enabled: " . ($user->hasTwoFactorEnabled() ? "Yes" : "No"));
+        $this->line('Password: Yes');
+        $this->line('2FA Enabled: '.($user->hasTwoFactorEnabled() ? 'Yes' : 'No'));
         if (method_exists($user, 'requires2FA')) {
-            $this->line("2FA Required: " . ($user->requires2FA() ? "Yes (by role)" : "No"));
+            $this->line('2FA Required: '.($user->requires2FA() ? 'Yes (by role)' : 'No'));
         }
-        $this->line("Passkeys Registered: " . ($user->hasPasskeysRegistered() ? "Yes ({$user->passkeys->count()})" : "No"));
+        $this->line('Passkeys Registered: '.($user->hasPasskeysRegistered() ? "Yes ({$user->passkeys->count()})" : 'No'));
         if (method_exists($user, 'requiresPasskey')) {
-            $this->line("Passkey Required: " . ($user->requiresPasskey() ? "Yes (by role)" : "No"));
+            $this->line('Passkey Required: '.($user->requiresPasskey() ? 'Yes (by role)' : 'No'));
         }
 
         // Special status
         $this->info("\n=== Special Status ===");
         if (method_exists($user, 'isSuperAdmin')) {
-            $this->line("Super Admin: " . ($user->isSuperAdmin() ? "Yes" : "No"));
+            $this->line('Super Admin: '.($user->isSuperAdmin() ? 'Yes' : 'No'));
         }
+
         return 0;
     }
 }

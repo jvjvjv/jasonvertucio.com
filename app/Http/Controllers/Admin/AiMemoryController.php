@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiFeatureMemoryRequest;
 use App\Http\Requests\Admin\UpdateAiFeatureMemoryRequest;
-use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
-use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 
 class AiMemoryController extends Controller
 {

@@ -33,12 +33,12 @@ class JobUrlParserController extends Controller
             $search = trim((string) $request->input('search'));
 
             $query->where(function ($builder) use ($search) {
-                $builder->where('domain', 'like', '%' . $search . '%')
-                    ->orWhere('job_title_selector', 'like', '%' . $search . '%')
-                    ->orWhere('company_name_selector', 'like', '%' . $search . '%')
-                    ->orWhere('job_location_selector', 'like', '%' . $search . '%')
-                    ->orWhere('job_description_selector', 'like', '%' . $search . '%')
-                    ->orWhere('ai_reasoning', 'like', '%' . $search . '%');
+                $builder->where('domain', 'like', '%'.$search.'%')
+                    ->orWhere('job_title_selector', 'like', '%'.$search.'%')
+                    ->orWhere('company_name_selector', 'like', '%'.$search.'%')
+                    ->orWhere('job_location_selector', 'like', '%'.$search.'%')
+                    ->orWhere('job_description_selector', 'like', '%'.$search.'%')
+                    ->orWhere('ai_reasoning', 'like', '%'.$search.'%');
             });
         }
 
@@ -135,6 +135,7 @@ class JobUrlParserController extends Controller
         foreach ($mapping as $field => $selector) {
             if ($selector === '') {
                 $results[$field] = '';
+
                 continue;
             }
 

@@ -17,7 +17,7 @@ return new class extends Migration
             ->value('id');
 
         if ($latestVersionId === null && DB::table('cover_letters')->exists()) {
-            throw new \RuntimeException('Cannot backfill cover letters: no resume_versions record exists.');
+            throw new RuntimeException('Cannot backfill cover letters: no resume_versions record exists.');
         }
 
         Schema::table('cover_letters', function (Blueprint $table) {

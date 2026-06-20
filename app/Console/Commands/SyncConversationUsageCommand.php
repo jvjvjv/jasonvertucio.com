@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Console\Command;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
-use Illuminate\Console\Command;
 
 class SyncConversationUsageCommand extends Command
 {
@@ -43,7 +43,7 @@ class SyncConversationUsageCommand extends Command
                 $changed++;
             }
 
-            $this->info('Synced conversation usage for ID ' . $conversation->id . '.');
+            $this->info('Synced conversation usage for ID '.$conversation->id.'.');
 
             return self::SUCCESS;
         }
@@ -76,8 +76,8 @@ class SyncConversationUsageCommand extends Command
         }
 
         $this->info('Conversation usage sync complete.');
-        $this->line('Processed: ' . $processed);
-        $this->line('Changed: ' . $changed);
+        $this->line('Processed: '.$processed);
+        $this->line('Changed: '.$changed);
 
         return self::SUCCESS;
     }

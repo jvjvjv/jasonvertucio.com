@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAiSystemPromptRequest;
 use App\Http\Requests\UpdateAiSystemPromptRequest;
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 
 class AiSystemPromptController extends Controller
 {

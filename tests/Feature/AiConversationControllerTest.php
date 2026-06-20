@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
+use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
 use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
-use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Queue;
-use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiConversationControllerTest extends TestCase

@@ -13,7 +13,8 @@ class AiConversationMessage extends Model
 
     public $timestamps = false;
 
-    protected static function booted(): void {
+    protected static function booted(): void
+    {
         static::creating(function (self $message): void {
             if ($message->created_at === null) {
                 $message->created_at = Carbon::now();

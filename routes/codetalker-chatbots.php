@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ChatBotController;
 use App\Http\Middleware\CheckChatBotAccess;
+use App\Http\Middleware\HandleChatInertiaRequests;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,16 +19,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware(['web', HandleChatInertiaRequests::class])
     ->get('/chats', [ChatBotController::class, 'index'])
     ->name('chat-bots.index');
 
-Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware(['web', HandleChatInertiaRequests::class])
     ->get('/chats/statuses', [ChatBotController::class, 'statuses'])
     ->name('chat-bots.statuses');
 
 // Hash/UUID-based conversation links
-Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class])
+Route::middleware(['web', HandleChatInertiaRequests::class])
     ->prefix('chat')
     ->group(function () {
         Route::get('/{slug}/{hash}', [ChatBotController::class, 'showByHash'])
@@ -47,13 +48,13 @@ $chatBotRoutes = function () {
 };
 
 // /chat/{slug} prefixed routes
-Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
+Route::middleware(['web', HandleChatInertiaRequests::class, CheckChatBotAccess::class])
     ->prefix('chat')
     ->name('chat-bots.chat.')
     ->group($chatBotRoutes);
 
 // Root-level /{slug} routes — must be last so the wildcard does not match
 // literal paths registered before this file is loaded.
-Route::middleware(['web', \App\Http\Middleware\HandleChatInertiaRequests::class, CheckChatBotAccess::class])
+Route::middleware(['web', HandleChatInertiaRequests::class, CheckChatBotAccess::class])
     ->name('chat-bots.root.')
     ->group($chatBotRoutes);

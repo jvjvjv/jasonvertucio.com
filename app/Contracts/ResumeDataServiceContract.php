@@ -2,6 +2,8 @@
 
 namespace App\Contracts;
 
+use Illuminate\Validation\ValidationException;
+
 interface ResumeDataServiceContract
 {
     /**
@@ -14,8 +16,9 @@ interface ResumeDataServiceContract
     /**
      * Save all editable data from the editor.
      *
-     * @param array{personal: array, skills: array, experience: array, education: array, projects: array} $data
-     * @throws \Illuminate\Validation\ValidationException
+     * @param  array{personal: array, skills: array, experience: array, education: array, projects: array}  $data
+     *
+     * @throws ValidationException
      */
     public function saveAllEditableData(array $data): void;
 

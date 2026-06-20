@@ -5,15 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Http\Controllers\ChatBotController as PackageChatBotController;
 use Jvjvjv\CodeTalker\Models\AiChatBot as BaseAiChatBot;
 use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
-use Jvjvjv\CodeTalker\Http\Controllers\ChatBotController as PackageChatBotController;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response as InertiaResponse;
 
 class ChatBotController extends PackageChatBotController
 {
@@ -58,8 +58,8 @@ class ChatBotController extends PackageChatBotController
                     'slug' => $bot->slug,
                     'name' => $bot->name,
                     'description' => $bot->description,
-                    'new_chat_url' => route($prefix . 'new', $bot),
-                    'status_url' => route($prefix . 'status', $bot),
+                    'new_chat_url' => route($prefix.'new', $bot),
+                    'status_url' => route($prefix.'status', $bot),
                     'conversations' => $conversations->map(function (AiConversation $conversation): array {
                         return [
                             'title' => trim((string) ($conversation->title ?: 'New chat')),
@@ -76,7 +76,8 @@ class ChatBotController extends PackageChatBotController
         ]);
     }
 
-    public function show(Request $request, BaseAiChatBot $aiChatBot): InertiaResponse {
+    public function show(Request $request, BaseAiChatBot $aiChatBot): InertiaResponse
+    {
 
         $this->abortIfInaccessible($request, $aiChatBot);
 
@@ -89,7 +90,7 @@ class ChatBotController extends PackageChatBotController
                 ->where('role', '!=', 'system')
                 ->orderBy('created_at')
                 ->get()
-                ->map(fn($message) => [
+                ->map(fn ($message) => [
                     'role' => $message->role,
                     'content' => $message->content,
                     'reasoning_content' => $message->reasoning_content,
@@ -101,7 +102,7 @@ class ChatBotController extends PackageChatBotController
         // Compute the hash-based URL for the current conversation (if it has one).
         $chatHash = $conversation?->chat_hash;
         $chatUrl = $chatHash
-            ? '/chat/' . $aiChatBot->slug . '/' . $chatHash
+            ? '/chat/'.$aiChatBot->slug.'/'.$chatHash
             : null;
 
         return Inertia::render('ai/ChatBot', [
@@ -122,8 +123,8 @@ class ChatBotController extends PackageChatBotController
             'statusUrl' => $this->routeUrlFor($aiChatBot, 'status'),
             'warmupUrl' => $this->routeUrlFor($aiChatBot, 'warmup'),
             'chatUrl' => $chatUrl,
-            'chatUrlBase' => '/chat/' . $aiChatBot->slug . '/',
-            'showIdentityForm' => !$request->user()
+            'chatUrlBase' => '/chat/'.$aiChatBot->slug.'/',
+            'showIdentityForm' => ! $request->user()
                 && $aiChatBot->require_visitor_identity
                 && $conversation === null,
         ]);
@@ -133,7 +134,8 @@ class ChatBotController extends PackageChatBotController
      * Load a conversation by its hash or UUID (UUID is the fallback for direct linking).
      * This allows accessing a specific chat from any computer.
      */
-    public function showByHash(Request $request, string $slug, string $hash): InertiaResponse {
+    public function showByHash(Request $request, string $slug, string $hash): InertiaResponse
+    {
         $conversation = AiConversation::findByChatHashOrUuid($hash);
 
         if ($conversation === null) {
@@ -148,7 +150,7 @@ class ChatBotController extends PackageChatBotController
         $state = $this->storedState($request, $bot);
         $state['current'] = $conversation->public_id;
         $history = collect($state['history'] ?? []);
-        if (!$history->contains(fn(array $item) => $item['public_id'] === $conversation->public_id)) {
+        if (! $history->contains(fn (array $item) => $item['public_id'] === $conversation->public_id)) {
             $history->prepend([
                 'handle' => (string) Str::ulid(),
                 'public_id' => $conversation->public_id,
@@ -163,7 +165,7 @@ class ChatBotController extends PackageChatBotController
             ->where('role', '!=', 'system')
             ->orderBy('created_at')
             ->get()
-            ->map(fn($message) => [
+            ->map(fn ($message) => [
                 'role' => $message->role,
                 'content' => $message->content,
                 'reasoning_content' => $message->reasoning_content,
@@ -174,7 +176,7 @@ class ChatBotController extends PackageChatBotController
         $historyForBot = $this->historyForBot($request, $bot);
 
         $chatUrl = $conversation->chat_hash
-            ? '/chat/' . $bot->slug . '/' . $conversation->chat_hash
+            ? '/chat/'.$bot->slug.'/'.$conversation->chat_hash
             : null;
 
         return Inertia::render('ai/ChatBot', [
@@ -194,12 +196,12 @@ class ChatBotController extends PackageChatBotController
             'switchUrl' => $this->routeUrlFor($bot, 'switch'),
             'statusUrl' => $this->routeUrlFor($bot, 'status'),
             'warmupUrl' => $this->routeUrlFor($bot, 'warmup'),
-            'showIdentityForm' => !$request->user()
+            'showIdentityForm' => ! $request->user()
                 && $bot->require_visitor_identity
                 && $conversation->messages()->where('role', '!=', 'system')->count() === 0,
             'chatHash' => $conversation->chat_hash,
             'chatUrl' => $chatUrl,
-            'chatUrlBase' => '/chat/' . $bot->slug . '/',
+            'chatUrlBase' => '/chat/'.$bot->slug.'/',
         ]);
     }
 

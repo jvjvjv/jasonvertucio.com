@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
-use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\TargetedResumeStatusUpdate;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use Tests\TestCase;
 
 class TargetedResumeStatusUpdateTest extends TestCase
@@ -244,7 +244,7 @@ class TargetedResumeStatusUpdateTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('resume/targeted/Index', false)
             ->where('conversations', fn ($conversations) => collect($conversations)->pluck('id')->contains($conv1->id)
-                && !collect($conversations)->pluck('id')->contains($conv2->id)
+                && ! collect($conversations)->pluck('id')->contains($conv2->id)
             )
         );
     }
@@ -294,7 +294,8 @@ class TargetedResumeStatusUpdateTest extends TestCase
         $this->assertSame('interviewing', $statusUpdates[1]['status']);
     }
 
-    public function test_can_edit_status_update_date_and_notes(): void {
+    public function test_can_edit_status_update_date_and_notes(): void
+    {
         $conversation = AiConversation::factory()->completed()->create();
         $targetedResume = TargetedResume::factory()->applied()->create([
             'ai_conversation_id' => $conversation->id,
@@ -322,7 +323,8 @@ class TargetedResumeStatusUpdateTest extends TestCase
         $this->assertSame('2026-06-12', $statusUpdate->occurred_at?->toDateString());
     }
 
-    public function test_can_delete_status_update_and_recalculate_latest_status(): void {
+    public function test_can_delete_status_update_and_recalculate_latest_status(): void
+    {
         $conversation = AiConversation::factory()->completed()->create();
         $targetedResume = TargetedResume::factory()->create([
             'ai_conversation_id' => $conversation->id,

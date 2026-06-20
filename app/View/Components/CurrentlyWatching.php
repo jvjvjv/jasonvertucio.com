@@ -4,18 +4,22 @@ namespace App\View\Components;
 
 use App\Models\LocalMedia;
 use Illuminate\View\Component;
+use Illuminate\View\View;
 
-class CurrentlyWatching extends Component {
+class CurrentlyWatching extends Component
+{
     public $media;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->media = LocalMedia::whereNotNull('last_playback_at')
             ->orderBy('last_playback_at', 'desc')
             ->first();
     }
 
-    public function title() {
-        if (!$this->media) {
+    public function title()
+    {
+        if (! $this->media) {
             return null;
         }
 
@@ -39,12 +43,13 @@ class CurrentlyWatching extends Component {
         return $title;
     }
 
-    public function subtitle() {
-        if (!$this->media) {
+    public function subtitle()
+    {
+        if (! $this->media) {
             return null;
         }
 
-        if (in_array($this->media->media_type, ['Episode', 'Season', 'Series',])) {
+        if (in_array($this->media->media_type, ['Episode', 'Season', 'Series'])) {
             $subtitle = '';
             if ($this->media->season_number && $this->media->episode_number) {
                 $season = str_pad($this->media->season_number, 2, '0', STR_PAD_LEFT);
@@ -54,6 +59,7 @@ class CurrentlyWatching extends Component {
             if ($this->media->title) {
                 $subtitle .= " - {$this->media->title}";
             }
+
             return $subtitle;
         }
 
@@ -61,12 +67,12 @@ class CurrentlyWatching extends Component {
             return "From the Album <em>{$this->media->album_name}</em>";
         }
 
-
         return null;
     }
 
-    public function playbackTime() {
-        if (!$this->media->playback_position) {
+    public function playbackTime()
+    {
+        if (! $this->media->playback_position) {
             return null;
         }
 
@@ -89,11 +95,12 @@ class CurrentlyWatching extends Component {
             return $time;
         };
 
-        return $formatTime($this->media->playback_position) . " / " . $formatTime($this->media->playback_duration);
+        return $formatTime($this->media->playback_position).' / '.$formatTime($this->media->playback_duration);
     }
 
-    public function description() {
-        if (!$this->media?->webhook_data) {
+    public function description()
+    {
+        if (! $this->media?->webhook_data) {
             return null;
         }
 
@@ -107,8 +114,9 @@ class CurrentlyWatching extends Component {
         return $data['Overview'];
     }
 
-    public function mediaType() {
-        if (!$this->media || !$this->media->media_type) {
+    public function mediaType()
+    {
+        if (! $this->media || ! $this->media->media_type) {
             return 'Media';
         }
 
@@ -126,8 +134,9 @@ class CurrentlyWatching extends Component {
         return $typeMap[$this->media->media_type] ?? $this->media->media_type;
     }
 
-    public function header() {
-        if (!$this->media) {
+    public function header()
+    {
+        if (! $this->media) {
             return 'Currently Watching';
         }
 
@@ -149,8 +158,9 @@ class CurrentlyWatching extends Component {
         }
     }
 
-    public function timestampLabel() {
-        if (!$this->media) {
+    public function timestampLabel()
+    {
+        if (! $this->media) {
             return 'Last updated';
         }
 
@@ -169,28 +179,32 @@ class CurrentlyWatching extends Component {
         }
     }
 
-    public function timestamp() {
-        if (!$this->media || !$this->media->last_playback_at) {
+    public function timestamp()
+    {
+        if (! $this->media || ! $this->media->last_playback_at) {
             return 'recently';
         }
 
         return $this->media->last_playback_at->diffForHumans();
     }
 
-    public function shouldDisplay() {
+    public function shouldDisplay()
+    {
         return $this->media !== null;
     }
 
-    public function mediaObject() {
+    public function mediaObject()
+    {
         return $this->media;
     }
 
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\View\View|string
+     * @return View|string
      */
-    public function render() {
+    public function render()
+    {
         return view('components.currently-watching');
     }
 }

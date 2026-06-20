@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Observers\CommentObserver;
 use App\Services\Mcp\TargetedResumeToolRegistry;
@@ -25,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         Comment::observe(CommentObserver::class);
 
-        Route::model('aiChatBot', \App\Models\AiChatBot::class);
+        Route::model('aiChatBot', AiChatBot::class);
 
         // Force HTTPS in local development when using local-ssl-proxy
         if (app()->environment('dev') && request()->getHost() === 'localhost') {

@@ -2,19 +2,8 @@
 
 namespace App\Services;
 
-use Jvjvjv\CodeTalker\Concerns\ExecutesAiTools;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Contracts\ResumeDataServiceContract;
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
-use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiConversationMessage;
-use Jvjvjv\CodeTalker\Models\AiInteractionLog;
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
@@ -22,26 +11,40 @@ use App\Services\Mcp\TargetedResumeToolRegistry;
 use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Jvjvjv\CodeTalker\Concerns\ExecutesAiTools;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
+use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 
 class TargetedResumeService
 {
     use ExecutesAiTools;
 
     public const int PROMPT_ID_DEFAULT = 1;
+
     public const int PROMPT_ID_CREATIVE = 2;
+
     public const int PROMPT_ID_TECHNICAL = 3;
+
     public const int PROMPT_ID_TARGETED_RESUME = 4;
+
     public const int PROMPT_ID_COVER_LETTER = 5;
 
     public function __construct(
         private AiClientFactory $clientFactory,
         private ResumeDataServiceContract $resumeDataService,
-        private \App\Services\TargetedResumeDocumentService $documentService,
+        private TargetedResumeDocumentService $documentService,
         private CoverLetterDocumentService $coverLetterDocumentService,
         private AiMemoryService $memoryService,
         private ConversationUsageService $conversationUsageService,
-    ) {
-    }
+    ) {}
 
     /**
      * Start a new targeted resume conversation.
@@ -81,7 +84,7 @@ class TargetedResumeService
         if ($features->contains('cover-letter')) {
             $parts[] = AiSystemPrompt::find(self::PROMPT_ID_COVER_LETTER)?->content ?? $this->buildCoverLetterPortionPrompt();
         }
-        $systemPrompt = !empty($parts)
+        $systemPrompt = ! empty($parts)
             ? implode("\n\n---\n\n## Cover Letter Guidelines\n\n", $parts)
             : ($system->systemPrompt?->content ?? $this->buildSystemPrompt());
         AiConversationMessage::create([
@@ -220,7 +223,7 @@ class TargetedResumeService
                 'error_message' => $e->getMessage(),
             ]);
 
-            yield "data: " . json_encode(['type' => 'error', 'message' => $e->getMessage()]) . "\n\n";
+            yield 'data: '.json_encode(['type' => 'error', 'message' => $e->getMessage()])."\n\n";
         }
     }
 
@@ -258,18 +261,17 @@ class TargetedResumeService
 
         $docxResult = $this->documentService->generateDocx($targetedResume);
 
-        if (!$docxResult['success']) {
+        if (! $docxResult['success']) {
             throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
         }
 
         $pdfResult = $this->documentService->generatePdf($targetedResume);
 
-        if (!$pdfResult['success']) {
+        if (! $pdfResult['success']) {
             throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
         }
 
         $conversation->update(['status' => AiConversationStatus::Completed]);
-
 
         return $targetedResume->fresh();
     }
@@ -277,7 +279,8 @@ class TargetedResumeService
     /**
      * @return array{title: ?string, markdown: string}
      */
-    protected function parseTailoredResumeContent(string $tailoredContent): array {
+    protected function parseTailoredResumeContent(string $tailoredContent): array
+    {
         $normalizedContent = str_replace("\r\n", "\n", trim($tailoredContent));
         $title = null;
 
@@ -297,10 +300,11 @@ class TargetedResumeService
         ];
     }
 
-    protected function extractTitleFromSummary(string $tailoredContent): ?string {
+    protected function extractTitleFromSummary(string $tailoredContent): ?string
+    {
         $parts = preg_split('/^#\s+Summary\s*$/mi', $tailoredContent, 2);
 
-        if (!is_array($parts) || count($parts) < 2) {
+        if (! is_array($parts) || count($parts) < 2) {
             return null;
         }
 
@@ -341,7 +345,8 @@ class TargetedResumeService
         return null;
     }
 
-    protected function normalizeTailoredResumeTitle(?string $title): ?string {
+    protected function normalizeTailoredResumeTitle(?string $title): ?string
+    {
         $normalizedTitle = trim((string) $title, " \t\n\r\0\x0B-:,");
 
         return $normalizedTitle !== '' ? $normalizedTitle : null;
@@ -354,7 +359,7 @@ class TargetedResumeService
     {
         $targetedResume = $conversation->targetedResume;
 
-        if (!$targetedResume) {
+        if (! $targetedResume) {
             throw new \RuntimeException('Please finalize the targeted resume before creating a cover letter.');
         }
 
@@ -379,12 +384,12 @@ class TargetedResumeService
         );
 
         $docxResult = $this->coverLetterDocumentService->generateDocx($coverLetter);
-        if (!$docxResult['success']) {
+        if (! $docxResult['success']) {
             throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the cover letter DOCX.');
         }
 
         $pdfResult = $this->coverLetterDocumentService->generatePdf($coverLetter);
-        if (!$pdfResult['success']) {
+        if (! $pdfResult['success']) {
             throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the cover letter PDF.');
         }
 
@@ -441,7 +446,7 @@ class TargetedResumeService
         $closing = 'Sincerely,';
 
         // Check first line for a greeting
-        if (!empty($lines) && preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $lines[0])) {
+        if (! empty($lines) && preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $lines[0])) {
             $greeting = trim(array_shift($lines));
         }
 
@@ -470,7 +475,7 @@ class TargetedResumeService
      */
     public function buildSystemPrompt(): string
     {
-        return $this->buildResumePortionPrompt() . "\n\n---\n\n## Cover Letter Guidelines\n\n" . $this->buildCoverLetterPortionPrompt();
+        return $this->buildResumePortionPrompt()."\n\n---\n\n## Cover Letter Guidelines\n\n".$this->buildCoverLetterPortionPrompt();
     }
 
     /**
@@ -478,7 +483,7 @@ class TargetedResumeService
      */
     public function buildResumePortionPrompt(): string
     {
-        return <<<PROMPT
+        return <<<'PROMPT'
 # Targeted Resume & Cover Letter
 
 You are an expert career advisor, resume tailoring specialist, and cover letter ghostwriter for Jason Vertucio. You help candidates optimize their resumes for specific job postings and produce cover letters that sound like Jay wrote them himself — not like an AI filled in a template. Your main job is to get the resume past automated ATS.
@@ -604,7 +609,7 @@ PROMPT;
      */
     public function buildCoverLetterPortionPrompt(): string
     {
-        return <<<PROMPT
+        return <<<'PROMPT'
 ### Voice & Tone
 
 - Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.
@@ -638,7 +643,8 @@ PROMPT;
 PROMPT;
     }
 
-    public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation {
+    public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation
+    {
         $context = $conversation->context ?? [];
 
         $title = trim((string) ($data['title'] ?? ''));
@@ -678,18 +684,19 @@ PROMPT;
         return $conversation->fresh(['targetedResume']);
     }
 
-    private function syncConversationMetadataFromAssistantResponse(AiConversation $conversation, string $response): void {
+    private function syncConversationMetadataFromAssistantResponse(AiConversation $conversation, string $response): void
+    {
         $context = $conversation->context ?? [];
         $updates = [];
 
-        if (!Arr::get($context, 'company_name_manual')) {
+        if (! Arr::get($context, 'company_name_manual')) {
             $companyName = $this->extractCompanyName($response);
             if ($companyName !== null) {
                 $updates['company_name'] = $companyName;
             }
         }
 
-        if (!Arr::get($context, 'job_title_manual')) {
+        if (! Arr::get($context, 'job_title_manual')) {
             $jobTitle = $this->extractJobTitle($response);
             if ($jobTitle !== null) {
                 $updates['job_title'] = $jobTitle;
@@ -712,7 +719,7 @@ PROMPT;
 
         $conversation->context = array_merge($context, $updates);
 
-        if (!Arr::get($context, 'title_manual')) {
+        if (! Arr::get($context, 'title_manual')) {
             $conversation->title = $this->buildConversationTitle(
                 $updates['company_name'] ?? ($context['company_name'] ?? null),
                 $updates['job_title'] ?? ($context['job_title'] ?? null),
@@ -722,7 +729,8 @@ PROMPT;
         $conversation->save();
     }
 
-    private function extractCompanyName(string $response): ?string {
+    private function extractCompanyName(string $response): ?string
+    {
         if (preg_match('/^Company:\s*(.+)$/im', $response, $matches) === 1) {
             return $this->cleanExtractedMetadata($matches[1]);
         }
@@ -730,7 +738,8 @@ PROMPT;
         return null;
     }
 
-    private function extractJobTitle(string $response): ?string {
+    private function extractJobTitle(string $response): ?string
+    {
         if (preg_match('/^(?:Job Title|Position|Role):\s*(.+)$/im', $response, $matches) === 1) {
             return $this->cleanExtractedMetadata($matches[1]);
         }
@@ -738,7 +747,8 @@ PROMPT;
         return null;
     }
 
-    private function extractFitScore(string $response): ?int {
+    private function extractFitScore(string $response): ?int
+    {
         if (preg_match('/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i', $response, $matches) !== 1) {
             return null;
         }
@@ -748,7 +758,8 @@ PROMPT;
         return $fitScore >= 1 && $fitScore <= 100 ? $fitScore : null;
     }
 
-    private function extractFitSummary(string $response): ?string {
+    private function extractFitSummary(string $response): ?string
+    {
         if (preg_match('/^Fit Summary:\s*(.+)$/im', $response, $matches) === 1) {
             return $this->cleanExtractedMetadata($matches[1]);
         }
@@ -756,13 +767,15 @@ PROMPT;
         return null;
     }
 
-    private function cleanExtractedMetadata(string $value): ?string {
+    private function cleanExtractedMetadata(string $value): ?string
+    {
         $cleaned = trim(preg_replace('/^[\-*#>\s`]+|[\s`]+$/', '', $value) ?? $value);
 
         return $cleaned !== '' ? $cleaned : null;
     }
 
-    private function buildConversationTitle(?string $companyName, ?string $jobTitle): string {
+    private function buildConversationTitle(?string $companyName, ?string $jobTitle): string
+    {
         if ($companyName && $jobTitle) {
             return "{$companyName} - {$jobTitle}";
         }
@@ -777,6 +790,7 @@ PROMPT;
 
         return 'Targeted Resume';
     }
+
     /**
      * Build the initial user message that starts analysis with the job description.
      */

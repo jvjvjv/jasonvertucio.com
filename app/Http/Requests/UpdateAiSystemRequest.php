@@ -22,21 +22,21 @@ class UpdateAiSystemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'        => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'model_capabilities' => ['nullable', 'array'],
             'model_capabilities.reasoning' => ['nullable', 'boolean'],
             'model_capabilities.vision' => ['nullable', 'boolean'],
             'model_capabilities.tools' => ['nullable', 'boolean'],
             'model_capabilities.max_context_length' => ['nullable', 'integer', 'min:1', 'max:2000000'],
-            'base_url'    => ['nullable', 'string', 'url', 'max:255'],
+            'base_url' => ['nullable', 'string', 'url', 'max:255'],
             'api_version' => ['nullable', 'string', 'max:50'],
-            'max_tokens'  => ['required', 'integer', 'min:1', 'max:200000'],
+            'max_tokens' => ['required', 'integer', 'min:1', 'max:200000'],
             'context_length' => ['nullable', 'integer', 'min:1', 'max:200000'],
             'temperature' => ['nullable', 'numeric', 'min:0', 'max:1'],
-            'is_active'   => ['boolean'],
+            'is_active' => ['boolean'],
             'system_prompt_id' => ['nullable', 'integer', 'exists:ai_system_prompts,id'],
             'custom_system_prompt' => ['nullable', 'string'],
-            'config'      => ['nullable', 'json'],
+            'config' => ['nullable', 'json'],
             'credentials' => ['nullable', 'json'],
             'auth_type' => ['nullable', 'string', 'max:50'],
             'endpoint_type' => ['nullable', 'string', 'max:50'],
@@ -49,7 +49,7 @@ class UpdateAiSystemRequest extends FormRequest
             'enable_thinking' => ['nullable', 'boolean'],
             'is_local_endpoint' => ['boolean'],
             'pricing_profile' => ['nullable', 'json'],
-            'feature_defaults'   => ['nullable', 'array'],
+            'feature_defaults' => ['nullable', 'array'],
             'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],
         ];
     }

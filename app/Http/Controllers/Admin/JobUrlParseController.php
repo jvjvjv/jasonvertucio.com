@@ -5,18 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ParseJobUrlRequest;
 use App\Http\Requests\ReparseJobUrlRequest;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\JobUrlParser;
 use App\Services\JobUrlParseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 class JobUrlParseController extends Controller
 {
     public function __construct(
         private JobUrlParseService $parseService,
-    ) {
-    }
+    ) {}
 
     /**
      * Parse a job URL and extract job information.

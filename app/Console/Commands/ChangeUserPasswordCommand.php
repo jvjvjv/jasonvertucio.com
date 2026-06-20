@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Canvas\Models\User as CanvasUser;
 use App\Models\User;
+use Canvas\Models\User as CanvasUser;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
 class ChangeUserPasswordCommand extends Command
@@ -35,8 +35,6 @@ class ChangeUserPasswordCommand extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return int
      */
     public function handle(): int
     {
@@ -47,13 +45,15 @@ class ChangeUserPasswordCommand extends Command
             $password_confirm = $this->secret('Enter password again to confirm');
             if ($password != $password_confirm) {
                 $this->error("Passwords don't match!");
+
                 return 1;
             }
         }
         $user = User::whereEmail($email)->firstOrFail();
         $user->password = Hash::make($password);
         $user->save();
-        $this->info("DONE");
+        $this->info('DONE');
+
         return 0;
     }
 }

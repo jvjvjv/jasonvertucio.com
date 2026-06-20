@@ -13,7 +13,7 @@ class CoverLetterDocumentServiceTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function testBuildDocxDataIncludesUrlFromPersonalInfo(): void
+    public function test_build_docx_data_includes_url_from_personal_info(): void
     {
         $resumeVersion = ResumeVersion::factory()->create();
         ResumePersonalInfo::factory()->create([
@@ -41,18 +41,18 @@ class CoverLetterDocumentServiceTest extends TestCase
         $this->assertSame('jasonvertucio.com', $data['url']);
     }
 
-    public function testNormalizeSplitPlaceholdersCollapsesSplitUrlToken(): void
+    public function test_normalize_split_placeholders_collapses_split_url_token(): void
     {
         $service = app(CoverLetterDocumentService::class);
         $normalize = new \ReflectionMethod($service, 'normalizeSplitPlaceholders');
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-            . '<w:body><w:p>'
-            . '<w:r><w:t>{</w:t></w:r>'
-            . '<w:r><w:t>url</w:t></w:r>'
-            . '<w:r><w:t>}</w:t></w:r>'
-            . '</w:p></w:body></w:document>';
+            .'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            .'<w:body><w:p>'
+            .'<w:r><w:t>{</w:t></w:r>'
+            .'<w:r><w:t>url</w:t></w:r>'
+            .'<w:r><w:t>}</w:t></w:r>'
+            .'</w:p></w:body></w:document>';
 
         $normalized = $normalize->invoke($service, $xml, ['url']);
 

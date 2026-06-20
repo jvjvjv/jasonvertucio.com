@@ -77,7 +77,7 @@ class AiClientFactory
             throw new \RuntimeException("No default AI system configured for feature: {$feature}");
         }
 
-        if (!$system->is_active) {
+        if (! $system->is_active) {
             throw new \RuntimeException("The default AI system for feature '{$feature}' is inactive.");
         }
 

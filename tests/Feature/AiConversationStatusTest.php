@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TargetedResumeStatus;
+use App\Models\TargetedResume;
+use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
-use App\Enums\TargetedResumeStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use App\Models\TargetedResume;
-use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Tests\TestCase;
 
 class AiConversationStatusTest extends TestCase

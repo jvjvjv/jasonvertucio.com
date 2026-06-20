@@ -3,11 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\AiChatBot;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AiChatBot>
+ * @extends Factory<AiChatBot>
  */
 class AiChatBotFactory extends Factory
 {

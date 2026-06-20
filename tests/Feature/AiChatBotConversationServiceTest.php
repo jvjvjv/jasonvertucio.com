@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use Generator;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
@@ -9,8 +11,6 @@ use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
-use Generator;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Mockery;
 use Tests\TestCase;
 
@@ -37,7 +37,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
         $targetedResumeService = Mockery::mock(TargetedResumeService::class);
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService, $resumeDataService, $targetedResumeService);
 
         $conversation = $service->startConversation($bot);
 
@@ -49,7 +49,8 @@ class AiChatBotConversationServiceTest extends TestCase
         );
     }
 
-    public function test_continue_conversation_syncs_usage_after_successful_response(): void {
+    public function test_continue_conversation_syncs_usage_after_successful_response(): void
+    {
         $bot = AiChatBot::factory()->create([
             'ai_system_id' => AiSystem::factory()->create([
                 'pricing_profile' => [
@@ -78,7 +79,7 @@ class AiChatBotConversationServiceTest extends TestCase
         $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
         $targetedResumeService = Mockery::mock(TargetedResumeService::class);
 
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService(), $resumeDataService, $targetedResumeService);
+        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService, $resumeDataService, $targetedResumeService);
 
         $conversation = $service->startConversation($bot->fresh());
 
@@ -111,7 +112,8 @@ class AiChatBotConversationServiceTest extends TestCase
         yield ['type' => 'message_stop'];
     }
 
-    private function usageAwareStream(): Generator {
+    private function usageAwareStream(): Generator
+    {
         yield [
             'type' => 'message_start',
             'message' => [

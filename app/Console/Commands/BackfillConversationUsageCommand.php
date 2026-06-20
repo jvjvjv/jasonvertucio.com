@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Console\Command;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
-use Illuminate\Console\Command;
 
 class BackfillConversationUsageCommand extends Command
 {
@@ -41,7 +41,7 @@ class BackfillConversationUsageCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Backfilling usage for ' . $total . ' conversation(s)...');
+        $this->info('Backfilling usage for '.$total.' conversation(s)...');
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
@@ -64,8 +64,8 @@ class BackfillConversationUsageCommand extends Command
         $bar->finish();
         $this->newLine(2);
         $this->info('Backfill complete.');
-        $this->line('Updated: ' . $updated);
-        $this->line('Unchanged: ' . ($total - $updated));
+        $this->line('Updated: '.$updated);
+        $this->line('Unchanged: '.($total - $updated));
 
         return self::SUCCESS;
     }

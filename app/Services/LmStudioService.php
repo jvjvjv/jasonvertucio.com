@@ -2,26 +2,33 @@
 
 namespace App\Services;
 
-use Jvjvjv\CodeTalker\Contracts\AiClientContract;
-use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
+use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
 
 class LmStudioService implements AiClientContract, CanLoadModels
 {
     private string $defaultModel;
+
     private int $defaultMaxTokens;
+
     private ?int $defaultContextLength;
 
     /** The root URL, e.g. http://localhost:1234 */
     private string $serverUrl;
 
     private ?string $apiKey;
+
     private ?string $system = null;
+
     private ?string $model = null;
+
     private ?int $maxTokens = null;
+
     private ?int $contextLength = null;
+
     private ?float $temperature = null;
 
     /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> */
@@ -85,7 +92,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
         $response = Http::withHeaders($this->headers())
             ->timeout(600)
-            ->post($this->serverUrl . '/v1/chat/completions', $payload);
+            ->post($this->serverUrl.'/v1/chat/completions', $payload);
 
         $this->reset();
 
@@ -130,7 +137,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $response = Http::withHeaders($this->headers())
             ->withOptions(['stream' => true])
             ->timeout(600)
-            ->post($this->serverUrl . '/v1/chat/completions', $payload);
+            ->post($this->serverUrl.'/v1/chat/completions', $payload);
 
         $this->reset();
 
@@ -147,14 +154,14 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $pendingToolCalls = [];
         $finishReason = null;
 
-        while (!$body->eof()) {
+        while (! $body->eof()) {
             $buffer .= $body->read(1024);
 
             while (($pos = strpos($buffer, "\n")) !== false) {
                 $line = trim(substr($buffer, 0, $pos));
                 $buffer = substr($buffer, $pos + 1);
 
-                if ($line === '' || !str_starts_with($line, 'data: ')) {
+                if ($line === '' || ! str_starts_with($line, 'data: ')) {
                     continue;
                 }
 
@@ -166,7 +173,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
                 $chunk = json_decode($rawData, true);
 
-                if (!is_array($chunk)) {
+                if (! is_array($chunk)) {
                     continue;
                 }
 
@@ -175,7 +182,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
                     $outputTokens = isset($chunk['usage']['completion_tokens']) ? (int) $chunk['usage']['completion_tokens'] : $outputTokens;
                 }
 
-                if (!$started) {
+                if (! $started) {
                     $started = true;
 
                     yield [
@@ -212,11 +219,11 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 }
 
                 // Accumulate streaming tool_calls fragments (delta format)
-                if (!empty($delta['tool_calls'])) {
+                if (! empty($delta['tool_calls'])) {
                     foreach ($delta['tool_calls'] as $tcDelta) {
                         $idx = (int) ($tcDelta['index'] ?? 0);
 
-                        if (!isset($pendingToolCalls[$idx])) {
+                        if (! isset($pendingToolCalls[$idx])) {
                             $pendingToolCalls[$idx] = ['id' => '', 'name' => '', 'arguments' => ''];
                         }
 
@@ -235,7 +242,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 }
 
                 // LM Studio fallback: complete tool_calls in choice['message'] instead of delta
-                if (empty($delta['tool_calls']) && !empty($choice['message']['tool_calls'])) {
+                if (empty($delta['tool_calls']) && ! empty($choice['message']['tool_calls'])) {
                     foreach ($choice['message']['tool_calls'] as $i => $tc) {
                         $pendingToolCalls[$i] = [
                             'id' => (string) ($tc['id'] ?? ''),
@@ -315,13 +322,13 @@ class LmStudioService implements AiClientContract, CanLoadModels
     {
         $response = Http::withHeaders($this->headers())
             ->timeout(15)
-            ->get($this->serverUrl . '/api/v1/models');
+            ->get($this->serverUrl.'/api/v1/models');
 
         $response->throw();
 
         $models = $response->json('models', []);
 
-        if (!is_array($models)) {
+        if (! is_array($models)) {
             return [];
         }
 
@@ -334,7 +341,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 return [
                     'id' => (string) $m['key'],
                     'display_name' => (string) ($m['display_name'] ?? $m['key']),
-                    'loaded' => !empty($m['loaded_instances']),
+                    'loaded' => ! empty($m['loaded_instances']),
                     'max_context_length' => isset($m['max_context_length']) ? (int) $m['max_context_length'] : null,
                     'capabilities' => [
                         'vision' => (bool) ($capabilities['vision'] ?? false),
@@ -354,7 +361,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     {
         $response = Http::withHeaders($this->headers())
             ->timeout(15)
-            ->get($this->serverUrl . '/api/v1/models');
+            ->get($this->serverUrl.'/api/v1/models');
 
         if ($response->failed()) {
             return false;
@@ -362,18 +369,18 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
         $models = $response->json('models', []);
 
-        if (!is_array($models)) {
+        if (! is_array($models)) {
             return false;
         }
 
         return collect($models)
             ->contains(static function (mixed $m) use ($model): bool {
-                if (!is_array($m)) {
+                if (! is_array($m)) {
                     return false;
                 }
 
                 return strcasecmp((string) ($m['key'] ?? ''), $model) === 0
-                    && !empty($m['loaded_instances']);
+                    && ! empty($m['loaded_instances']);
             });
     }
 
@@ -396,7 +403,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
         $response = Http::withHeaders($this->headers())
             ->timeout(300)
-            ->post($this->serverUrl . '/api/v1/models/load', $payload);
+            ->post($this->serverUrl.'/api/v1/models/load', $payload);
 
         $response->throw();
 
@@ -410,7 +417,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     }
 
     /**
-     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @param  array<int, array{id: string, name: string, input: array<string, mixed>}>  $toolCalls
      * @return array{role: string, content: string|null, tool_calls: array<int, mixed>}
      */
     public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
@@ -424,7 +431,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 'function' => [
                     'name' => $toolCall['name'],
                     'arguments' => json_encode(
-                        $toolCall['input'] === [] ? new \stdClass() : $toolCall['input']
+                        $toolCall['input'] === [] ? new \stdClass : $toolCall['input']
                     ),
                 ],
             ];
@@ -438,7 +445,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     }
 
     /**
-     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @param  array<int, array{id: string, result: array<string, mixed>}>  $toolResults
      * @return array<int, array{role: string, tool_call_id: string, content: string}>
      */
     public function formatToolResultTurn(array $toolResults): array
@@ -451,7 +458,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     }
 
     /**
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @param  array<int, array{role: string, content: string|array<int, mixed>}>  $messages
      */
     private function buildOpenAiPayload(array $messages, bool $streaming): array
     {
@@ -490,7 +497,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
     }
 
     /**
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @param  array<int, array{role: string, content: string|array<int, mixed>}>  $messages
      * @return array<int, array{role: string, content: string|array<int, mixed>}>
      */
     private function buildMessages(array $messages): array
@@ -515,7 +522,8 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $this->tools = [];
     }
 
-    private function normalizeServerUrl(string $serverUrl): string {
+    private function normalizeServerUrl(string $serverUrl): string
+    {
         $normalized = rtrim($serverUrl, '/');
 
         if (str_ends_with($normalized, '/api/v1')) {
@@ -537,7 +545,7 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $headers = ['content-type' => 'application/json'];
 
         if ($this->apiKey !== null && $this->apiKey !== '') {
-            $headers['Authorization'] = 'Bearer ' . $this->apiKey;
+            $headers['Authorization'] = 'Bearer '.$this->apiKey;
         }
 
         return $headers;

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\AiFeatureMemoryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AiFeatureMemory extends Model
 {
-    /** @use HasFactory<\Database\Factories\AiFeatureMemoryFactory> */
+    /** @use HasFactory<AiFeatureMemoryFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -49,17 +50,17 @@ class AiFeatureMemory extends Model
     /**
      * Get the user who owns this memory (for logged-in users).
      */
-    public function user(): ?\Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user(): ?BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 
     /**
      * Scope memories to a specific user by ID.
      *
-     * @param \Illuminate\Database\Eloquent\Builder<self> $query
+     * @param  Builder<self>  $query
      */
-    public function scopeForUser($query, int $userId): \Illuminate\Database\Eloquent\Builder
+    public function scopeForUser($query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
@@ -67,15 +68,15 @@ class AiFeatureMemory extends Model
     /**
      * Scope memories to a specific visitor by email.
      *
-     * @param \Illuminate\Database\Eloquent\Builder<self> $query
+     * @param  Builder<self>  $query
      */
-    public function scopeForVisitor($query, string $email): \Illuminate\Database\Eloquent\Builder
+    public function scopeForVisitor($query, string $email): Builder
     {
         return $query->where('visitor_email', $email);
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      */
     public function scopeForFeature(Builder $query, string $feature): Builder
     {
@@ -83,7 +84,7 @@ class AiFeatureMemory extends Model
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -91,7 +92,7 @@ class AiFeatureMemory extends Model
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      */
     public function scopeByCategory(Builder $query, string $category): Builder
     {

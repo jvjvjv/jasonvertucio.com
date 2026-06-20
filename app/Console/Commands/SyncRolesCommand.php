@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SyncRolesCommand extends Command
 {
@@ -20,8 +21,9 @@ class SyncRolesCommand extends Command
         // Find user
         try {
             $user = User::where('email', $email)->firstOrFail();
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             $this->error("User with email '{$email}' not found.");
+
             return 1;
         }
 
@@ -30,10 +32,11 @@ class SyncRolesCommand extends Command
         foreach ($roleNames as $roleName) {
             try {
                 $roles->push(Role::where('name', $roleName)->firstOrFail());
-            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            } catch (ModelNotFoundException $e) {
                 $this->error("Role '{$roleName}' does not exist.");
                 $availableRoles = Role::pluck('name')->toArray();
-                $this->info("Available roles: " . implode(', ', $availableRoles));
+                $this->info('Available roles: '.implode(', ', $availableRoles));
+
                 return 1;
             }
         }
@@ -46,8 +49,9 @@ class SyncRolesCommand extends Command
         $this->line("New roles: {$newRoles}");
 
         $confirm = $this->confirm('Replace all roles with the new set?', true);
-        if (!$confirm) {
+        if (! $confirm) {
             $this->info('Operation cancelled.');
+
             return 0;
         }
 
@@ -55,7 +59,7 @@ class SyncRolesCommand extends Command
         $user->syncRoles($roles);
 
         $this->info("Roles synced successfully for user '{$email}'.");
-        $this->line("Current roles: " . $user->getRoleNames()->join(', '));
+        $this->line('Current roles: '.$user->getRoleNames()->join(', '));
 
         return 0;
     }

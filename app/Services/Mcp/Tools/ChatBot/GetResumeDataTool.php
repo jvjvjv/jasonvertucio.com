@@ -5,6 +5,7 @@ namespace App\Services\Mcp\Tools\ChatBot;
 use App\Contracts\ResumeDataServiceContract;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -23,7 +24,7 @@ class GetResumeDataTool extends Tool
     ) {}
 
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {

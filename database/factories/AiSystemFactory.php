@@ -3,13 +3,14 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Jvjvjv\CodeTalker\Models\AiSystem>
+ * @extends Factory<AiSystem>
  */
 class AiSystemFactory extends Factory
 {
-    protected $model = \Jvjvjv\CodeTalker\Models\AiSystem::class;
+    protected $model = AiSystem::class;
 
     /**
      * Define the model's default state.

@@ -18,7 +18,7 @@ class JobUrlParseServiceTest extends TestCase
         $this->service = new JobUrlParseService($factory);
     }
 
-    public function testCleanHtmlStripsScriptsAndStyles(): void
+    public function test_clean_html_strips_scripts_and_styles(): void
     {
         $html = '<html><head><style>body{color:red}</style></head><body><script>alert("x")</script><p>Hello</p></body></html>';
 
@@ -30,7 +30,7 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Hello', $cleaned);
     }
 
-    public function testCleanHtmlStripsSvgAndNoscript(): void
+    public function test_clean_html_strips_svg_and_noscript(): void
     {
         $html = '<html><body><svg><circle r="5"/></svg><noscript>Enable JS</noscript><p>Content</p></body></html>';
 
@@ -41,7 +41,7 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Content', $cleaned);
     }
 
-    public function testCleanHtmlTruncatesLargeContent(): void
+    public function test_clean_html_truncates_large_content(): void
     {
         $html = str_repeat('a', 200000);
 
@@ -50,7 +50,7 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertLessThanOrEqual(100000, strlen($cleaned));
     }
 
-    public function testCleanHtmlStripsComments(): void
+    public function test_clean_html_strips_comments(): void
     {
         $html = '<html><body><!-- secret comment --><p>Visible</p></body></html>';
 
@@ -60,24 +60,25 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Visible', $cleaned);
     }
 
-    public function testExtractDomainStripsWww(): void
+    public function test_extract_domain_strips_www(): void
     {
         $this->assertEquals('linkedin.com', $this->service->extractDomain('https://www.linkedin.com/jobs/123'));
     }
 
-    public function testExtractDomainHandlesSubdomains(): void
+    public function test_extract_domain_handles_subdomains(): void
     {
         $this->assertEquals('jobs.lever.co', $this->service->extractDomain('https://jobs.lever.co/company/abc'));
     }
 
-    public function testExtractDomainLowercases(): void
+    public function test_extract_domain_lowercases(): void
     {
         $this->assertEquals('example.com', $this->service->extractDomain('https://EXAMPLE.COM/job'));
     }
 
     // Tests for htmlToMarkdown()
 
-    public function testHtmlToMarkdownRemovesScriptTags(): void {
+    public function test_html_to_markdown_removes_script_tags(): void
+    {
         $html = '<p>Hello</p><script>alert("x")</script><p>World</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -87,13 +88,16 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('World', $markdown);
     }
 
-    public function testHtmlToMarkdownStrongAndBr(): void {
+    public function test_html_to_markdown_strong_and_br(): void
+    {
         $html = '<strong>Qualifications<br><br></strong>Qualifications<br><br>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('**Qualifications**', $markdown);
     }
-    public function testHtmlToMarkdownRemovesStyleTags(): void {
+
+    public function test_html_to_markdown_removes_style_tags(): void
+    {
         $html = '<style>body{color:red}</style><p>Hello</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -102,7 +106,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Hello', $markdown);
     }
 
-    public function testHtmlToMarkdownRemovesComments(): void {
+    public function test_html_to_markdown_removes_comments(): void
+    {
         $html = '<!-- secret comment --><p>Visible content</p><!-- end -->';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -111,94 +116,107 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Visible content', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsH1Heading(): void {
+    public function test_html_to_markdown_converts_h1_heading(): void
+    {
         $html = '<h1>Main Title</h1>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('# Main Title', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsH2Heading(): void {
+    public function test_html_to_markdown_converts_h2_heading(): void
+    {
         $html = '<h2>Section Title</h2>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('## Section Title', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsH3Heading(): void {
+    public function test_html_to_markdown_converts_h3_heading(): void
+    {
         $html = '<h3>Subsection</h3>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('### Subsection', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsH4Heading(): void {
+    public function test_html_to_markdown_converts_h4_heading(): void
+    {
         $html = '<h4>Detail</h4>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('#### Detail', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsH5Heading(): void {
+    public function test_html_to_markdown_converts_h5_heading(): void
+    {
         $html = '<h5>Sub-detail</h5>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('##### Sub-detail', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsH6Heading(): void {
+    public function test_html_to_markdown_converts_h6_heading(): void
+    {
         $html = '<h6>Minimal heading</h6>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('###### Minimal heading', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsParagraphs(): void {
+    public function test_html_to_markdown_converts_paragraphs(): void
+    {
         $html = '<p>First paragraph</p><p>Second paragraph</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
-        $this->assertStringContainsString('First paragraph' . PHP_EOL . PHP_EOL, $markdown);
+        $this->assertStringContainsString('First paragraph'.PHP_EOL.PHP_EOL, $markdown);
         $this->assertStringContainsString('Second paragraph', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsLineBreaks(): void {
+    public function test_html_to_markdown_converts_line_breaks(): void
+    {
         $html = '<p>Line 1<br>Line 2<br/>Line 3</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
-        $this->assertStringContainsString('Line 1' . PHP_EOL, $markdown);
-        $this->assertStringContainsString('Line 2' . PHP_EOL, $markdown);
+        $this->assertStringContainsString('Line 1'.PHP_EOL, $markdown);
+        $this->assertStringContainsString('Line 2'.PHP_EOL, $markdown);
         $this->assertStringContainsString('Line 3', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsStrongTags(): void {
+    public function test_html_to_markdown_converts_strong_tags(): void
+    {
         $html = '<p>This is <strong>bold text</strong> in a paragraph.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('**bold text**', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsBTags(): void {
+    public function test_html_to_markdown_converts_b_tags(): void
+    {
         $html = '<p>This is <b>bold using b tag</b> content.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('**bold using b tag**', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsEmTags(): void {
+    public function test_html_to_markdown_converts_em_tags(): void
+    {
         $html = '<p>This is <em>italic text</em> here.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('*italic text*', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsITags(): void {
+    public function test_html_to_markdown_converts_i_tags(): void
+    {
         $html = '<p>This is <i>italics using i tag</i> content.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('*italics using i tag*', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsUnorderedLists(): void {
+    public function test_html_to_markdown_converts_unordered_lists(): void
+    {
         $html = '<ul><li>Item one</li><li>Item two</li><li>Item three</li></ul>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -207,7 +225,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('- Item three', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsOrderedLists(): void {
+    public function test_html_to_markdown_converts_ordered_lists(): void
+    {
         $html = '<ol><li>First item</li><li>Second item</li></ol>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -216,14 +235,16 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('- Second item', $markdown);
     }
 
-    public function testHtmlToMarkdownConvertsAnchors(): void {
+    public function test_html_to_markdown_converts_anchors(): void
+    {
         $html = '<p>Visit <a href="https://example.com">Example Site</a> for more info.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('Example Site (https://example.com)', $markdown);
     }
 
-    public function testHtmlToMarkdownHandlesMultipleLinks(): void {
+    public function test_html_to_markdown_handles_multiple_links(): void
+    {
         $html = '<p>Check <a href="https://site1.com">Site 1</a> and <a href="https://site2.com">Site 2</a>.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -231,7 +252,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Site 2 (https://site2.com)', $markdown);
     }
 
-    public function testHtmlToMarkdownHandlesComplexHTML(): void {
+    public function test_html_to_markdown_handles_complex_html(): void
+    {
         $html = <<<'HTML'
             <div>
                 <h1>Job Title</h1>
@@ -256,21 +278,24 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('jobs@example.com (mailto:jobs@example.com)', $markdown);
     }
 
-    public function testHtmlToMarkdownHandlesEmptyInput(): void {
+    public function test_html_to_markdown_handles_empty_input(): void
+    {
         $html = '';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertEquals('', $markdown);
     }
 
-    public function testHtmlToMarkdownPreservesTextContentWithAttributes(): void {
+    public function test_html_to_markdown_preserves_text_content_with_attributes(): void
+    {
         $html = '<h1 class="title" id="main">Title with attributes</h1>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('# Title with attributes', $markdown);
     }
 
-    public function testHtmlToMarkdownHandlesNestedFormatting(): void {
+    public function test_html_to_markdown_handles_nested_formatting(): void
+    {
         $html = '<p><strong>Bold and <em>bold italic</em></strong> text.</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -279,7 +304,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('*', $markdown);
     }
 
-    public function testHtmlToMarkdownRemovesSvgTags(): void {
+    public function test_html_to_markdown_removes_svg_tags(): void
+    {
         $html = '<p>Before</p><svg><circle r="5"/></svg><p>After</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -288,7 +314,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('After', $markdown);
     }
 
-    public function testHtmlToMarkdownRemovesNoscriptTags(): void {
+    public function test_html_to_markdown_removes_noscript_tags(): void
+    {
         $html = '<p>Before</p><noscript>Please enable JavaScript</noscript><p>After</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -297,7 +324,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('After', $markdown);
     }
 
-    public function testHtmlToMarkdownPreservesMultipleLines(): void {
+    public function test_html_to_markdown_preserves_multiple_lines(): void
+    {
         $html = '<p>Line 1</p><br/><p>Line 2</p><br/><p>Line 3</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -306,7 +334,8 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('Line 3', $markdown);
     }
 
-    public function testHtmlToMarkdownMultipleHeadings(): void {
+    public function test_html_to_markdown_multiple_headings(): void
+    {
         $html = '<h1>First</h1><h2>Second</h2><h3>Third</h3>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
@@ -315,14 +344,16 @@ class JobUrlParseServiceTest extends TestCase
         $this->assertStringContainsString('### Third', $markdown);
     }
 
-    public function testHtmlToMarkdownParagraphWithAttributes(): void {
+    public function test_html_to_markdown_paragraph_with_attributes(): void
+    {
         $html = '<p class="lead">Lead paragraph</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);
 
         $this->assertStringContainsString('Lead paragraph', $markdown);
     }
 
-    public function testHtmlToMarkdownListWithinParagraph(): void {
+    public function test_html_to_markdown_list_within_paragraph(): void
+    {
         // Test that list and paragraph conversions work together
         $html = '<p>Introduction</p><ul><li>Bullet 1</li></ul><p>Conclusion</p>';
         $markdown = JobUrlParseService::htmlToMarkdown($html);

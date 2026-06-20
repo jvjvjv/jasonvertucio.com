@@ -6,14 +6,16 @@ use App\Models\LocalMedia;
 use Illuminate\Http\Request;
 use Log;
 
-class LocalMediaController extends Controller {
-    public function index(Request $request) {
+class LocalMediaController extends Controller
+{
+    public function index(Request $request)
+    {
         // Get the raw JSON body first
         $data = $request->json()->all();
 
         $event = $data['NotificationType'] ?? null;
 
-        if (!$event) {
+        if (! $event) {
             return response(['error' => 'No event type provided'], 400);
         }
 
@@ -41,16 +43,17 @@ class LocalMediaController extends Controller {
 
         return response([
             'status' => 'success',
-            'event' => $event
+            'event' => $event,
         ], 200);
     }
 
-    public function currentlyWatching() {
+    public function currentlyWatching()
+    {
         $media = LocalMedia::whereNotNull('last_playback_at')
             ->orderBy('last_playback_at', 'desc')
             ->first();
 
-        if (!$media) {
+        if (! $media) {
             return response()->json(null);
         }
 
@@ -69,10 +72,12 @@ class LocalMediaController extends Controller {
         ]);
     }
 
-    public function mediaStats() {
+    public function mediaStats()
+    {
         $last_media_watched = LocalMedia::whereNotNull('last_playback_at')->orderBy('last_playback_at', 'desc')->first();
         $last_media_added = LocalMedia::where('event_type', 'ItemAdded')->orderBy('created_at', 'desc')->first();
         $last_media_deleted = LocalMedia::where('event_type', 'ItemDeleted')->orderBy('updated_at', 'desc')->first();
+
         return response()->json([
             'last_watched' => $last_media_watched,
             'last_added' => $last_media_added,
@@ -80,9 +85,11 @@ class LocalMediaController extends Controller {
         ]);
     }
 
-    protected function handleItemAdded($data) {
-        if (!isset($data['ItemId']))
+    protected function handleItemAdded($data)
+    {
+        if (! isset($data['ItemId'])) {
             return;
+        }
 
         $providerIds = [];
         if (isset($data['Provider_imdb'])) {
@@ -104,15 +111,17 @@ class LocalMediaController extends Controller {
                 'season_number' => $data['SeasonNumber'] ?? null,
                 'episode_number' => $data['EpisodeNumber'] ?? null,
                 'year' => $data['Year'] ?? null,
-                'provider_ids' => !empty($providerIds) ? $providerIds : null,
+                'provider_ids' => ! empty($providerIds) ? $providerIds : null,
                 'webhook_data' => $data,
             ]
         );
     }
 
-    protected function handleItemDeleted($data) {
-        if (!isset($data['ItemId']))
+    protected function handleItemDeleted($data)
+    {
+        if (! isset($data['ItemId'])) {
             return;
+        }
 
         $media = LocalMedia::where('jellyfin_item_id', $data['ItemId'])->first();
         if ($media) {
@@ -122,9 +131,11 @@ class LocalMediaController extends Controller {
         }
     }
 
-    protected function handlePlayback($data) {
-        if (!isset($data['ItemId']))
+    protected function handlePlayback($data)
+    {
+        if (! isset($data['ItemId'])) {
             return;
+        }
 
         $providerIds = [];
         if (isset($data['Provider_imdb'])) {
@@ -147,7 +158,7 @@ class LocalMediaController extends Controller {
                 'season_number' => $data['SeasonNumber'] ?? null,
                 'episode_number' => $data['EpisodeNumber'] ?? null,
                 'year' => $data['Year'] ?? null,
-                'provider_ids' => !empty($providerIds) ? $providerIds : null,
+                'provider_ids' => ! empty($providerIds) ? $providerIds : null,
                 'playback_position' => $data['PlaybackPositionTicks'] ?? 0,
                 'playback_duration' => $data['RunTimeTicks'] ?? null,
                 'is_paused' => $data['IsPaused'] ?? false,
@@ -162,9 +173,11 @@ class LocalMediaController extends Controller {
         }
     }
 
-    protected function handlePlaybackStop($data) {
-        if (!isset($data['ItemId']))
+    protected function handlePlaybackStop($data)
+    {
+        if (! isset($data['ItemId'])) {
             return;
+        }
 
         $providerIds = [];
         if (isset($data['Provider_imdb'])) {
@@ -187,7 +200,7 @@ class LocalMediaController extends Controller {
                 'season_number' => $data['SeasonNumber'] ?? null,
                 'episode_number' => $data['EpisodeNumber'] ?? null,
                 'year' => $data['Year'] ?? null,
-                'provider_ids' => !empty($providerIds) ? $providerIds : null,
+                'provider_ids' => ! empty($providerIds) ? $providerIds : null,
                 'playback_position' => $data['PlaybackPositionTicks'] ?? 0,
                 'playback_duration' => $data['RunTimeTicks'] ?? null,
                 'is_paused' => false,

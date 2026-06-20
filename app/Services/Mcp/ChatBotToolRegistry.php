@@ -2,12 +2,12 @@
 
 namespace App\Services\Mcp;
 
+use App\Contracts\ResumeDataServiceContract;
+use App\Services\TargetedResumeService;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
-use App\Contracts\ResumeDataServiceContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use App\Services\TargetedResumeService;
 
 class ChatBotToolRegistry implements AiToolRegistryContract
 {
@@ -23,8 +23,7 @@ class ChatBotToolRegistry implements AiToolRegistryContract
         TargetedResumeService $targetedResumeService,
         ?array $allowedToolNames = null,
         bool $exposeAllDiscoveredTools = false,
-    )
-    {
+    ) {
         $handlers = $this->discoverHandlers(
             [app_path('Services/Mcp/Tools')],
             [
@@ -75,12 +74,12 @@ class ChatBotToolRegistry implements AiToolRegistryContract
     }
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     public function dispatch(string $toolName, array $input): array
     {
-        if (!isset($this->handlers[$toolName])) {
+        if (! isset($this->handlers[$toolName])) {
             return ['error' => "Unknown tool: {$toolName}"];
         }
 

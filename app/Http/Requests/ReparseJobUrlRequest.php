@@ -22,7 +22,7 @@ class ReparseJobUrlRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'feedback'     => ['required', 'string', 'max:1000'],
+            'feedback' => ['required', 'string', 'max:1000'],
             'ai_system_id' => ['required', 'integer', 'exists:ai_systems,id'],
         ];
     }

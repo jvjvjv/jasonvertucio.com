@@ -5,6 +5,7 @@ namespace App\Services\Mcp\Tools\ChatBot;
 use Canvas\Models\Post;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
@@ -17,7 +18,7 @@ use Laravel\Mcp\Server\Tool;
 class GetRecentBlogPostsTool extends Tool
 {
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -52,7 +53,7 @@ class GetRecentBlogPostsTool extends Tool
                     // Use full-text search for body (better performance on large text fields)
                     $query->orWhere(function ($q) use ($search) {
                         $q->from('canvas_posts');
-                        $q->whereRaw("MATCH(body) AGAINST(? IN NATURAL LANGUAGE MODE)", [$search]);
+                        $q->whereRaw('MATCH(body) AGAINST(? IN NATURAL LANGUAGE MODE)', [$search]);
                     });
                 }
             })
@@ -63,7 +64,7 @@ class GetRecentBlogPostsTool extends Tool
                 'title' => $post->title,
                 'summary' => $post->summary,
                 'slug' => $post->slug,
-                'url' => '/blog/' . $post->slug,
+                'url' => '/blog/'.$post->slug,
                 'published_at' => $post->published_at?->toDateString(),
                 'topic' => $post->topic->first()?->name,
             ])->values()->toArray(),

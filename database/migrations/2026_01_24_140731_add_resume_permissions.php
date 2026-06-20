@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use BSPDX\Keystone\Services\PermissionRegistrar;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -12,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         // Reset cached permissions
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Create resume permissions
         $permissions = [
@@ -49,7 +50,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Remove permissions (roles will automatically lose them)
         Permission::whereIn('name', ['read-resume', 'save-resume', 'edit-resume'])->delete();

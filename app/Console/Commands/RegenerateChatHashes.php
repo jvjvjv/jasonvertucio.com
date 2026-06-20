@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Jvjvjv\CodeTalker\Models\AiConversation;
 use Illuminate\Console\Command;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 
 class RegenerateChatHashes extends Command
 {

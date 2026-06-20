@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('comments', 'post_id')) {
+        if (! Schema::hasColumn('comments', 'post_id')) {
             Schema::table('comments', function (Blueprint $table) {
                 $table->char('post_id', 36)->nullable()->after('id');
                 $table->foreign('post_id')->references('id')->on('canvas_posts')->onDelete('set null');

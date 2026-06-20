@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\ResumeVersion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ResumeVersion>
+ * @extends Factory<ResumeVersion>
  */
 class ResumeVersionFactory extends Factory
 {
@@ -17,7 +18,7 @@ class ResumeVersionFactory extends Factory
     public function definition(): array
     {
         return [
-            'version' => fake()->year() . '.' . fake()->numberBetween(1, 5) . '.' . fake()->numberBetween(0, 9),
+            'version' => fake()->year().'.'.fake()->numberBetween(1, 5).'.'.fake()->numberBetween(0, 9),
             'is_current' => false,
             'docx_path' => null,
             'pdf_path' => null,

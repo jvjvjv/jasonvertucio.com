@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\ResumePersonalInfoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ResumePersonalInfo extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResumePersonalInfoFactory> */
+    /** @use HasFactory<ResumePersonalInfoFactory> */
     use HasFactory;
 
     protected $table = 'resume_personal_info';

@@ -3,6 +3,7 @@
 namespace App\Services\Mcp\Tools\ChatBot;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Support\Facades\File;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -16,7 +17,7 @@ use Laravel\Mcp\Server\Tool;
 class GetSiteInfoTool extends Tool
 {
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -27,13 +28,13 @@ class GetSiteInfoTool extends Tool
     {
         $configPath = resource_path('config/config.json');
 
-        if (!File::exists($configPath)) {
+        if (! File::exists($configPath)) {
             return Response::error('Site config not found');
         }
 
         $config = json_decode(File::get($configPath), true);
 
-        if (!\is_array($config)) {
+        if (! \is_array($config)) {
             return Response::error('Could not parse site config');
         }
 

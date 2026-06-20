@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 abstract class BaseAdminController extends Controller
 {
-    public function __construct(protected AdminNavigationService $navigationService) { }
+    public function __construct(protected AdminNavigationService $navigationService) {}
 
     /**
      * Return permission-filtered navigation blocks for the given admin route.

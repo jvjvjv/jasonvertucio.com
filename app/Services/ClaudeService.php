@@ -14,13 +14,15 @@ use Anthropic\Messages\TextBlock;
 use Anthropic\Messages\TextDelta;
 use Anthropic\Messages\ThinkingDelta;
 use Anthropic\Messages\ToolUseBlock;
-use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Generator;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 
 class ClaudeService implements AiClientContract
 {
     private AnthropicClient $client;
+
     private string $defaultModel;
+
     private int $defaultMaxTokens;
 
     /** @var string|null Per-request system prompt */
@@ -100,7 +102,7 @@ class ClaudeService implements AiClientContract
      * Accepts user-defined tools (name, description, input_schema) or
      * server-side tool declarations (type, name) such as web_search_20260209.
      *
-     * @param array<int, array<string, mixed>> $tools
+     * @param  array<int, array<string, mixed>>  $tools
      */
     public function withTools(array $tools): self
     {
@@ -128,7 +130,7 @@ class ClaudeService implements AiClientContract
     /**
      * Send a message and return the parsed response.
      *
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @param  array<int, array{role: string, content: string|array<int, mixed>}>  $messages
      * @return array{id: string, type: string, role: string, content: array<int, mixed>, model: string, stop_reason: string, usage: array{input_tokens: int, output_tokens: int}}
      */
     public function message(array $messages): array
@@ -180,7 +182,7 @@ class ClaudeService implements AiClientContract
      * Yields decoded SSE event arrays. Use the 'type' key to distinguish
      * event types (e.g., 'content_block_delta', 'message_stop').
      *
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @param  array<int, array{role: string, content: string|array<int, mixed>}>  $messages
      * @return Generator<int, array<string, mixed>>
      */
     public function stream(array $messages): Generator
@@ -263,7 +265,7 @@ class ClaudeService implements AiClientContract
         $page = $this->client->models->list(limit: 100);
 
         return collect($page->data)
-            ->map(static fn($model): array => [
+            ->map(static fn ($model): array => [
                 'id' => $model->id,
                 'display_name' => $model->displayName,
                 'created_at' => $model->createdAt->format(\DateTimeInterface::ATOM),
@@ -273,7 +275,7 @@ class ClaudeService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @param  array<int, array{id: string, name: string, input: array<string, mixed>}>  $toolCalls
      * @return array{role: string, content: array<int, mixed>}
      */
     public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
@@ -297,7 +299,7 @@ class ClaudeService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @param  array<int, array{id: string, result: array<string, mixed>}>  $toolResults
      * @return array<int, array{role: string, content: array<int, mixed>}>
      */
     public function formatToolResultTurn(array $toolResults): array

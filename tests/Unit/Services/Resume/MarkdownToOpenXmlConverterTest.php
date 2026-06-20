@@ -12,16 +12,16 @@ class MarkdownToOpenXmlConverterTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->converter = new MarkdownToOpenXmlConverter();
+        $this->converter = new MarkdownToOpenXmlConverter;
     }
 
-    public function testEmptyInputReturnsEmptyString(): void
+    public function test_empty_input_returns_empty_string(): void
     {
         $this->assertSame('', $this->converter->convert(''));
         $this->assertSame('', $this->converter->convert('   '));
     }
 
-    public function testHeading1ProducesHeading1Style(): void
+    public function test_heading1_produces_heading1_style(): void
     {
         $xml = $this->converter->convert('# Experience');
 
@@ -29,7 +29,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Experience', $xml);
     }
 
-    public function testHeading2DefaultProducesHeading2Style(): void
+    public function test_heading2_default_produces_heading2_style(): void
     {
         $xml = $this->converter->convert("# Skills\n## Programming Languages");
 
@@ -37,7 +37,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Programming Languages', $xml);
     }
 
-    public function testHeading2UnderExperienceProducesJobTitleStyle(): void
+    public function test_heading2_under_experience_produces_job_title_style(): void
     {
         $xml = $this->converter->convert("# Experience\n## Senior Software Engineer");
 
@@ -45,7 +45,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Senior Software Engineer', $xml);
     }
 
-    public function testHeading3UnderExperienceProducesCompanyInfoStyle(): void
+    public function test_heading3_under_experience_produces_company_info_style(): void
     {
         $xml = $this->converter->convert("# Experience\n## Senior Engineer\n### Acme Corp - NYC - 2020-2024");
 
@@ -53,7 +53,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Acme Corp - NYC - 2020-2024', $xml);
     }
 
-    public function testHeading3UnderEducationProducesCompanyInfoStyle(): void
+    public function test_heading3_under_education_produces_company_info_style(): void
     {
         $xml = $this->converter->convert("# Education\n## Bachelor of Science\n### MIT - 2016-2020");
 
@@ -61,7 +61,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('MIT - 2016-2020', $xml);
     }
 
-    public function testHeading2UnderSkillsDoesNotProduceJobTitle(): void
+    public function test_heading2_under_skills_does_not_produce_job_title(): void
     {
         $xml = $this->converter->convert("# Skills\n## Frontend");
 
@@ -69,7 +69,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('<w:pStyle w:val="Heading2"/>', $xml);
     }
 
-    public function testBulletProducesListParagraphWithNumPr(): void
+    public function test_bullet_produces_list_paragraph_with_num_pr(): void
     {
         $xml = $this->converter->convert('- Led a team of 5 engineers');
 
@@ -80,7 +80,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Led a team of 5 engineers', $xml);
     }
 
-    public function testAsteriskBulletAlsoWorks(): void
+    public function test_asterisk_bullet_also_works(): void
     {
         $xml = $this->converter->convert('* Built a REST API');
 
@@ -88,7 +88,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Built a REST API', $xml);
     }
 
-    public function testKeyTechnologiesLineProducesKeyTechnologiesStyle(): void
+    public function test_key_technologies_line_produces_key_technologies_style(): void
     {
         $xml = $this->converter->convert('- Key Technologies: React, Node.js, PostgreSQL');
 
@@ -97,7 +97,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Key Technologies: React, Node.js, PostgreSQL', $xml);
     }
 
-    public function testPlainParagraphProducesNormalStyle(): void
+    public function test_plain_paragraph_produces_normal_style(): void
     {
         $xml = $this->converter->convert('Experienced software engineer with 10 years of expertise.');
 
@@ -105,7 +105,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Experienced software engineer', $xml);
     }
 
-    public function testBoldTextCreatesBoldRun(): void
+    public function test_bold_text_creates_bold_run(): void
     {
         $xml = $this->converter->convert('Led **cross-functional** teams');
 
@@ -115,7 +115,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString(' teams', $xml);
     }
 
-    public function testCodeFencesAreStripped(): void
+    public function test_code_fences_are_stripped(): void
     {
         $markdown = "```tailored-resume\n# Summary\nTest content\n```";
         $xml = $this->converter->convert($markdown);
@@ -126,7 +126,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('Test content', $xml);
     }
 
-    public function testEmptyLinesAreSkipped(): void
+    public function test_empty_lines_are_skipped(): void
     {
         $xml = $this->converter->convert("# Summary\n\nA paragraph\n\n- A bullet");
 
@@ -134,7 +134,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertSame(3, $pCount, 'Should produce exactly 3 paragraphs (no empty ones)');
     }
 
-    public function testXmlSpecialCharactersAreEscaped(): void
+    public function test_xml_special_characters_are_escaped(): void
     {
         $xml = $this->converter->convert('- Used R&D approach with <script> tags & "quotes"');
 
@@ -143,7 +143,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertStringContainsString('&quot;quotes&quot;', $xml);
     }
 
-    public function testSectionContextResetsOnNewH1(): void
+    public function test_section_context_resets_on_new_h1(): void
     {
         $markdown = "# Experience\n## Senior Engineer\n# Projects\n## My Cool Project";
         $xml = $this->converter->convert($markdown);
@@ -155,7 +155,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertSame(1, substr_count($xml, 'w:val="Heading2"'));
     }
 
-    public function testFullResumeEndToEnd(): void
+    public function test_full_resume_end_to_end(): void
     {
         $markdown = <<<'MD'
 ```tailored-resume
@@ -222,7 +222,7 @@ MD;
         $this->assertStringContainsString('<w:cols w:num="1"', $xml);
     }
 
-    public function testSkillsSectionGetsTwoColumnBreaks(): void
+    public function test_skills_section_gets_two_column_breaks(): void
     {
         $xml = $this->converter->convert("# Skills\n## Frontend\n- React\n## Backend\n- PHP");
 
@@ -233,7 +233,7 @@ MD;
         $this->assertSame(3, substr_count($xml, '<w:type w:val="continuous"/>'));
     }
 
-    public function testSkillsColumnsEndWhenNextSectionStarts(): void
+    public function test_skills_columns_end_when_next_section_starts(): void
     {
         $xml = $this->converter->convert("# Skills\n## Frontend\n- React\n# Experience\n## Engineer");
 
@@ -245,7 +245,7 @@ MD;
         $this->assertStringContainsString('w:val="JobTitle"', $xml);
     }
 
-    public function testNonSkillsSectionsDoNotGetColumnBreaks(): void
+    public function test_non_skills_sections_do_not_get_column_breaks(): void
     {
         $xml = $this->converter->convert("# Experience\n## Engineer\n### Corp - 2020\n- Built stuff");
 

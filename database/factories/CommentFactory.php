@@ -52,7 +52,7 @@ class CommentFactory extends Factory
         // Try to get an existing post, otherwise create a minimal one
         $post = Post::query()->inRandomOrder()->first();
 
-        if (!$post) {
+        if (! $post) {
             // Create a minimal post if none exists
             return Post::create([
                 'title' => $this->faker->sentence(),

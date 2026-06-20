@@ -46,7 +46,7 @@ class AiToolsControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('ai/Index', false)
-                ->has('navBlocks', 7)
+            ->has('navBlocks', 7)
             ->where('navBlocks.0.href', '/admin/resume/targeted-builder')
         );
     }

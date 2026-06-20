@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::table('canvas_posts', function (Blueprint $table) {
             // Add full-text index on body column for searching content
-            if (!Schema::hasIndex('canvas_posts', 'body')) {
+            if (! Schema::hasIndex('canvas_posts', 'body')) {
                 $table->fullText('body');
             }
 
             // Add composite full-text index on title and summary for combined searches
-            if (!Schema::hasIndex('canvas_posts', ['title', 'summary'])) {
+            if (! Schema::hasIndex('canvas_posts', ['title', 'summary'])) {
                 $table->fullText(['title', 'summary']);
             }
         });
@@ -38,4 +38,3 @@ return new class extends Migration
         });
     }
 };
-

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 
 class AiInteractionLog extends Model
 {
@@ -54,7 +54,8 @@ class AiInteractionLog extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function aiChatBot(): BelongsTo {
+    public function aiChatBot(): BelongsTo
+    {
         return $this->belongsTo(AiChatBot::class);
     }
 

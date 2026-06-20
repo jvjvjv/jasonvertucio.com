@@ -2,20 +2,25 @@
 
 namespace App\Services;
 
-use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Generator;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use OpenAI\Client as OpenAIClient;
 use OpenAI\Responses\Chat\CreateStreamedResponseToolCall;
 
 class OpenAiService implements AiClientContract
 {
     private OpenAIClient $client;
+
     private string $defaultModel;
+
     private int $defaultMaxTokens;
 
     private ?string $system = null;
+
     private ?string $model = null;
+
     private ?int $maxTokens = null;
+
     private ?float $temperature = null;
 
     /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> */
@@ -127,7 +132,7 @@ class OpenAiService implements AiClientContract
                 $outputTokens = $response->usage->completionTokens ?? $outputTokens;
             }
 
-            if (!$started) {
+            if (! $started) {
                 $started = true;
                 yield [
                     'type' => 'message_start',
@@ -165,7 +170,7 @@ class OpenAiService implements AiClientContract
                 /** @var CreateStreamedResponseToolCall $tcDelta */
                 $idx = (int) ($tcDelta->index ?? 0);
 
-                if (!isset($pendingToolCalls[$idx])) {
+                if (! isset($pendingToolCalls[$idx])) {
                     $pendingToolCalls[$idx] = ['id' => '', 'name' => '', 'arguments' => ''];
                 }
 
@@ -206,7 +211,7 @@ class OpenAiService implements AiClientContract
             yield ['type' => 'content_block_stop'];
         }
 
-        if (!$started) {
+        if (! $started) {
             yield [
                 'type' => 'message_start',
                 'message' => [
@@ -245,7 +250,7 @@ class OpenAiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @param  array<int, array{id: string, name: string, input: array<string, mixed>}>  $toolCalls
      * @return array{role: string, content: string|null, tool_calls: array<int, mixed>}
      */
     public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
@@ -259,7 +264,7 @@ class OpenAiService implements AiClientContract
                 'function' => [
                     'name' => $toolCall['name'],
                     'arguments' => json_encode(
-                        $toolCall['input'] === [] ? new \stdClass() : $toolCall['input']
+                        $toolCall['input'] === [] ? new \stdClass : $toolCall['input']
                     ),
                 ],
             ];
@@ -273,7 +278,7 @@ class OpenAiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @param  array<int, array{id: string, result: array<string, mixed>}>  $toolResults
      * @return array<int, array{role: string, tool_call_id: string, content: string}>
      */
     public function formatToolResultTurn(array $toolResults): array
@@ -286,7 +291,7 @@ class OpenAiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @param  array<int, array{role: string, content: string|array<int, mixed>}>  $messages
      * @return array<string, mixed>
      */
     private function buildParams(array $messages, bool $streaming): array
@@ -324,7 +329,7 @@ class OpenAiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{role: string, content: string|array<int, mixed>}> $messages
+     * @param  array<int, array{role: string, content: string|array<int, mixed>}>  $messages
      * @return array<int, array{role: string, content: string|array<int, mixed>}>
      */
     private function buildMessages(array $messages): array

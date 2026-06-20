@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Console\Command;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiSystemCapabilityService;
-use Illuminate\Console\Command;
 
 class BackfillAiSystemCapabilitiesCommand extends Command
 {
@@ -43,7 +43,7 @@ class BackfillAiSystemCapabilitiesCommand extends Command
             $unsupportedProviders = array_values(array_diff($providers, $supportedProviders));
 
             if ($unsupportedProviders !== []) {
-                $this->warn('Capability backfill is not supported for: ' . implode(', ', $unsupportedProviders));
+                $this->warn('Capability backfill is not supported for: '.implode(', ', $unsupportedProviders));
             }
 
             $providers = array_values(array_intersect($providers, $supportedProviders));
@@ -80,7 +80,7 @@ class BackfillAiSystemCapabilitiesCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Backfilling capabilities for ' . $total . ' AI system(s)...');
+        $this->info('Backfilling capabilities for '.$total.' AI system(s)...');
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
@@ -122,9 +122,9 @@ class BackfillAiSystemCapabilitiesCommand extends Command
         $bar->finish();
         $this->newLine(2);
         $this->info('Capability backfill complete.');
-        $this->line('Updated: ' . $updated);
-        $this->line('Unchanged: ' . $unchanged);
-        $this->line('Missing metadata: ' . $missing);
+        $this->line('Updated: '.$updated);
+        $this->line('Unchanged: '.$unchanged);
+        $this->line('Missing metadata: '.$missing);
 
         return self::SUCCESS;
     }

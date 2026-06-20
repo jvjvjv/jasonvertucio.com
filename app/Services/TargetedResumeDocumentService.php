@@ -31,9 +31,9 @@ class TargetedResumeDocumentService
     public function generateDocx(TargetedResume $targetedResume): array
     {
         $filename = $targetedResume->generateFilename();
-        $outputPath = $this->outputDir . '/' . $filename . '.docx';
+        $outputPath = $this->outputDir.'/'.$filename.'.docx';
 
-        if (!file_exists($this->outputDir)) {
+        if (! file_exists($this->outputDir)) {
             mkdir($this->outputDir, 0755, true);
         }
 
@@ -42,7 +42,7 @@ class TargetedResumeDocumentService
 
             copy($this->templatePath, $outputPath);
 
-            $zip = new ZipArchive();
+            $zip = new ZipArchive;
             if ($zip->open($outputPath) !== true) {
                 return [
                     'success' => false,
@@ -97,9 +97,9 @@ class TargetedResumeDocumentService
     }
 
     /**
-    * Replace simple placeholders in the raw XML.
+     * Replace simple placeholders in the raw XML.
      *
-     * @param array{name: string, title: string, email: string, phone: string, url: string, resume: string} $data
+     * @param  array{name: string, title: string, email: string, phone: string, url: string, resume: string}  $data
      */
     protected function replaceSimplePlaceholders(string $xml, array $data): string
     {
@@ -123,7 +123,7 @@ class TargetedResumeDocumentService
 
     protected function replaceSplitPlaceholderRuns(string $xml, string $placeholder, string $value): string
     {
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         if (! $dom->loadXML($xml)) {
             return $xml;
         }
@@ -181,7 +181,7 @@ class TargetedResumeDocumentService
      */
     protected function appendResumeContent(string $xml, string $resumeMarkdown): string
     {
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         $dom->preserveWhiteSpace = true;
         $dom->formatOutput = false;
         $dom->loadXML($xml);
@@ -201,11 +201,11 @@ class TargetedResumeDocumentService
         $insertBefore = $sectPr ?? null;
 
         $wrapperXml = '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<w:body xmlns:w="' . self::NAMESPACE_W . '">'
-            . $openXmlFragment
-            . '</w:body>';
+            .'<w:body xmlns:w="'.self::NAMESPACE_W.'">'
+            .$openXmlFragment
+            .'</w:body>';
 
-        $fragmentDom = new DOMDocument();
+        $fragmentDom = new DOMDocument;
         $fragmentDom->loadXML($wrapperXml);
 
         $paragraphs = $fragmentDom->getElementsByTagNameNS(self::NAMESPACE_W, 'p');
@@ -228,7 +228,7 @@ class TargetedResumeDocumentService
      */
     public function generatePdf(TargetedResume $targetedResume): array
     {
-        if (!$targetedResume->docxExists()) {
+        if (! $targetedResume->docxExists()) {
             return [
                 'success' => false,
                 'error' => 'DOCX file not found. Generate DOCX first.',
@@ -236,7 +236,7 @@ class TargetedResumeDocumentService
         }
 
         $filename = $targetedResume->generateFilename();
-        $pdfPath = $this->outputDir . '/' . $filename . '.pdf';
+        $pdfPath = $this->outputDir.'/'.$filename.'.pdf';
 
         try {
             $command = sprintf(
@@ -257,11 +257,11 @@ class TargetedResumeDocumentService
 
                 return [
                     'success' => false,
-                    'error' => 'LibreOffice conversion failed: ' . implode("\n", $output),
+                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
                 ];
             }
 
-            if (!file_exists($pdfPath)) {
+            if (! file_exists($pdfPath)) {
                 return [
                     'success' => false,
                     'error' => 'PDF file was not created.',

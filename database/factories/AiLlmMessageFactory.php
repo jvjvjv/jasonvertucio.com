@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
-use Jvjvjv\CodeTalker\Models\AiConversation;
+use App\Models\AiLlmMessage;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AiLlmMessage>
+ * @extends Factory<AiLlmMessage>
  */
 class AiLlmMessageFactory extends Factory
 {

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Gemini\Client as GeminiClient;
 use Gemini\Data\Content;
 use Gemini\Data\GenerationConfig;
@@ -10,16 +9,22 @@ use Gemini\Data\Part;
 use Gemini\Enums\FinishReason;
 use Gemini\Enums\Role;
 use Generator;
+use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 
 class GeminiService implements AiClientContract
 {
     private GeminiClient $client;
+
     private string $defaultModel;
+
     private int $defaultMaxTokens;
 
     private ?string $system = null;
+
     private ?string $model = null;
+
     private ?int $maxTokens = null;
+
     private ?float $temperature = null;
 
     /** @var array<int, array{name: string, description: string, input_schema: array<string, mixed>}> */
@@ -144,7 +149,7 @@ class GeminiService implements AiClientContract
         $outputTokens = null;
 
         foreach ($sdkStream as $chunk) {
-            if (!$started) {
+            if (! $started) {
                 $started = true;
                 yield [
                     'type' => 'message_start',
@@ -190,7 +195,7 @@ class GeminiService implements AiClientContract
             }
         }
 
-        if (!$started) {
+        if (! $started) {
             yield [
                 'type' => 'message_start',
                 'message' => [
@@ -226,7 +231,7 @@ class GeminiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{id: string, name: string, input: array<string, mixed>}> $toolCalls
+     * @param  array<int, array{id: string, name: string, input: array<string, mixed>}>  $toolCalls
      * @return array{role: string, parts: array<int, mixed>}
      */
     public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array
@@ -250,7 +255,7 @@ class GeminiService implements AiClientContract
     }
 
     /**
-     * @param array<int, array{id: string, result: array<string, mixed>}> $toolResults
+     * @param  array<int, array{id: string, result: array<string, mixed>}>  $toolResults
      * @return array<int, array{role: string, parts: array<int, mixed>}>
      */
     public function formatToolResultTurn(array $toolResults): array
@@ -268,7 +273,7 @@ class GeminiService implements AiClientContract
     /**
      * Map internal message format to Gemini Content objects.
      *
-     * @param array<int, array<string, mixed>> $messages
+     * @param  array<int, array<string, mixed>>  $messages
      * @return array<int, Content>
      */
     private function mapToContents(array $messages): array
@@ -297,7 +302,7 @@ class GeminiService implements AiClientContract
     }
 
     /**
-     * @param array<int, Part> $parts
+     * @param  array<int, Part>  $parts
      */
     private function extractResponseText(array $parts): string
     {
@@ -308,12 +313,12 @@ class GeminiService implements AiClientContract
     }
 
     /**
-     * @param array<int, Part> $parts
+     * @param  array<int, Part>  $parts
      */
     private function extractThoughtText(array $parts): string
     {
         return collect($parts)
-            ->filter(static fn (Part $part): bool => !empty($part->thought))
+            ->filter(static fn (Part $part): bool => ! empty($part->thought))
             ->map(static fn (Part $part): string => $part->text ?? '')
             ->implode('');
     }

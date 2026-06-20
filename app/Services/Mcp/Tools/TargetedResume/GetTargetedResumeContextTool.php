@@ -5,6 +5,7 @@ namespace App\Services\Mcp\Tools\TargetedResume;
 use App\Models\TargetedResume;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
@@ -14,12 +15,12 @@ use Laravel\Mcp\Server\Attributes\Name;
 #[Name('get-targeted-resume-context')]
 #[Description(
     'Load the full context for a targeted resume by conversation ID, company name, or job title. '
-    . 'If more than one resume matches, return the candidate list so the user can choose which one to use.'
+    .'If more than one resume matches, return the candidate list so the user can choose which one to use.'
 )]
 class GetTargetedResumeContextTool extends AuthorizedResumeTool
 {
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -72,14 +73,14 @@ class GetTargetedResumeContextTool extends AuthorizedResumeTool
         }
 
         if ($companyName !== null && $companyName !== '') {
-            $query->where('company_name', 'like', '%' . $companyName . '%');
+            $query->where('company_name', 'like', '%'.$companyName.'%');
         }
 
         if ($jobTitle !== null && $jobTitle !== '') {
             $query->where(function (Builder $builder) use ($jobTitle): void {
                 $builder
-                    ->where('position', 'like', '%' . $jobTitle . '%')
-                    ->orWhere('title', 'like', '%' . $jobTitle . '%');
+                    ->where('position', 'like', '%'.$jobTitle.'%')
+                    ->orWhere('title', 'like', '%'.$jobTitle.'%');
             });
         }
 

@@ -22,9 +22,9 @@ class StartTargetedResumeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ai_system_id'   => ['required', 'integer', 'exists:ai_systems,id'],
-            'job_url_id'      => ['nullable', 'string', 'exists:job_urls,id'],
-            'job_title'       => ['nullable', 'string', 'max:255'],
+            'ai_system_id' => ['required', 'integer', 'exists:ai_systems,id'],
+            'job_url_id' => ['nullable', 'string', 'exists:job_urls,id'],
+            'job_title' => ['nullable', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'job_location' => ['nullable', 'string', 'max:255'],
             'job_description' => ['required', 'string'],

@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use Tests\TestCase;
 
 class AiMemoryControllerTest extends TestCase

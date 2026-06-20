@@ -22,7 +22,7 @@ class ParseJobUrlRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'url'          => ['required', 'url', 'max:2048'],
+            'url' => ['required', 'url', 'max:2048'],
             'ai_system_id' => ['required', 'integer', 'exists:ai_systems,id'],
         ];
     }

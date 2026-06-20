@@ -2,18 +2,17 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class AiMemoryService
 {
     public function __construct(
         private AiClientFactory $clientFactory,
-    ) {
-    }
+    ) {}
 
     /**
      * Get formatted memory text for injection into a system prompt.
@@ -23,9 +22,9 @@ class AiMemoryService
      * - For visitors (email): memories tied to their email address
      * This allows each individual user to have persistent chatbot memories while keeping different users' data separate.
      *
-     * @param string $feature The feature key (e.g., 'chat-bot:resume-assistant')
-     * @param string|int|null $userId User ID if logged in, null for visitors (supports both UUID and integer IDs)
-     * @param string|null $email Email address for visitors or when user_id is unavailable
+     * @param  string  $feature  The feature key (e.g., 'chat-bot:resume-assistant')
+     * @param  string|int|null  $userId  User ID if logged in, null for visitors (supports both UUID and integer IDs)
+     * @param  string|null  $email  Email address for visitors or when user_id is unavailable
      */
     public function getMemoriesForPrompt(string $feature, string|int|null $userId = null, ?string $email = null): string
     {
@@ -44,8 +43,8 @@ class AiMemoryService
         }
 
         $memories = $query->orderByDesc('confidence')
-                          ->orderByDesc('times_reinforced')
-                          ->get();
+            ->orderByDesc('times_reinforced')
+            ->get();
 
         if ($memories->isEmpty()) {
             return '';
@@ -164,7 +163,7 @@ class AiMemoryService
                     $updates['confidence'] = $entry['confidence'];
                 }
 
-                if (!empty($entry['reinforced'])) {
+                if (! empty($entry['reinforced'])) {
                     $updates['times_reinforced'] = $memory->times_reinforced + 1;
                     $updates['last_reinforced_at'] = now();
                 }
@@ -305,7 +304,7 @@ PROMPT;
 
         $parsed = json_decode($text, true);
 
-        if (!is_array($parsed)) {
+        if (! is_array($parsed)) {
             Log::warning('AI Memory analysis returned unparseable response', ['raw' => $text]);
 
             return ['add' => [], 'update' => [], 'remove' => []];

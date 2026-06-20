@@ -2,12 +2,12 @@
 
 namespace App\Concerns;
 
+use Generator;
+use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiLlmMessage;
-use Generator;
-use Illuminate\Support\Facades\Log;
 
 trait ExecutesAiTools
 {
@@ -18,8 +18,8 @@ trait ExecutesAiTools
      * Yields SSE-formatted lines for streaming to the client.
      * Populates $result with the final turn's text and token counts.
      *
-     * @param array<int, array<string, mixed>> $messages
-     * @param array{text: string, inputTokens: int|null, outputTokens: int|null}|null $result
+     * @param  array<int, array<string, mixed>>  $messages
+     * @param  array{text: string, inputTokens: int|null, outputTokens: int|null}|null  $result
      * @return Generator<int, string>
      */
     private function runToolLoop(
@@ -41,7 +41,7 @@ trait ExecutesAiTools
             $max = AiLlmMessage::query()
                 ->where('ai_conversation_id', $conversation->id)
                 ->max('turn_number');
-            $baseTurnNumber = ($max === null || !is_numeric($max)) ? 1 : (int) $max + 1;
+            $baseTurnNumber = ($max === null || ! is_numeric($max)) ? 1 : (int) $max + 1;
         }
 
         yield ": heartbeat\n\n";
@@ -96,7 +96,7 @@ trait ExecutesAiTools
                             'partialJson' => '',
                         ];
                     } elseif (($block['type'] ?? '') === 'thinking') {
-                        yield "data: " . json_encode($event) . "\n\n";
+                        yield 'data: '.json_encode($event)."\n\n";
                     }
 
                 } elseif ($type === 'content_block_delta') {
@@ -107,10 +107,10 @@ trait ExecutesAiTools
                         $pendingToolBlocks[$currentBlockKey]['partialJson'] .= (string) ($delta['partial_json'] ?? '');
                     } elseif ($deltaType === 'thinking_delta' || isset($delta['reasoning'])) {
                         $fullReasoning .= (string) ($delta['thinking'] ?? $delta['reasoning'] ?? '');
-                        yield "data: " . json_encode($event) . "\n\n";
+                        yield 'data: '.json_encode($event)."\n\n";
                     } elseif (isset($delta['text'])) {
                         $fullText .= $delta['text'];
-                        yield "data: " . json_encode($event) . "\n\n";
+                        yield 'data: '.json_encode($event)."\n\n";
                     }
 
                 } elseif ($type === 'content_block_stop') {
@@ -118,7 +118,7 @@ trait ExecutesAiTools
 
                 } elseif ($type === 'message_delta') {
                     $outputTokens = $event['usage']['output_tokens'] ?? $outputTokens;
-                    $inputTokens  = $event['usage']['input_tokens']  ?? $inputTokens;
+                    $inputTokens = $event['usage']['input_tokens'] ?? $inputTokens;
                     $reason = $event['delta']['stop_reason'] ?? null;
 
                     if ($reason !== null) {
@@ -198,11 +198,12 @@ trait ExecutesAiTools
                     // Response was cut off at the token limit — send it back and ask the model to continue
                     $messages[] = ['role' => 'assistant', 'content' => $finalTextAccumulator];
                     $messages[] = ['role' => 'user', 'content' => 'Continue.'];
+
                     continue;
                 }
 
                 $combinedText = $preambleText !== ''
-                    ? $preambleText . ($finalTextAccumulator !== '' ? "\n\n{$finalTextAccumulator}" : '')
+                    ? $preambleText.($finalTextAccumulator !== '' ? "\n\n{$finalTextAccumulator}" : '')
                     : $finalTextAccumulator;
 
                 $result = [
@@ -211,7 +212,7 @@ trait ExecutesAiTools
                     'outputTokens' => $totalOutputTokens ?: null,
                 ];
 
-                yield "data: " . json_encode(['type' => 'message_stop']) . "\n\n";
+                yield 'data: '.json_encode(['type' => 'message_stop'])."\n\n";
 
                 return;
             }
@@ -220,17 +221,17 @@ trait ExecutesAiTools
             // is included in the final saved message even if the follow-up
             // iteration produces no additional text.
             if ($fullText !== '') {
-                $preambleText .= ($preambleText !== '' ? "\n\n" : '') . $fullText;
+                $preambleText .= ($preambleText !== '' ? "\n\n" : '').$fullText;
             }
             $finalTextAccumulator = ''; // reset — this iteration had tool calls, not a continuation
 
             // Notify the frontend that tool calls are happening so it can display a panel.
             // Include any preamble text the model wrote before calling tools.
-            yield "data: " . json_encode([
+            yield 'data: '.json_encode([
                 'type' => 'tool_use_progress',
                 'text' => $fullText,
                 'tools' => array_column($toolCalls, 'name'),
-            ]) . "\n\n";
+            ])."\n\n";
 
             // Execute tool calls and splice results back into the message history
             $toolResults = [];
@@ -251,8 +252,8 @@ trait ExecutesAiTools
                     $toolResult = ['error' => $e->getMessage()];
                 }
 
-                if (!empty($toolResult['_page_reload'])) {
-                    yield "data: " . json_encode(['type' => 'page_reload']) . "\n\n";
+                if (! empty($toolResult['_page_reload'])) {
+                    yield 'data: '.json_encode(['type' => 'page_reload'])."\n\n";
                 }
 
                 $toolResults[] = [
@@ -284,6 +285,6 @@ trait ExecutesAiTools
             'outputTokens' => $totalOutputTokens ?: null,
         ];
 
-        yield "data: " . json_encode(['type' => 'message_stop']) . "\n\n";
+        yield 'data: '.json_encode(['type' => 'message_stop'])."\n\n";
     }
 }

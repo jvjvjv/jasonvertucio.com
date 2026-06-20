@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Enums\AiProvider;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
 
 class AiSystemCapabilityPersistenceTest extends TestCase

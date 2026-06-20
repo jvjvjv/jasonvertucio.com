@@ -18,7 +18,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     {
         $version = $this->getCurrentVersion();
 
-        if (!$version) {
+        if (! $version) {
             return [
                 'personal' => [],
                 'skills' => ['top' => [], 'other' => []],
@@ -60,7 +60,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
 
         $version = $this->getCurrentVersion();
 
-        if (!$version) {
+        if (! $version) {
             throw ValidationException::withMessages([
                 'version' => 'No current version found. Set a version first.',
             ]);
@@ -114,11 +114,11 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                     'company' => $exp['company'],
                     'location' => $exp['location'] ?? null,
                     'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
-                    'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
-                    'salary_start_amount' => !empty($exp['salaryStart']['amount']) ? $exp['salaryStart']['amount'] : null,
-                    'salary_start_period' => !empty($exp['salaryStart']['period']) ? $exp['salaryStart']['period'] : null,
-                    'salary_end_amount' => !empty($exp['salaryEnd']['amount']) ? $exp['salaryEnd']['amount'] : null,
-                    'salary_end_period' => !empty($exp['salaryEnd']['period']) ? $exp['salaryEnd']['period'] : null,
+                    'date_end' => $this->sanitizeDateValue(! empty($dates) ? end($dates) : null, allowPresent: true),
+                    'salary_start_amount' => ! empty($exp['salaryStart']['amount']) ? $exp['salaryStart']['amount'] : null,
+                    'salary_start_period' => ! empty($exp['salaryStart']['period']) ? $exp['salaryStart']['period'] : null,
+                    'salary_end_amount' => ! empty($exp['salaryEnd']['amount']) ? $exp['salaryEnd']['amount'] : null,
+                    'salary_end_period' => ! empty($exp['salaryEnd']['period']) ? $exp['salaryEnd']['period'] : null,
                     'is_freelance' => (bool) ($exp['isFreelance'] ?? false),
                     'sort_order' => $expIndex,
                 ]);
@@ -140,7 +140,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                     'degree' => $edu['degree'] ?? null,
                     'level' => $edu['level'] ?? null,
                     'date_start' => $this->sanitizeDateValue($dates[0] ?? null),
-                    'date_end' => $this->sanitizeDateValue(!empty($dates) ? end($dates) : null, allowPresent: true),
+                    'date_end' => $this->sanitizeDateValue(! empty($dates) ? end($dates) : null, allowPresent: true),
                     'description' => $edu['description'] ?? null,
                     'sort_order' => $eduIndex,
                 ]);
@@ -171,7 +171,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     {
         $version = $this->getCurrentVersion();
 
-        if (!$version) {
+        if (! $version) {
             return [
                 'personal' => [],
                 'skills' => ['top' => [], 'other' => []],
@@ -226,7 +226,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
      */
     protected function transformPersonalInfo(?ResumePersonalInfo $info): array
     {
-        if (!$info) {
+        if (! $info) {
             return [];
         }
 
@@ -400,10 +400,10 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
 
             $range = $start;
             if ($end !== '') {
-                $range .= " \u{2013} " . $end;
+                $range .= " \u{2013} ".$end;
             }
 
-            return $separator . $range;
+            return $separator.$range;
         };
 
         $flat['experience'] = array_map(function ($job) use ($buildDateDisplay) {
@@ -411,7 +411,8 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
             $job['dateStart'] = $dates[0] ?? '';
             $job['dateEnd'] = $dates[1] ?? '';
             $job['dateRange'] = count($dates) > 0 ? implode(' - ', $dates) : '';
-            $job['dateDisplay'] = $buildDateDisplay($dates, ' • ') . (count($dates) > 0 ? ' • ' : '');
+            $job['dateDisplay'] = $buildDateDisplay($dates, ' • ').(count($dates) > 0 ? ' • ' : '');
+
             return $job;
         }, $data['experience']);
 
@@ -451,12 +452,14 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
                     if (isset($category['list']) && is_array($category['list'])) {
                         $category['listJoined'] = implode($delimiter, $category['list']);
                     }
+
                     return $category;
                 }, $categories);
             } else {
                 $result[$key] = $categories;
             }
         }
+
         return $result;
     }
 
@@ -480,7 +483,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
      */
     protected function validateTechnicalSkills(array $data): void
     {
-        if (!isset($data['top']) || !is_array($data['top'])) {
+        if (! isset($data['top']) || ! is_array($data['top'])) {
             throw ValidationException::withMessages([
                 'skills.top' => 'Top skills section is required.',
             ]);
@@ -492,7 +495,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
      */
     protected function validateExperience(array $data): void
     {
-        if (!is_array($data) || count($data) === 0) {
+        if (! is_array($data) || count($data) === 0) {
             throw ValidationException::withMessages([
                 'experience' => 'At least one job experience is required.',
             ]);
@@ -517,7 +520,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
      */
     protected function validateEducation(array $data): void
     {
-        if (!is_array($data) || count($data) === 0) {
+        if (! is_array($data) || count($data) === 0) {
             throw ValidationException::withMessages([
                 'education' => 'At least one education entry is required.',
             ]);
@@ -537,7 +540,7 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
      */
     protected function validateProjects(array $data): void
     {
-        if (!is_array($data) || count($data) === 0) {
+        if (! is_array($data) || count($data) === 0) {
             throw ValidationException::withMessages([
                 'projects' => 'At least one project is required.',
             ]);

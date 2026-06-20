@@ -6,6 +6,7 @@ use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Models\TargetedResumeStatusUpdate;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
@@ -15,15 +16,15 @@ use Laravel\Mcp\Server\Attributes\Name;
 #[Name('update-status')]
 #[Description(
     'Log a job application status update. Call this when the candidate reports a status change, '
-    . 'e.g. "I applied" → status=applied, "I have an interview on June 12th" → status=interviewing, '
-    . 'occurred_at=2026-06-12, "I got rejected" → status=rejected. '
-    . 'For `interviewing`, occurred_at should be the scheduled interview date. '
-    . 'Valid statuses: applied, interviewing, interviewed, offered, accepted, hired, rejected.'
+    .'e.g. "I applied" → status=applied, "I have an interview on June 12th" → status=interviewing, '
+    .'occurred_at=2026-06-12, "I got rejected" → status=rejected. '
+    .'For `interviewing`, occurred_at should be the scheduled interview date. '
+    .'Valid statuses: applied, interviewing, interviewed, offered, accepted, hired, rejected.'
 )]
 class UpdateStatusTool extends AuthorizedResumeTool
 {
     /**
-     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     * @return array<string, Type>
      */
     public function schema(JsonSchema $schema): array
     {
@@ -61,7 +62,7 @@ class UpdateStatusTool extends AuthorizedResumeTool
 
         if ($currentStatus?->isTerminal()) {
             return Response::error(
-                'Cannot update status — application is already in a terminal state (' . $targetedResume->status->value . ').'
+                'Cannot update status — application is already in a terminal state ('.$targetedResume->status->value.').'
             );
         }
 
@@ -70,7 +71,7 @@ class UpdateStatusTool extends AuthorizedResumeTool
         $occurredAt = isset($occurredAtInput) && $occurredAtInput !== ''
             ? $occurredAtInput
             ? stripos($occurredAtInput, ' ') || stripos($occurredAtInput, 'T')
-            : now()->parse($occurredAtInput . ' 12:00:00')
+            : now()->parse($occurredAtInput.' 12:00:00')
             : now();
 
         TargetedResumeStatusUpdate::create([

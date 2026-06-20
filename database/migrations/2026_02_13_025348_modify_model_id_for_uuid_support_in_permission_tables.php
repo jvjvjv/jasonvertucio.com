@@ -21,7 +21,7 @@ return new class extends Migration
         foreach ($tables as $table) {
             if (Schema::hasTable($table)) {
                 $column = DB::selectOne("SHOW COLUMNS FROM {$table} WHERE Field = 'model_id'");
-                if ($column && !str_contains($column->Type, 'varchar')) {
+                if ($column && ! str_contains($column->Type, 'varchar')) {
                     DB::statement("ALTER TABLE {$table} MODIFY model_id VARCHAR(36) NOT NULL");
                 }
             }
