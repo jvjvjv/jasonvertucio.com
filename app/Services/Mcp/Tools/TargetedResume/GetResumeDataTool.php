@@ -2,8 +2,8 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
+use App\Contracts\ResumeDataServiceContract;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -11,13 +11,13 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Attributes\Name;
 
-#[Name('get-resume-memories')]
-#[Description('Load learned preferences and insights from previous sessions with this user.')]
-class GetResumeMemoriesTool extends AuthorizedResumeTool
+#[Name('get-resume-data')]
+#[Description("Load the candidate's full resume data (experience, skills, education, projects) before tailoring.")]
+class GetResumeDataTool extends AuthorizedResumeTool
 {
     public function __construct(
         ToolContext $context,
-        private AiMemoryService $memoryService,
+        private ResumeDataServiceContract $resumeDataService,
     ) {
         parent::__construct($context);
     }
@@ -36,12 +36,6 @@ class GetResumeMemoriesTool extends AuthorizedResumeTool
             return $response;
         }
 
-        if ($this->context->userId === null) {
-            return Response::structured(['memories' => '']);
-        }
-
-        $memories = $this->memoryService->getMemoriesForPrompt('targeted-resume', $this->context->userId);
-
-        return Response::structured(['memories' => $memories]);
+        return Response::structured($this->resumeDataService->getAllEditableData());
     }
 }

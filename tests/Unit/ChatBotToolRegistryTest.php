@@ -12,12 +12,12 @@ class ChatBotToolRegistryTest extends TestCase
     {
         $registry = new ChatBotToolRegistry(
             new AiConversation(['user_id' => null, 'context' => []]),
-            ['get_recent_blog_posts'],
+            ['get-recent-blog-posts'],
         );
 
         $toolNames = array_column($registry->toApiTools(), 'name');
 
-        $this->assertSame(['get_recent_blog_posts'], $toolNames);
+        $this->assertSame(['get-recent-blog-posts'], $toolNames);
     }
 
     public function test_registry_exposes_no_tools_when_allowlist_is_null(): void

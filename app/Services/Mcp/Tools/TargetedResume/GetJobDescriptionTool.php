@@ -2,36 +2,37 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
-use Jvjvjv\CodeTalker\Models\AiConversation;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 
-class GetJobDescriptionTool implements AiToolHandlerContract
+#[Name('get-job-description')]
+#[Description('Load the job description and any known job title or company name from the conversation context.')]
+class GetJobDescriptionTool extends AuthorizedResumeTool
 {
-    public function __construct(private AiConversation $conversation) {}
-
-    public function name(): string
+    /**
+     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     */
+    public function schema(JsonSchema $schema): array
     {
-        return 'get_job_description';
+        return [];
     }
 
-    public function description(): string
+    public function handle(Request $request): Response|ResponseFactory
     {
-        return 'Load the job description and any known job title or company name from the conversation context.';
-    }
+        if ($response = $this->guard()) {
+            return $response;
+        }
 
-    public function schema(): array
-    {
-        return ['type' => 'object', 'properties' => (object) [], 'required' => []];
-    }
+        $context = $this->context->conversation?->context ?? [];
 
-    public function handle(array $input): array
-    {
-        $context = $this->conversation->context ?? [];
-
-        return [
+        return Response::structured([
             'job_description' => $context['job_description'] ?? '',
             'job_title' => $context['job_title'] ?? null,
             'company_name' => $context['company_name'] ?? null,
-        ];
+        ]);
     }
 }

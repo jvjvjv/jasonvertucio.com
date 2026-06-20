@@ -61,7 +61,7 @@ class TargetedResumeFilterTest extends TestCase
         );
     }
 
-    public function test_index_defaults_to_active_and_finalized(): void
+    public function test_index_defaults_to_none(): void
     {
         $active = AiConversation::factory()->active()->create([
             'context' => ['company_name' => 'ActiveCo'],
@@ -88,8 +88,8 @@ class TargetedResumeFilterTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
             ->component('resume/targeted/Index', false)
-            ->where('filters.statuses', ['active', 'finalized'])
-            ->where('conversations', fn ($conversations) => collect($conversations)->pluck('id')->sort()->values()->all() === collect([$active->id, $finalized->id])->sort()->values()->all())
+            ->where('filters.statuses', [])
+            ->where('conversations', fn ($conversations) => collect($conversations)->pluck('id')->sort()->values()->all() === collect([$active->id, $completed->id, $pass->id, $finalized->id])->sort()->values()->all())
         );
     }
 

@@ -2,30 +2,56 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use App\Contracts\ResumeDataServiceContract;
+use App\Models\User;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Jvjvjv\CodeTalker\Support\ToolContext;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Tool;
 
-class GetResumeDataTool implements AiToolHandlerContract
+#[Name('get-resume-data')]
+#[Description("Load the candidate's full resume data (experience, skills, education, projects) before tailoring.")]
+class GetResumeDataTool extends Tool
 {
-    public function __construct(private ResumeDataServiceContract $resumeDataService) {}
+    public function __construct(
+        private ToolContext $context,
+        private ResumeDataServiceContract $resumeDataService,
+    ) {}
 
-    public function name(): string
+    /**
+     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     */
+    public function schema(JsonSchema $schema): array
     {
-        return 'get_resume_data';
+        return [];
     }
 
-    public function description(): string
+    public function handle(Request $request): Response|ResponseFactory
     {
-        return "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.";
+        $resumeData = $this->resumeDataService->getAllEditableData();
+
+        if (! $this->canViewSalary()) {
+            $resumeData['experience'] = array_map(static function (array $experience): array {
+                $experience['salaryStart'] = null;
+                $experience['salaryEnd'] = null;
+
+                return $experience;
+            }, $resumeData['experience'] ?? []);
+        }
+
+        return Response::structured($resumeData);
     }
 
-    public function schema(): array
+    private function canViewSalary(): bool
     {
-        return ['type' => 'object', 'properties' => (object) [], 'required' => []];
-    }
+        if ($this->context->userId === null) {
+            return false;
+        }
 
-    public function handle(array $input): array
-    {
-        return $this->resumeDataService->getAllEditableData();
+        return User::find($this->context->userId)?->can('save-resume') ?? false;
     }
 }

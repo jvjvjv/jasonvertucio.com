@@ -5,18 +5,40 @@ namespace Tests\Unit\Services\Mcp\Tools\TargetedResume;
 use App\Enums\TargetedResumeStatus;
 use App\Models\CoverLetter;
 use App\Models\TargetedResume;
+use App\Models\User;
 use App\Services\Mcp\Tools\TargetedResume\GetTargetedResumeContextTool;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Services\Mcp\ToolResultConverter;
+use Jvjvjv\CodeTalker\Support\ToolContext;
+use Laravel\Mcp\Request;
 use Tests\TestCase;
 
 class GetTargetedResumeContextToolTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private function authorizedUser(): User
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo('save-resume');
+
+        return $user;
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    private function handle(GetTargetedResumeContextTool $tool, array $input): array
+    {
+        return ToolResultConverter::toArray($tool->handle(new Request($input)));
+    }
+
     public function test_it_loads_resume_context_by_conversation_id(): void
     {
-        $conversation = AiConversation::factory()->create();
+        $user = $this->authorizedUser();
+        $conversation = AiConversation::factory()->create(['user_id' => $user->id]);
         $resume = TargetedResume::factory()->finalized()->create([
             'ai_conversation_id' => $conversation->id,
             'company_name' => 'Acme Labs',
@@ -40,9 +62,9 @@ class GetTargetedResumeContextToolTest extends TestCase
             'signature' => 'Jason',
         ]);
 
-        $tool = new GetTargetedResumeContextTool($conversation);
+        $tool = new GetTargetedResumeContextTool(ToolContext::forConversation($conversation));
 
-        $result = $tool->handle(['conversation_id' => $conversation->id]);
+        $result = $this->handle($tool, ['conversation_id' => $conversation->id]);
 
         $this->assertSame('Acme Labs', data_get($result, 'job_description.company'));
         $this->assertSame('Senior Laravel Engineer', data_get($result, 'job_description.position'));
@@ -54,7 +76,8 @@ class GetTargetedResumeContextToolTest extends TestCase
 
     public function test_it_returns_matches_when_company_search_is_ambiguous(): void
     {
-        $conversation = AiConversation::factory()->create();
+        $user = $this->authorizedUser();
+        $conversation = AiConversation::factory()->create(['user_id' => $user->id]);
 
         $firstResume = TargetedResume::factory()->finalized()->create([
             'ai_conversation_id' => $conversation->id,
@@ -84,9 +107,9 @@ class GetTargetedResumeContextToolTest extends TestCase
             'title' => 'Other User Resume',
         ]);
 
-        $tool = new GetTargetedResumeContextTool($conversation);
+        $tool = new GetTargetedResumeContextTool(ToolContext::forConversation($conversation));
 
-        $result = $tool->handle(['company_name' => 'Acme']);
+        $result = $this->handle($tool, ['company_name' => 'Acme']);
 
         $this->assertTrue($result['needs_selection']);
         $this->assertCount(2, $result['matches']);
@@ -98,7 +121,8 @@ class GetTargetedResumeContextToolTest extends TestCase
 
     public function test_it_finds_a_resume_by_job_title(): void
     {
-        $conversation = AiConversation::factory()->create();
+        $user = $this->authorizedUser();
+        $conversation = AiConversation::factory()->create(['user_id' => $user->id]);
 
         $resume = TargetedResume::factory()->finalized()->create([
             'ai_conversation_id' => $conversation->id,
@@ -108,9 +132,9 @@ class GetTargetedResumeContextToolTest extends TestCase
             'job_description' => 'Lead platform modernization.',
         ]);
 
-        $tool = new GetTargetedResumeContextTool($conversation);
+        $tool = new GetTargetedResumeContextTool(ToolContext::forConversation($conversation));
 
-        $result = $tool->handle(['job_title' => 'Platform Architect']);
+        $result = $this->handle($tool, ['job_title' => 'Platform Architect']);
 
         $this->assertSame($resume->id, data_get($result, 'meta.targeted_resume_id'));
         $this->assertSame('Northwind', data_get($result, 'job_description.company'));

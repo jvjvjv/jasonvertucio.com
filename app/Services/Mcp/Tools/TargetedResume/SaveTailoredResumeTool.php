@@ -2,60 +2,62 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
-use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Services\TargetedResumeService;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Jvjvjv\CodeTalker\Support\ToolContext;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 
-class SaveTailoredResumeTool implements AiToolHandlerContract
+#[Name('save-tailored-resume')]
+#[Description('Save the finalized tailored resume, generate DOCX and PDF, and mark the conversation completed. Call this when the user approves the resume.')]
+class SaveTailoredResumeTool extends AuthorizedResumeTool
 {
     public function __construct(
-        private AiConversation $conversation,
+        ToolContext $context,
         private TargetedResumeService $targetedResumeService,
-    ) {}
-
-    public function name(): string
-    {
-        return 'save_tailored_resume';
+    ) {
+        parent::__construct($context);
     }
 
-    public function description(): string
-    {
-        return 'Save the finalized tailored resume, generate DOCX and PDF, and mark the conversation completed. Call this when the user approves the resume.';
-    }
-
-    public function schema(): array
+    /**
+     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     */
+    public function schema(JsonSchema $schema): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                'tailored_content' => ['type' => 'string'],
-                'fit_score' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100],
-            ],
-            'required' => ['tailored_content'],
+            'tailored_content' => $schema->string()->required(),
+            'fit_score' => $schema->integer()->min(1)->max(100),
         ];
     }
 
-    public function handle(array $input): array
+    public function handle(Request $request): Response|ResponseFactory
     {
-        $tailoredContent = (string) ($input['tailored_content'] ?? '');
-
-        if ($tailoredContent === '') {
-            return ['error' => 'tailored_content must not be empty.'];
+        if ($response = $this->guard()) {
+            return $response;
         }
 
-        $fitScore = isset($input['fit_score']) ? (int) $input['fit_score'] : null;
+        $tailoredContent = (string) ($request->get('tailored_content') ?? '');
+
+        if ($tailoredContent === '') {
+            return Response::error('tailored_content must not be empty.');
+        }
+
+        $fitScore = $request->get('fit_score') !== null ? (int) $request->get('fit_score') : null;
 
         $targetedResume = $this->targetedResumeService->saveTailoredResume(
-            $this->conversation,
+            $this->context->conversation,
             $tailoredContent,
             $fitScore,
         );
 
-        return [
+        return Response::structured([
             'success' => true,
             'targeted_resume_id' => $targetedResume->id,
             'status' => $targetedResume->status->value,
             '_page_reload' => true,
-        ];
+        ]);
     }
 }

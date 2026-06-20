@@ -123,15 +123,15 @@ class AiChatBotControllerTest extends TestCase
             ],
         ]);
         $response->assertJsonFragment([
-            'name' => 'get_recent_blog_posts',
+            'name' => 'get-recent-blog-posts',
             'description' => 'Load recent blog posts with titles, summaries, and URLs. Supports search by keyword in title, summary, or body.',
         ]);
         $response->assertJsonFragment([
-            'name' => 'fetch_web_page',
+            'name' => 'fetch-web-page',
             'description' => 'Fetch a web page by URL and return its readable text content using the JayScraper research user agent.',
         ]);
         $response->assertJsonFragment([
-            'name' => 'get_resume_data',
+            'name' => 'get-resume-data',
             'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
         ]);
     }
@@ -139,7 +139,7 @@ class AiChatBotControllerTest extends TestCase
     public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void {
         $user = $this->authenticatedUser();
         $system = AiSystem::factory()->create([
-            'allowed_tools' => ['get_recent_blog_posts'],
+            'allowed_tools' => ['get-recent-blog-posts'],
         ]);
 
         $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', [
@@ -149,10 +149,10 @@ class AiChatBotControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(1, 'tools');
         $response->assertJsonFragment([
-            'name' => 'get_recent_blog_posts',
+            'name' => 'get-recent-blog-posts',
         ]);
         $response->assertJsonMissing([
-            'name' => 'get_resume_data',
+            'name' => 'get-resume-data',
         ]);
     }
 }

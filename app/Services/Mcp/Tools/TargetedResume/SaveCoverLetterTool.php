@@ -2,52 +2,54 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
-use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Services\TargetedResumeService;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Jvjvjv\CodeTalker\Support\ToolContext;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 
-class SaveCoverLetterTool implements AiToolHandlerContract
+#[Name('save-cover-letter')]
+#[Description('Save the finalized cover letter and generate DOCX and PDF. Call this when the user approves the cover letter.')]
+class SaveCoverLetterTool extends AuthorizedResumeTool
 {
     public function __construct(
-        private AiConversation $conversation,
+        ToolContext $context,
         private TargetedResumeService $targetedResumeService,
-    ) {}
-
-    public function name(): string
-    {
-        return 'save_cover_letter';
+    ) {
+        parent::__construct($context);
     }
 
-    public function description(): string
-    {
-        return 'Save the finalized cover letter and generate DOCX and PDF. Call this when the user approves the cover letter.';
-    }
-
-    public function schema(): array
+    /**
+     * @return array<string, \Illuminate\JsonSchema\Types\Type>
+     */
+    public function schema(JsonSchema $schema): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                'cover_letter_content' => ['type' => 'string'],
-            ],
-            'required' => ['cover_letter_content'],
+            'cover_letter_content' => $schema->string()->required(),
         ];
     }
 
-    public function handle(array $input): array
+    public function handle(Request $request): Response|ResponseFactory
     {
-        $content = (string) ($input['cover_letter_content'] ?? '');
-
-        if ($content === '') {
-            return ['error' => 'cover_letter_content must not be empty.'];
+        if ($response = $this->guard()) {
+            return $response;
         }
 
-        $coverLetter = $this->targetedResumeService->saveCoverLetter($this->conversation, $content);
+        $content = (string) ($request->get('cover_letter_content') ?? '');
 
-        return [
+        if ($content === '') {
+            return Response::error('cover_letter_content must not be empty.');
+        }
+
+        $coverLetter = $this->targetedResumeService->saveCoverLetter($this->context->conversation, $content);
+
+        return Response::structured([
             'success' => true,
             'cover_letter_id' => $coverLetter->id,
             '_page_reload' => true,
-        ];
+        ]);
     }
 }

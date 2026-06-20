@@ -136,4 +136,31 @@ return [
         ],
 
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | External MCP Server
+    |--------------------------------------------------------------------------
+    |
+    | The bundled CodeTalkerServer exposes the built-in chat-bot tools
+    | (fetch-web-page, search-web, scan-memories) to external MCP clients such
+    | as Grok or Claude Desktop. Only the Sanctum-protected web (HTTP) transport
+    | is enabled here; the local stdio transport is left off.
+    |
+    */
+
+    'mcp' => [
+        'enabled' => env('CODE_TALKER_MCP_ENABLED', false),
+
+        'web' => [
+            'enabled' => env('CODE_TALKER_MCP_WEB_ENABLED', true),
+            'path' => env('CODE_TALKER_MCP_PATH', 'mcp/code-talker'),
+            'middleware' => ['auth:sanctum'],
+        ],
+
+        'local' => [
+            'enabled' => env('CODE_TALKER_MCP_LOCAL_ENABLED', false),
+            'handle' => env('CODE_TALKER_MCP_LOCAL_HANDLE', 'code-talker'),
+        ],
+    ],
 ];

@@ -32,19 +32,19 @@ class ChatBotToolRegistryTest extends TestCase
         }
 
         // Known package tool must always be present
-        $this->assertContains('scan_memories', $registeredToolNames);
-        $this->assertContains('fetch_web_page', $registeredToolNames);
+        $this->assertContains('scan-memories', $registeredToolNames);
+        $this->assertContains('fetch-web-page', $registeredToolNames);
     }
 
     public function testRegistryFiltersToAllowedToolsOnly(): void
     {
         $conversation = new AiConversation(['user_id' => null, 'context' => []]);
 
-        $registry = new ChatBotToolRegistry($conversation, ['scan_memories']);
+        $registry = new ChatBotToolRegistry($conversation, ['scan-memories']);
 
         $toolNames = array_column($registry->toApiTools(), 'name');
 
-        $this->assertSame(['scan_memories'], $toolNames);
+        $this->assertSame(['scan-memories'], $toolNames);
     }
 
     public function testRegistryExposesNoToolsWhenAllowlistIsNull(): void
