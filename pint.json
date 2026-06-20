@@ -1,0 +1,10 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        "index.php",
+        "server.php"
+    ],
+    "rules": {
+        "no_unused_imports": false
+    }
+}
