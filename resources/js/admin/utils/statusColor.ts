@@ -20,6 +20,7 @@ export function statusColor(status: string): ChipColor {
         case "interviewing":
             return "warning";
         case "active":
+        case "in_progress":
         case "interviewed":
             return "info";
         case "pass":

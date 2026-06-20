@@ -1,4 +1,4 @@
-const GHOSTED_AFTER_DAYS = 14;
+const DEFAULT_GHOSTED_AFTER_DAYS = 30;
 
 function isOlderThanDays(dateValue: string, days: number): boolean {
     const parsed = new Date(dateValue);
@@ -17,17 +17,19 @@ interface ResolveDisplayStatusParams {
     conversationStatus: string;
     resumeStatus?: string | null;
     latestStatusOccurredAt?: string | null;
+    ghostedAfterDays?: number;
 }
 
 export function resolveTargetedResumeDisplayStatus({
     conversationStatus,
     resumeStatus,
     latestStatusOccurredAt,
+    ghostedAfterDays = DEFAULT_GHOSTED_AFTER_DAYS,
 }: ResolveDisplayStatusParams): string {
     if (
         resumeStatus === "applied" &&
         latestStatusOccurredAt &&
-        isOlderThanDays(latestStatusOccurredAt, GHOSTED_AFTER_DAYS)
+        isOlderThanDays(latestStatusOccurredAt, ghostedAfterDays)
     ) {
         return "ghosted";
     }

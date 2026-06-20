@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\ResumeEditorController;
+use App\Http\Controllers\Admin\ResumeMetricsController;
 use App\Http\Controllers\Admin\TargetedResumeController;
 use App\Http\Middleware\HandleInertiaRequests;
 
@@ -11,6 +12,9 @@ Route::middleware(['auth', 'can:edit-resume', HandleInertiaRequests::class])
     ->name('admin.resume.')
     ->group(function () {
         Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
+
+        // Application Metrics
+        Route::get('/metrics', [ResumeMetricsController::class, 'index'])->name('metrics');
 
         // Targeted Resume Builder
         Route::get('/targeted-builder', [TargetedResumeController::class, 'index'])->name('targeted.index');
