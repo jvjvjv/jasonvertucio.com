@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Concerns\ExecutesAiTools;
 use App\Enums\TargetedResumeStatus;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
@@ -11,7 +12,6 @@ use App\Services\Mcp\TargetedResumeToolRegistry;
 use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
-use Jvjvjv\CodeTalker\Concerns\ExecutesAiTools;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
@@ -19,7 +19,6 @@ use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 
@@ -148,6 +147,15 @@ class TargetedResumeService
 
         $client = $this->clientFactory->forSystem($conversation->aiSystem);
 
+        Log::info('targeted-resume.continueConversation: client selected', [
+            'conversation_id' => $conversation->id,
+            'ai_system_id' => $conversation->aiSystem->id,
+            'provider' => $conversation->aiSystem->provider,
+            'model' => $conversation->aiSystem->model,
+            'base_url' => $conversation->aiSystem->base_url,
+            'max_tokens' => $conversation->aiSystem->max_tokens,
+        ]);
+
         if ($systemPrompt) {
             $client->withSystem($systemPrompt);
         }
@@ -210,6 +218,13 @@ class TargetedResumeService
 
             $this->conversationUsageService->syncConversation($conversation->fresh());
         } catch (\Exception $e) {
+            Log::error('targeted-resume.continueConversation: failed', [
+                'conversation_id' => $conversation->id,
+                'model' => $conversation->aiSystem->model,
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ]);
+
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
             AiInteractionLog::create([
@@ -236,6 +251,15 @@ class TargetedResumeService
         $parsedResume = $this->parseTailoredResumeContent($tailoredContent);
         $existingTargetedResume = $conversation->targetedResume;
 
+        Log::info('targeted-resume.saveTailoredResume: starting save', [
+            'conversation_id' => $conversation->id,
+            'existing_targeted_resume_id' => $existingTargetedResume?->id,
+            'existing_status' => $existingTargetedResume?->status?->value,
+            'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
+            'parsed_title' => $parsedResume['title'],
+            'markdown_length' => strlen($parsedResume['markdown']),
+        ]);
+
         $targetedResume = TargetedResume::updateOrCreate(
             ['ai_conversation_id' => $conversation->id],
             [
@@ -259,21 +283,54 @@ class TargetedResumeService
             ]
         );
 
-        $docxResult = $this->documentService->generateDocx($targetedResume);
+        Log::info('targeted-resume.saveTailoredResume: resume persisted', [
+            'conversation_id' => $conversation->id,
+            'targeted_resume_id' => $targetedResume->id,
+            'was_recently_created' => $targetedResume->wasRecentlyCreated,
+            'status' => $targetedResume->status->value,
+        ]);
 
-        if (! $docxResult['success']) {
-            throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
+        try {
+            Log::debug('targeted-resume.saveTailoredResume: generating DOCX', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            $docxResult = $this->documentService->generateDocx($targetedResume);
+
+            if (! $docxResult['success']) {
+                throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
+            }
+
+            Log::debug('targeted-resume.saveTailoredResume: generating PDF', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            $pdfResult = $this->documentService->generatePdf($targetedResume);
+
+            if (! $pdfResult['success']) {
+                throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
+            }
+
+            $conversation->update(['status' => AiConversationStatus::Completed]);
+
+            Log::info('targeted-resume.saveTailoredResume: conversation completed', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            return $targetedResume->fresh();
+        } catch (\Throwable $throwable) {
+            Log::error('targeted-resume.saveTailoredResume: failed', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+                'exception' => $throwable::class,
+                'message' => $throwable->getMessage(),
+            ]);
+
+            throw $throwable;
         }
-
-        $pdfResult = $this->documentService->generatePdf($targetedResume);
-
-        if (! $pdfResult['success']) {
-            throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
-        }
-
-        $conversation->update(['status' => AiConversationStatus::Completed]);
-
-        return $targetedResume->fresh();
     }
 
     /**

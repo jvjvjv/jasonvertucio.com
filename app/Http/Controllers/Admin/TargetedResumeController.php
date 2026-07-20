@@ -277,12 +277,20 @@ class TargetedResumeController extends Controller
             'message' => ['nullable', 'string'],
         ]);
 
+        Log::info('targeted-resume.chat: stream requested', [
+            'conversation_id' => $conversation->id,
+            'user_id' => auth()->id(),
+            'message_present' => $request->filled('message'),
+            'message_length' => strlen((string) $request->input('message', '')),
+        ]);
+
         // Re-activate conversations that were marked as passed
         if ($conversation->status === AiConversationStatus::Pass) {
             $conversation->update(['status' => AiConversationStatus::Active]);
         }
 
         return response()->stream(function () use ($request, $conversation) {
+            $streamStart = microtime(true);
             set_time_limit(0);
 
             echo 'data: '.json_encode([
@@ -307,8 +315,17 @@ class TargetedResumeController extends Controller
                     }
                     flush();
                 }
+
+                Log::info('targeted-resume.chat: stream completed', [
+                    'conversation_id' => $conversation->id,
+                    'duration_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                ]);
             } catch (\Throwable $e) {
-                Log::error('Targeted resume stream failed', ['error' => $e->getMessage()]);
+                Log::error('targeted-resume.chat: stream failed', [
+                    'conversation_id' => $conversation->id,
+                    'duration_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                    'error' => $e->getMessage(),
+                ]);
                 echo 'data: '.json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.'])."\n\n";
                 echo "data: [DONE]\n\n";
                 if (ob_get_level() > 0) {

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Generator;
+use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Contracts\AiClientContract;
 use OpenAI\Client as OpenAIClient;
 use OpenAI\Responses\Chat\CreateStreamedResponseToolCall;
@@ -114,6 +115,14 @@ class OpenAiService implements AiClientContract
     {
         $params = $this->buildParams($messages, true);
 
+        $streamStart = microtime(true);
+        Log::info('openai.stream: request starting', [
+            'model' => $params['model'] ?? null,
+            'message_count' => count($params['messages'] ?? []),
+            'max_tokens' => $params['max_tokens'] ?? null,
+            'tool_count' => count($params['tools'] ?? []),
+        ]);
+
         $sdkStream = $this->client->chat()->createStreamed($params);
 
         $this->reset();
@@ -125,8 +134,18 @@ class OpenAiService implements AiClientContract
         /** @var array<int, array{id: string, name: string, arguments: string}> $pendingToolCalls */
         $pendingToolCalls = [];
         $finishReason = null;
+        $chunkCount = 0;
 
         foreach ($sdkStream as $response) {
+            $chunkCount++;
+
+            if ($chunkCount === 1 || $chunkCount % 100 === 0) {
+                Log::info('openai.stream: chunk progress', [
+                    'chunk_count' => $chunkCount,
+                    'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                ]);
+            }
+
             if ($response->usage !== null) {
                 $inputTokens = $response->usage->promptTokens ?? $inputTokens;
                 $outputTokens = $response->usage->completionTokens ?? $outputTokens;
@@ -187,8 +206,22 @@ class OpenAiService implements AiClientContract
 
             if ($choice->finishReason !== null) {
                 $finishReason = $choice->finishReason;
+
+                Log::info('openai.stream: finish reason received', [
+                    'finish_reason' => $finishReason,
+                    'chunk_count' => $chunkCount,
+                    'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                ]);
             }
         }
+
+        Log::info('openai.stream: stream loop finished', [
+            'chunk_count' => $chunkCount,
+            'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+            'finish_reason' => $finishReason,
+            'tool_call_count' => count($pendingToolCalls),
+            'started' => $started,
+        ]);
 
         foreach ($pendingToolCalls as $toolCall) {
             yield [

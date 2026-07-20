@@ -12,7 +12,6 @@ import {
     useState,
     forwardRef,
 } from "react";
-import { flushSync } from "react-dom";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
@@ -168,6 +167,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         const extraPayloadRef = useRef(extraPayload);
         const onModelStatusChangeRef = useRef(onModelStatusChange);
         const onMessagesChangeRef = useRef(onMessagesChange);
+        const streamingRafRef = useRef<number | null>(null);
 
         // Keep callback refs fresh without mutating during render
         useEffect(() => {
@@ -202,6 +202,15 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         useEffect(() => {
             onMessagesChangeRef.current?.(messages);
         }, [messages]);
+
+        useEffect(() => {
+            return () => {
+                if (streamingRafRef.current !== null) {
+                    cancelAnimationFrame(streamingRafRef.current);
+                    streamingRafRef.current = null;
+                }
+            };
+        }, []);
 
         const updateModelStatus = (status: ModelStatus | null) => {
             setModelStatus(status);
@@ -295,6 +304,8 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                 setError("");
 
                 let liveBlocks: MessageBlock[] = [];
+                let sawPageReloadEvent = false;
+                let sawAnyStreamData = false;
 
                 const appendToBlocks = (
                     type: MessageBlock["type"],
@@ -311,9 +322,13 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                     } else {
                         liveBlocks = [...liveBlocks, { type, content: delta }];
                     }
-                    flushSync(() => {
-                        setStreamingBlocks([...liveBlocks]);
-                    });
+
+                    if (streamingRafRef.current === null) {
+                        streamingRafRef.current = requestAnimationFrame(() => {
+                            streamingRafRef.current = null;
+                            setStreamingBlocks([...liveBlocks]);
+                        });
+                    }
                 };
 
                 try {
@@ -332,11 +347,17 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                     )) {
                         if (!jsonStr || jsonStr === "[DONE]") continue;
 
+                        sawAnyStreamData = true;
+
                         let event: StreamEvent;
                         try {
                             event = JSON.parse(jsonStr) as StreamEvent;
                         } catch {
                             continue;
+                        }
+
+                        if (event.type === "page_reload") {
+                            sawPageReloadEvent = true;
                         }
 
                         onEvent?.(event);
@@ -407,12 +428,26 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
 
                     onStreamEnd?.();
                 } catch (err) {
-                    setError(
+                    const message =
                         err instanceof Error
                             ? err.message
-                            : "Unable to send message right now.",
-                    );
+                            : "Unable to send message right now.";
+
+                    const isBenignStreamReadInterruption =
+                        (sawPageReloadEvent || sawAnyStreamData) &&
+                        /failed to read from stream|abort|aborted/i.test(
+                            message,
+                        );
+
+                    if (!isBenignStreamReadInterruption) {
+                        setError(message);
+                    }
                 } finally {
+                    if (streamingRafRef.current !== null) {
+                        cancelAnimationFrame(streamingRafRef.current);
+                        streamingRafRef.current = null;
+                    }
+
                     setIsStreaming(false);
                     setStreamingBlocks([]);
                     setStreamingToolPanels([]);

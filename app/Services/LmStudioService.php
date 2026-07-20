@@ -134,8 +134,16 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
         Log::debug('LmStudio stream payload', ['message_count' => count($payload['messages']), 'messages' => $payload['messages']]);
 
+        $streamStart = microtime(true);
+        Log::info('lm-studio.stream: request starting', [
+            'model' => $payload['model'] ?? null,
+            'message_count' => count($payload['messages'] ?? []),
+            'max_tokens' => $payload['max_tokens'] ?? null,
+            'tool_count' => count($payload['tools'] ?? []),
+        ]);
+
         $response = Http::withHeaders($this->headers())
-            ->withOptions(['stream' => true])
+            ->withOptions(['stream' => true, 'read_timeout' => 10])
             ->timeout(600)
             ->post($this->serverUrl.'/v1/chat/completions', $payload);
 
@@ -148,6 +156,9 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $inputTokens = null;
         $outputTokens = null;
         $started = false;
+        $lineCount = 0;
+        $eventCount = 0;
+        $idleReadCount = 0;
 
         // Track in-flight tool calls: index → {id, name, arguments}
         /** @var array<int, array{id: string, name: string, arguments: string}> $pendingToolCalls */
@@ -155,9 +166,62 @@ class LmStudioService implements AiClientContract, CanLoadModels
         $finishReason = null;
 
         while (! $body->eof()) {
-            $buffer .= $body->read(1024);
+            try {
+                $chunkData = $body->read(1024);
+            } catch (\Throwable $throwable) {
+                $message = $throwable->getMessage();
+
+                if (str_contains(strtolower($message), 'timed out')) {
+                    $idleReadCount++;
+
+                    if ($idleReadCount === 1 || $idleReadCount % 3 === 0) {
+                        Log::info('lm-studio.stream: socket read timeout, continuing', [
+                            'idle_reads' => $idleReadCount,
+                            'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                            'line_count' => $lineCount,
+                            'event_count' => $eventCount,
+                            'message' => $message,
+                        ]);
+                    }
+
+                    yield [
+                        'type' => 'heartbeat',
+                    ];
+
+                    continue;
+                }
+
+                Log::error('lm-studio.stream: socket read failed', [
+                    'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                    'line_count' => $lineCount,
+                    'event_count' => $eventCount,
+                    'exception' => $throwable::class,
+                    'message' => $message,
+                ]);
+
+                throw $throwable;
+            }
+
+            if ($chunkData === '') {
+                $idleReadCount++;
+
+                if ($idleReadCount % 6 === 0) {
+                    Log::info('lm-studio.stream: idle read', [
+                        'idle_reads' => $idleReadCount,
+                        'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                        'line_count' => $lineCount,
+                        'event_count' => $eventCount,
+                    ]);
+                }
+
+                continue;
+            }
+
+            $idleReadCount = 0;
+            $buffer .= $chunkData;
 
             while (($pos = strpos($buffer, "\n")) !== false) {
+                $lineCount++;
                 $line = trim(substr($buffer, 0, $pos));
                 $buffer = substr($buffer, $pos + 1);
 
@@ -168,13 +232,36 @@ class LmStudioService implements AiClientContract, CanLoadModels
                 $rawData = substr($line, 6);
 
                 if ($rawData === '[DONE]') {
+                    Log::info('lm-studio.stream: received done marker', [
+                        'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                        'line_count' => $lineCount,
+                        'event_count' => $eventCount,
+                    ]);
+
                     break 2;
                 }
 
                 $chunk = json_decode($rawData, true);
 
                 if (! is_array($chunk)) {
+                    Log::warning('lm-studio.stream: invalid json chunk', [
+                        'line_count' => $lineCount,
+                        'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                        'preview' => mb_substr($rawData, 0, 300),
+                    ]);
+
                     continue;
+                }
+
+                $eventCount++;
+
+                if ($eventCount === 1 || $eventCount % 100 === 0) {
+                    Log::info('lm-studio.stream: chunk progress', [
+                        'event_count' => $eventCount,
+                        'line_count' => $lineCount,
+                        'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                        'has_choices' => ! empty($chunk['choices']),
+                    ]);
                 }
 
                 if (isset($chunk['usage'])) {
@@ -254,10 +341,22 @@ class LmStudioService implements AiClientContract, CanLoadModels
 
                 if (isset($choice['finish_reason']) && $choice['finish_reason'] !== null) {
                     $finishReason = $choice['finish_reason'];
-                    Log::debug('LmStudio finish_reason chunk', ['chunk' => $chunk]);
+                    Log::info('lm-studio.stream: finish reason received', [
+                        'finish_reason' => $finishReason,
+                        'event_count' => $eventCount,
+                        'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                    ]);
                 }
             }
         }
+
+        Log::info('lm-studio.stream: stream loop finished', [
+            'event_count' => $eventCount,
+            'line_count' => $lineCount,
+            'elapsed_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+            'finish_reason' => $finishReason,
+            'started' => $started,
+        ]);
 
         // Emit accumulated tool calls as normalized Anthropic-style events
         foreach ($pendingToolCalls as $toolCall) {

@@ -4,6 +4,7 @@ namespace App\Services\Mcp;
 
 use App\Contracts\ResumeDataServiceContract;
 use App\Services\TargetedResumeService;
+use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
@@ -21,12 +22,16 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
     /** @var array<string, Tool|AiToolHandlerContract> */
     private array $handlers = [];
 
+    private int $conversationId;
+
     public function __construct(
         AiConversation $conversation,
         ResumeDataServiceContract $resumeDataService,
         AiMemoryService $memoryService,
         TargetedResumeService $targetedResumeService,
     ) {
+        $this->conversationId = (int) $conversation->id;
+
         $this->handlers = $this->discoverHandlers([
             app_path('Services/Mcp/Tools/TargetedResume') => 'App\\Services\\Mcp\\Tools\\TargetedResume\\',
         ], [
@@ -75,16 +80,44 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
      */
     public function dispatch(string $toolName, array $input): array
     {
+        Log::info('targeted-resume.tool-registry: dispatch requested', [
+            'conversation_id' => $this->conversationId,
+            'tool' => $toolName,
+            'input_keys' => array_keys($input),
+        ]);
+
         if (! isset($this->handlers[$toolName])) {
+            Log::warning('targeted-resume.tool-registry: unknown tool', [
+                'conversation_id' => $this->conversationId,
+                'tool' => $toolName,
+                'known_tools' => array_keys($this->handlers),
+            ]);
+
             return ['error' => "Unknown tool: {$toolName}"];
         }
 
         $handler = $this->handlers[$toolName];
 
         if ($handler instanceof Tool) {
-            return ToolResultConverter::toArray($handler->handle(new Request($input)));
+            $result = ToolResultConverter::toArray($handler->handle(new Request($input)));
+
+            Log::info('targeted-resume.tool-registry: dispatch completed', [
+                'conversation_id' => $this->conversationId,
+                'tool' => $toolName,
+                'result_keys' => array_keys($result),
+            ]);
+
+            return $result;
         }
 
-        return $handler->handle($input);
+        $result = $handler->handle($input);
+
+        Log::info('targeted-resume.tool-registry: dispatch completed', [
+            'conversation_id' => $this->conversationId,
+            'tool' => $toolName,
+            'result_keys' => array_keys($result),
+        ]);
+
+        return $result;
     }
 }

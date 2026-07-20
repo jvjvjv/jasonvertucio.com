@@ -38,7 +38,7 @@ return [
             'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
             'max_tokens' => (int) env('ANTHROPIC_MAX_TOKENS', 1024),
             'api_version' => env('ANTHROPIC_API_VERSION', '2023-06-01'),
-            'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
+            'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
             'pricing' => [
                 'default' => [
                     'input_per_million' => (float) env('ANTHROPIC_DEFAULT_INPUT_PER_MILLION', 3.00),

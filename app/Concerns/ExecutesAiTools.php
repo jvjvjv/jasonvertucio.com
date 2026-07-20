@@ -52,6 +52,13 @@ trait ExecutesAiTools
                 ? ($iteration === 0 ? (string) $baseTurnNumber : "{$baseTurnNumber}.{$iteration}")
                 : null;
 
+            Log::info('ai-tool-loop: iteration started', [
+                'conversation_id' => $conversation?->id,
+                'iteration' => $iteration,
+                'turn_number' => $iterationTurnNumber,
+                'message_count' => count($messages),
+            ]);
+
             $iterationRequestPayload = ['messages' => $messages];
             if ($conversation !== null) {
                 $iterationRequestPayload['model'] = $conversation->aiSystem->model;
@@ -66,7 +73,20 @@ trait ExecutesAiTools
                 ]);
             }
 
-            $stream = $client->withTools($toolRegistry->toApiTools())->stream($messages);
+            $apiTools = $toolRegistry->toApiTools();
+
+            Log::info('ai-tool-loop: creating stream client', [
+                'conversation_id' => $conversation?->id,
+                'iteration' => $iteration,
+                'tool_count' => count($apiTools),
+            ]);
+
+            $stream = $client->withTools($apiTools)->stream($messages);
+
+            Log::info('ai-tool-loop: stream client created', [
+                'conversation_id' => $conversation?->id,
+                'iteration' => $iteration,
+            ]);
 
             $fullText = '';
             $fullReasoning = '';
@@ -77,67 +97,134 @@ trait ExecutesAiTools
             /** @var array<string, array{id: string, name: string, partialJson: string}> $pendingToolBlocks */
             $pendingToolBlocks = [];
             $currentBlockKey = null;
+            $streamEventCount = 0;
+            $firstStreamEventLogged = false;
 
-            foreach ($stream as $event) {
-                $type = $event['type'] ?? '';
+            try {
+                foreach ($stream as $event) {
+                    $streamEventCount++;
+                    $type = $event['type'] ?? '';
 
-                if ($type === 'message_start') {
-                    $inputTokens = $event['message']['usage']['input_tokens'] ?? $inputTokens;
+                    if ($type === 'heartbeat') {
+                        yield ": heartbeat\n\n";
 
-                } elseif ($type === 'content_block_start') {
-                    $block = $event['content_block'] ?? [];
-
-                    if (($block['type'] ?? '') === 'tool_use') {
-                        $id = (string) ($block['id'] ?? uniqid('tool_', true));
-                        $currentBlockKey = $id;
-                        $pendingToolBlocks[$id] = [
-                            'id' => $id,
-                            'name' => (string) ($block['name'] ?? ''),
-                            'partialJson' => '',
-                        ];
-                    } elseif (($block['type'] ?? '') === 'thinking') {
-                        yield 'data: '.json_encode($event)."\n\n";
+                        continue;
                     }
 
-                } elseif ($type === 'content_block_delta') {
-                    $delta = $event['delta'] ?? [];
-                    $deltaType = $delta['type'] ?? '';
+                    if (! $firstStreamEventLogged) {
+                        $firstStreamEventLogged = true;
 
-                    if ($deltaType === 'input_json_delta' && $currentBlockKey !== null && isset($pendingToolBlocks[$currentBlockKey])) {
-                        $pendingToolBlocks[$currentBlockKey]['partialJson'] .= (string) ($delta['partial_json'] ?? '');
-                    } elseif ($deltaType === 'thinking_delta' || isset($delta['reasoning'])) {
-                        $fullReasoning .= (string) ($delta['thinking'] ?? $delta['reasoning'] ?? '');
-                        yield 'data: '.json_encode($event)."\n\n";
-                    } elseif (isset($delta['text'])) {
-                        $fullText .= $delta['text'];
-                        yield 'data: '.json_encode($event)."\n\n";
+                        Log::info('ai-tool-loop: first stream event received', [
+                            'conversation_id' => $conversation?->id,
+                            'iteration' => $iteration,
+                            'event_type' => $type,
+                            'elapsed_ms' => (int) ((microtime(true) - $iterationStartTime) * 1000),
+                        ]);
                     }
 
-                } elseif ($type === 'content_block_stop') {
-                    $currentBlockKey = null;
+                    if ($type === 'message_start') {
+                        $inputTokens = $event['message']['usage']['input_tokens'] ?? $inputTokens;
 
-                } elseif ($type === 'message_delta') {
-                    $outputTokens = $event['usage']['output_tokens'] ?? $outputTokens;
-                    $inputTokens = $event['usage']['input_tokens'] ?? $inputTokens;
-                    $reason = $event['delta']['stop_reason'] ?? null;
+                    } elseif ($type === 'content_block_start') {
+                        $block = $event['content_block'] ?? [];
 
-                    if ($reason !== null) {
-                        $stopReason = (string) $reason;
+                        if (($block['type'] ?? '') === 'tool_use') {
+                            $id = (string) ($block['id'] ?? uniqid('tool_', true));
+                            $currentBlockKey = $id;
+                            $pendingToolBlocks[$id] = [
+                                'id' => $id,
+                                'name' => (string) ($block['name'] ?? ''),
+                                'partialJson' => '',
+                            ];
+                        } elseif (($block['type'] ?? '') === 'thinking') {
+                            yield 'data: '.json_encode($event)."\n\n";
+                        }
+
+                    } elseif ($type === 'content_block_delta') {
+                        $delta = $event['delta'] ?? [];
+                        $deltaType = $delta['type'] ?? '';
+
+                        if ($deltaType === 'input_json_delta' && $currentBlockKey !== null && isset($pendingToolBlocks[$currentBlockKey])) {
+                            $pendingToolBlocks[$currentBlockKey]['partialJson'] .= (string) ($delta['partial_json'] ?? '');
+                        } elseif ($deltaType === 'thinking_delta' || isset($delta['reasoning'])) {
+                            $fullReasoning .= (string) ($delta['thinking'] ?? $delta['reasoning'] ?? '');
+                            yield 'data: '.json_encode($event)."\n\n";
+                        } elseif (isset($delta['text'])) {
+                            $fullText .= $delta['text'];
+                            yield 'data: '.json_encode($event)."\n\n";
+                        }
+
+                    } elseif ($type === 'content_block_stop') {
+                        $currentBlockKey = null;
+
+                    } elseif ($type === 'message_delta') {
+                        $outputTokens = $event['usage']['output_tokens'] ?? $outputTokens;
+                        $inputTokens = $event['usage']['input_tokens'] ?? $inputTokens;
+                        $reason = $event['delta']['stop_reason'] ?? null;
+
+                        if ($reason !== null) {
+                            $stopReason = (string) $reason;
+                        }
                     }
+                    // message_stop is deferred until we know this is the final turn
                 }
-                // message_stop is deferred until we know this is the final turn
+            } catch (\Throwable $throwable) {
+                Log::error('ai-tool-loop: stream iteration failed', [
+                    'conversation_id' => $conversation?->id,
+                    'iteration' => $iteration,
+                    'event_count' => $streamEventCount,
+                    'elapsed_ms' => (int) ((microtime(true) - $iterationStartTime) * 1000),
+                    'exception' => $throwable::class,
+                    'message' => $throwable->getMessage(),
+                ]);
+
+                throw $throwable;
             }
+
+            Log::info('ai-tool-loop: stream exhausted', [
+                'conversation_id' => $conversation?->id,
+                'iteration' => $iteration,
+                'event_count' => $streamEventCount,
+                'elapsed_ms' => (int) ((microtime(true) - $iterationStartTime) * 1000),
+                'stop_reason' => $stopReason,
+                'full_text_length' => strlen($fullText),
+                'tool_block_count' => count($pendingToolBlocks),
+            ]);
 
             // Parse accumulated tool call JSON
             $toolCalls = [];
 
             foreach ($pendingToolBlocks as $block) {
-                $input = json_decode($block['partialJson'], true);
+                $partialJson = $block['partialJson'];
+                $input = json_decode($partialJson, true);
+
+                if ($stopReason === 'tool_use' && ! \is_array($input)) {
+                    Log::warning('ai-tool-loop: tool input JSON could not be parsed', [
+                        'conversation_id' => $conversation?->id,
+                        'iteration' => $iteration,
+                        'tool_name' => $block['name'],
+                        'tool_id' => $block['id'],
+                        'partial_json_length' => strlen($partialJson),
+                        'json_error' => json_last_error_msg(),
+                        'partial_json_preview' => mb_substr($partialJson, 0, 300),
+                    ]);
+                }
+
                 $toolCalls[] = [
                     'id' => $block['id'],
                     'name' => $block['name'],
                     'input' => \is_array($input) ? $input : [],
                 ];
+            }
+
+            if ($stopReason === 'tool_use') {
+                Log::info('ai-tool-loop: tool-use turn captured', [
+                    'conversation_id' => $conversation?->id,
+                    'iteration' => $iteration,
+                    'tool_count' => count($toolCalls),
+                    'tool_names' => array_values(array_filter(array_map(static fn (array $tc): string => (string) ($tc['name'] ?? ''), $toolCalls))),
+                    'text_length' => strlen($fullText),
+                ]);
             }
 
             $totalInputTokens += (int) ($inputTokens ?? 0);
@@ -187,7 +274,8 @@ trait ExecutesAiTools
             if ($stopReason !== 'tool_use' || $toolCalls === []) {
                 $finalTextAccumulator .= $fullText;
 
-                Log::debug('ExecutesAiTools: stop check', [
+                Log::info('ai-tool-loop: stop check', [
+                    'conversation_id' => $conversation?->id,
                     'iteration' => $iteration,
                     'stop_reason' => $stopReason,
                     'full_text_length' => strlen($fullText),
@@ -237,20 +325,32 @@ trait ExecutesAiTools
             $toolResults = [];
 
             foreach ($toolCalls as $toolCall) {
-                Log::debug('Executing AI tool call', [
+                Log::info('ai-tool-loop: dispatching tool call', [
+                    'conversation_id' => $conversation?->id,
                     'tool' => $toolCall['name'],
-                    'input' => $toolCall['input'],
+                    'tool_id' => $toolCall['id'],
+                    'input_keys' => array_keys($toolCall['input']),
                 ]);
 
                 try {
                     $toolResult = $toolRegistry->dispatch($toolCall['name'], $toolCall['input']);
                 } catch (\Throwable $e) {
-                    Log::warning('AI tool call failed', [
+                    Log::warning('ai-tool-loop: tool call failed', [
+                        'conversation_id' => $conversation?->id,
                         'tool' => $toolCall['name'],
+                        'tool_id' => $toolCall['id'],
                         'error' => $e->getMessage(),
                     ]);
                     $toolResult = ['error' => $e->getMessage()];
                 }
+
+                Log::info('ai-tool-loop: tool call completed', [
+                    'conversation_id' => $conversation?->id,
+                    'tool' => $toolCall['name'],
+                    'tool_id' => $toolCall['id'],
+                    'result_keys' => array_keys($toolResult),
+                    'requested_page_reload' => ! empty($toolResult['_page_reload']),
+                ]);
 
                 if (! empty($toolResult['_page_reload'])) {
                     yield 'data: '.json_encode(['type' => 'page_reload'])."\n\n";
@@ -277,7 +377,10 @@ trait ExecutesAiTools
         }
 
         // Safety cap reached
-        Log::warning('AI tool loop reached max iterations', ['maxIterations' => $maxIterations]);
+        Log::warning('ai-tool-loop: reached max iterations', [
+            'conversation_id' => $conversation?->id,
+            'max_iterations' => $maxIterations,
+        ]);
 
         $result = [
             'text' => $preambleText,
