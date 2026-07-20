@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Http\Requests\Admin\StoreAiChatBotRequest;
+use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Observers\CommentObserver;
@@ -13,12 +15,20 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Jvjvjv\CodeTalker\CodeTalkerServiceProvider;
+use Jvjvjv\CodeTalker\Http\Requests\Admin\StoreAiChatBotRequest as BaseStoreAiChatBotRequest;
+use Jvjvjv\CodeTalker\Http\Requests\Admin\UpdateAiChatBotRequest as BaseUpdateAiChatBotRequest;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Admin\AiChatBotController extends the package controller, so its
+        // store()/update() must type-hint the package form requests (PHP
+        // forbids narrowing a parameter type). These bindings make the
+        // container hand back the host subclasses, which add the
+        // `allowed_roles` validation rules the host needs.
+        $this->app->bind(BaseStoreAiChatBotRequest::class, StoreAiChatBotRequest::class);
+        $this->app->bind(BaseUpdateAiChatBotRequest::class, UpdateAiChatBotRequest::class);
     }
 
     public function boot(): void

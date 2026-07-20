@@ -85,6 +85,34 @@ class AiChatBotControllerTest extends TestCase
             'temperature' => '0.45',
             'require_visitor_identity' => true,
         ]);
+
+        // allowed_roles is host-only: it exists on the host form request and
+        // model, not the package's. The controller extends the package
+        // controller, so this guards against the field being silently dropped.
+        $bot = AiChatBot::where('slug', 'lead-intake')->firstOrFail();
+        $this->assertSame(['admin'], $bot->allowed_roles);
+    }
+
+    public function test_update_preserves_allowed_roles(): void
+    {
+        $user = $this->authenticatedUser();
+        $bot = AiChatBot::factory()->create([
+            'slug' => 'role-gated',
+            'allowed_roles' => ['admin'],
+        ]);
+
+        $response = $this->actingAs($user)->put(route('admin.ai.bots.update', $bot), [
+            'name' => $bot->name,
+            'slug' => 'role-gated',
+            'access_path' => $bot->access_path,
+            'ai_system_id' => $bot->ai_system_id,
+            'prompt_template' => 'You are {{bot_name}}.',
+            'allowed_roles' => ['admin', 'editor'],
+            'is_active' => true,
+        ]);
+
+        $response->assertRedirect(route('admin.ai.bots.index'));
+        $this->assertSame(['admin', 'editor'], $bot->fresh()->allowed_roles);
     }
 
     public function test_store_rejects_reserved_root_slug(): void

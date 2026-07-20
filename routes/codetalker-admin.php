@@ -2,9 +2,9 @@
 
 use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiConversationController;
-use App\Http\Controllers\Admin\AiMemoryController;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiMemoryController;
 use App\Http\Controllers\Admin\AiSystemController;
-use App\Http\Controllers\Admin\AiSystemPromptController;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\AiToolsController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Middleware\HandleInertiaRequests;
