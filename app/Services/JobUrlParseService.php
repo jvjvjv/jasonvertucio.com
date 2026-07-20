@@ -7,7 +7,10 @@ use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Laravel\Ai\Messages\AssistantMessage;
+use Laravel\Ai\Messages\UserMessage;
+use Laravel\Ai\Responses\Data\FinishReason;
 use Symfony\Component\DomCrawler\Crawler;
 
 class JobUrlParseService
@@ -15,7 +18,7 @@ class JobUrlParseService
     private const MAX_HTML_LENGTH = 100000;
 
     public function __construct(
-        private AiClientFactory $clientFactory,
+        private AgentFactory $agentFactory,
     ) {}
 
     /**
@@ -100,8 +103,6 @@ class JobUrlParseService
     {
         $cleanedHtml = $this->cleanHtml($html);
 
-        $client = $this->clientFactory->forSystem($aiSystem);
-
         $systemPrompt = $this->buildSystemPrompt();
 
         $userContent = "URL: {$url}\n\nHTML content:\n{$cleanedHtml}";
@@ -110,30 +111,28 @@ class JobUrlParseService
             $userContent .= "\n\n---\nIMPORTANT: This is a re-parse. The previous extraction was inaccurate.\nFeedback on what was wrong: {$feedback}\nPlease try again, taking this feedback into account.";
         }
 
-        $messages = [
-            ['role' => 'user', 'content' => $userContent],
-        ];
+        $agent = $this->agentFactory->forSystem(
+            $aiSystem,
+            instructions: $systemPrompt,
+            maxTokens: $aiSystem->context_length ?? $aiSystem->max_tokens,
+        );
 
         $accumulatedText = '';
+        $prompt = $userContent;
 
         for ($i = 0; $i < 5; $i++) {
-            $response = $client
-                ->withSystem($systemPrompt)
-                ->withMaxTokens($aiSystem->context_length ?? $aiSystem->max_tokens)
-                ->message($messages);
+            $response = $agent->prompt($prompt);
 
-            foreach ($response['content'] ?? [] as $block) {
-                if (($block['type'] ?? '') === 'text') {
-                    $accumulatedText .= $block['text'];
-                }
-            }
+            $accumulatedText .= $response->text;
 
-            if (($response['stop_reason'] ?? '') !== 'max_tokens' || $accumulatedText === '') {
+            $finishReason = $response->steps->last()?->finishReason;
+
+            if ($finishReason !== FinishReason::Length || $accumulatedText === '') {
                 break;
             }
 
-            $messages[] = ['role' => 'assistant', 'content' => $accumulatedText];
-            $messages[] = ['role' => 'user', 'content' => 'Continue.'];
+            $agent->append(new UserMessage($prompt), new AssistantMessage($accumulatedText));
+            $prompt = 'Continue.';
         }
 
         $parsed = $this->parseAiResponse(['content' => [['type' => 'text', 'text' => $accumulatedText]]]);

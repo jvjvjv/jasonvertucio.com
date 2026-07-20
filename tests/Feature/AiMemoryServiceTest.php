@@ -7,9 +7,12 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
+use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Tests\TestCase;
 
 class AiMemoryServiceTest extends TestCase
@@ -179,31 +182,24 @@ class AiMemoryServiceTest extends TestCase
             'content' => 'Noted, I will keep bullets concise.',
         ]);
 
-        $mockResponse = [
-            'content' => [
-                [
-                    'type' => 'text',
-                    'text' => json_encode([
-                        'add' => [
-                            ['key' => 'concise-bullets', 'category' => 'preference', 'content' => 'Prefers concise bullets', 'confidence' => 85],
-                        ],
-                        'update' => [],
-                        'remove' => [],
-                    ]),
-                ],
+        $responseJson = json_encode([
+            'add' => [
+                ['key' => 'concise-bullets', 'category' => 'preference', 'content' => 'Prefers concise bullets', 'confidence' => 85],
             ],
-        ];
+            'update' => [],
+            'remove' => [],
+        ]);
 
-        $mockClient = $this->createMock(ClaudeService::class);
-        $mockClient->method('withSystem')->willReturnSelf();
-        $mockClient->method('withMaxTokens')->willReturnSelf();
-        $mockClient->method('withTemperature')->willReturnSelf();
-        $mockClient->method('message')->willReturn($mockResponse);
+        $mockAgent = $this->createMock(CodeTalkerAgent::class);
+        $mockAgent->method('prompt')->willReturn($this->agentResponse($responseJson));
 
-        $mockFactory = $this->createMock(AiClientFactory::class);
-        $mockFactory->method('forSystem')->willReturn($mockClient);
+        $mockFactory = $this->createMock(AgentFactory::class);
+        $mockFactory->method('forSystem')->willReturn($mockAgent);
+        $mockFactory->method('forFeature')->willReturn($mockAgent);
 
-        $service = new AiMemoryService($mockFactory);
+        $this->app->instance(AgentFactory::class, $mockFactory);
+
+        $service = app(AiMemoryService::class);
         $operations = $service->analyzeConversation($conversation);
 
         $this->assertCount(1, $operations['add']);
@@ -218,19 +214,29 @@ class AiMemoryServiceTest extends TestCase
             'feature' => 'targeted-resume',
         ]);
 
-        $mockClient = $this->createMock(ClaudeService::class);
-        $mockClient->method('withSystem')->willReturnSelf();
-        $mockClient->method('withMaxTokens')->willReturnSelf();
-        $mockClient->method('withTemperature')->willReturnSelf();
-        $mockClient->method('message')->willThrowException(new \RuntimeException('API error'));
+        $mockAgent = $this->createMock(CodeTalkerAgent::class);
+        $mockAgent->method('prompt')->willThrowException(new \RuntimeException('API error'));
 
-        $mockFactory = $this->createMock(AiClientFactory::class);
-        $mockFactory->method('forSystem')->willReturn($mockClient);
+        $mockFactory = $this->createMock(AgentFactory::class);
+        $mockFactory->method('forSystem')->willReturn($mockAgent);
+        $mockFactory->method('forFeature')->willReturn($mockAgent);
 
-        $service = new AiMemoryService($mockFactory);
+        $this->app->instance(AgentFactory::class, $mockFactory);
+
+        $service = app(AiMemoryService::class);
         $service->processCompletedConversation($conversation);
 
         // Should not throw — just logs the error
         $this->assertTrue(true);
+    }
+
+    private function agentResponse(string $text): AgentResponse
+    {
+        return new AgentResponse(
+            'id-1',
+            $text,
+            new Usage(promptTokens: 10, completionTokens: 10),
+            new Meta(provider: 'anthropic', model: 'claude-sonnet-4-6'),
+        );
     }
 }

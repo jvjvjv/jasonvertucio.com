@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\JobUrlParseService;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
 use PHPUnit\Framework\TestCase;
 
 class JobUrlParseServiceTest extends TestCase
@@ -14,7 +14,7 @@ class JobUrlParseServiceTest extends TestCase
     {
         parent::setUp();
 
-        $factory = $this->createMock(AiClientFactory::class);
+        $factory = $this->createMock(AgentFactory::class);
         $this->service = new JobUrlParseService($factory);
     }
 

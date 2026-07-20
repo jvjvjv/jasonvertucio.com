@@ -9,6 +9,7 @@ use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolRegistryContract;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\BridgedTool;
 use Jvjvjv\CodeTalker\Services\Mcp\DiscoversAiToolHandlers;
 use Jvjvjv\CodeTalker\Services\Mcp\ToolResultConverter;
 use Jvjvjv\CodeTalker\Support\ToolContext;
@@ -23,6 +24,8 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
     private array $handlers = [];
 
     private int $conversationId;
+
+    private bool $pageReloadRequested = false;
 
     public function __construct(
         AiConversation $conversation,
@@ -75,6 +78,25 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
     }
 
     /**
+     * The registered tools adapted to laravel/ai's Tool contract, for use in
+     * a laravel/ai agent's tools() list.
+     *
+     * @return array<int, BridgedTool>
+     */
+    public function toLaravelAiTools(): array
+    {
+        return array_map(
+            fn (array $tool): BridgedTool => new BridgedTool(
+                $tool['name'],
+                $tool['description'],
+                (array) $tool['input_schema'],
+                $this,
+            ),
+            $this->toApiTools(),
+        );
+    }
+
+    /**
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
@@ -99,7 +121,9 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
         $handler = $this->handlers[$toolName];
 
         if ($handler instanceof Tool) {
-            $result = ToolResultConverter::toArray($handler->handle(new Request($input)));
+            $result = $this->capturePageReload(
+                ToolResultConverter::toArray($handler->handle(new Request($input))),
+            );
 
             Log::info('targeted-resume.tool-registry: dispatch completed', [
                 'conversation_id' => $this->conversationId,
@@ -110,7 +134,7 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
             return $result;
         }
 
-        $result = $handler->handle($input);
+        $result = $this->capturePageReload($handler->handle($input));
 
         Log::info('targeted-resume.tool-registry: dispatch completed', [
             'conversation_id' => $this->conversationId,
@@ -119,5 +143,37 @@ class TargetedResumeToolRegistry implements AiToolRegistryContract
         ]);
 
         return $result;
+    }
+
+    /**
+     * Tool results carry `_page_reload` to tell the browser to refresh. Under
+     * laravel/ai the agent loop consumes tool results internally, so the flag
+     * is latched here and drained by the streaming caller instead of being
+     * yielded inline. The key is stripped so it never reaches the model.
+     *
+     * @param  array<string, mixed>  $result
+     * @return array<string, mixed>
+     */
+    private function capturePageReload(array $result): array
+    {
+        if (! empty($result['_page_reload'])) {
+            $this->pageReloadRequested = true;
+        }
+
+        unset($result['_page_reload']);
+
+        return $result;
+    }
+
+    /**
+     * Whether a tool requested a page reload since this was last called.
+     * Reading it clears the flag.
+     */
+    public function consumePageReload(): bool
+    {
+        $requested = $this->pageReloadRequested;
+        $this->pageReloadRequested = false;
+
+        return $requested;
     }
 }

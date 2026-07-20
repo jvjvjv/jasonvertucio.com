@@ -7,7 +7,6 @@ use App\Enums\TargetedResumeStatus;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\CoverLetterDocumentService;
-use App\Services\AiClientFactory;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
 use Generator;
@@ -18,8 +17,15 @@ use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\StreamableAgentResponse;
+use Laravel\Ai\Streaming\Events\StreamEnd;
+use Laravel\Ai\Streaming\Events\StreamStart;
+use Laravel\Ai\Streaming\Events\TextDelta;
 use Mockery;
 use Tests\TestCase;
 
@@ -50,7 +56,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             ->willReturn(['success' => true]);
 
         $service = new TargetedResumeService(
-            $this->createMock(AiClientFactory::class),
+            $this->createMock(AgentFactory::class),
             $this->createMock(ResumeDataServiceContract::class),
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
@@ -112,7 +118,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             ->willReturn(['success' => true]);
 
         $service = new TargetedResumeService(
-            $this->createMock(AiClientFactory::class),
+            $this->createMock(AgentFactory::class),
             $this->createMock(ResumeDataServiceContract::class),
             $documentService,
             $this->createMock(CoverLetterDocumentService::class),
@@ -135,19 +141,16 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);
         $resumeVersion = ResumeVersion::factory()->create();
 
-        $client = Mockery::mock(ClaudeService::class);
-        $client->shouldReceive('withSystem')->once()->andReturnSelf();
-        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
-        $client->shouldReceive('withTools')->once()->andReturnSelf();
-        $client->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
-        $client->shouldReceive('formatAssistantToolCallTurn')->never();
-        $client->shouldReceive('formatToolResultTurn')->never();
+        $agent = Mockery::mock(CodeTalkerAgent::class);
+        $agent->shouldReceive('messages')->andReturn([]);
+        $agent->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
+        $agent->shouldReceive('append')->never();
 
-        $clientFactory = Mockery::mock(AiClientFactory::class);
-        $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
+        $agentFactory = Mockery::mock(AgentFactory::class);
+        $agentFactory->shouldReceive('forSystem')->once()->andReturn($agent);
 
         $service = new TargetedResumeService(
-            $clientFactory,
+            $agentFactory,
             $this->createMock(ResumeDataServiceContract::class),
             $this->createMock(TargetedResumeDocumentService::class),
             $this->createMock(CoverLetterDocumentService::class),
@@ -182,23 +185,22 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         ]);
     }
 
-    private function usageAwareStream(): Generator
+    private function usageAwareStream(): StreamableAgentResponse
     {
-        yield [
-            'type' => 'message_start',
-            'message' => [
-                'usage' => ['input_tokens' => 1200],
-            ],
-        ];
-        yield [
-            'type' => 'content_block_delta',
-            'delta' => ['text' => 'Targeted resume analysis complete.'],
-        ];
-        yield [
-            'type' => 'message_delta',
-            'usage' => ['output_tokens' => 300],
-        ];
-        yield ['type' => 'message_stop'];
+        return new StreamableAgentResponse(
+            'id-1',
+            static function (): Generator {
+                yield new StreamStart('id-1', 'anthropic', 'claude-sonnet-4-6', time());
+                yield new TextDelta('e1', 'm1', 'Targeted resume analysis complete.', time());
+                yield new StreamEnd(
+                    'id-1',
+                    'stop',
+                    new Usage(promptTokens: 1200, completionTokens: 300),
+                    time(),
+                );
+            },
+            new Meta(provider: 'anthropic', model: 'claude-sonnet-4-6'),
+        );
     }
 
     protected function tearDown(): void

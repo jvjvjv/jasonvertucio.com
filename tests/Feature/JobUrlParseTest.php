@@ -10,8 +10,13 @@ use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
+use Laravel\Ai\Gateway\StepResponse;
+use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\FinishReason;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
 use Mockery;
 use Tests\TestCase;
 
@@ -270,32 +275,41 @@ class JobUrlParseTest extends TestCase
             ),
         ]);
 
-        $aiResponse = [
-            'content' => [[
-                'type' => 'text',
-                'text' => json_encode([
-                    'job_title' => 'Software Engineer',
-                    'company_name' => 'No Parser Corp',
-                    'job_location' => 'Remote',
-                    'job_description' => 'We are a great company hiring talented engineers.',
-                    'job_title_selector' => 'h1',
-                    'company_name_selector' => '.company',
-                    'job_location_selector' => '.location',
-                    'job_description_selector' => 'p',
-                    'reasoning' => 'Used semantic HTML elements.',
-                ]),
-            ]],
-        ];
+        $aiText = json_encode([
+            'job_title' => 'Software Engineer',
+            'company_name' => 'No Parser Corp',
+            'job_location' => 'Remote',
+            'job_description' => 'We are a great company hiring talented engineers.',
+            'job_title_selector' => 'h1',
+            'company_name_selector' => '.company',
+            'job_location_selector' => '.location',
+            'job_description_selector' => 'p',
+            'reasoning' => 'Used semantic HTML elements.',
+        ]);
 
-        $client = Mockery::mock(ClaudeService::class);
-        $client->shouldReceive('withSystem')->once()->andReturnSelf();
-        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
-        $client->shouldReceive('message')->once()->andReturn($aiResponse);
+        $agentResponse = (new AgentResponse(
+            'id-1',
+            $aiText,
+            new Usage(promptTokens: 100, completionTokens: 50),
+            new Meta(provider: 'anthropic', model: 'claude-sonnet-4-6'),
+        ))->withSteps(collect([
+            new StepResponse(
+                text: $aiText,
+                toolCalls: [],
+                finishReason: FinishReason::Stop,
+                usage: new Usage(promptTokens: 100, completionTokens: 50),
+                meta: new Meta(provider: 'anthropic', model: 'claude-sonnet-4-6'),
+            ),
+        ]));
 
-        $factory = Mockery::mock(AiClientFactory::class);
-        $factory->shouldReceive('forSystem')->once()->andReturn($client);
+        $agent = Mockery::mock(CodeTalkerAgent::class);
+        $agent->shouldReceive('prompt')->once()->andReturn($agentResponse);
+        $agent->shouldReceive('append')->never();
 
-        $this->app->instance(AiClientFactory::class, $factory);
+        $factory = Mockery::mock(AgentFactory::class);
+        $factory->shouldReceive('forSystem')->once()->andReturn($agent);
+
+        $this->app->instance(AgentFactory::class, $factory);
 
         $this->actingAs($this->admin)
             ->postJson(route('admin.resume.targeted.parse-url'), [

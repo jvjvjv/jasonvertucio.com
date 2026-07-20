@@ -10,6 +10,8 @@ use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
  */
 class AiFeatureMemoryFactory extends Factory
 {
+    protected $model = AiFeatureMemory::class;
+
     /**
      * Define the model's default state.
      *

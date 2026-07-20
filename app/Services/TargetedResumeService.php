@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
-use App\Concerns\ExecutesAiTools;
 use App\Enums\TargetedResumeStatus;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
@@ -17,14 +16,25 @@ use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiLlmMessage;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\StreamTranslator;
+use Laravel\Ai\Messages\AssistantMessage;
+use Laravel\Ai\Messages\UserMessage;
+use Laravel\Ai\Streaming\Events\StreamEnd;
+use Laravel\Ai\Streaming\Events\StreamEvent;
+use Laravel\Ai\Streaming\Events\ToolCall as ToolCallEvent;
 
 class TargetedResumeService
 {
-    use ExecutesAiTools;
+    /**
+     * Maximum number of max-token continuation round trips per turn.
+     */
+    private const int MAX_CONTINUATION_ATTEMPTS = 5;
 
     public const int PROMPT_ID_DEFAULT = 1;
 
@@ -37,7 +47,7 @@ class TargetedResumeService
     public const int PROMPT_ID_COVER_LETTER = 5;
 
     public function __construct(
-        private AiClientFactory $clientFactory,
+        private AgentFactory $agentFactory,
         private ResumeDataServiceContract $resumeDataService,
         private TargetedResumeDocumentService $documentService,
         private CoverLetterDocumentService $coverLetterDocumentService,
@@ -103,6 +113,18 @@ class TargetedResumeService
     }
 
     /**
+     * The turn number the next agent invocation should log under.
+     */
+    private function nextTurnNumberForConversation(AiConversation $conversation): int
+    {
+        $max = AiLlmMessage::query()
+            ->where('ai_conversation_id', $conversation->id)
+            ->max('turn_number');
+
+        return ($max === null || ! is_numeric($max)) ? 1 : (int) $max + 1;
+    }
+
+    /**
      * Continue a conversation by streaming a response.
      *
      * @return Generator<int, string> Yields SSE-formatted data lines
@@ -129,25 +151,55 @@ class TargetedResumeService
             ]);
         }
 
-        // Build messages array for the API (exclude system messages from the messages array)
-        $allMessages = $conversation->messages()->orderBy('created_at')->get();
+        // Build the laravel/ai message history. The system message becomes the
+        // agent's instructions, and the trailing user message becomes the
+        // prompt rather than part of the history.
+        $allMessages = $conversation->messages()->orderBy('created_at')->orderBy('id')->get();
         $systemPrompt = null;
-        $apiMessages = [];
+        $history = [];
+        $prompt = '';
 
-        foreach ($allMessages as $msg) {
+        $conversationMessages = $allMessages->filter(function ($msg) use (&$systemPrompt): bool {
             if ($msg->role === 'system') {
                 $systemPrompt = $msg->content;
-            } else {
-                $apiMessages[] = [
-                    'role' => $msg->role,
-                    'content' => $msg->content,
-                ];
+
+                return false;
             }
+
+            return true;
+        })->values();
+
+        $reversedUserIndex = $conversationMessages
+            ->reverse()
+            ->values()
+            ->search(static fn ($msg): bool => $msg->role === 'user');
+        $lastUserIndex = $reversedUserIndex === false
+            ? null
+            : $conversationMessages->count() - 1 - $reversedUserIndex;
+
+        foreach ($conversationMessages as $index => $msg) {
+            $content = (string) $msg->content;
+
+            if ($index === $lastUserIndex) {
+                $prompt = $content;
+
+                continue;
+            }
+
+            if ($msg->role === 'assistant') {
+                if (trim($content) === '') {
+                    continue;
+                }
+
+                $history[] = new AssistantMessage($content);
+
+                continue;
+            }
+
+            $history[] = new UserMessage($content);
         }
 
-        $client = $this->clientFactory->forSystem($conversation->aiSystem);
-
-        Log::info('targeted-resume.continueConversation: client selected', [
+        Log::info('targeted-resume.continueConversation: agent selected', [
             'conversation_id' => $conversation->id,
             'ai_system_id' => $conversation->aiSystem->id,
             'provider' => $conversation->aiSystem->provider,
@@ -155,12 +207,6 @@ class TargetedResumeService
             'base_url' => $conversation->aiSystem->base_url,
             'max_tokens' => $conversation->aiSystem->max_tokens,
         ]);
-
-        if ($systemPrompt) {
-            $client->withSystem($systemPrompt);
-        }
-
-        $client->withMaxTokens($conversation->aiSystem->max_tokens);
 
         $toolRegistry = new TargetedResumeToolRegistry(
             $conversation,
@@ -170,16 +216,129 @@ class TargetedResumeService
         );
 
         $startTime = microtime(true);
-        $loopResult = null;
+        $baseTurnNumber = $this->nextTurnNumberForConversation($conversation);
 
         try {
-            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult, conversation: $conversation);
+            $agent = $this->agentFactory->forSystem(
+                $conversation->aiSystem,
+                instructions: $systemPrompt ?? '',
+                messages: $history,
+                tools: $toolRegistry->toLaravelAiTools(),
+                maxSteps: 10,
+            );
+
+            $translator = new StreamTranslator();
+            $textBlocks = [];
+            $reasoningBlocks = [];
+
+            for ($attempt = 0; $attempt < self::MAX_CONTINUATION_ATTEMPTS; $attempt++) {
+                $attemptTurnNumber = $attempt === 0
+                    ? (string) $baseTurnNumber
+                    : "{$baseTurnNumber}.{$attempt}";
+
+                $requestMessages = [];
+
+                foreach ($agent->messages() as $message) {
+                    $requestMessages[] = [
+                        'role' => $message->role->value,
+                        'content' => $message->content,
+                    ];
+                }
+
+                $requestMessages[] = ['role' => 'user', 'content' => $prompt];
+
+                $requestPayload = [
+                    'model' => $conversation->aiSystem->model,
+                    'max_tokens' => $conversation->aiSystem->max_tokens,
+                    'instructions' => $systemPrompt,
+                    'messages' => $requestMessages,
+                ];
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'request',
+                    'turn_number' => $attemptTurnNumber,
+                    'request_data' => $requestPayload,
+                    'created_at' => now(),
+                ]);
+
+                /** @var array<int, StreamEvent> $events */
+                $events = [];
+                $toolCalls = [];
+
+                foreach ($agent->stream($prompt) as $event) {
+                    $events[] = $event;
+
+                    if ($event instanceof ToolCallEvent) {
+                        $toolCalls[] = [
+                            'id' => $event->toolCall->id,
+                            'name' => $event->toolCall->name,
+                        ];
+
+                        // Mirrors the pre-0.6.0 loop so the builder panel can
+                        // show a tool activity indicator.
+                        yield 'data: '.json_encode([
+                            'type' => 'tool_use_progress',
+                            'text' => '',
+                            'tools' => [$event->toolCall->name],
+                        ])."\n\n";
+                    }
+
+                    foreach ($translator->translate($event) as $browserEvent) {
+                        if ($browserEvent['type'] === 'content_block_delta') {
+                            $textBlocks[] = $browserEvent['delta']['text'];
+                        } elseif ($browserEvent['type'] === 'reasoning_block_delta') {
+                            $reasoningBlocks[] = $browserEvent['delta']['reasoning'];
+                        }
+
+                        yield 'data: '.json_encode($browserEvent)."\n\n";
+                    }
+
+                    // Tool results are consumed inside the agent loop, so the
+                    // registry latches the reload request for us to drain here.
+                    if ($toolRegistry->consumePageReload()) {
+                        yield 'data: '.json_encode(['type' => 'page_reload'])."\n\n";
+                    }
+                }
+
+                $attemptUsage = StreamEnd::combineUsage($events);
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'response',
+                    'turn_number' => $attemptTurnNumber,
+                    'request_data' => $requestPayload,
+                    'response_data' => [
+                        'events' => array_map(
+                            static fn (StreamEvent $event): array => $event->toArray(),
+                            $events,
+                        ),
+                        'stop_reason' => $translator->stopReason(),
+                        'input_tokens' => $attemptUsage->promptTokens ?: null,
+                        'output_tokens' => $attemptUsage->completionTokens ?: null,
+                        'model' => $conversation->aiSystem->model,
+                        'tool_calls' => $toolCalls,
+                    ],
+                    'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
+                    'created_at' => now(),
+                ]);
+
+                if ($translator->lastReason() !== 'length') {
+                    break;
+                }
+
+                $agent->append(new UserMessage($prompt), new AssistantMessage(implode('', $textBlocks)));
+                $prompt = 'Continue.';
+            }
+
+            foreach ($translator->finish() as $browserEvent) {
+                yield 'data: '.json_encode($browserEvent)."\n\n";
+            }
 
             yield "data: [DONE]\n\n";
 
-            $fullResponse = $loopResult['text'] ?? '';
-            $inputTokens = $loopResult['inputTokens'] ?? null;
-            $outputTokens = $loopResult['outputTokens'] ?? null;
+            $fullResponse = implode('', $textBlocks);
+            $inputTokens = $translator->inputTokens() ?: null;
+            $outputTokens = $translator->outputTokens() ?: null;
 
             $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
                 $conversation->aiSystem,

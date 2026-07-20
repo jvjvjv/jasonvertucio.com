@@ -7,10 +7,15 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\ClaudeService;
-use Jvjvjv\CodeTalker\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\StreamableAgentResponse;
+use Laravel\Ai\Streaming\Events\StreamEnd;
+use Laravel\Ai\Streaming\Events\StreamStart;
+use Laravel\Ai\Streaming\Events\TextDelta;
 use Mockery;
 use Tests\TestCase;
 
@@ -22,22 +27,9 @@ class AiChatBotConversationServiceTest extends TestCase
     {
         $bot = AiChatBot::factory()->create();
 
-        $client = Mockery::mock(ClaudeService::class);
-        $client->shouldReceive('withSystem')->once()->andReturnSelf();
-        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
-        $client->shouldReceive('withTemperature')->once()->andReturnSelf();
-        $client->shouldReceive('stream')->once()->andReturn($this->fakeStream());
+        $this->bindAgentReturning($this->fakeStream());
 
-        $clientFactory = Mockery::mock(AiClientFactory::class);
-        $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
-
-        $memoryService = Mockery::mock(AiMemoryService::class);
-        $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
-
-        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
-        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
-
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService, $resumeDataService, $targetedResumeService);
+        $service = app(AiChatBotConversationService::class);
 
         $conversation = $service->startConversation($bot);
 
@@ -64,22 +56,9 @@ class AiChatBotConversationServiceTest extends TestCase
             ])->id,
         ]);
 
-        $client = Mockery::mock(ClaudeService::class);
-        $client->shouldReceive('withSystem')->once()->andReturnSelf();
-        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
-        $client->shouldReceive('withTemperature')->once()->andReturnSelf();
-        $client->shouldReceive('stream')->once()->andReturn($this->usageAwareStream());
+        $this->bindAgentReturning($this->usageAwareStream());
 
-        $clientFactory = Mockery::mock(AiClientFactory::class);
-        $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
-
-        $memoryService = Mockery::mock(AiMemoryService::class);
-        $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
-
-        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
-        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
-
-        $service = new AiChatBotConversationService($clientFactory, $memoryService, new ConversationUsageService, $resumeDataService, $targetedResumeService);
+        $service = app(AiChatBotConversationService::class);
 
         $conversation = $service->startConversation($bot->fresh());
 
@@ -103,32 +82,55 @@ class AiChatBotConversationServiceTest extends TestCase
         ]);
     }
 
-    private function fakeStream(): Generator
+    /**
+     * Swap the container's AgentFactory for one returning an agent that streams
+     * the given canned response, and stub out memory lookups.
+     */
+    private function bindAgentReturning(StreamableAgentResponse $response): void
     {
-        yield [
-            'type' => 'content_block_delta',
-            'delta' => ['text' => 'Jason has led engineering teams and shipped backend systems.'],
-        ];
-        yield ['type' => 'message_stop'];
+        $agent = Mockery::mock(CodeTalkerAgent::class);
+        $agent->shouldReceive('messages')->andReturn([]);
+        $agent->shouldReceive('stream')->once()->andReturn($response);
+        $agent->shouldReceive('append')->never();
+
+        $agentFactory = Mockery::mock(AgentFactory::class);
+        $agentFactory->shouldReceive('forSystem')->once()->andReturn($agent);
+
+        $memoryService = Mockery::mock(AiMemoryService::class);
+        $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
+        $memoryService->shouldReceive('processCompletedConversation')->zeroOrMoreTimes();
+
+        $this->app->instance(AgentFactory::class, $agentFactory);
+        $this->app->instance(AiMemoryService::class, $memoryService);
     }
 
-    private function usageAwareStream(): Generator
+    private function fakeStream(): StreamableAgentResponse
     {
-        yield [
-            'type' => 'message_start',
-            'message' => [
-                'usage' => ['input_tokens' => 1200],
-            ],
-        ];
-        yield [
-            'type' => 'content_block_delta',
-            'delta' => ['text' => 'Jason has built backend systems.'],
-        ];
-        yield [
-            'type' => 'message_delta',
-            'usage' => ['output_tokens' => 300],
-        ];
-        yield ['type' => 'message_stop'];
+        return $this->streamOf(
+            'Jason has led engineering teams and shipped backend systems.',
+            new Usage(promptTokens: 0, completionTokens: 0),
+        );
+    }
+
+    private function usageAwareStream(): StreamableAgentResponse
+    {
+        return $this->streamOf(
+            'Jason has built backend systems.',
+            new Usage(promptTokens: 1200, completionTokens: 300),
+        );
+    }
+
+    private function streamOf(string $text, Usage $usage): StreamableAgentResponse
+    {
+        return new StreamableAgentResponse(
+            'id-1',
+            static function () use ($text, $usage): Generator {
+                yield new StreamStart('id-1', 'anthropic', 'claude-sonnet-4-6', time());
+                yield new TextDelta('e1', 'm1', $text, time());
+                yield new StreamEnd('id-1', 'stop', $usage, time());
+            },
+            new Meta(provider: 'anthropic', model: 'claude-sonnet-4-6'),
+        );
     }
 
     protected function tearDown(): void
