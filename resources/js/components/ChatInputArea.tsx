@@ -1,4 +1,5 @@
 import SendIcon from "@mui/icons-material/Send";
+import StopIcon from "@mui/icons-material/Stop";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -19,6 +20,10 @@ export interface ChatInputAreaProps {
     onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => void;
     onSubmit: () => void;
     disabled?: boolean;
+    /** While true, the send button is replaced with an active Stop button. */
+    isStreaming?: boolean;
+    /** Called when the user cancels an in-flight turn (Stop button or ESC). */
+    onStop?: () => void;
     slots?: ChatInputAreaSlots;
 }
 
@@ -28,6 +33,8 @@ export default function ChatInputArea({
     onKeyDown,
     onSubmit,
     disabled = false,
+    isStreaming = false,
+    onStop,
     slots,
 }: ChatInputAreaProps) {
     return (
@@ -60,18 +67,30 @@ export default function ChatInputArea({
                             },
                         }}
                     />
-                    <IconButton
-                        type="submit"
-                        color="primary"
-                        disabled={disabled}
-                        aria-label="Send message"
-                        sx={{ position: "absolute", bottom: 8, right: 8 }}
-                        onClick={() => {
-                            if (!disabled) onSubmit();
-                        }}
-                    >
-                        <SendIcon />
-                    </IconButton>
+                    {isStreaming && onStop ? (
+                        <IconButton
+                            type="button"
+                            color="primary"
+                            aria-label="Stop generating"
+                            sx={{ position: "absolute", bottom: 8, right: 8 }}
+                            onClick={onStop}
+                        >
+                            <StopIcon />
+                        </IconButton>
+                    ) : (
+                        <IconButton
+                            type="submit"
+                            color="primary"
+                            disabled={disabled}
+                            aria-label="Send message"
+                            sx={{ position: "absolute", bottom: 8, right: 8 }}
+                            onClick={() => {
+                                if (!disabled) onSubmit();
+                            }}
+                        >
+                            <SendIcon />
+                        </IconButton>
+                    )}
                 </Box>
 
                 {slots?.afterSend ? (

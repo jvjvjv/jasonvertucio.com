@@ -110,17 +110,19 @@ async function* stream(
     body?: unknown,
     onResponse?: (res: Response) => void,
     retry = true,
+    signal?: AbortSignal,
 ): AsyncGenerator<string> {
     const res = await fetch(url, {
         method: "POST",
         credentials: "same-origin",
         headers: baseHeaders({ "Content-Type": "application/json" }),
         body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal,
     });
 
     if (res.status === 419 && retry) {
         await refreshCsrfToken();
-        yield* stream(url, body, onResponse, false);
+        yield* stream(url, body, onResponse, false, signal);
         return;
     }
 

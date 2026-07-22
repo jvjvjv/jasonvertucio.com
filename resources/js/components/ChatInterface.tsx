@@ -50,6 +50,8 @@ export interface StreamEvent {
     };
     content_block?: { type?: string };
     message?: string;
+    /** Present on `type: "error"` events. Stable reason code — prefer this over parsing `message`. */
+    reason?: string;
     text?: string;
     tools?: string[];
     phase?: string;
@@ -168,6 +170,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         const onModelStatusChangeRef = useRef(onModelStatusChange);
         const onMessagesChangeRef = useRef(onMessagesChange);
         const streamingRafRef = useRef<number | null>(null);
+        const abortControllerRef = useRef<AbortController | null>(null);
 
         // Keep callback refs fresh without mutating during render
         useEffect(() => {
@@ -306,6 +309,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                 let liveBlocks: MessageBlock[] = [];
                 let sawPageReloadEvent = false;
                 let sawAnyStreamData = false;
+                let streamErrorReason: string | undefined;
 
                 const appendToBlocks = (
                     type: MessageBlock["type"],
@@ -331,6 +335,37 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                     }
                 };
 
+                // Turns whatever streamed so far into a normal assistant
+                // message. Used both when the stream finishes cleanly and
+                // when it errors out mid-turn (e.g. a max-duration abort) —
+                // reasoning/text that already rendered live shouldn't vanish
+                // just because the turn ultimately failed.
+                const persistLiveBlocks = (): void => {
+                    if (liveBlocks.length === 0) return;
+
+                    const finalText = liveBlocks
+                        .filter((b) => b.type === "text")
+                        .map((b) => b.content)
+                        .join("");
+
+                    setMessages((prev) => {
+                        const next = [
+                            ...prev,
+                            {
+                                role: "assistant" as const,
+                                content: finalText,
+                                blocks: liveBlocks,
+                                created_at: new Date().toISOString(),
+                            },
+                        ];
+                        onMessagesChangeRef.current?.(next);
+                        return next;
+                    });
+                };
+
+                const abortController = new AbortController();
+                abortControllerRef.current = abortController;
+
                 try {
                     const extra = extraPayloadRef.current ?? {};
                     const payload: {
@@ -344,6 +379,8 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                         chatEndpoint,
                         payload,
                         onStreamResponse,
+                        true,
+                        abortController.signal,
                     )) {
                         if (!jsonStr || jsonStr === "[DONE]") continue;
 
@@ -398,33 +435,12 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                     "Waiting for model response...",
                             );
                         } else if (event.type === "error") {
+                            streamErrorReason = event.reason;
                             throw new Error(event.message ?? "Unknown error");
                         }
                     }
 
-                    const finalText = liveBlocks
-                        .filter((b) => b.type === "text")
-                        .map((b) => b.content)
-                        .join("");
-
-                    if (finalText || liveBlocks.length > 0) {
-                        setMessages((prev) => {
-                            const next = [
-                                ...prev,
-                                {
-                                    role: "assistant" as const,
-                                    content: finalText,
-                                    blocks:
-                                        liveBlocks.length > 0
-                                            ? liveBlocks
-                                            : null,
-                                    created_at: new Date().toISOString(),
-                                },
-                            ];
-                            onMessagesChangeRef.current?.(next);
-                            return next;
-                        });
-                    }
+                    persistLiveBlocks();
 
                     onStreamEnd?.();
                 } catch (err) {
@@ -433,16 +449,35 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                             ? err.message
                             : "Unable to send message right now.";
 
+                    // The user clicking Stop (or pressing ESC) aborts the
+                    // fetch via our own AbortController — always benign,
+                    // regardless of message text or how much had streamed.
+                    const clientInitiatedAbort =
+                        err instanceof DOMException &&
+                        err.name === "AbortError";
+
+                    // Only a genuine client-side interruption (browser tab
+                    // closed, fetch aborted, page reload) is benign. Backend
+                    // `type: "error"` events always carry a `reason` code and
+                    // are real failures — e.g. max_stream_duration — even
+                    // though their message text may also contain the word
+                    // "aborted".
                     const isBenignStreamReadInterruption =
-                        (sawPageReloadEvent || sawAnyStreamData) &&
-                        /failed to read from stream|abort|aborted/i.test(
-                            message,
-                        );
+                        clientInitiatedAbort ||
+                        (streamErrorReason === undefined &&
+                            (sawPageReloadEvent || sawAnyStreamData) &&
+                            /failed to read from stream|abort|aborted/i.test(
+                                message,
+                            ));
 
                     if (!isBenignStreamReadInterruption) {
                         setError(message);
                     }
+
+                    persistLiveBlocks();
                 } finally {
+                    abortControllerRef.current = null;
+
                     if (streamingRafRef.current !== null) {
                         cancelAnimationFrame(streamingRafRef.current);
                         streamingRafRef.current = null;
@@ -465,6 +500,13 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             ],
         );
 
+        // Aborts the in-flight turn (Stop button / ESC). The stream's own
+        // catch block treats this as benign and still keeps whatever had
+        // already rendered live.
+        const stopStreaming = useCallback(() => {
+            abortControllerRef.current?.abort();
+        }, []);
+
         // Expose sendMessage for parent imperative use (e.g. auto-start from Show.tsx)
         useImperativeHandle(ref, () => ({ sendMessage }), [sendMessage]);
 
@@ -481,6 +523,9 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 void sendMessage();
+            } else if (e.key === "Escape" && isStreaming) {
+                e.preventDefault();
+                stopStreaming();
             }
         };
 
@@ -649,6 +694,8 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                 isWarmingModel ||
                                 modelStatus?.state === "unavailable"
                             }
+                            isStreaming={isStreaming}
+                            onStop={stopStreaming}
                             slots={{
                                 beforeSend: slots?.beforeSend,
                                 afterSend: slots?.afterSend,

@@ -69,8 +69,10 @@ function getLocaleDateTime(sentAt: string | null | undefined): string | null {
 
 const userMarkdownOverrides = {
     "& a": { color: "inherit" },
-    "& code": { bgcolor: "rgba(255,255,255,0.2)" },
-    "& pre": { bgcolor: "rgba(255,255,255,0.2)" },
+    "& pre": {
+        bgcolor: "rgba(255,255,255,0.2)",
+        whiteSpace: "pre-pre-wrap",
+    },
     "& blockquote": {
         borderLeftColor: "rgba(255,255,255,0.55)",
         color: "inherit",
