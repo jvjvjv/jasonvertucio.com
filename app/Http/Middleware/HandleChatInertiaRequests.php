@@ -30,6 +30,9 @@ class HandleChatInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                 ] : null,
             ],
+            'session' => [
+                'expiresAt' => now()->addMinutes((int) config('session.lifetime'))->toIso8601String(),
+            ],
             'flash' => [
                 'success' => fn () => $request->hasSession() ? $request->session()->get('success') : null,
                 'error' => fn () => $request->hasSession() ? $request->session()->get('error') : null,

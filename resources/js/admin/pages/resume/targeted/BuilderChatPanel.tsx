@@ -1,4 +1,4 @@
-import { Link as InertiaLink, router } from "@inertiajs/react";
+import { Link as InertiaLink, router, usePage } from "@inertiajs/react";
 import EditIcon from "@mui/icons-material/Edit";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
@@ -8,7 +8,12 @@ import IconButton from "@mui/material/IconButton";
 import BuilderStatusCard from "./BuilderStatusCard";
 
 import type { ChatMessage } from "@/components/ChatInterface";
-import type { Conversation, CoverLetter, TargetedResume } from "@/types";
+import type {
+    Conversation,
+    CoverLetter,
+    SharedProps,
+    TargetedResume,
+} from "@/types";
 
 import ChatInterface from "@/components/ChatInterface";
 
@@ -51,6 +56,9 @@ export default function BuilderChatPanel({
     warmupUrl,
     onMessagesChange,
 }: BuilderChatPanelProps) {
+    const page = usePage<SharedProps>();
+    const sessionExpiresAt = page.props.session.expiresAt;
+
     return (
         <>
             <Box
@@ -177,6 +185,7 @@ export default function BuilderChatPanel({
                 warmupUrl={warmupUrl}
                 initialMessages={initialMessages}
                 isAuthenticated={!!authUser}
+                sessionExpiresAt={sessionExpiresAt}
                 shouldAutoStart={shouldAutoStart}
                 onEvent={(event) => {
                     if (event.type === "page_reload") {

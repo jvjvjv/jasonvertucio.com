@@ -54,6 +54,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'adminNav' => fn () => $this->navigationService->getAppBarItems($request->user()),
             'navLinks' => $config['links'] ?? [],
+            'session' => [
+                'expiresAt' => now()->addMinutes((int) config('session.lifetime'))->toIso8601String(),
+            ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

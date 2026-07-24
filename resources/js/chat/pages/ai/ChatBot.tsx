@@ -68,6 +68,7 @@ export default function ChatBot({
 
     const page = usePage<SharedProps>();
     const authUser = page.props.auth.user;
+    const sessionExpiresAt = page.props.session.expiresAt;
 
     // Redirect to hash-based URL after first message so the chat is shareable
     useEffect(() => {
@@ -162,6 +163,7 @@ export default function ChatBot({
                             warmupUrl={warmupUrl}
                             initialMessages={initialMessages}
                             isAuthenticated={!!authUser}
+                            sessionExpiresAt={sessionExpiresAt}
                             extraPayload={extraPayload}
                             slots={{
                                 header: botHeaderCard,

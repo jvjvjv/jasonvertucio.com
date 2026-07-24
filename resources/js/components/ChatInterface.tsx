@@ -1,4 +1,6 @@
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
@@ -22,6 +24,11 @@ import ChatInputArea from "@/components/ChatInputArea";
 import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ModelStatusDisplay from "@/components/ModelStatusDisplay";
 import ToolsPanel from "@/components/ToolsPanel";
+import useSessionExpiry from "@/hooks/useSessionExpiry";
+
+// Used when no session deadline is supplied, so the hook always has a
+// stable initial value to call (rules-of-hooks) but effectively never fires.
+const FAR_FUTURE = new Date(8.64e15).toISOString();
 
 export interface ChatMessage {
     role: "user" | "assistant" | "system";
@@ -73,6 +80,8 @@ export interface ChatInterfaceProps {
     warmupUrl: string;
     initialMessages: ChatMessage[];
     isAuthenticated: boolean;
+    /** ISO timestamp of when the current session is expected to expire. Omit to disable expiry tracking. */
+    sessionExpiresAt?: string;
     shouldAutoStart?: boolean;
     autoStartMessage?: string;
     /** Extra fields merged into the POST body on every send. Stable reference preferred. */
@@ -130,6 +139,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             warmupUrl,
             initialMessages,
             isAuthenticated,
+            sessionExpiresAt,
             shouldAutoStart = false,
             autoStartMessage,
             extraPayload,
@@ -144,6 +154,20 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
     ) {
         const theme = useTheme();
         const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+        const { isExpired, extend, markExpired } = useSessionExpiry(
+            sessionExpiresAt ?? FAR_FUTURE,
+        );
+
+        useEffect(() => {
+            api.setSessionHandlers({
+                onActivity: extend,
+                onSessionExpired: markExpired,
+            });
+            return () => {
+                api.setSessionHandlers({});
+            };
+        }, [extend, markExpired]);
 
         const [messages, setMessages] =
             useState<ChatMessage[]>(initialMessages);
@@ -284,6 +308,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
 
                 if (!text && !shouldAutoStart) return;
                 if (isStreaming) return;
+                if (isExpired) return;
 
                 if (text) {
                     setMessages((prev) => {
@@ -494,6 +519,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                 messageText,
                 chatEndpoint,
                 isStreaming,
+                isExpired,
                 shouldAutoStart,
                 onEvent,
                 onStreamEnd,
@@ -683,6 +709,27 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                             error={error}
                         />
 
+                        {isExpired ? (
+                            <Alert
+                                severity="warning"
+                                sx={{ mx: { xs: 1.5, md: 3 }, mt: 1.5 }}
+                                action={
+                                    <Button
+                                        color="inherit"
+                                        size="small"
+                                        onClick={() => {
+                                            window.location.reload();
+                                        }}
+                                    >
+                                        Refresh
+                                    </Button>
+                                }
+                            >
+                                Your session has expired. Refresh the page to
+                                continue.
+                            </Alert>
+                        ) : null}
+
                         <ChatInputArea
                             messageText={messageText}
                             onChange={setMessageText}
@@ -692,7 +739,8 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                                 isStreaming ||
                                 isCheckingModelStatus ||
                                 isWarmingModel ||
-                                modelStatus?.state === "unavailable"
+                                modelStatus?.state === "unavailable" ||
+                                isExpired
                             }
                             isStreaming={isStreaming}
                             onStop={stopStreaming}

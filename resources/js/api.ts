@@ -7,6 +7,17 @@ export class ApiError extends Error {
     }
 }
 
+let onActivity: (() => void) | null = null;
+let onSessionExpired: (() => void) | null = null;
+
+function setSessionHandlers(handlers: {
+    onActivity?: () => void;
+    onSessionExpired?: () => void;
+}): void {
+    onActivity = handlers.onActivity ?? null;
+    onSessionExpired = handlers.onSessionExpired ?? null;
+}
+
 function csrfToken(): string {
     return (
         document
@@ -51,9 +62,12 @@ async function request<T>(
         signal,
     });
 
-    if (res.status === 419 && retry) {
-        await refreshCsrfToken();
-        return request<T>(method, url, body, signal, false);
+    if (res.status === 419) {
+        onSessionExpired?.();
+        if (retry) {
+            await refreshCsrfToken();
+            return request<T>(method, url, body, signal, false);
+        }
     }
 
     if (!res.ok) {
@@ -61,6 +75,7 @@ async function request<T>(
         throw new ApiError(res.status, data);
     }
 
+    onActivity?.();
     return res.json() as Promise<T>;
 }
 
@@ -120,16 +135,20 @@ async function* stream(
         signal,
     });
 
-    if (res.status === 419 && retry) {
-        await refreshCsrfToken();
-        yield* stream(url, body, onResponse, false, signal);
-        return;
+    if (res.status === 419) {
+        onSessionExpired?.();
+        if (retry) {
+            await refreshCsrfToken();
+            yield* stream(url, body, onResponse, false, signal);
+            return;
+        }
     }
 
     if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
+    onActivity?.();
     onResponse?.(res);
 
     if (!res.body) {
@@ -158,4 +177,12 @@ async function* stream(
     }
 }
 
-export const api = { get, post, put, del, upload, stream };
+export const api = {
+    get,
+    post,
+    put,
+    del,
+    upload,
+    stream,
+    setSessionHandlers,
+};

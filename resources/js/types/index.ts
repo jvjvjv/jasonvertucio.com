@@ -31,6 +31,10 @@ export interface FlashMessages {
     error: string | null;
 }
 
+export interface SessionInfo {
+    expiresAt: string;
+}
+
 export interface SharedProps extends PageProps {
     [key: string]: unknown;
     auth: {
@@ -38,6 +42,7 @@ export interface SharedProps extends PageProps {
     };
     adminNav: AppBarItem[];
     navLinks: NavLink[];
+    session: SessionInfo;
     flash: FlashMessages;
 }
 
