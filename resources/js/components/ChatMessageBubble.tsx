@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import { useState } from "react";
 
 import { markdownSx } from "../admin/utils/markdownSx";
+import mergeSx from "../utils/mergeSx";
 
 import BlockContent from "./chat-message-bubble/BlockContent";
 import LegacyContent from "./chat-message-bubble/LegacyContent";
@@ -29,24 +30,6 @@ interface ChatMessageBubbleProps {
     activeBlockType?: "text" | "reasoning" | null;
     /** Legacy single-blob reasoning (used when blocks is absent). */
     reasoningContent?: string | null;
-}
-
-type SxItem =
-    | boolean
-    | SystemStyleObject<Theme>
-    | ((theme: Theme) => SystemStyleObject<Theme>);
-
-function isSxArray(v: SxProps<Theme>): v is readonly SxItem[] {
-    return Array.isArray(v);
-}
-
-function mergeSx(...values: (SxProps<Theme> | undefined)[]): SxProps<Theme> {
-    return values.flatMap((v): SxItem[] => {
-        if (v === undefined) {
-            return [];
-        }
-        return isSxArray(v) ? [...v] : [v];
-    });
 }
 
 export const userMarkdownOverrides = {

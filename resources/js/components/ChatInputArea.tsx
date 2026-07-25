@@ -72,6 +72,7 @@ export default function ChatInputArea({
                         onKeyDown={onKeyDown}
                         fullWidth
                         sx={{
+                            backgroundColor: "#ffffff",
                             "& .MuiInputBase-inputMultiline": {
                                 paddingBottom: "44px",
                             },

@@ -20,7 +20,6 @@ import { useState } from "react";
 
 import BuilderChatPanel from "./BuilderChatPanel";
 import BuilderMetadataForm from "./BuilderMetadataForm";
-import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
 import useFinalizeArtifacts from "./useFinalizeArtifacts";
 import useLatestGeneratedArtifacts from "./useLatestGeneratedArtifacts";
 import useStatusUpdates from "./useStatusUpdates";
@@ -36,7 +35,6 @@ import type {
 } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
@@ -166,178 +164,173 @@ export default function Show({
         : "";
 
     return (
-        <AdminLayout>
+        <>
             <Head title={`${pageTitle} | Targeted Resumes`} />
-            <PageHeader title={pageTitle} />
-
-            <TargetedBuilderStatusBar
-                conversation={conversation}
-                targetedResume={targetedResume}
-                statusUpdates={status.statusUpdates}
-            />
-
-            <Box
-                sx={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 10,
-                    mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    bgcolor: "background.paper",
-                    borderBottom: 1,
-                    borderColor: "divider",
-                }}
-            >
-                <IconButton
-                    component={InertiaLink}
-                    href="/admin/resume/targeted-builder"
-                    aria-label="Back to Targeted Resumes"
-                    size="small"
-                    sx={{ ml: 0.5 }}
-                >
-                    <ArrowBackIcon fontSize="small" />
-                </IconButton>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, v) => {
-                        setActiveTab(v as number);
-                    }}
-                    aria-label="Targeted resume tabs"
-                    sx={{
-                        "& .MuiTab-root": {
-                            minWidth: 0,
-                            px: 2,
-                            py: 1.5,
-                        },
-                    }}
-                >
-                    <Tab icon={<ChatIcon />} />
-                    <Tab icon={<InfoIcon />} />
-                </Tabs>
-                <Box sx={{ flexGrow: 1 }} />
+            <AdminLayout showChrome={false} noMargin>
                 <Box
                     sx={{
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 10,
+
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
-                        pr: 1,
+                        bgcolor: "background.paper",
+                        borderBottom: 1,
+                        borderColor: "divider",
                     }}
                 >
-                    <ResponsiveButton
+                    <IconButton
+                        component={InertiaLink}
+                        href="/admin/resume/targeted-builder"
+                        aria-label="Back to Targeted Resumes"
                         size="small"
-                        color="success"
-                        icon={<DoneIcon />}
-                        label="Mark Applied"
-                        title={
-                            isApplied
-                                ? "Already in application flow"
-                                : "Mark as applied"
-                        }
-                        variant="outlined"
-                        disabled={isApplied || status.isSubmittingStatus}
-                        onClick={handleApplied}
-                    />
-                    <ResponsiveButton
-                        size="small"
-                        color="warning"
-                        icon={<BackHandOutlinedIcon />}
-                        label="Pass"
-                        title={
-                            conversation.status === "pass"
-                                ? "Already marked as passed"
-                                : "Mark as passed"
-                        }
-                        variant="outlined"
-                        disabled={conversation.status === "pass"}
-                        onClick={handlePass}
-                    />
-                    {jobUrl ? (
+                        sx={{ ml: 0.5 }}
+                    >
+                        <ArrowBackIcon fontSize="small" />
+                    </IconButton>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, v) => {
+                            setActiveTab(v as number);
+                        }}
+                        aria-label="Targeted resume tabs"
+                        sx={{
+                            "& .MuiTab-root": {
+                                minWidth: 0,
+                                px: 2,
+                                py: 1.5,
+                            },
+                        }}
+                    >
+                        <Tab icon={<ChatIcon />} />
+                        <Tab icon={<InfoIcon />} />
+                    </Tabs>
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            pr: 1,
+                        }}
+                    >
                         <ResponsiveButton
                             size="small"
-                            color="primary"
-                            icon={<OpenInNewIcon />}
+                            color="success"
+                            icon={<DoneIcon />}
+                            label="Mark Applied"
+                            title={
+                                isApplied
+                                    ? "Already in application flow"
+                                    : "Mark as applied"
+                            }
                             variant="outlined"
-                            label="Job URL"
-                            title="Open Job URL in new tab"
-                            onClick={() => {
-                                window.open(
-                                    jobUrl,
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                );
-                            }}
+                            disabled={isApplied || status.isSubmittingStatus}
+                            onClick={handleApplied}
                         />
-                    ) : null}
+                        <ResponsiveButton
+                            size="small"
+                            color="warning"
+                            icon={<BackHandOutlinedIcon />}
+                            label="Pass"
+                            title={
+                                conversation.status === "pass"
+                                    ? "Already marked as passed"
+                                    : "Mark as passed"
+                            }
+                            variant="outlined"
+                            disabled={conversation.status === "pass"}
+                            onClick={handlePass}
+                        />
+                        {jobUrl ? (
+                            <ResponsiveButton
+                                size="small"
+                                color="primary"
+                                icon={<OpenInNewIcon />}
+                                variant="outlined"
+                                label="Job URL"
+                                title="Open Job URL in new tab"
+                                onClick={() => {
+                                    window.open(
+                                        jobUrl,
+                                        "_blank",
+                                        "noopener,noreferrer",
+                                    );
+                                }}
+                            />
+                        ) : null}
+                    </Box>
                 </Box>
-            </Box>
 
-            {(finalizeError !== null ||
-                finalizeCoverLetterError !== null ||
-                status.statusError !== null) && (
-                <Box
-                    sx={{
-                        mb: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                    }}
-                >
-                    {finalizeError && (
-                        <Alert severity="error">{finalizeError}</Alert>
-                    )}
-                    {finalizeCoverLetterError && (
-                        <Alert severity="error">
-                            {finalizeCoverLetterError}
-                        </Alert>
-                    )}
-                    {status.statusError && (
-                        <Alert severity="error">{status.statusError}</Alert>
-                    )}
+                {(finalizeError !== null ||
+                    finalizeCoverLetterError !== null ||
+                    status.statusError !== null) && (
+                    <Box
+                        sx={{
+                            mb: 2,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                        }}
+                    >
+                        {finalizeError && (
+                            <Alert severity="error">{finalizeError}</Alert>
+                        )}
+                        {finalizeCoverLetterError && (
+                            <Alert severity="error">
+                                {finalizeCoverLetterError}
+                            </Alert>
+                        )}
+                        {status.statusError && (
+                            <Alert severity="error">{status.statusError}</Alert>
+                        )}
+                    </Box>
+                )}
+
+                <Box sx={{ display: activeTab === 0 ? undefined : "none" }}>
+                    <BuilderChatPanel
+                        authUser={authUser}
+                        conversation={conversation}
+                        targetedResume={targetedResume}
+                        coverLetter={coverLetter}
+                        initialMessages={initialMessages as ChatMessage[]}
+                        shouldAutoStart={shouldAutoStart}
+                        canFinalizeResume={canFinalizeResume}
+                        isFinalizing={isFinalizing}
+                        hasNewerResume={hasNewerResume}
+                        onFinalizeResume={() => {
+                            void finalizeResume();
+                        }}
+                        canFinalizeCoverLetter={canFinalizeCoverLetter}
+                        isFinalizingCoverLetter={isFinalizingCoverLetter}
+                        hasCoverLetterUpdate={!!coverLetter}
+                        onFinalizeCoverLetter={() => {
+                            void finalizeCoverLetter();
+                        }}
+                        statusUrl={statusUrl}
+                        warmupUrl={warmupUrl}
+                        onMessagesChange={setLiveMessages}
+                    />
                 </Box>
-            )}
 
-            <Box sx={{ display: activeTab === 0 ? undefined : "none" }}>
-                <BuilderChatPanel
-                    authUser={authUser}
-                    conversation={conversation}
-                    targetedResume={targetedResume}
-                    coverLetter={coverLetter}
-                    initialMessages={initialMessages as ChatMessage[]}
-                    shouldAutoStart={shouldAutoStart}
-                    canFinalizeResume={canFinalizeResume}
-                    isFinalizing={isFinalizing}
-                    hasNewerResume={hasNewerResume}
-                    onFinalizeResume={() => {
-                        void finalizeResume();
-                    }}
-                    canFinalizeCoverLetter={canFinalizeCoverLetter}
-                    isFinalizingCoverLetter={isFinalizingCoverLetter}
-                    hasCoverLetterUpdate={!!coverLetter}
-                    onFinalizeCoverLetter={() => {
-                        void finalizeCoverLetter();
-                    }}
-                    statusUrl={statusUrl}
-                    warmupUrl={warmupUrl}
-                    onMessagesChange={setLiveMessages}
-                />
-            </Box>
-
-            <Box sx={{ display: activeTab === 1 ? undefined : "none" }}>
-                {/* `deleteStatusUpdate` must stay after the spread — it
+                <Box sx={{ display: activeTab === 1 ? undefined : "none" }}>
+                    {/* `deleteStatusUpdate` must stay after the spread — it
                     overrides the hook's raw action with the confirmed one. */}
-                <BuilderMetadataForm
-                    {...status}
-                    conversation={conversation}
-                    metadataForm={metadataForm}
-                    onMetadataSave={handleMetadataSave}
-                    targetedResume={targetedResume}
-                    coverLetter={coverLetter}
-                    deleteStatusUpdate={handleDeleteStatusUpdate}
-                />
-            </Box>
-            <ConfirmDialog {...dialogProps} />
-        </AdminLayout>
+                    <BuilderMetadataForm
+                        {...status}
+                        conversation={conversation}
+                        metadataForm={metadataForm}
+                        onMetadataSave={handleMetadataSave}
+                        targetedResume={targetedResume}
+                        coverLetter={coverLetter}
+                        deleteStatusUpdate={handleDeleteStatusUpdate}
+                    />
+                </Box>
+                <ConfirmDialog {...dialogProps} />
+            </AdminLayout>
+        </>
     );
 }

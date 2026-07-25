@@ -2,22 +2,26 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 import type { Conversation, StatusUpdate, TargetedResume } from "@/types";
+import type { SxProps } from "@mui/material";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
 import { formatCalendarDate } from "@/utils/date";
+import mergeSx from "@/utils/mergeSx";
 
 interface TargetedBuilderStatusBarProps {
     conversation: Conversation;
     targetedResume: TargetedResume | null;
     statusUpdates?: StatusUpdate[];
+    sx?: SxProps;
 }
 
 export default function TargetedBuilderStatusBar({
     conversation,
     targetedResume,
     statusUpdates,
+    sx,
 }: TargetedBuilderStatusBarProps) {
     const fitScore: number | null = (targetedResume?.fit_score ??
         conversation.context?.fit_score) as number | null;
@@ -34,13 +38,16 @@ export default function TargetedBuilderStatusBar({
 
     return (
         <Box
-            sx={{
-                display: "flex",
-                gap: 2,
-                mb: 2,
-                alignItems: "center",
-                flexWrap: "wrap",
-            }}
+            sx={mergeSx(
+                {
+                    display: "flex",
+                    gap: 2,
+                    mb: 2,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                },
+                sx,
+            )}
         >
             <StatusChip status={displayStatus} />
             <UsageChip usage={conversation.usage} />

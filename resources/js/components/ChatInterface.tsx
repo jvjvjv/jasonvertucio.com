@@ -77,6 +77,7 @@ export interface ChatInterfaceProps {
     sessionExpiresAt?: string;
     shouldAutoStart?: boolean;
     autoStartMessage?: string;
+    messagePadding?: number;
     /** Extra fields merged into the POST body on every send. Stable reference preferred. */
     extraPayload?: { [key: string]: string | null | undefined };
     slots?: {
@@ -108,6 +109,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             isAuthenticated,
             sessionExpiresAt,
             shouldAutoStart = false,
+            messagePadding = 40,
             autoStartMessage,
             extraPayload,
             slots,
@@ -211,6 +213,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                             isMobile={isMobile}
                             initialTopMostItemIndex={initialTopMostItemIndex}
                             aboveMessagesSlot={slots?.aboveMessages}
+                            padding={messagePadding}
                         />
 
                         {slots?.aboveInput}

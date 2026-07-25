@@ -1,12 +1,13 @@
 import Box from "@mui/material/Box";
 import { forwardRef } from "react";
-import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
+import { Virtuoso } from "react-virtuoso";
 
 import EmptyPlaceholder from "./EmptyPlaceholder";
 
 import type { ChatMessage } from "@/components/ChatInterface";
 import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { ReactNode } from "react";
+import type { ContextProp, VirtuosoHandle } from "react-virtuoso";
 
 import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ToolsPanel from "@/components/ToolsPanel";
@@ -34,6 +35,15 @@ interface ChatVirtualListProps {
     isMobile: boolean;
     initialTopMostItemIndex: number;
     aboveMessagesSlot?: ReactNode;
+    padding: number;
+}
+
+interface ListContext {
+    bottomPadding: number;
+}
+
+function ListFooter({ context }: ContextProp<ListContext>) {
+    return <Box sx={{ height: `${context.bottomPadding}px` }} />;
 }
 
 /** Virtualized message list: optional above-messages header, past messages, and the live streaming item. */
@@ -48,6 +58,7 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
             isMobile,
             initialTopMostItemIndex,
             aboveMessagesSlot,
+            padding,
         },
         ref,
     ) {
@@ -80,7 +91,7 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
         };
 
         return (
-            <Virtuoso<VirtualItem>
+            <Virtuoso<VirtualItem, ListContext>
                 ref={ref}
                 style={{
                     height: virtuosoHeight,
@@ -91,8 +102,10 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                 data={virtualItems}
                 followOutput="smooth"
                 initialTopMostItemIndex={initialTopMostItemIndex}
+                context={{ bottomPadding: padding }}
                 components={{
                     EmptyPlaceholder,
+                    Footer: ListFooter,
                 }}
                 itemContent={(_, item) => {
                     if (item._kind === "above-messages") {
@@ -101,7 +114,6 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                 sx={{
                                     px: { xs: 1.5, md: 3 },
                                     pt: 2.5,
-                                    pb: 1,
                                 }}
                             >
                                 {aboveMessagesSlot}
