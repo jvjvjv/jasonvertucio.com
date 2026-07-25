@@ -315,7 +315,11 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertCookie('ai_chat_bot_conversations_'.$bot->id);
+
+        // Per-bot cookies were consolidated into one `ai_chat_bot_current`
+        // cookie to keep the request header from growing with each bot. The
+        // per-bot state itself still lives in the server-side session.
+        $response->assertCookie('ai_chat_bot_current', $conversation->public_id);
         $this->assertEquals($conversation->public_id, session('ai_chat_bot_conversations_'.$bot->id.'.current'));
         $this->assertCount(1, session('ai_chat_bot_conversations_'.$bot->id.'.history', []));
     }

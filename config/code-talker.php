@@ -41,7 +41,17 @@ return [
     |
     */
 
-    'reserved_slugs' => [],
+    'reserved_slugs' => [
+        '_boost',
+        'blog',
+        'canvas',
+        'mlopnadjs22tn',
+        'paper',
+        'passkey',
+        'resume',
+        'wp-admin',
+        'wp-login.php',
+    ],
 
     /*
     |--------------------------------------------------------------------------
