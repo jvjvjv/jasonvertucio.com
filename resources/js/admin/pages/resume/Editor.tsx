@@ -32,12 +32,7 @@ import VersionTab from "./tabs/VersionTab";
 
 import type { EditorProps, Personal, ResumeData } from "./types";
 
-import { api, ApiError } from "@/api";
-
-interface SaveErrorResponse {
-    errors?: { [key: string]: string[] };
-    message?: string;
-}
+import { api, apiErrorMessages, networkErrorMessage } from "@/api";
 
 export default function Editor({
     data: initialData,
@@ -151,16 +146,13 @@ export default function Editor({
 
             router.reload();
         } catch (error) {
-            if (error instanceof ApiError) {
-                const result = error.data as SaveErrorResponse;
-                if (result.errors) {
-                    setErrors(Object.values(result.errors).flat());
-                } else {
-                    setErrors([result.message ?? "Failed to save"]);
-                }
-            } else {
-                setErrors(["Network error: " + (error as Error).message]);
-            }
+            setErrors(
+                apiErrorMessages(
+                    error,
+                    "Failed to save",
+                    networkErrorMessage(error),
+                ),
+            );
         } finally {
             setSaving(false);
         }

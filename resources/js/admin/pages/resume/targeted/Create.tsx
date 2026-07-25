@@ -16,7 +16,7 @@ import type { SyntheticEvent } from "react";
 
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import { api, ApiError } from "@/api";
+import { api, apiErrorMessage, networkErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
 
 interface ParseJobResponse {
@@ -143,12 +143,13 @@ export default function Create({
             if (result.parser_id) setParserId(result.parser_id);
             if (result.used_existing_parser) setUsedExistingParser(true);
         } catch (err) {
-            if (err instanceof ApiError) {
-                const result = err.data as ParseJobResponse;
-                setParseError(result.message ?? "Failed to parse URL");
-            } else {
-                setParseError("Network error: " + (err as Error).message);
-            }
+            setParseError(
+                apiErrorMessage(
+                    err,
+                    "Failed to parse URL",
+                    networkErrorMessage(err),
+                ),
+            );
         } finally {
             setIsParsing(false);
         }
@@ -175,12 +176,13 @@ export default function Create({
             if (result.parser_id) setParserId(result.parser_id);
             setReparseFeedback("");
         } catch (err) {
-            if (err instanceof ApiError) {
-                const result = err.data as ParseJobResponse;
-                setParseError(result.message ?? "Failed to re-parse URL");
-            } else {
-                setParseError("Network error: " + (err as Error).message);
-            }
+            setParseError(
+                apiErrorMessage(
+                    err,
+                    "Failed to re-parse URL",
+                    networkErrorMessage(err),
+                ),
+            );
         } finally {
             setIsReparsing(false);
         }
@@ -215,12 +217,13 @@ export default function Create({
 
             window.location.href = result.redirect ?? "";
         } catch (err) {
-            if (err instanceof ApiError) {
-                const result = err.data as ParseJobResponse;
-                setError(result.message ?? "Failed to start session");
-            } else {
-                setError("Network error: " + (err as Error).message);
-            }
+            setError(
+                apiErrorMessage(
+                    err,
+                    "Failed to start session",
+                    networkErrorMessage(err),
+                ),
+            );
         } finally {
             setIsSubmitting(false);
         }

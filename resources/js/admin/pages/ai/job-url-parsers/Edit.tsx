@@ -15,7 +15,7 @@ import AdminLayout from "../../../layouts/AdminLayout";
 
 import type { SyntheticEvent } from "react";
 
-import { api, ApiError } from "@/api";
+import { api, apiErrorMessage, networkErrorMessage } from "@/api";
 
 interface ParserEditModel {
     id: number;
@@ -103,19 +103,13 @@ export default function Edit({ parser }: EditProps) {
             setPreviewResult(result.results);
             setPreviewFieldErrors(result.errors);
         } catch (err: unknown) {
-            if (err instanceof ApiError) {
-                const result = err.data as PreviewApiResponse;
-                setPreviewError(
-                    result.message ?? "Failed to preview selectors.",
-                );
-            } else {
-                setPreviewError(
-                    "Network error: " +
-                        (err instanceof Error
-                            ? err.message
-                            : "An error occurred"),
-                );
-            }
+            setPreviewError(
+                apiErrorMessage(
+                    err,
+                    "Failed to preview selectors.",
+                    networkErrorMessage(err),
+                ),
+            );
             setPreviewResult(null);
             setPreviewFieldErrors({});
         } finally {
