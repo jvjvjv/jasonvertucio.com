@@ -123,6 +123,7 @@ export default function ShareCodeRow({
                                 variant="body2"
                                 noWrap
                                 title={code.email}
+                                sx={{ cursor: "default" }}
                             >
                                 {code.email}
                             </Typography>
