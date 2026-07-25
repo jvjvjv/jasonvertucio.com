@@ -26,6 +26,15 @@ interface AdminLayoutProps {
     title?: string;
 }
 
+/**
+ * Blade-rendered routes must use a plain anchor: an Inertia visit to them
+ * returns HTML without the `x-inertia` header, which Inertia displays in an
+ * error-modal iframe instead of navigating.
+ */
+function linkComponent(external?: boolean) {
+    return external ? "a" : InertiaLink;
+}
+
 function isPathActive(currentPath: string, item: AppBarItem): boolean {
     return (
         currentPath === item.href ||
@@ -52,7 +61,9 @@ function DesktopNavItem({
         <>
             <Button
                 color="inherit"
-                component={hasChildren ? "button" : InertiaLink}
+                component={
+                    hasChildren ? "button" : linkComponent(item.external)
+                }
                 href={hasChildren ? undefined : item.href}
                 endIcon={
                     hasChildren ? (
@@ -99,7 +110,7 @@ function DesktopNavItem({
                     slotProps={{ paper: { sx: { minWidth: 220 } } }}
                 >
                     <MenuItem
-                        component={InertiaLink}
+                        component={linkComponent(item.external)}
                         href={item.href}
                         selected={currentPath === item.href}
                         onClick={() => {
@@ -120,7 +131,7 @@ function DesktopNavItem({
                     {item.children.map((child) => (
                         <MenuItem
                             key={child.href}
-                            component={InertiaLink}
+                            component={linkComponent(child.external)}
                             href={child.href}
                             selected={
                                 currentPath === child.href ||
@@ -155,7 +166,7 @@ function MobileNavSection({
     if (!hasChildren) {
         return (
             <MenuItem
-                component={InertiaLink}
+                component={linkComponent(item.external)}
                 href={item.href}
                 selected={isActive}
                 onClick={onNavigate}
@@ -187,7 +198,7 @@ function MobileNavSection({
             <Collapse in={open}>
                 <List disablePadding dense>
                     <ListItemButton
-                        component={InertiaLink}
+                        component={linkComponent(item.external)}
                         href={item.href}
                         selected={currentPath === item.href}
                         onClick={onNavigate}
@@ -206,7 +217,7 @@ function MobileNavSection({
                     {item.children.map((child) => (
                         <ListItemButton
                             key={child.href}
-                            component={InertiaLink}
+                            component={linkComponent(child.external)}
                             href={child.href}
                             selected={
                                 currentPath === child.href ||
@@ -254,7 +265,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 >
                     <Typography
                         variant="h6"
-                        component={InertiaLink}
+                        component="a"
                         href="/"
                         sx={{
                             mr: "auto",

@@ -52,7 +52,7 @@
         { "can": "edit-resume", "href": "/admin/resume/editor",           "icon": "EditNote",     "label": "Resume Builder",          "description": "Build and edit resume content. Documents auto-generate on save." },
         { "can": "edit-resume", "href": "/admin/resume/targeted-builder", "icon": "TrackChanges", "label": "Targeted Resume Builder", "description": "Use AI to tailor your resume for specific job postings" },
         { "can": "edit-resume", "href": "/admin/resume/metrics",          "icon": "Insights",     "label": "Application Metrics",     "description": "Track applications, outcomes, and pipeline timelines" },
-        { "can": null,          "href": "/resume",                        "icon": "Visibility",   "label": "Resume Preview",          "description": "View the resume as it appears to visitors" },
+        { "can": null,          "href": "/resume", "external": true,      "icon": "Visibility",   "label": "Resume Preview",          "description": "View the resume as it appears to visitors" },
         { "can": "edit-resume", "href": "/admin/resume/codes",            "icon": "Code",         "label": "Share Codes",             "description": "Share and manage codes for unauthenticated resume access" }
       ]
     },

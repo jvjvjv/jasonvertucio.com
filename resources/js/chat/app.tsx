@@ -5,6 +5,10 @@ import { createRoot } from "react-dom/client";
 
 import { theme } from "../admin/theme";
 
+import { followNonInertiaResponses } from "@/utils/nonInertiaNavigation";
+
+followNonInertiaResponses();
+
 void createInertiaApp({
     title: (title) => (title ? `${title} | Jason Vertucio` : "Jason Vertucio"),
     resolve: (name) => {

@@ -13,6 +13,7 @@ export interface NavBlock {
     icon: ReactNode;
     label: string;
     description: string;
+    external?: boolean;
 }
 
 interface NavGridProps {
@@ -26,7 +27,7 @@ export default function NavGrid({ blocks }: NavGridProps) {
                 <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={block.href}>
                     <Card>
                         <CardActionArea
-                            component={InertiaLink}
+                            component={block.external ? "a" : InertiaLink}
                             href={block.href}
                         >
                             <CardContent

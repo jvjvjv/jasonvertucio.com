@@ -10,6 +10,7 @@ interface ServerNavBlock {
     icon: string;
     label: string;
     description: string;
+    external?: boolean;
 }
 
 interface ResumeHubProps {

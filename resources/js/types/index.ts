@@ -10,11 +10,13 @@ export interface AuthUser {
 export interface AppBarNavChild {
     href: string;
     label: string;
+    external?: boolean;
 }
 
 export interface AppBarItem {
     href: string;
     label: string;
+    external?: boolean;
     children: AppBarNavChild[];
 }
 
