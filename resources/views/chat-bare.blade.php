@@ -22,21 +22,9 @@
 </head>
 
 <body id="page-top" class="flex min-h-screen flex-col bg-gray-50 font-body">
-    <x-top-navbar />
-
     <div id="main" class="fonts-loading grow">
-        <div class="mx-0 my-4 p-0">
-            @inertia
-        </div>
+    @inertia
     </div>
-
-    <footer class="mt-auto bg-secondary py-3 text-white">
-        <div class="mx-auto max-w-7xl px-4">
-            <div class="text-right">
-                <span>Copyright &copy; {{ date("Y") }}, Jason Vertucio.</span>
-            </div>
-        </div>
-    </footer>
 
     @vite(["resources/js/font-loader.js", "resources/js/app.js", "resources/js/chat/app.tsx"])
     <script>
