@@ -1,4 +1,5 @@
 import AddCommentIcon from "@mui/icons-material/AddComment";
+import BackIcon from "@mui/icons-material/ArrowBack";
 import ChatIcon from "@mui/icons-material/Chat";
 import InfoIcon from "@mui/icons-material/Info";
 import Badge from "@mui/material/Badge";
@@ -12,6 +13,7 @@ interface ChatTabsProps {
     badgeColor: "success" | "warning" | "error" | "info";
     onTabChange: (_tab: number) => void;
     onReset: () => void;
+    previousHref?: string | null;
 }
 
 export default function ChatTabs({
@@ -19,6 +21,7 @@ export default function ChatTabs({
     badgeColor,
     onTabChange,
     onReset,
+    previousHref,
 }: ChatTabsProps) {
     return (
         <Box
@@ -34,6 +37,19 @@ export default function ChatTabs({
                 borderColor: "divider",
             }}
         >
+            {previousHref ? (
+                <Box sx={{ ml: 1.5 }}>
+                    <IconButton
+                        component="a"
+                        href={previousHref}
+                        aria-label="Go back"
+                        size="large"
+                    >
+                        <BackIcon />
+                    </IconButton>
+                </Box>
+            ) : null}
+
             <Tabs
                 value={activeTab}
                 onChange={(_, value: number) => {

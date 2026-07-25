@@ -40,7 +40,17 @@ export default function ChatInputArea({
     return (
         <Box
             component="form"
-            sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 1, md: 1.5 } }}
+            sx={{
+                position: "absolute",
+                bottom: "0",
+                left: "0",
+                right: "0",
+                width: "100%",
+                maxWidth: "840px",
+                margin: "0 auto",
+                px: { xs: 1.5, md: 3 },
+                py: { xs: 1, md: 1.5 },
+            }}
             onSubmit={(e) => {
                 e.preventDefault();
                 onSubmit();

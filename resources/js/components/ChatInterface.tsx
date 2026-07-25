@@ -1,29 +1,27 @@
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import {
-    useCallback,
     useEffect,
     useImperativeHandle,
     useRef,
     useState,
     forwardRef,
 } from "react";
-import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
+import { type VirtuosoHandle } from "react-virtuoso";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
 import type { ReactNode, KeyboardEvent } from "react";
 
 import { api } from "@/api";
+import ChatVirtualList from "@/components/chat-interface/ChatVirtualList";
+import SessionExpiryBanner from "@/components/chat-interface/SessionExpiryBanner";
 import ChatInputArea from "@/components/ChatInputArea";
-import ChatMessageBubble from "@/components/ChatMessageBubble";
 import ModelStatusDisplay from "@/components/ModelStatusDisplay";
-import ToolsPanel from "@/components/ToolsPanel";
+import useChatStream from "@/hooks/useChatStream";
+import useModelStatus from "@/hooks/useModelStatus";
 import useSessionExpiry from "@/hooks/useSessionExpiry";
 
 // Used when no session deadline is supplied, so the hook always has a
@@ -65,11 +63,6 @@ export interface StreamEvent {
     [key: string]: unknown;
 }
 
-interface ToolPanel {
-    pretext: string;
-    tools: string[];
-}
-
 export interface ChatInterfaceHandle {
     sendMessage: (messageOverride?: string) => Promise<void>;
 }
@@ -104,32 +97,6 @@ export interface ChatInterfaceProps {
     /** Called immediately when the stream response arrives (before body is read). */
     onStreamResponse?: (response: Response) => void;
 }
-
-type VirtualItem =
-    | { _kind: "above-messages" }
-    | { _kind: "message"; msg: ChatMessage; msgIndex: number }
-    | {
-          _kind: "stream";
-          blocks: MessageBlock[];
-          toolPanels: ToolPanel[];
-      };
-
-const EmptyPlaceholder = () => (
-    <Box
-        sx={{
-            border: "1px dashed",
-            borderColor: "divider",
-            py: 3,
-            px: 2,
-            mx: 3,
-            mt: 2.5,
-            textAlign: "center",
-            color: "text.secondary",
-        }}
-    >
-        Send the first message to start the conversation.
-    </Box>
-);
 
 export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
     function ChatInterface(
@@ -169,43 +136,43 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             };
         }, [extend, markExpired]);
 
-        const [messages, setMessages] =
-            useState<ChatMessage[]>(initialMessages);
-        const [streamingBlocks, setStreamingBlocks] = useState<MessageBlock[]>(
-            [],
-        );
-        const [streamingToolPanels, setStreamingToolPanels] = useState<
-            ToolPanel[]
-        >([]);
-        const [isStreaming, setIsStreaming] = useState(false);
-        const [modelStatus, setModelStatus] = useState<ModelStatus | null>(
-            null,
-        );
-        const [isCheckingModelStatus, setIsCheckingModelStatus] =
-            useState(false);
-        const [isWarmingModel, setIsWarmingModel] = useState(false);
-        const [loadingMessage, setLoadingMessage] = useState("");
-        const [error, setError] = useState("");
+        const {
+            modelStatus,
+            isCheckingModelStatus,
+            isWarmingModel,
+            loadingMessage,
+            setLoadingMessage,
+        } = useModelStatus(statusUrl, warmupUrl, onModelStatusChange);
+
         const [messageText, setMessageText] = useState("");
 
-        const virtuosoRef = useRef<VirtuosoHandle>(null);
-        const hasAutoStarted = useRef(false);
-        const extraPayloadRef = useRef(extraPayload);
-        const onModelStatusChangeRef = useRef(onModelStatusChange);
-        const onMessagesChangeRef = useRef(onMessagesChange);
-        const streamingRafRef = useRef<number | null>(null);
-        const abortControllerRef = useRef<AbortController | null>(null);
+        const {
+            messages,
+            streamingBlocks,
+            streamingToolPanels,
+            isStreaming,
+            error,
+            sendMessage,
+            stopStreaming,
+        } = useChatStream({
+            chatEndpoint,
+            initialMessages,
+            messageText,
+            onMessageSent: () => {
+                setMessageText("");
+            },
+            isExpired,
+            shouldAutoStart,
+            autoStartMessage,
+            extraPayload,
+            onEvent,
+            onStreamEnd,
+            onMessagesChange,
+            onStreamResponse,
+            setLoadingMessage,
+        });
 
-        // Keep callback refs fresh without mutating during render
-        useEffect(() => {
-            extraPayloadRef.current = extraPayload;
-        });
-        useEffect(() => {
-            onModelStatusChangeRef.current = onModelStatusChange;
-        });
-        useEffect(() => {
-            onMessagesChangeRef.current = onMessagesChange;
-        });
+        const virtuosoRef = useRef<VirtuosoHandle>(null);
 
         // Capture the initial last index so Virtuoso starts scrolled to the bottom.
         // Add 1 when aboveMessages is present because it occupies virtual index 0.
@@ -216,334 +183,8 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                 : 0;
         });
 
-        // Reset messages when the conversation changes (initialMessages reference changes).
-        // React's "setState during render" pattern — React re-renders immediately with new state.
-        const [prevInitialMessages, setPrevInitialMessages] =
-            useState(initialMessages);
-        if (prevInitialMessages !== initialMessages) {
-            setPrevInitialMessages(initialMessages);
-            setMessages(initialMessages);
-        }
-
-        // Notify parent whenever messages change (including on conversation reset above)
-        useEffect(() => {
-            onMessagesChangeRef.current?.(messages);
-        }, [messages]);
-
-        useEffect(() => {
-            return () => {
-                if (streamingRafRef.current !== null) {
-                    cancelAnimationFrame(streamingRafRef.current);
-                    streamingRafRef.current = null;
-                }
-            };
-        }, []);
-
-        const updateModelStatus = (status: ModelStatus | null) => {
-            setModelStatus(status);
-            onModelStatusChangeRef.current?.(status);
-        };
-
-        const setUnavailableStatus = (message: string): void => {
-            setModelStatus((current) => {
-                const next: ModelStatus = {
-                    state: "unavailable",
-                    provider: current?.provider ?? "unknown",
-                    model: current?.model ?? "",
-                    message,
-                    checked_at: new Date().toISOString(),
-                };
-                onModelStatusChangeRef.current?.(next);
-                return next;
-            });
-        };
-
-        // On mount: check status and auto-warm if needed
-        useEffect(() => {
-            let mounted = true;
-
-            const prepare = async (): Promise<void> => {
-                setIsCheckingModelStatus(true);
-
-                let status: ModelStatus | null = null;
-                try {
-                    const payload = await api.get<{ status?: ModelStatus }>(
-                        statusUrl,
-                    );
-                    status = payload.status ?? null;
-                    if (status) updateModelStatus(status);
-                } catch {
-                    setUnavailableStatus("Provider is unavailable.");
-                } finally {
-                    setIsCheckingModelStatus(false);
-                }
-
-                if (!mounted || status?.state !== "not_loaded") return;
-
-                setIsWarmingModel(true);
-                setLoadingMessage(
-                    "Loading model. This can take a little while...",
-                );
-
-                try {
-                    const wp = await api.post<{ status?: ModelStatus }>(
-                        warmupUrl,
-                    );
-                    if (wp.status) updateModelStatus(wp.status);
-                } finally {
-                    setIsWarmingModel(false);
-                    setLoadingMessage("");
-                }
-            };
-
-            void prepare();
-            return () => {
-                mounted = false;
-            };
-        }, [statusUrl, warmupUrl]);
-
-        const sendMessage = useCallback(
-            async (messageOverride?: string) => {
-                const text = messageOverride ?? messageText.trim();
-
-                if (!text && !shouldAutoStart) return;
-                if (isStreaming) return;
-                if (isExpired) return;
-
-                if (text) {
-                    setMessages((prev) => {
-                        const next = [
-                            ...prev,
-                            {
-                                role: "user" as const,
-                                content: text,
-                                created_at: new Date().toISOString(),
-                            },
-                        ];
-                        onMessagesChangeRef.current?.(next);
-                        return next;
-                    });
-                    setMessageText("");
-                }
-
-                setIsStreaming(true);
-                setStreamingBlocks([]);
-                setStreamingToolPanels([]);
-                setError("");
-
-                let liveBlocks: MessageBlock[] = [];
-                let sawPageReloadEvent = false;
-                let sawAnyStreamData = false;
-                let streamErrorReason: string | undefined;
-
-                const appendToBlocks = (
-                    type: MessageBlock["type"],
-                    delta: string,
-                ): void => {
-                    const last = liveBlocks[liveBlocks.length - 1] as
-                        | MessageBlock
-                        | undefined;
-                    if (last?.type === type) {
-                        liveBlocks = [
-                            ...liveBlocks.slice(0, -1),
-                            { type, content: last.content + delta },
-                        ];
-                    } else {
-                        liveBlocks = [...liveBlocks, { type, content: delta }];
-                    }
-
-                    if (streamingRafRef.current === null) {
-                        streamingRafRef.current = requestAnimationFrame(() => {
-                            streamingRafRef.current = null;
-                            setStreamingBlocks([...liveBlocks]);
-                        });
-                    }
-                };
-
-                // Turns whatever streamed so far into a normal assistant
-                // message. Used both when the stream finishes cleanly and
-                // when it errors out mid-turn (e.g. a max-duration abort) —
-                // reasoning/text that already rendered live shouldn't vanish
-                // just because the turn ultimately failed.
-                const persistLiveBlocks = (): void => {
-                    if (liveBlocks.length === 0) return;
-
-                    const finalText = liveBlocks
-                        .filter((b) => b.type === "text")
-                        .map((b) => b.content)
-                        .join("");
-
-                    setMessages((prev) => {
-                        const next = [
-                            ...prev,
-                            {
-                                role: "assistant" as const,
-                                content: finalText,
-                                blocks: liveBlocks,
-                                created_at: new Date().toISOString(),
-                            },
-                        ];
-                        onMessagesChangeRef.current?.(next);
-                        return next;
-                    });
-                };
-
-                const abortController = new AbortController();
-                abortControllerRef.current = abortController;
-
-                try {
-                    const extra = extraPayloadRef.current ?? {};
-                    const payload: {
-                        [key: string]: string | null | undefined;
-                    } = {
-                        message: text || null,
-                        ...extra,
-                    };
-
-                    for await (const jsonStr of api.stream(
-                        chatEndpoint,
-                        payload,
-                        onStreamResponse,
-                        true,
-                        abortController.signal,
-                    )) {
-                        if (!jsonStr || jsonStr === "[DONE]") continue;
-
-                        sawAnyStreamData = true;
-
-                        let event: StreamEvent;
-                        try {
-                            event = JSON.parse(jsonStr) as StreamEvent;
-                        } catch {
-                            continue;
-                        }
-
-                        if (event.type === "page_reload") {
-                            sawPageReloadEvent = true;
-                        }
-
-                        onEvent?.(event);
-
-                        if (
-                            event.type === "reasoning_block_delta" &&
-                            event.delta?.reasoning
-                        ) {
-                            setLoadingMessage("");
-                            appendToBlocks("reasoning", event.delta.reasoning);
-                        } else if (event.type === "content_block_delta") {
-                            if (
-                                event.delta?.type === "thinking_delta" &&
-                                event.delta.thinking
-                            ) {
-                                setLoadingMessage("");
-                                appendToBlocks(
-                                    "reasoning",
-                                    event.delta.thinking,
-                                );
-                            } else if (event.delta?.text) {
-                                setLoadingMessage("");
-                                appendToBlocks("text", event.delta.text);
-                            }
-                        } else if (event.type === "tool_use_progress") {
-                            setStreamingToolPanels((prev) => [
-                                ...prev,
-                                {
-                                    pretext: event.text ?? "",
-                                    tools: event.tools ?? [],
-                                },
-                            ]);
-                            liveBlocks = [];
-                            setStreamingBlocks([]);
-                        } else if (event.type === "status") {
-                            setLoadingMessage(
-                                event.message ??
-                                    "Waiting for model response...",
-                            );
-                        } else if (event.type === "error") {
-                            streamErrorReason = event.reason;
-                            throw new Error(event.message ?? "Unknown error");
-                        }
-                    }
-
-                    persistLiveBlocks();
-
-                    onStreamEnd?.();
-                } catch (err) {
-                    const message =
-                        err instanceof Error
-                            ? err.message
-                            : "Unable to send message right now.";
-
-                    // The user clicking Stop (or pressing ESC) aborts the
-                    // fetch via our own AbortController — always benign,
-                    // regardless of message text or how much had streamed.
-                    const clientInitiatedAbort =
-                        err instanceof DOMException &&
-                        err.name === "AbortError";
-
-                    // Only a genuine client-side interruption (browser tab
-                    // closed, fetch aborted, page reload) is benign. Backend
-                    // `type: "error"` events always carry a `reason` code and
-                    // are real failures — e.g. max_stream_duration — even
-                    // though their message text may also contain the word
-                    // "aborted".
-                    const isBenignStreamReadInterruption =
-                        clientInitiatedAbort ||
-                        (streamErrorReason === undefined &&
-                            (sawPageReloadEvent || sawAnyStreamData) &&
-                            /failed to read from stream|abort|aborted/i.test(
-                                message,
-                            ));
-
-                    if (!isBenignStreamReadInterruption) {
-                        setError(message);
-                    }
-
-                    persistLiveBlocks();
-                } finally {
-                    abortControllerRef.current = null;
-
-                    if (streamingRafRef.current !== null) {
-                        cancelAnimationFrame(streamingRafRef.current);
-                        streamingRafRef.current = null;
-                    }
-
-                    setIsStreaming(false);
-                    setStreamingBlocks([]);
-                    setStreamingToolPanels([]);
-                    setLoadingMessage("");
-                }
-            },
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            [
-                messageText,
-                chatEndpoint,
-                isStreaming,
-                isExpired,
-                shouldAutoStart,
-                onEvent,
-                onStreamEnd,
-            ],
-        );
-
-        // Aborts the in-flight turn (Stop button / ESC). The stream's own
-        // catch block treats this as benign and still keeps whatever had
-        // already rendered live.
-        const stopStreaming = useCallback(() => {
-            abortControllerRef.current?.abort();
-        }, []);
-
         // Expose sendMessage for parent imperative use (e.g. auto-start from Show.tsx)
         useImperativeHandle(ref, () => ({ sendMessage }), [sendMessage]);
-
-        // Auto-start the conversation on mount
-        useEffect(() => {
-            if (shouldAutoStart && !hasAutoStarted.current) {
-                hasAutoStarted.current = true;
-                void sendMessage(autoStartMessage ?? "");
-            }
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, []);
 
         const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
@@ -555,146 +196,21 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             }
         };
 
-        // Build the virtual item list: optional above-messages header + past messages + optional live streaming item
-        const virtualItems: VirtualItem[] = [];
-        if (slots?.aboveMessages) {
-            virtualItems.push({ _kind: "above-messages" });
-        }
-        virtualItems.push(
-            ...messages.map((msg, msgIndex) => ({
-                _kind: "message" as const,
-                msg,
-                msgIndex,
-            })),
-        );
-        if (isStreaming) {
-            virtualItems.push({
-                _kind: "stream",
-                blocks: streamingBlocks,
-                toolPanels: streamingToolPanels,
-            });
-        }
-
-        const virtuosoHeight = isMobile
-            ? "calc(100dvh - 320px)"
-            : "calc(100vh - 480px)";
-        const virtuosoMinHeight = isMobile ? 200 : 300;
-
         return (
             <>
                 {slots?.header ?? null}
                 <Card>
-                    <CardContent sx={{ p: 0 }}>
-                        <Virtuoso<VirtualItem>
+                    <CardContent sx={{ p: 0, m: 0 }}>
+                        <ChatVirtualList
                             ref={virtuosoRef}
-                            style={{
-                                height: virtuosoHeight,
-                                minHeight: virtuosoMinHeight,
-                            }}
-                            data={virtualItems}
-                            followOutput="smooth"
+                            messages={messages}
+                            isStreaming={isStreaming}
+                            streamingBlocks={streamingBlocks}
+                            streamingToolPanels={streamingToolPanels}
+                            isAuthenticated={isAuthenticated}
+                            isMobile={isMobile}
                             initialTopMostItemIndex={initialTopMostItemIndex}
-                            components={{
-                                EmptyPlaceholder,
-                            }}
-                            itemContent={(_, item) => {
-                                if (item._kind === "above-messages") {
-                                    return (
-                                        <Box
-                                            sx={{
-                                                px: { xs: 1.5, md: 3 },
-                                                pt: 2.5,
-                                                pb: 1,
-                                            }}
-                                        >
-                                            {slots?.aboveMessages}
-                                        </Box>
-                                    );
-                                }
-
-                                if (item._kind === "message") {
-                                    return (
-                                        <Box
-                                            sx={{
-                                                px: { xs: 1.5, md: 3 },
-                                                py: 1.5,
-                                            }}
-                                        >
-                                            <ChatMessageBubble
-                                                role={item.msg.role}
-                                                content={item.msg.content}
-                                                blocks={item.msg.blocks ?? null}
-                                                reasoningContent={
-                                                    item.msg
-                                                        .reasoning_content ??
-                                                    null
-                                                }
-                                                isAuthenticated={
-                                                    isAuthenticated
-                                                }
-                                            />
-                                        </Box>
-                                    );
-                                }
-
-                                // Streaming item: tool panels + live assistant bubble
-                                const lastBlock =
-                                    item.blocks.length > 0
-                                        ? item.blocks[item.blocks.length - 1]
-                                        : null;
-                                return (
-                                    <Box
-                                        sx={{
-                                            px: { xs: 1.5, md: 3 },
-                                            py: 1.5,
-                                        }}
-                                    >
-                                        {item.toolPanels.length > 0 ? (
-                                            <Box
-                                                sx={{
-                                                    bgcolor: "grey.50",
-                                                    p: 2,
-                                                    mb: 1.5,
-                                                }}
-                                            >
-                                                {item.toolPanels.map(
-                                                    (panel, i) => (
-                                                        <ToolsPanel
-                                                            key={i}
-                                                            pretext={
-                                                                panel.pretext
-                                                            }
-                                                            tools={panel.tools}
-                                                            isActive={false}
-                                                        />
-                                                    ),
-                                                )}
-                                                {item.blocks.length === 0 ? (
-                                                    <ToolsPanel
-                                                        pretext=""
-                                                        tools={[]}
-                                                        isActive
-                                                    />
-                                                ) : null}
-                                            </Box>
-                                        ) : null}
-                                        <ChatMessageBubble
-                                            role="assistant"
-                                            content=""
-                                            isStreaming
-                                            blocks={
-                                                item.blocks.length > 0
-                                                    ? item.blocks
-                                                    : null
-                                            }
-                                            activeBlockType={
-                                                lastBlock?.type ?? null
-                                            }
-                                            isAuthenticated={isAuthenticated}
-                                        />
-                                    </Box>
-                                );
-                            }}
+                            aboveMessagesSlot={slots?.aboveMessages}
                         />
 
                         {slots?.aboveInput}
@@ -709,26 +225,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                             error={error}
                         />
 
-                        {isExpired ? (
-                            <Alert
-                                severity="warning"
-                                sx={{ mx: { xs: 1.5, md: 3 }, mt: 1.5 }}
-                                action={
-                                    <Button
-                                        color="inherit"
-                                        size="small"
-                                        onClick={() => {
-                                            window.location.reload();
-                                        }}
-                                    >
-                                        Refresh
-                                    </Button>
-                                }
-                            >
-                                Your session has expired. Refresh the page to
-                                continue.
-                            </Alert>
-                        ) : null}
+                        {isExpired ? <SessionExpiryBanner /> : null}
 
                         <ChatInputArea
                             messageText={messageText}

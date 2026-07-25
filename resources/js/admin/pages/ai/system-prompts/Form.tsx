@@ -11,7 +11,7 @@ export interface FormData {
 interface FormProps {
     data: FormData;
     setData: InertiaFormProps<FormData>["setData"];
-    errors: Partial<Record<keyof FormData, string>>;
+    errors: { [K in keyof FormData]?: string };
 }
 
 export default function Form({ data, setData, errors }: FormProps) {

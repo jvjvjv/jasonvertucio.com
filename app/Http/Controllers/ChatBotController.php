@@ -127,6 +127,7 @@ class ChatBotController extends PackageChatBotController
             'showIdentityForm' => ! $request->user()
                 && $aiChatBot->require_visitor_identity
                 && $conversation === null,
+            'previousHref' => $this->previousHref($request),
         ]);
     }
 
@@ -202,6 +203,7 @@ class ChatBotController extends PackageChatBotController
             'chatHash' => $conversation->chat_hash,
             'chatUrl' => $chatUrl,
             'chatUrlBase' => '/chat/'.$bot->slug.'/',
+            'previousHref' => $this->previousHref($request),
         ]);
     }
 
@@ -234,5 +236,18 @@ class ChatBotController extends PackageChatBotController
     private function canAccess(AiChatBot $bot, ?User $user): bool
     {
         return empty($bot->allowed_roles) || $bot->allowsRole($user);
+    }
+
+    private function previousHref(Request $request): ?string
+    {
+        $referer = $request->headers->get('referer');
+
+        if ($referer === null || $referer === $request->fullUrl()) {
+            return route('chat-bots.index');
+        }
+
+        return parse_url($referer, PHP_URL_HOST) === $request->getHost()
+            ? $referer
+            : route('chat-bots.index');
     }
 }

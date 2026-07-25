@@ -46,9 +46,7 @@ export default function useSessionExpiry(
     // effect rather than during render) and schedule/reschedule the timer
     // whenever the deadline changes.
     useEffect(() => {
-        if (lifetimeMsRef.current === null) {
-            lifetimeMsRef.current = Math.max(0, deadline - Date.now());
-        }
+        lifetimeMsRef.current ??= Math.max(0, deadline - Date.now());
 
         clearTimer();
         timerRef.current = setTimeout(
