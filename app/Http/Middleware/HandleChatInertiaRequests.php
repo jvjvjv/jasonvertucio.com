@@ -17,6 +17,7 @@ class HandleChatInertiaRequests extends Middleware
     protected array $bareViewRouteNames = [
         'chat-bots.chat.show',
         'chat-bots.root.show',
+        'chat-bot.by-hash',
     ];
 
     public function rootView(Request $request): string

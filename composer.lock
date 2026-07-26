@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4d39eb85b3cc2daa0e36ca310bd2cd1d",
+    "content-hash": "26b8de7c189dac0b6da91fe756e05e0d",
     "packages": [
         {
             "name": "anthropic-ai/sdk",
@@ -1788,17 +1788,11 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "v0.9.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/jvjvjv/CodeTalker.git",
-                "reference": "a12b546b67d67be1d4e0b2bbadfa46843dbbbd31"
-            },
+            "version": "dev-develop",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/a12b546b67d67be1d4e0b2bbadfa46843dbbbd31",
-                "reference": "a12b546b67d67be1d4e0b2bbadfa46843dbbbd31",
-                "shasum": ""
+                "type": "path",
+                "url": "../code-talker",
+                "reference": "c58c32ab1d5d849af9e6344e7ccf6f78786cc63f"
             },
             "require": {
                 "guzzlehttp/guzzle": "^7.0",
@@ -1829,7 +1823,25 @@
                     "Jvjvjv\\CodeTalker\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Jvjvjv\\CodeTalker\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "@php vendor/bin/phpunit"
+                ],
+                "version": [
+                    "@php -r \"echo 'Current version: '; passthru('git describe --tags --abbrev=0 2>/dev/null || echo No version tags yet');\""
+                ],
+                "version:list": [
+                    "@php -r \"echo 'All version tags:' . PHP_EOL; passthru('git tag -l | sort -V');\""
+                ],
+                "version:release": [
+                    "bash bin/release"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -1841,21 +1853,20 @@
             ],
             "description": "Multi-provider AI communications package for Laravel — chatbots, streaming, tool-use, memory, and admin management.",
             "keywords": [
-                "Gemini",
                 "ai",
                 "anthropic",
                 "chatbot",
+                "gemini",
                 "grok",
                 "laravel",
                 "llm",
                 "openai",
                 "streaming"
             ],
-            "support": {
-                "issues": "https://github.com/jvjvjv/CodeTalker/issues",
-                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.9.1"
-            },
-            "time": "2026-07-21T23:18:00+00:00"
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "laravel/ai",
@@ -11202,7 +11213,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "jvjvjv/code-talker": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
