@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatMessage, StreamEvent } from "@/components/ChatInterface";
 import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { ChatStreamErrorReason } from "@/types/code-talker";
 
 import { api } from "@/api";
 
@@ -139,7 +140,7 @@ export default function useChatStream({
             let liveBlocks: MessageBlock[] = [];
             let sawPageReloadEvent = false;
             let sawAnyStreamData = false;
-            let streamErrorReason: string | undefined;
+            let streamErrorReason: ChatStreamErrorReason | undefined;
 
             const appendToBlocks = (
                 type: MessageBlock["type"],
@@ -229,18 +230,12 @@ export default function useChatStream({
 
                     if (
                         event.type === "reasoning_block_delta" &&
-                        event.delta?.reasoning
+                        event.delta.reasoning
                     ) {
                         setLoadingMessage("");
                         appendToBlocks("reasoning", event.delta.reasoning);
                     } else if (event.type === "content_block_delta") {
-                        if (
-                            event.delta?.type === "thinking_delta" &&
-                            event.delta.thinking
-                        ) {
-                            setLoadingMessage("");
-                            appendToBlocks("reasoning", event.delta.thinking);
-                        } else if (event.delta?.text) {
+                        if (event.delta.text) {
                             setLoadingMessage("");
                             appendToBlocks("text", event.delta.text);
                         }
@@ -248,19 +243,17 @@ export default function useChatStream({
                         setStreamingToolPanels((prev) => [
                             ...prev,
                             {
-                                pretext: event.text ?? "",
-                                tools: event.tools ?? [],
+                                pretext: event.text,
+                                tools: event.tools,
                             },
                         ]);
                         liveBlocks = [];
                         setStreamingBlocks([]);
                     } else if (event.type === "status") {
-                        setLoadingMessage(
-                            event.message ?? "Waiting for model response...",
-                        );
+                        setLoadingMessage(event.message);
                     } else if (event.type === "error") {
                         streamErrorReason = event.reason;
-                        throw new Error(event.message ?? "Unknown error");
+                        throw new Error(event.message);
                     }
                 }
 

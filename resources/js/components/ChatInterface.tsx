@@ -13,6 +13,7 @@ import {
 import { type VirtuosoHandle } from "react-virtuoso";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { ChatStreamEvent } from "@/types/code-talker";
 import type { ReactNode, KeyboardEvent } from "react";
 
 import { api } from "@/api";
@@ -28,6 +29,14 @@ import useSessionExpiry from "@/hooks/useSessionExpiry";
 // stable initial value to call (rules-of-hooks) but effectively never fires.
 const FAR_FUTURE = new Date(8.64e15).toISOString();
 
+/**
+ * Deliberately NOT the package's `ChatMessage` from `@/types/code-talker`.
+ *
+ * That type describes what the server sends; this one also covers messages the
+ * client builds mid-turn, so it diverges in three ways: `role` allows "system",
+ * `reasoning_content`/`blocks` are optional rather than nullable-required, and
+ * `created_at` is stamped locally when a message is appended optimistically.
+ */
 export interface ChatMessage {
     role: "user" | "assistant" | "system";
     content: string;
@@ -44,24 +53,41 @@ export interface ModelStatus {
     checked_at?: string;
 }
 
-export interface StreamEvent {
-    type: string;
-    delta?: {
-        type?: string;
-        text?: string;
-        thinking?: string;
-        reasoning?: string;
-        partial_json?: string;
-    };
-    content_block?: { type?: string };
-    message?: string;
-    /** Present on `type: "error"` events. Stable reason code — prefer this over parsing `message`. */
-    reason?: string;
-    text?: string;
-    tools?: string[];
-    phase?: string;
-    [key: string]: unknown;
+/**
+ * Progress frame emitted while the agent calls a tool.
+ *
+ * Host-only, not part of the package contract — see
+ * `app/Services/TargetedResumeService.php:281`.
+ */
+export interface ToolUseProgressEvent {
+    type: "tool_use_progress";
+    text: string;
+    tools: string[];
 }
+
+/**
+ * Tells the browser a tool changed server state and the page should refresh.
+ *
+ * Host-only, not part of the package contract — see
+ * `app/Services/TargetedResumeService.php:300`, which drains the latch set by
+ * `TargetedResumeToolRegistry::consumePageReload()`.
+ */
+export interface PageReloadEvent {
+    type: "page_reload";
+}
+
+/**
+ * Every frame the chat stream can deliver: the package's published contract
+ * plus the two events this app emits itself.
+ *
+ * Deliberately has no index signature — an unrecognized property should be a
+ * build error, not `unknown`. Unhandled event *types* are still inert at
+ * runtime, so a newer package stays forward-compatible.
+ */
+export type StreamEvent =
+    | ChatStreamEvent
+    | ToolUseProgressEvent
+    | PageReloadEvent;
 
 export interface ChatInterfaceHandle {
     sendMessage: (messageOverride?: string) => Promise<void>;

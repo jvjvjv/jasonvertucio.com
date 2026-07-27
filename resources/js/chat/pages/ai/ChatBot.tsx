@@ -9,43 +9,26 @@ import ChatTabs from "./ChatTabs";
 import IdentityFormModal from "./IdentityFormModal";
 
 import type { BadgeColor } from "./chat-bot/statusToBadgeColor";
-import type { ChatMessage } from "@/components/ChatInterface";
 import type { SharedProps } from "@/types";
+import type { ChatBotPageProps, ChatBotSummary } from "@/types/code-talker";
 
 import BotHeaderCard from "@/chat/components/BotHeaderCard";
 import ChatInterface from "@/components/ChatInterface";
 import useChatUrlSync from "@/hooks/useChatUrlSync";
 import { formatCost } from "@/utils/currency";
 
-interface HistoryItem {
-    handle: string;
-    label: string;
-    is_current: boolean;
-    is_stale: boolean;
-    updated_at: string;
-    cost_usd: number | null;
-}
-
-interface Bot {
-    name: string;
-    description: string | null;
-    allowed_roles: string[];
-    require_visitor_identity: boolean;
-    total_cost_usd: number;
-}
-
-interface ChatBotProps {
-    bot: Bot;
-    messages: ChatMessage[];
-    history: HistoryItem[];
-    messageUrl: string;
-    statusUrl: string;
-    warmupUrl: string;
-    resetUrl: string;
-    switchUrl: string;
-    chatUrl?: string | null;
-    chatUrlBase?: string | null;
-    showIdentityForm: boolean;
+/**
+ * The package's page contract plus this app's own additions.
+ *
+ * Everything inherited — `messages`, `history`, the five endpoint URLs,
+ * `chatUrl`/`chatUrlBase`, `showIdentityForm` — comes from the package and is
+ * not restated here. The three members below are the host's delta:
+ * `allowed_roles` and `previousHref` are added by the payload subclasses in
+ * `app/Services/ChatBot/` (see the `host-chat-bot-presentation` spec), and
+ * `chatHash` is present only on the hash-link route.
+ */
+interface ChatBotProps extends ChatBotPageProps {
+    bot: ChatBotSummary & { allowed_roles: string[] };
     chatHash?: string | null;
     previousHref?: string | null;
 }

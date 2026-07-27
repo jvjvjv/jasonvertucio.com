@@ -130,7 +130,7 @@ export default function AdminLayout({
                 component="main"
                 sx={{ flexGrow: 1, py: noMargin ? {} : { xs: 2, md: 4 } }}
             >
-                <Container maxWidth={false} disableGutters>
+                <Container maxWidth={false} disableGutters={!showChrome}>
                     {title && (
                         <Typography
                             variant="h4"
@@ -162,6 +162,24 @@ export default function AdminLayout({
                     {flash.success ?? flash.error}
                 </Alert>
             </Snackbar>
+            {showChrome && (
+                <Box
+                    component="footer"
+                    sx={{
+                        mt: "auto",
+                        py: 1.5,
+                        bgcolor: "secondary.main",
+                        color: "white",
+                    }}
+                >
+                    <Container>
+                        <Typography variant="body2" align="right">
+                            Copyright &copy; {new Date().getFullYear()}, Jason
+                            Vertucio.
+                        </Typography>
+                    </Container>
+                </Box>
+            )}
         </Box>
     );
 }

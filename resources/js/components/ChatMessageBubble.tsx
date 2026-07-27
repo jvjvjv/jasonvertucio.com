@@ -7,12 +7,16 @@ import mergeSx from "../utils/mergeSx";
 import BlockContent from "./chat-message-bubble/BlockContent";
 import LegacyContent from "./chat-message-bubble/LegacyContent";
 
+import type { MessageBlock } from "@/types/code-talker";
 import type { SxProps, SystemStyleObject, Theme } from "@mui/system";
 
-export interface MessageBlock {
-    type: "text" | "reasoning";
-    content: string;
-}
+/**
+ * Re-exported from the package contract rather than redeclared — the shapes are
+ * identical, so this keeps the package as the single source of truth. If the
+ * package ever adds a block type, it surfaces here as a type error instead of
+ * drifting silently.
+ */
+export type { MessageBlock };
 
 interface ChatMessageBubbleProps {
     content?: string;
@@ -43,6 +47,7 @@ export const userMarkdownOverrides = {
         color: "inherit",
     },
     "& hr": { borderTopColor: "rgba(255,255,255,0.35)" },
+    "& table td": { padding: "0.25rem" },
 };
 
 export default function ChatMessageBubble({
