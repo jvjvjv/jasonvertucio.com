@@ -6,6 +6,8 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
+import { CHAT_COLUMN_MAX_WIDTH } from "./chat-interface/chatColumn";
+
 import type { KeyboardEvent, ReactNode } from "react";
 
 export interface ChatInputAreaSlots {
@@ -46,7 +48,7 @@ export default function ChatInputArea({
                 left: "0",
                 right: "0",
                 width: "100%",
-                maxWidth: "840px",
+                maxWidth: CHAT_COLUMN_MAX_WIDTH,
                 margin: "0 auto",
                 px: { xs: 1.5, md: 3 },
                 py: { xs: 1, md: 1.5 },

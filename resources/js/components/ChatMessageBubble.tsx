@@ -6,7 +6,9 @@ import mergeSx from "../utils/mergeSx";
 
 import BlockContent from "./chat-message-bubble/BlockContent";
 import LegacyContent from "./chat-message-bubble/LegacyContent";
+import ToolsPanel from "./ToolsPanel";
 
+import type { ToolPanel } from "./ToolsPanel";
 import type { MessageBlock } from "@/types/code-talker";
 import type { SxProps, SystemStyleObject, Theme } from "@mui/system";
 
@@ -30,6 +32,13 @@ interface ChatMessageBubbleProps {
     isAuthenticated?: boolean;
     /** Full interleaved block sequence. When present, renders instead of `content`. */
     blocks?: MessageBlock[] | null;
+    /**
+     * Tool activity for the turn, rendered at the top of the bubble so it shares
+     * the message's width and chrome. Host-only and live-only: the tool event
+     * wipes the block sequence, so nothing precedes these, and they are dropped
+     * when the turn ends because the server never persists tool calls.
+     */
+    toolPanels?: ToolPanel[];
     /** Which block type is currently being streamed (only meaningful when isStreaming). */
     activeBlockType?: "text" | "reasoning" | null;
     /** Legacy single-blob reasoning (used when blocks is absent). */
@@ -59,6 +68,7 @@ export default function ChatMessageBubble({
     isStreaming = false,
     isAuthenticated = false,
     blocks = null,
+    toolPanels = [],
     activeBlockType = null,
     reasoningContent = null,
     sx,
@@ -112,40 +122,53 @@ export default function ChatMessageBubble({
         }
     };
 
-    if (!isUser && blocks && blocks.length > 0) {
-        return (
-            <Box
-                sx={mergeSx(baseBubbleSx, sx)}
-                onDoubleClick={handlePreDblClick}
-            >
-                <BlockContent
-                    blocks={blocks}
-                    isStreaming={isStreaming}
-                    isAuthenticated={isAuthenticated}
-                    activeBlockType={activeBlockType}
-                    sentAt={sentAt}
-                    preWrapSx={preWrapSx}
-                />
-            </Box>
-        );
-    }
+    const hasBlocks = !isUser && !!blocks && blocks.length > 0;
+
+    const body = hasBlocks ? (
+        <BlockContent
+            blocks={blocks}
+            isStreaming={isStreaming}
+            isAuthenticated={isAuthenticated}
+            activeBlockType={activeBlockType}
+            sentAt={sentAt}
+            preWrapSx={preWrapSx}
+        />
+    ) : (
+        <LegacyContent
+            content={content}
+            isUser={isUser}
+            isChatVariant={isChatVariant}
+            isStreaming={isStreaming}
+            isAuthenticated={isAuthenticated}
+            activeBlockType={activeBlockType}
+            reasoningContent={reasoningContent}
+            sentAt={sentAt}
+            preWrapSx={preWrapSx}
+        />
+    );
 
     return (
         <Box
-            sx={mergeSx({ ...baseBubbleSx, position: "relative" }, sx)}
+            sx={mergeSx(
+                hasBlocks
+                    ? baseBubbleSx
+                    : // LegacyContent positions its reasoning toggle absolutely.
+                      { ...baseBubbleSx, position: "relative" },
+                sx,
+            )}
             onDoubleClick={handlePreDblClick}
         >
-            <LegacyContent
-                content={content}
-                isUser={isUser}
-                isChatVariant={isChatVariant}
-                isStreaming={isStreaming}
-                isAuthenticated={isAuthenticated}
-                activeBlockType={activeBlockType}
-                reasoningContent={reasoningContent}
-                sentAt={sentAt}
-                preWrapSx={preWrapSx}
-            />
+            {toolPanels.map((panel, i) => (
+                <ToolsPanel
+                    key={i}
+                    pretext={panel.pretext}
+                    tools={panel.tools}
+                    isActive={
+                        isStreaming && !hasBlocks && i === toolPanels.length - 1
+                    }
+                />
+            ))}
+            {body}
         </Box>
     );
 }

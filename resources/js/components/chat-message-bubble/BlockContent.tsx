@@ -19,7 +19,15 @@ interface BlockContentProps {
     preWrapSx: SystemStyleObject<Theme>;
 }
 
-/** Renders the interleaved reasoning/text block sequence used by streamed and stored assistant messages. */
+/**
+ * Renders the interleaved reasoning/text block sequence used by streamed and
+ * stored assistant messages.
+ *
+ * The streaming progress bar is owned here rather than by the individual
+ * panels: a reasoning panel only renders its bar while expanded, so a collapsed
+ * one — or a hidden one, for guests — left the turn with no feedback at all.
+ * One bar at the end of the message body always shows, whatever is collapsed.
+ */
 export default function BlockContent({
     blocks,
     isStreaming,
@@ -38,7 +46,7 @@ export default function BlockContent({
                     return (
                         isAuthenticated && (
                             <ReasoningPanel
-                                key={i}
+                                key={`${block.type}-${i}`}
                                 content={block.content}
                                 isActive={
                                     isActiveBlock &&
@@ -51,7 +59,7 @@ export default function BlockContent({
 
                 return (
                     <Box
-                        key={i}
+                        key={`${block.type}-${i}`}
                         sx={{
                             ...markdownSx,
                             ...preWrapSx,
@@ -59,21 +67,21 @@ export default function BlockContent({
                         }}
                     >
                         <MarkdownContent content={block.content} />
-                        {isActiveBlock && activeBlockType === "text" ? (
-                            <Box
-                                sx={{ mt: 1.5 }}
-                                role="status"
-                                aria-live="polite"
-                                aria-label="Assistant response is still streaming"
-                            >
-                                <LinearProgress />
-                            </Box>
-                        ) : null}
                     </Box>
                 );
             })}
             {sentAt ? (
                 <SentAtLabel sentAt={sentAt} color="text.secondary" />
+            ) : null}
+            {isStreaming ? (
+                <Box
+                    sx={{ mt: 1.5 }}
+                    role="status"
+                    aria-live="polite"
+                    aria-label="Assistant response is still streaming"
+                >
+                    <LinearProgress />
+                </Box>
             ) : null}
         </>
     );

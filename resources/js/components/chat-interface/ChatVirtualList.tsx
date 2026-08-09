@@ -2,20 +2,16 @@ import Box from "@mui/material/Box";
 import { forwardRef } from "react";
 import { Virtuoso } from "react-virtuoso";
 
+import { CHAT_COLUMN_MAX_WIDTH } from "./chatColumn";
 import EmptyPlaceholder from "./EmptyPlaceholder";
 
 import type { ChatMessage } from "@/components/ChatInterface";
 import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { ToolPanel } from "@/components/ToolsPanel";
 import type { ReactNode } from "react";
 import type { ContextProp, VirtuosoHandle } from "react-virtuoso";
 
 import ChatMessageBubble from "@/components/ChatMessageBubble";
-import ToolsPanel from "@/components/ToolsPanel";
-
-interface ToolPanel {
-    pretext: string;
-    tools: string[];
-}
 
 type VirtualItem =
     | { _kind: "above-messages" }
@@ -86,7 +82,7 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
         const virtuosoMinHeight = isMobile ? 200 : 300;
 
         const chatBubbleStyle = {
-            maxWidth: "840px",
+            maxWidth: CHAT_COLUMN_MAX_WIDTH,
             margin: "0 auto",
         };
 
@@ -144,7 +140,9 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                         );
                     }
 
-                    // Streaming item: tool panels + live assistant bubble
+                    // Streaming item: the live assistant bubble, which renders
+                    // this turn's tool panels inside itself so they share the
+                    // bubble's width and chrome.
                     const lastBlock =
                         item.blocks.length > 0
                             ? item.blocks[item.blocks.length - 1]
@@ -156,31 +154,6 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                 py: 1.5,
                             }}
                         >
-                            {item.toolPanels.length > 0 ? (
-                                <Box
-                                    sx={{
-                                        bgcolor: "grey.50",
-                                        p: 2,
-                                        mb: 1.5,
-                                    }}
-                                >
-                                    {item.toolPanels.map((panel, i) => (
-                                        <ToolsPanel
-                                            key={i}
-                                            pretext={panel.pretext}
-                                            tools={panel.tools}
-                                            isActive={false}
-                                        />
-                                    ))}
-                                    {item.blocks.length === 0 ? (
-                                        <ToolsPanel
-                                            pretext=""
-                                            tools={[]}
-                                            isActive
-                                        />
-                                    ) : null}
-                                </Box>
-                            ) : null}
                             <ChatMessageBubble
                                 role="assistant"
                                 content=""
@@ -189,6 +162,7 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                 blocks={
                                     item.blocks.length > 0 ? item.blocks : null
                                 }
+                                toolPanels={item.toolPanels}
                                 activeBlockType={lastBlock?.type ?? null}
                                 isAuthenticated={isAuthenticated}
                                 sx={chatBubbleStyle}

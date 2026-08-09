@@ -3,10 +3,21 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+
+/**
+ * One run of tool activity, built from a `tool_use_progress` frame.
+ *
+ * Host-only streaming state — the package contract has no tool events, so this
+ * shape lives with the component that renders it rather than in
+ * `@/types/code-talker`.
+ */
+export interface ToolPanel {
+    pretext: string;
+    tools: string[];
+}
 
 export interface ToolsPanelProps {
     pretext: string;
@@ -38,7 +49,12 @@ export default function ToolsPanel({
                         sx={{ p: 0.5 }}
                     >
                         <BuildIcon
-                            sx={{ fontSize: 16, color: "text.disabled" }}
+                            sx={{
+                                fontSize: 16,
+                                color: isActive
+                                    ? "warning.main"
+                                    : "text.disabled",
+                            }}
                         />
                     </IconButton>
                 </Tooltip>
@@ -136,14 +152,6 @@ export default function ToolsPanel({
                     ))}
                 </Box>
             </Box>
-
-            {isActive ? (
-                <LinearProgress
-                    color="warning"
-                    sx={{ height: 2 }}
-                    aria-label="Tools are running"
-                />
-            ) : null}
         </Box>
     );
 }

@@ -2,14 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatMessage, StreamEvent } from "@/components/ChatInterface";
 import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { ToolPanel } from "@/components/ToolsPanel";
 import type { ChatStreamErrorReason } from "@/types/code-talker";
 
 import { api } from "@/api";
-
-interface ToolPanel {
-    pretext: string;
-    tools: string[];
-}
 
 export interface UseChatStreamOptions {
     chatEndpoint: string;
