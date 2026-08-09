@@ -143,8 +143,7 @@ export default function useChatStream({
                 delta: string,
             ): void => {
                 const last = liveBlocks[liveBlocks.length - 1] as
-                    | MessageBlock
-                    | undefined;
+                    MessageBlock | undefined;
                 if (last?.type === type) {
                     liveBlocks = [
                         ...liveBlocks.slice(0, -1),

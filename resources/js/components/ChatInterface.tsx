@@ -85,9 +85,7 @@ export interface PageReloadEvent {
  * runtime, so a newer package stays forward-compatible.
  */
 export type StreamEvent =
-    | ChatStreamEvent
-    | ToolUseProgressEvent
-    | PageReloadEvent;
+    ChatStreamEvent | ToolUseProgressEvent | PageReloadEvent;
 
 export interface ChatInterfaceHandle {
     sendMessage: (messageOverride?: string) => Promise<void>;

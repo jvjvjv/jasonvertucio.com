@@ -242,14 +242,12 @@ export default function Index({
                                     const companyName =
                                         resume?.company_name ??
                                         (conv.context?.company_name as
-                                            | string
-                                            | undefined) ??
+                                            string | undefined) ??
                                         "—";
                                     const position =
                                         resume?.position ??
                                         (conv.context?.job_title as
-                                            | string
-                                            | undefined) ??
+                                            string | undefined) ??
                                         "";
                                     const displayStatus =
                                         resolveTargetedResumeDisplayStatus({

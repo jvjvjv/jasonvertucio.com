@@ -1,9 +1,7 @@
 import type { SxProps, SystemStyleObject, Theme } from "@mui/system";
 
 type SxItem<T extends object> =
-    | boolean
-    | SystemStyleObject<T>
-    | ((theme: T) => SystemStyleObject<T>);
+    boolean | SystemStyleObject<T> | ((theme: T) => SystemStyleObject<T>);
 
 const isSxArray = <T extends object>(
     value: SxProps<T>,
