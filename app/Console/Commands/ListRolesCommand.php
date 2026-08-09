@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ListRolesCommand extends Command
 {
@@ -20,25 +21,27 @@ class ListRolesCommand extends Command
             // Show user's roles
             try {
                 $user = User::with('roles')->where('email', $email)->firstOrFail();
-            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            } catch (ModelNotFoundException $e) {
                 $this->error("User with email '{$email}' not found.");
+
                 return 1;
             }
 
             $this->info("Roles for {$user->name} ({$email}):");
 
             if ($user->roles->isEmpty()) {
-                $this->warn("No roles assigned.");
+                $this->warn('No roles assigned.');
+
                 return 0;
             }
 
             $this->table(
                 ['Role', 'Guard', 'Permissions Count'],
-                $user->roles->map(function($role) {
+                $user->roles->map(function ($role) {
                     return [
                         $role->name,
                         $role->guard_name,
-                        $role->permissions->count()
+                        $role->permissions->count(),
                     ];
                 })
             );
@@ -51,19 +54,20 @@ class ListRolesCommand extends Command
 
         if ($roles->isEmpty()) {
             $this->warn('No roles defined.');
+
             return 0;
         }
 
-        $this->info("All System Roles:");
+        $this->info('All System Roles:');
 
         $this->table(
             ['Role', 'Guard', 'Permissions', 'Users'],
-            $roles->map(function($role) {
+            $roles->map(function ($role) {
                 return [
                     $role->name,
                     $role->guard_name,
                     $role->permissions->count(),
-                    $role->users()->count()
+                    $role->users()->count(),
                 ];
             })
         );

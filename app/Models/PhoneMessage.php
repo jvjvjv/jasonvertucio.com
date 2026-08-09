@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PhoneMessage extends Model
 {
     use HasFactory, SoftDeletes;
+
     protected $fillable = [
-        'message', 'sid', 'from_phone_id', 'to_phone_id'
+        'message', 'sid', 'from_phone_id', 'to_phone_id',
     ];
+
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 
     public function toNumber()

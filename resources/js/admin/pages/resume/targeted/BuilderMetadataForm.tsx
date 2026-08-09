@@ -10,16 +10,13 @@ import Typography from "@mui/material/Typography";
 import StatusHistoryList from "./StatusHistoryList";
 import StatusUpdateForm from "./StatusUpdateForm";
 
-import type {
-    Conversation,
-    CoverLetter,
-    StatusUpdate,
-    TargetedResume,
-} from "@/types";
+import type { UseStatusUpdatesResult } from "./useStatusUpdates";
+import type { Conversation, CoverLetter, TargetedResume } from "@/types";
 import type { InertiaFormProps } from "@inertiajs/react";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
 
 export interface MetadataFormData {
     title: string;
@@ -27,35 +24,23 @@ export interface MetadataFormData {
     job_title: string;
 }
 
-interface BuilderMetadataFormProps {
+/**
+ * Takes the whole `useStatusUpdates` bundle so the caller can spread it, plus
+ * the conversation metadata this form owns.
+ *
+ * `deleteStatusUpdate` is narrowed to a sync callback: the page wraps the
+ * hook's action in a confirmation dialog before it ever reaches this form.
+ */
+interface BuilderMetadataFormProps extends Omit<
+    UseStatusUpdatesResult,
+    "deleteStatusUpdate"
+> {
     conversation: Conversation;
     metadataForm: InertiaFormProps<MetadataFormData>;
     onMetadataSave: () => void;
     targetedResume: TargetedResume | null;
-    statusUpdates: StatusUpdate[];
-    allowedNextStatuses: string[];
-    selectedNextStatus: string;
-    statusOccurredAt: string;
-    statusNotes: string;
-    isSubmittingStatus: boolean;
-    showStatusUpdateForm: boolean;
-    editingStatusId: number | null;
-    editingStatusOccurredAt: string;
-    editingStatusNotes: string;
-    isSavingStatusEdit: boolean;
-    isDeletingStatusId: number | null;
     coverLetter: CoverLetter | null;
-    onShowStatusUpdateFormChange: (expanded: boolean) => void;
-    onSelectedNextStatusChange: (value: string) => void;
-    onStatusOccurredAtChange: (value: string) => void;
-    onStatusNotesChange: (value: string) => void;
-    onAddStatusUpdate: () => void;
-    onStartEditingStatus: (statusUpdate: StatusUpdate) => void;
-    onCancelEditingStatus: () => void;
-    onEditingStatusOccurredAtChange: (value: string) => void;
-    onEditingStatusNotesChange: (value: string) => void;
-    onSaveStatusEdit: (statusUpdateId: number) => void;
-    onDeleteStatusUpdate: (statusUpdateId: number) => void;
+    deleteStatusUpdate: (statusUpdateId: number) => void;
 }
 
 export default function BuilderMetadataForm({
@@ -76,18 +61,32 @@ export default function BuilderMetadataForm({
     isSavingStatusEdit,
     isDeletingStatusId,
     coverLetter,
-    onShowStatusUpdateFormChange,
-    onSelectedNextStatusChange,
-    onStatusOccurredAtChange,
-    onStatusNotesChange,
-    onAddStatusUpdate,
-    onStartEditingStatus,
-    onCancelEditingStatus,
-    onEditingStatusOccurredAtChange,
-    onEditingStatusNotesChange,
-    onSaveStatusEdit,
-    onDeleteStatusUpdate,
+    setShowStatusUpdateForm,
+    setSelectedNextStatus,
+    setStatusOccurredAt,
+    setStatusNotes,
+    addStatusUpdate,
+    startEditingStatus,
+    cancelEditingStatus,
+    setEditingStatusOccurredAt,
+    setEditingStatusNotes,
+    saveStatusEdit,
+    deleteStatusUpdate,
 }: BuilderMetadataFormProps) {
+    const latestStatusUpdate =
+        statusUpdates.length > 0
+            ? statusUpdates[statusUpdates.length - 1]
+            : null;
+
+    const displayStatus =
+        targetedResume != null
+            ? resolveTargetedResumeDisplayStatus({
+                  conversationStatus: targetedResume.status,
+                  resumeStatus: targetedResume.status,
+                  latestStatusOccurredAt: latestStatusUpdate?.occurred_at,
+              })
+            : "draft";
+
     return (
         <Card>
             <CardContent>
@@ -208,7 +207,7 @@ export default function BuilderMetadataForm({
                                 mb: 1,
                             }}
                         >
-                            <StatusChip status={targetedResume.status} />
+                            <StatusChip status={displayStatus} />
                             <Typography variant="body2">
                                 {targetedResume.company_name} —{" "}
                                 {targetedResume.position}
@@ -238,15 +237,13 @@ export default function BuilderMetadataForm({
                             isSavingStatusEdit={isSavingStatusEdit}
                             isDeletingStatusId={isDeletingStatusId}
                             onEditingStatusOccurredAtChange={
-                                onEditingStatusOccurredAtChange
+                                setEditingStatusOccurredAt
                             }
-                            onEditingStatusNotesChange={
-                                onEditingStatusNotesChange
-                            }
-                            onStartEditingStatus={onStartEditingStatus}
-                            onCancelEditingStatus={onCancelEditingStatus}
-                            onSaveStatusEdit={onSaveStatusEdit}
-                            onDeleteStatusUpdate={onDeleteStatusUpdate}
+                            onEditingStatusNotesChange={setEditingStatusNotes}
+                            onStartEditingStatus={startEditingStatus}
+                            onCancelEditingStatus={cancelEditingStatus}
+                            onSaveStatusEdit={saveStatusEdit}
+                            onDeleteStatusUpdate={deleteStatusUpdate}
                         />
 
                         <StatusUpdateForm
@@ -256,13 +253,11 @@ export default function BuilderMetadataForm({
                             statusNotes={statusNotes}
                             isSubmittingStatus={isSubmittingStatus}
                             showStatusUpdateForm={showStatusUpdateForm}
-                            onExpandedChange={onShowStatusUpdateFormChange}
-                            onSelectedNextStatusChange={
-                                onSelectedNextStatusChange
-                            }
-                            onStatusOccurredAtChange={onStatusOccurredAtChange}
-                            onStatusNotesChange={onStatusNotesChange}
-                            onSubmit={onAddStatusUpdate}
+                            onExpandedChange={setShowStatusUpdateForm}
+                            onSelectedNextStatusChange={setSelectedNextStatus}
+                            onStatusOccurredAtChange={setStatusOccurredAt}
+                            onStatusNotesChange={setStatusNotes}
+                            onSubmit={addStatusUpdate}
                         />
                     </Box>
                 )}

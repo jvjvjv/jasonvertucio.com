@@ -2,25 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
-
 use Canvas\Events\PostViewed;
 use Canvas\Models\Post;
 use Canvas\Models\Tag;
 use Canvas\Models\Topic;
+use Illuminate\Support\Facades\Auth;
 
 class BlogController extends Controller
 {
-
     public function index()
     {
         $list = Post::published()->orderBy('published_at', 'DESC')->get();
+
         return view('blog.list', [
             'list' => $list,
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
-                ['href' => '/blog/tags', 'label' => 'Tags']
+                ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
         ]);
     }
@@ -29,12 +28,11 @@ class BlogController extends Controller
     {
         return view('blog.topics', [
             'list' => Topic::with('user', 'posts')->get(),
-            'links' =>
-            [
+            'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
-                ['href' => '/blog/tags', 'label' => 'Tags']
-            ]
+                ['href' => '/blog/tags', 'label' => 'Tags'],
+            ],
         ]);
     }
 
@@ -42,24 +40,24 @@ class BlogController extends Controller
     {
         return view('blog.tags', [
             'list' => Tag::with('user', 'posts')->get(),
-            'links' =>
-            [
+            'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
-                ['href' => '/blog/tags', 'label' => 'Tags']
-            ]
+                ['href' => '/blog/tags', 'label' => 'Tags'],
+            ],
         ]);
     }
 
     public function topicList(string $slug)
     {
         $topic = Topic::with('posts')->where('slug', $slug)->firstOrFail();
+
         return view('blog.list', [
             'list' => $topic->posts->whereNotNull('published_at'),
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
-                ['href' => '/blog/tags', 'label' => 'Tags']
+                ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
         ]);
     }
@@ -67,12 +65,13 @@ class BlogController extends Controller
     public function tagList(string $slug)
     {
         $tag = Tag::with('posts')->where('slug', $slug)->firstOrFail();
+
         return view('blog.list', [
             'list' => $tag->posts->whereNotNull('published_at'),
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
-                ['href' => '/blog/tags', 'label' => 'Tags']
+                ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
         ]);
     }
@@ -89,7 +88,7 @@ class BlogController extends Controller
     public function post($slug)
     {
         $post = Post::with(['user', 'tags', 'topic'])->where('slug', $slug)->first();
-        if (!$post) {
+        if (! $post) {
             return $this->topicsOrTags($slug);
         }
         $auth = Auth::guard('canvas');
@@ -99,6 +98,7 @@ class BlogController extends Controller
             // If it's not the author, or if there IS no user
             event(new PostViewed($post));
         }
+
         return view('blog.single', [
             'post' => $post,
         ]);

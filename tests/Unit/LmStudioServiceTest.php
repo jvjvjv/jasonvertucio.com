@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use Jvjvjv\CodeTalker\Services\LmStudioService;
 use Illuminate\Support\Facades\Http;
+use Jvjvjv\CodeTalker\Services\LmStudioServerClient;
 use Tests\TestCase;
 
 class LmStudioServiceTest extends TestCase
@@ -21,12 +21,9 @@ class LmStudioServiceTest extends TestCase
             ]),
         ]);
 
-        $service = new LmStudioService(
-            serverUrl: 'http://localhost:1234',
-            contextLength: 16384,
-        );
+        $service = new LmStudioServerClient(serverUrl: 'http://localhost:1234');
 
-        $result = $service->loadModel('openai/gpt-oss-20b');
+        $result = $service->loadModel('openai/gpt-oss-20b', contextLength: 16384);
 
         Http::assertSent(function ($request): bool {
             return $request->url() === 'http://localhost:1234/api/v1/models/load'
@@ -39,7 +36,8 @@ class LmStudioServiceTest extends TestCase
         $this->assertSame(1.25, $result['load_time_seconds']);
     }
 
-    public function test_list_models_exposes_capability_metadata(): void {
+    public function test_list_models_exposes_capability_metadata(): void
+    {
         Http::fake([
             'http://localhost:1234/api/v1/models' => Http::response([
                 'models' => [
@@ -64,7 +62,7 @@ class LmStudioServiceTest extends TestCase
             ]),
         ]);
 
-        $service = new LmStudioService(serverUrl: 'http://localhost:1234');
+        $service = new LmStudioServerClient(serverUrl: 'http://localhost:1234');
 
         $models = $service->listModels();
 

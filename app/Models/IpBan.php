@@ -10,10 +10,11 @@ class IpBan extends Model
     use HasFactory;
 
     protected $table = 'ip_ban';
+
     protected $fillable = [
         'ip',
         'banned_method',
         'banned_url',
-        'banned_body'
+        'banned_body',
     ];
 }

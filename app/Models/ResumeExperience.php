@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SalaryPeriod;
+use Database\Factories\ResumeExperienceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ResumeExperience extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResumeExperienceFactory> */
+    /** @use HasFactory<ResumeExperienceFactory> */
     use HasFactory;
 
     protected $fillable = [

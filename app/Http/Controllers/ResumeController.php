@@ -12,14 +12,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ResumeController extends Controller
 {
     public function __construct(
         protected ResumeDataServiceContract $resumeData,
         protected ResumeVersionServiceContract $versionService,
-    ) {
-    }
+    ) {}
 
     /**
      * GET /resume/enter-code
@@ -82,11 +82,12 @@ class ResumeController extends Controller
 
     /**
      * Validate user has permission to download resume
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     *
+     * @throws HttpException
      */
     private function validateDownloadPermission(Request $request): void
     {
-        if (!session('resume_share_code') && !$request->user()?->can('save-resume')) {
+        if (! session('resume_share_code') && ! $request->user()?->can('save-resume')) {
             if ($request->wantsJson()) {
                 response()->json([
                     'code' => 403,
@@ -101,7 +102,8 @@ class ResumeController extends Controller
 
     /**
      * Handle file not found scenario
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     *
+     * @throws HttpException
      */
     private function handleFileNotFound(Request $request): never
     {
@@ -137,6 +139,7 @@ class ResumeController extends Controller
     private function downloadFile(string $path, string $mimeType): BinaryFileResponse
     {
         $filename = basename($path);
+
         return response()->download($path, $filename, [
             'Content-Type' => $mimeType,
         ]);
@@ -151,8 +154,8 @@ class ResumeController extends Controller
         $this->validateDownloadPermission($request);
 
         return view('resume.download.index', [
-            'docx_exists' => !!$this->versionService->getLatestDocxPath(),
-            'pdf_exists' => !!$this->versionService->getLatestPdfPath(),
+            'docx_exists' => (bool) $this->versionService->getLatestDocxPath(),
+            'pdf_exists' => (bool) $this->versionService->getLatestPdfPath(),
         ]);
     }
 
@@ -165,7 +168,7 @@ class ResumeController extends Controller
         $this->validateDownloadPermission($request);
 
         $docxPath = $this->versionService->getLatestDocxPath();
-        if (!$docxPath) {
+        if (! $docxPath) {
             $this->handleFileNotFound($request);
         }
 
@@ -186,7 +189,7 @@ class ResumeController extends Controller
         $this->validateDownloadPermission($request);
 
         $pdfPath = $this->versionService->getLatestPdfPath();
-        if (!$pdfPath) {
+        if (! $pdfPath) {
             $this->handleFileNotFound($request);
         }
 

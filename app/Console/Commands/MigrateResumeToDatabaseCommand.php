@@ -21,14 +21,14 @@ class MigrateResumeToDatabaseCommand extends Command
 
     public function handle(): int
     {
-        if (!$this->option('force') && !$this->confirm('This will replace current resume data in the database. Continue?')) {
+        if (! $this->option('force') && ! $this->confirm('This will replace current resume data in the database. Continue?')) {
             $this->warn('Migration aborted.');
 
             return self::SUCCESS;
         }
 
         $payload = $this->buildPayload();
-        $version = now()->format('Y') . '.1.0';
+        $version = now()->format('Y').'.1.0';
 
         $this->resumeVersionService->setVersion($version);
         $this->resumeDataService->saveAllEditableData($payload);
@@ -69,7 +69,7 @@ class MigrateResumeToDatabaseCommand extends Command
 
         $experience = [];
         foreach (($config['experience'] ?? []) as $job) {
-            if (!is_array($job)) {
+            if (! is_array($job)) {
                 continue;
             }
 

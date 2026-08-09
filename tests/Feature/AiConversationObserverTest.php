@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Jobs\ProcessAiMemoryJob;
 use Jvjvjv\CodeTalker\Models\AiConversation;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class AiConversationObserverTest extends TestCase

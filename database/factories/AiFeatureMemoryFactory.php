@@ -2,14 +2,16 @@
 
 namespace Database\Factories;
 
-use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 
 /**
  * @extends Factory<AiFeatureMemory>
  */
 class AiFeatureMemoryFactory extends Factory
 {
+    protected $model = AiFeatureMemory::class;
+
     /**
      * Define the model's default state.
      *

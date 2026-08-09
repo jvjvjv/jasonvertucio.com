@@ -12,7 +12,7 @@ class StoreAiChatBotRequest extends BaseRequest
     public function rules(): array
     {
         return array_merge(parent::rules(), [
-            'allowed_roles'   => ['nullable', 'array'],
+            'allowed_roles' => ['nullable', 'array'],
             'allowed_roles.*' => ['string'],
         ]);
     }

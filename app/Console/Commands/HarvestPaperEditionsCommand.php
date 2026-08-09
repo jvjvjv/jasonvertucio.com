@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Paper;
-
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
 class HarvestPaperEditionsCommand extends Command
@@ -35,7 +34,7 @@ class HarvestPaperEditionsCommand extends Command
 
     public function getEdition(?string $id = null)
     {
-        $url = 'http://paper.li/~api/papers/' . env('PAPER_ID');
+        $url = 'http://paper.li/~api/papers/'.env('PAPER_ID');
         if ($id) {
             $url .= "?edition_id={$id}";
         }
@@ -44,15 +43,16 @@ class HarvestPaperEditionsCommand extends Command
             $response = Http::get($url);
             $paper = $response->json()['data'];
             $edition = Paper::where('edition_id', $paper['edition']['id'])->first();
-            if (!$edition) {
+            if (! $edition) {
                 $edition = Paper::create([
                     'edition_id' => $paper['edition']['id'],
                     'edition' => json_encode($paper['edition']),
-                    'published_at' => $paper['edition']['published_at']
+                    'published_at' => $paper['edition']['published_at'],
                 ]);
             }
             if ($paper['edition']['previous']) {
                 $this->info("Found previous edition {$paper['edition']['previous']}.");
+
                 return $paper['edition']['previous'];
             } else {
                 return null;
@@ -60,6 +60,7 @@ class HarvestPaperEditionsCommand extends Command
         } catch (\ErrorException $e) {
             $this->error($e->getMessage());
             $this->info("I think we're done here.");
+
             return null;
         }
     }
@@ -84,6 +85,7 @@ class HarvestPaperEditionsCommand extends Command
                 $edition_id = $this->getEdition($edition_id);
             }
         } while ($edition_id != null && ++$count < $limit);
+
         return 0;
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -26,6 +26,7 @@ class MakeUserCommand extends Command
         // Validate email doesn't exist
         if (User::where('email', $email)->exists()) {
             $this->error("User with email '{$email}' already exists.");
+
             return 1;
         }
 
@@ -40,6 +41,7 @@ class MakeUserCommand extends Command
             $passwordConfirm = $this->secret('Confirm password');
             if ($password !== $passwordConfirm) {
                 $this->error("Passwords don't match!");
+
                 return 1;
             }
         }
@@ -91,21 +93,21 @@ class MakeUserCommand extends Command
                 $user->assignRole($role);
                 $this->info("Role '{$roleName}' assigned.");
             } catch (\Exception $e) {
-                $this->error("Failed to assign role: " . $e->getMessage());
+                $this->error('Failed to assign role: '.$e->getMessage());
             }
         }
 
         // Summary
         $this->newLine();
-        $this->info("=== User Summary ===");
+        $this->info('=== User Summary ===');
         $this->line("Name: {$user->name}");
         $this->line("Email: {$user->email}");
         if ($generatedPassword) {
             $this->line("Password: {$password} (auto-generated)");
             $this->warn("Make sure to save this password - it won't be shown again!");
         }
-        $this->line("Email Verified: " . ($verified ? 'Yes' : 'No'));
-        $this->line("Roles: " . ($user->getRoleNames()->join(', ') ?: '<none>'));
+        $this->line('Email Verified: '.($verified ? 'Yes' : 'No'));
+        $this->line('Roles: '.($user->getRoleNames()->join(', ') ?: '<none>'));
 
         return 0;
     }

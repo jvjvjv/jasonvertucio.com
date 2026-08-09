@@ -29,10 +29,7 @@ export default function BotHeaderCard({
                     {name}
                 </Typography>
                 {description ? (
-                    <Typography
-                        sx={{ mt: 1, maxWidth: 840 }}
-                        color="text.secondary"
-                    >
+                    <Typography sx={{ mt: 1 }} color="text.secondary">
                         {description}
                     </Typography>
                 ) : null}

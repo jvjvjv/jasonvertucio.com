@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use BSPDX\Keystone\Contracts\HasPasskeys;
+use BSPDX\Keystone\Traits\HasKeystone;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use BSPDX\Keystone\Traits\HasKeystone;
-use BSPDX\Keystone\Contracts\HasPasskeys;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 
 class User extends Authenticatable implements HasPasskeys
 {
-    use HasFactory, HasUuids, Notifiable, HasKeystone;
+    use HasFactory, HasKeystone, HasUuids, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -63,17 +64,15 @@ class User extends Authenticatable implements HasPasskeys
     /**
      * Get the names of the roles assigned to the user.
      *
-     * @return \Illuminate\Support\Collection<int, string>
+     * @return Collection<int, string>
      */
-    public function getRoleNames(): \Illuminate\Support\Collection
+    public function getRoleNames(): Collection
     {
         return $this->roles->pluck('name');
     }
 
     /**
      * Canvas compatibility: Check if user is an Admin.
-     *
-     * @return bool
      */
     public function getIsAdminAttribute(): bool
     {
@@ -82,8 +81,6 @@ class User extends Authenticatable implements HasPasskeys
 
     /**
      * Canvas compatibility: Check if user is an Editor.
-     *
-     * @return bool
      */
     public function getIsEditorAttribute(): bool
     {
@@ -92,8 +89,6 @@ class User extends Authenticatable implements HasPasskeys
 
     /**
      * Canvas compatibility: Check if user is a Contributor.
-     *
-     * @return bool
      */
     public function getIsContributorAttribute(): bool
     {
@@ -102,18 +97,14 @@ class User extends Authenticatable implements HasPasskeys
 
     /**
      * Canvas compatibility: Return a default avatar.
-     *
-     * @return string
      */
     public function getDefaultAvatarAttribute(): string
     {
-        return 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($this->email ?? ''))) . '?d=mp';
+        return 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($this->email ?? ''))).'?d=mp';
     }
 
     /**
      * Canvas compatibility: Return a default locale.
-     *
-     * @return string
      */
     public function getDefaultLocaleAttribute(): string
     {

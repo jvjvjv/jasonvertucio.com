@@ -25,7 +25,7 @@ class DatabaseResumeDataServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DatabaseResumeDataService();
+        $this->service = new DatabaseResumeDataService;
     }
 
     public function test_get_all_editable_data_returns_empty_when_no_version(): void

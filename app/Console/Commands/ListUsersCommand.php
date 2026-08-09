@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Illuminate\Console\Command;
 
 class ListUsersCommand extends Command
 {
@@ -23,10 +23,11 @@ class ListUsersCommand extends Command
         if ($roleFilter) {
             // Validate role exists
             $roleExists = Role::where('name', $roleFilter)->exists();
-            if (!$roleExists) {
+            if (! $roleExists) {
                 $this->error("Role '{$roleFilter}' does not exist.");
                 $availableRoles = Role::pluck('name')->toArray();
-                $this->info("Available roles: " . implode(', ', $availableRoles));
+                $this->info('Available roles: '.implode(', ', $availableRoles));
+
                 return 1;
             }
             $query->role($roleFilter);
@@ -36,21 +37,23 @@ class ListUsersCommand extends Command
 
         if ($users->isEmpty()) {
             $this->warn('No users found.');
+
             return 0;
         }
 
         if ($format === 'json') {
-            $this->line(json_encode($users->map(function($user) {
+            $this->line(json_encode($users->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'roles' => $user->getRoleNames(),
-                    'email_verified' => !is_null($user->email_verified_at),
+                    'email_verified' => ! is_null($user->email_verified_at),
                     '2fa_enabled' => $user->hasTwoFactorEnabled(),
                     'passkeys' => $user->hasPasskeysRegistered(),
                 ];
             }), JSON_PRETTY_PRINT));
+
             return 0;
         }
 
@@ -70,7 +73,8 @@ class ListUsersCommand extends Command
             })
         );
 
-        $this->info("\nTotal users: " . $users->count());
+        $this->info("\nTotal users: ".$users->count());
+
         return 0;
     }
 }

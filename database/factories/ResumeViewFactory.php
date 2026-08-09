@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\ResumeView;
 use App\Models\ResumeShareCode;
+use App\Models\ResumeView;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ResumeViewFactory extends Factory

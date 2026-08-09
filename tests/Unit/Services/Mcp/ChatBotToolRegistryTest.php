@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class ChatBotToolRegistryTest extends TestCase
 {
-    public function testItRegistersEveryToolInTheMcpToolsDirectory(): void
+    public function test_it_registers_every_tool_in_the_mcp_tools_directory(): void
     {
         $conversation = new AiConversation([
             'user_id' => 123,
@@ -32,22 +32,22 @@ class ChatBotToolRegistryTest extends TestCase
         }
 
         // Known package tool must always be present
-        $this->assertContains('scan_memories', $registeredToolNames);
-        $this->assertContains('fetch_web_page', $registeredToolNames);
+        $this->assertContains('scan-memories', $registeredToolNames);
+        $this->assertContains('fetch-web-page', $registeredToolNames);
     }
 
-    public function testRegistryFiltersToAllowedToolsOnly(): void
+    public function test_registry_filters_to_allowed_tools_only(): void
     {
         $conversation = new AiConversation(['user_id' => null, 'context' => []]);
 
-        $registry = new ChatBotToolRegistry($conversation, ['scan_memories']);
+        $registry = new ChatBotToolRegistry($conversation, ['scan-memories']);
 
         $toolNames = array_column($registry->toApiTools(), 'name');
 
-        $this->assertSame(['scan_memories'], $toolNames);
+        $this->assertSame(['scan-memories'], $toolNames);
     }
 
-    public function testRegistryExposesNoToolsWhenAllowlistIsNull(): void
+    public function test_registry_exposes_no_tools_when_allowlist_is_null(): void
     {
         $registry = new ChatBotToolRegistry(
             new AiConversation(['user_id' => null, 'context' => []]),
@@ -57,7 +57,7 @@ class ChatBotToolRegistryTest extends TestCase
         $this->assertSame([], $registry->toApiTools());
     }
 
-    public function testItRegistersEveryTargetedResumeToolInItsDirectory(): void
+    public function test_it_registers_every_targeted_resume_tool_in_its_directory(): void
     {
         $resumeDataService = $this->createMock(ResumeDataServiceContract::class);
         $memoryService = $this->createMock(AiMemoryService::class);

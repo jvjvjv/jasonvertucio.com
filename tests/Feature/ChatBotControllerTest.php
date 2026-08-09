@@ -3,17 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\AiChatBot;
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use App\Models\User;
-use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
-use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
-use Mockery;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystoneRole as Role;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
+use Mockery;
 use Tests\TestCase;
 
 class ChatBotControllerTest extends TestCase
@@ -76,8 +77,8 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $olderConversationId = DB::table('ai_conversations')->insertGetId([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
-            'public_id' => (string) \Illuminate\Support\Str::ulid(),
+            'uuid' => (string) Str::uuid(),
+            'public_id' => (string) Str::ulid(),
             'user_id' => $user->id,
             'ai_system_id' => $privateAllowedBot->ai_system_id,
             'ai_chat_bot_id' => $privateAllowedBot->id,
@@ -90,8 +91,8 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $newerConversationId = DB::table('ai_conversations')->insertGetId([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
-            'public_id' => (string) \Illuminate\Support\Str::ulid(),
+            'uuid' => (string) Str::uuid(),
+            'public_id' => (string) Str::ulid(),
             'user_id' => $user->id,
             'ai_system_id' => $privateAllowedBot->ai_system_id,
             'ai_chat_bot_id' => $privateAllowedBot->id,
@@ -168,7 +169,7 @@ class ChatBotControllerTest extends TestCase
         $response = $this->get(route('chat-bots.statuses'));
 
         $response->assertOk();
-        $response->assertJsonPath('statuses.' . $publicBot->slug . '.state', 'loaded');
+        $response->assertJsonPath('statuses.'.$publicBot->slug.'.state', 'loaded');
     }
 
     public function test_guest_can_request_public_bot_status_endpoint(): void
@@ -200,74 +201,6 @@ class ChatBotControllerTest extends TestCase
 
         $readiness = Mockery::mock(AiModelReadinessService::class);
         $readiness->shouldReceive('warmUpChatBot')
-            ->once()
-            ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill') + [
-                'warmup_attempted' => true,
-            ]);
-
-        $this->app->instance(AiModelReadinessService::class, $readiness);
-
-        $response = $this->post(route('chat-bots.chat.warmup', $bot));
-
-        $response->assertOk();
-        $response->assertJsonPath('status.state', 'loaded');
-        $response->assertJsonPath('status.warmup_attempted', true);
-    }
-
-    public function test_chats_statuses_endpoint_returns_statuses_for_accessible_bots(): void
-    {
-        $publicBot = AiChatBot::factory()->create([
-            'name' => 'Public Bot',
-            'is_public' => true,
-        ]);
-
-        AiChatBot::factory()->create([
-            'name' => 'Private Bot',
-            'is_public' => false,
-        ]);
-
-        $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('statusForSystem')
-            ->once()
-            ->andReturnUsing(fn (): array => $this->loadedStatus('anthropic', 'claude-sonnet-4-6'));
-
-        $this->app->instance(AiModelReadinessService::class, $readiness);
-
-        $response = $this->get(route('chat-bots.statuses'));
-
-        $response->assertOk();
-        $response->assertJsonPath('statuses.' . $publicBot->slug . '.state', 'loaded');
-    }
-
-    public function test_guest_can_request_public_bot_status_endpoint(): void
-    {
-        $bot = AiChatBot::factory()->create([
-            'is_public' => true,
-            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
-        ]);
-
-        $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('statusForSystem')
-            ->once()
-            ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill'));
-
-        $this->app->instance(AiModelReadinessService::class, $readiness);
-
-        $response = $this->get(route('chat-bots.chat.status', $bot));
-
-        $response->assertOk();
-        $response->assertJsonPath('status.state', 'loaded');
-    }
-
-    public function test_guest_can_request_public_bot_warmup_endpoint(): void
-    {
-        $bot = AiChatBot::factory()->create([
-            'is_public' => true,
-            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
-        ]);
-
-        $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('warmUpSystem')
             ->once()
             ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill') + [
                 'warmup_attempted' => true,
@@ -382,9 +315,13 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertCookie('ai_chat_bot_conversations_' . $bot->id);
-        $this->assertEquals($conversation->public_id, session('ai_chat_bot_conversations_' . $bot->id . '.current'));
-        $this->assertCount(1, session('ai_chat_bot_conversations_' . $bot->id . '.history', []));
+
+        // Per-bot cookies were consolidated into one `ai_chat_bot_current`
+        // cookie to keep the request header from growing with each bot. The
+        // per-bot state itself still lives in the server-side session.
+        $response->assertCookie('ai_chat_bot_current', $conversation->public_id);
+        $this->assertEquals($conversation->public_id, session('ai_chat_bot_conversations_'.$bot->id.'.current'));
+        $this->assertCount(1, session('ai_chat_bot_conversations_'.$bot->id.'.history', []));
     }
 
     public function test_switch_endpoint_sets_current_conversation_from_session_history(): void
@@ -410,7 +347,7 @@ class ChatBotControllerTest extends TestCase
 
         $response = $this
             ->withSession([
-                'ai_chat_bot_conversations_' . $bot->id => [
+                'ai_chat_bot_conversations_'.$bot->id => [
                     'current' => $firstConversation->public_id,
                     'history' => [
                         ['handle' => 'first-chat', 'public_id' => $firstConversation->public_id],
@@ -423,7 +360,7 @@ class ChatBotControllerTest extends TestCase
             ]);
 
         $response->assertRedirect(route('chat-bots.root.show', $bot));
-        $this->assertEquals($secondConversation->public_id, session('ai_chat_bot_conversations_' . $bot->id . '.current'));
+        $this->assertEquals($secondConversation->public_id, session('ai_chat_bot_conversations_'.$bot->id.'.current'));
     }
 
     public function test_new_chat_preserves_history_but_clears_current_conversation(): void
@@ -442,7 +379,7 @@ class ChatBotControllerTest extends TestCase
 
         $response = $this
             ->withSession([
-                'ai_chat_bot_conversations_' . $bot->id => [
+                'ai_chat_bot_conversations_'.$bot->id => [
                     'current' => $conversation->public_id,
                     'history' => [
                         ['handle' => 'chat-one', 'public_id' => $conversation->public_id],
@@ -452,8 +389,8 @@ class ChatBotControllerTest extends TestCase
             ->post(route('chat-bots.root.reset', $bot));
 
         $response->assertRedirect(route('chat-bots.root.show', $bot));
-        $this->assertNull(session('ai_chat_bot_conversations_' . $bot->id . '.current'));
-        $this->assertCount(1, session('ai_chat_bot_conversations_' . $bot->id . '.history', []));
+        $this->assertNull(session('ai_chat_bot_conversations_'.$bot->id.'.current'));
+        $this->assertCount(1, session('ai_chat_bot_conversations_'.$bot->id.'.history', []));
     }
 
     private function fakeStream(): Generator

@@ -5,6 +5,10 @@ import { createRoot } from "react-dom/client";
 
 import { theme } from "./theme";
 
+import { followNonInertiaResponses } from "@/utils/nonInertiaNavigation";
+
+followNonInertiaResponses();
+
 void createInertiaApp({
     title: (title) => {
         if (!title) {

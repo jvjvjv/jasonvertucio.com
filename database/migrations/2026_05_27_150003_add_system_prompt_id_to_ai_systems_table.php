@@ -24,7 +24,7 @@ return new class extends Migration
             ->orderBy('id')
             ->each(function ($system) {
                 $promptId = DB::table('ai_system_prompts')->insertGetId([
-                    'title' => mb_substr($system->name . ' Custom Prompt', 0, 64),
+                    'title' => mb_substr($system->name.' Custom Prompt', 0, 64),
                     'description' => 'Custom prompt migrated from AI system.',
                     'content' => $system->system_prompt,
                     'created_at' => now(),
@@ -64,7 +64,7 @@ return new class extends Migration
                             $parts[] = $prompt;
                         }
                     }
-                    if (!empty($parts)) {
+                    if (! empty($parts)) {
                         DB::table('ai_systems')
                             ->where('id', $system->id)
                             ->update(['system_prompt' => implode("\n\n---\n\n", $parts)]);

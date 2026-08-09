@@ -1,10 +1,11 @@
 <?php
 
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
+use BSPDX\Keystone\Services\PermissionRegistrar;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
-use BSPDX\Keystone\Models\KeystoneRole as Role;
 
 return new class extends Migration
 {
@@ -14,7 +15,7 @@ return new class extends Migration
     public function up(): void
     {
         // Reset cached permissions
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Create the manage-unauthenticated-viewers permission
         Permission::firstOrCreate(['name' => 'manage-unauthenticated-viewers', 'guard_name' => 'web']);
@@ -59,7 +60,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Schema::dropIfExists('resume_views');
         Schema::dropIfExists('resume_share_codes');

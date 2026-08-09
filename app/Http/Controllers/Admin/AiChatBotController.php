@@ -2,23 +2,32 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Requests\Admin\StoreAiChatBotRequest;
-use App\Http\Requests\Admin\UpdateAiChatBotRequest;
+use App\Concerns\ProvidesAdminNavigation;
 use App\Models\AiChatBot;
-use App\Models\AiConversation;
-use App\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\Mcp\ChatBotToolRegistry;
 use BSPDX\Keystone\Models\KeystoneRole;
-
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController as BaseAiChatBotController;
+use Jvjvjv\CodeTalker\Http\Requests\Admin\StoreAiChatBotRequest as BaseStoreAiChatBotRequest;
+use Jvjvjv\CodeTalker\Http\Requests\Admin\UpdateAiChatBotRequest as BaseUpdateAiChatBotRequest;
+use Jvjvjv\CodeTalker\Models\AiChatBot as BaseAiChatBot;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
-class AiChatBotController extends BaseAdminController
+/**
+ * Extends the package controller, overriding only what the host adds on top:
+ * admin nav blocks, Keystone role selection, and the `allowed_roles` field.
+ *
+ * `destroy()` and `mcpTools()` are inherited unchanged. Every other method is
+ * overridden because it touches `allowed_roles`, which exists only on the
+ * host's AiChatBot model and form requests — inheriting them would silently
+ * drop the field on write and omit it on read.
+ */
+class AiChatBotController extends BaseAiChatBotController
 {
+    use ProvidesAdminNavigation;
+
     /**
      * Display a list of AI chat bots.
      */
@@ -72,14 +81,14 @@ class AiChatBotController extends BaseAdminController
     {
         return Inertia::render('ai/bots/Create', [
             'systems' => $this->systems(),
-            'roles'   => $this->roles(),
+            'roles' => $this->roles(),
         ]);
     }
 
     /**
      * Store a newly created bot.
      */
-    public function store(StoreAiChatBotRequest $request): RedirectResponse
+    public function store(BaseStoreAiChatBotRequest $request): RedirectResponse
     {
         $bot = AiChatBot::create($request->validated());
 
@@ -90,129 +99,26 @@ class AiChatBotController extends BaseAdminController
     /**
      * Show the form for editing a bot.
      */
-    public function edit(AiChatBot $aiChatBot): InertiaResponse
+    public function edit(BaseAiChatBot $aiChatBot): InertiaResponse
     {
         $aiChatBot->loadCount('conversations');
 
         return Inertia::render('ai/bots/Edit', [
-            'bot'     => $aiChatBot,
+            'bot' => $aiChatBot,
             'systems' => $this->systems(),
-            'roles'   => $this->roles(),
-        ]);
-    }
-
-    /**
-     * Return the currently available MCP tools for admin UI display.
-     */
-    public function mcpTools(
-        Request $request,
-        AiMemoryService $memoryService,
-    ): JsonResponse {
-        $request->validate([
-            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
-            'include_all' => ['nullable', 'boolean'],
-        ]);
-
-        $conversation = new AiConversation([
-            'user_id' => $request->user()?->getKey(),
-            'context' => [],
-        ]);
-
-        $allowedTools = null;
-        $includeAllTools = $request->boolean('include_all');
-
-        if (!$includeAllTools && $request->filled('ai_system_id')) {
-            $allowedTools = AiSystem::query()
-                ->whereKey($request->integer('ai_system_id'))
-                ->value('allowed_tools');
-        }
-
-        $registry = new ChatBotToolRegistry(
-            $conversation,
-            $allowedTools,
-            $includeAllTools,
-        );
-
-        return response()->json([
-            'tools' => array_map(
-                static fn (array $tool): array => [
-                    'name' => $tool['name'],
-                    'description' => $tool['description'],
-                ],
-                $registry->toApiTools(),
-            ),
-        ]);
-    }
-
-    /**
-     * Return the currently available MCP tools for admin UI display.
-     */
-    public function mcpTools(
-        Request $request,
-        ResumeDataServiceContract $resumeDataService,
-        AiMemoryService $memoryService,
-        TargetedResumeService $targetedResumeService,
-    ): JsonResponse {
-        $request->validate([
-            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
-            'include_all' => ['nullable', 'boolean'],
-        ]);
-
-        $conversation = new AiConversation([
-            'user_id' => $request->user()?->getKey(),
-            'context' => [],
-        ]);
-
-        $allowedTools = null;
-        $includeAllTools = $request->boolean('include_all');
-
-        if (!$includeAllTools && $request->filled('ai_system_id')) {
-            $allowedTools = AiSystem::query()
-                ->whereKey($request->integer('ai_system_id'))
-                ->value('allowed_tools');
-        }
-
-        $registry = new ChatBotToolRegistry(
-            $conversation,
-            $resumeDataService,
-            $memoryService,
-            $targetedResumeService,
-            $allowedTools,
-            $includeAllTools,
-        );
-
-        return response()->json([
-            'tools' => array_map(
-                static fn (array $tool): array => [
-                    'name' => $tool['name'],
-                    'description' => $tool['description'],
-                ],
-                $registry->toApiTools(),
-            ),
+            'roles' => $this->roles(),
         ]);
     }
 
     /**
      * Update the specified bot.
      */
-    public function update(UpdateAiChatBotRequest $request, AiChatBot $aiChatBot): RedirectResponse
+    public function update(BaseUpdateAiChatBotRequest $request, BaseAiChatBot $aiChatBot): RedirectResponse
     {
         $aiChatBot->update($request->validated());
 
         return redirect()->route('admin.ai.bots.index')
             ->with('success', "AI chat bot \"{$aiChatBot->name}\" updated successfully.");
-    }
-
-    /**
-     * Soft delete the specified bot.
-     */
-    public function destroy(AiChatBot $aiChatBot): RedirectResponse
-    {
-        $name = $aiChatBot->name;
-        $aiChatBot->delete();
-
-        return redirect()->route('admin.ai.bots.index')
-            ->with('success', "AI chat bot \"{$name}\" deleted successfully.");
     }
 
     /**
@@ -224,7 +130,10 @@ class AiChatBotController extends BaseAdminController
     }
 
     /**
-    * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
+     * Mirrors the package's private systems() helper, which subclasses cannot
+     * reach.
+     *
+     * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
      */
     private function systems(): array
     {
@@ -242,5 +151,4 @@ class AiChatBotController extends BaseAdminController
             ])
             ->all();
     }
-
 }

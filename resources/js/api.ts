@@ -7,6 +7,85 @@ export class ApiError extends Error {
     }
 }
 
+interface ApiErrorData {
+    message?: string;
+    errors?: { [key: string]: string[] };
+}
+
+/**
+ * Message for a non-`ApiError` rejection, i.e. the request never got a response.
+ */
+export function networkErrorMessage(error: unknown): string {
+    return (
+        "Network error: " +
+        (error instanceof Error ? error.message : "An error occurred")
+    );
+}
+
+/**
+ * Best available human-readable message for a failed request.
+ *
+ * For an `ApiError`, prefers the response `message`, then the first Laravel
+ * validation error, then `fallback`. Anything else (network failure, aborted
+ * request) yields `networkFallback`, which defaults to `fallback`.
+ *
+ * Use `apiErrorMessages` instead when the UI can display a list — it surfaces
+ * every validation error and prefers them over the generic `message`.
+ */
+export function apiErrorMessage(
+    error: unknown,
+    fallback: string,
+    networkFallback: string = fallback,
+): string {
+    if (!(error instanceof ApiError)) {
+        return networkFallback;
+    }
+
+    const data = error.data as ApiErrorData | null;
+    const firstValidationError = data?.errors
+        ? Object.values(data.errors)[0]?.[0]
+        : null;
+
+    return data?.message ?? firstValidationError ?? fallback;
+}
+
+/**
+ * Every human-readable message for a failed request, for UIs that render a list.
+ *
+ * For an `ApiError`, returns all Laravel validation errors flattened; if there
+ * are none, a single-item list holding the response `message` or `fallback`.
+ * Anything else yields `[networkFallback]`, which defaults to `[fallback]`.
+ */
+export function apiErrorMessages(
+    error: unknown,
+    fallback: string,
+    networkFallback: string = fallback,
+): string[] {
+    if (!(error instanceof ApiError)) {
+        return [networkFallback];
+    }
+
+    const data = error.data as ApiErrorData | null;
+    const validationErrors = Object.values(data?.errors ?? {}).flat();
+
+    if (validationErrors.length > 0) {
+        return validationErrors;
+    }
+
+    return [data?.message ?? fallback];
+}
+
+let onActivity: (() => void) | null = null;
+let onSessionExpired: (() => void) | null = null;
+
+function setSessionHandlers(handlers: {
+    onActivity?: () => void;
+    onSessionExpired?: () => void;
+}): void {
+    onActivity = handlers.onActivity ?? null;
+    onSessionExpired = handlers.onSessionExpired ?? null;
+}
+
 function csrfToken(): string {
     return (
         document
@@ -51,9 +130,12 @@ async function request<T>(
         signal,
     });
 
-    if (res.status === 419 && retry) {
-        await refreshCsrfToken();
-        return request<T>(method, url, body, signal, false);
+    if (res.status === 419) {
+        onSessionExpired?.();
+        if (retry) {
+            await refreshCsrfToken();
+            return request<T>(method, url, body, signal, false);
+        }
     }
 
     if (!res.ok) {
@@ -61,6 +143,7 @@ async function request<T>(
         throw new ApiError(res.status, data);
     }
 
+    onActivity?.();
     return res.json() as Promise<T>;
 }
 
@@ -110,24 +193,30 @@ async function* stream(
     body?: unknown,
     onResponse?: (res: Response) => void,
     retry = true,
+    signal?: AbortSignal,
 ): AsyncGenerator<string> {
     const res = await fetch(url, {
         method: "POST",
         credentials: "same-origin",
         headers: baseHeaders({ "Content-Type": "application/json" }),
         body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal,
     });
 
-    if (res.status === 419 && retry) {
-        await refreshCsrfToken();
-        yield* stream(url, body, onResponse, false);
-        return;
+    if (res.status === 419) {
+        onSessionExpired?.();
+        if (retry) {
+            await refreshCsrfToken();
+            yield* stream(url, body, onResponse, false, signal);
+            return;
+        }
     }
 
     if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
+    onActivity?.();
     onResponse?.(res);
 
     if (!res.body) {
@@ -156,4 +245,12 @@ async function* stream(
     }
 }
 
-export const api = { get, post, put, del, upload, stream };
+export const api = {
+    get,
+    post,
+    put,
+    del,
+    upload,
+    stream,
+    setSessionHandlers,
+};

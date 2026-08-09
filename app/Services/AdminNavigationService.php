@@ -27,9 +27,18 @@ class AdminNavigationService
     }
 
     /**
+     * Whether the item points at a route outside the Inertia app and must be
+     * rendered as a plain anchor rather than an Inertia link.
+     */
+    private function isExternal(array $item): bool
+    {
+        return $item['external'] ?? false;
+    }
+
+    /**
      * Return filtered navigation blocks for the given admin route.
      *
-     * @return array<int, array{href: string, icon: string, label: string, description: string}>
+     * @return array<int, array{href: string, icon: string, label: string, description: string, external: bool}>
      */
     public function getNavBlocksForRoute(string $route, ?User $user): array
     {
@@ -44,10 +53,11 @@ class AdminNavigationService
         return array_values(
             array_map(
                 fn (array $item) => [
-                    'href'        => $item['href'],
-                    'icon'        => $item['icon'],
-                    'label'       => $item['label'],
+                    'href' => $item['href'],
+                    'icon' => $item['icon'],
+                    'label' => $item['label'],
                     'description' => $item['description'],
+                    'external' => $this->isExternal($item),
                 ],
                 array_filter(
                     $entry['navigationItems'],
@@ -60,7 +70,7 @@ class AdminNavigationService
     /**
      * Return AppBar navigation entries (with filtered children) for the given user.
      *
-     * @return array<int, array{href: string, label: string, children: array<int, array{href: string, label: string}>}>
+     * @return array<int, array{href: string, label: string, external: bool, children: array<int, array{href: string, label: string, external: bool}>}>
      */
     public function getAppBarItems(?User $user): array
     {
@@ -73,12 +83,14 @@ class AdminNavigationService
 
         return array_values(array_map(
             fn (array $entry) => [
-                'href'     => $entry['route'],
-                'label'    => $entry['name'],
+                'href' => $entry['route'],
+                'label' => $entry['name'],
+                'external' => $this->isExternal($entry),
                 'children' => array_values(array_map(
                     fn (array $item) => [
-                        'href'  => $item['href'],
+                        'href' => $item['href'],
                         'label' => $item['label'],
+                        'external' => $this->isExternal($item),
                     ],
                     array_filter(
                         $entry['navigationItems'],

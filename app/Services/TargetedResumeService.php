@@ -2,19 +2,8 @@
 
 namespace App\Services;
 
-use Jvjvjv\CodeTalker\Concerns\ExecutesAiTools;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
-use Jvjvjv\CodeTalker\Services\AiMemoryService;
-use Jvjvjv\CodeTalker\Services\ConversationUsageService;
 use App\Contracts\ResumeDataServiceContract;
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
-use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use App\Enums\TargetedResumeStatus;
-use Jvjvjv\CodeTalker\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiConversationMessage;
-use Jvjvjv\CodeTalker\Models\AiInteractionLog;
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
@@ -22,26 +11,49 @@ use App\Services\Mcp\TargetedResumeToolRegistry;
 use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Models\AiInteractionLog;
+use Jvjvjv\CodeTalker\Models\AiLlmMessage;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Models\AiSystemPrompt;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\StreamTranslator;
+use Laravel\Ai\Messages\AssistantMessage;
+use Laravel\Ai\Messages\UserMessage;
+use Laravel\Ai\Streaming\Events\StreamEnd;
+use Laravel\Ai\Streaming\Events\StreamEvent;
+use Laravel\Ai\Streaming\Events\ToolCall as ToolCallEvent;
 
 class TargetedResumeService
 {
-    use ExecutesAiTools;
+    /**
+     * Maximum number of max-token continuation round trips per turn.
+     */
+    private const int MAX_CONTINUATION_ATTEMPTS = 5;
 
     public const int PROMPT_ID_DEFAULT = 1;
+
     public const int PROMPT_ID_CREATIVE = 2;
+
     public const int PROMPT_ID_TECHNICAL = 3;
+
     public const int PROMPT_ID_TARGETED_RESUME = 4;
+
     public const int PROMPT_ID_COVER_LETTER = 5;
 
     public function __construct(
-        private AiClientFactory $clientFactory,
+        private AgentFactory $agentFactory,
         private ResumeDataServiceContract $resumeDataService,
-        private \App\Services\TargetedResumeDocumentService $documentService,
+        private TargetedResumeDocumentService $documentService,
         private CoverLetterDocumentService $coverLetterDocumentService,
         private AiMemoryService $memoryService,
         private ConversationUsageService $conversationUsageService,
-    ) {
-    }
+    ) {}
 
     /**
      * Start a new targeted resume conversation.
@@ -81,7 +93,7 @@ class TargetedResumeService
         if ($features->contains('cover-letter')) {
             $parts[] = AiSystemPrompt::find(self::PROMPT_ID_COVER_LETTER)?->content ?? $this->buildCoverLetterPortionPrompt();
         }
-        $systemPrompt = !empty($parts)
+        $systemPrompt = ! empty($parts)
             ? implode("\n\n---\n\n## Cover Letter Guidelines\n\n", $parts)
             : ($system->systemPrompt?->content ?? $this->buildSystemPrompt());
         AiConversationMessage::create([
@@ -98,6 +110,18 @@ class TargetedResumeService
         ]);
 
         return $conversation;
+    }
+
+    /**
+     * The turn number the next agent invocation should log under.
+     */
+    private function nextTurnNumberForConversation(AiConversation $conversation): int
+    {
+        $max = AiLlmMessage::query()
+            ->where('ai_conversation_id', $conversation->id)
+            ->max('turn_number');
+
+        return ($max === null || ! is_numeric($max)) ? 1 : (int) $max + 1;
     }
 
     /**
@@ -127,29 +151,62 @@ class TargetedResumeService
             ]);
         }
 
-        // Build messages array for the API (exclude system messages from the messages array)
-        $allMessages = $conversation->messages()->orderBy('created_at')->get();
+        // Build the laravel/ai message history. The system message becomes the
+        // agent's instructions, and the trailing user message becomes the
+        // prompt rather than part of the history.
+        $allMessages = $conversation->messages()->orderBy('created_at')->orderBy('id')->get();
         $systemPrompt = null;
-        $apiMessages = [];
+        $history = [];
+        $prompt = '';
 
-        foreach ($allMessages as $msg) {
+        $conversationMessages = $allMessages->filter(function ($msg) use (&$systemPrompt): bool {
             if ($msg->role === 'system') {
                 $systemPrompt = $msg->content;
-            } else {
-                $apiMessages[] = [
-                    'role' => $msg->role,
-                    'content' => $msg->content,
-                ];
+
+                return false;
             }
+
+            return true;
+        })->values();
+
+        $reversedUserIndex = $conversationMessages
+            ->reverse()
+            ->values()
+            ->search(static fn ($msg): bool => $msg->role === 'user');
+        $lastUserIndex = $reversedUserIndex === false
+            ? null
+            : $conversationMessages->count() - 1 - $reversedUserIndex;
+
+        foreach ($conversationMessages as $index => $msg) {
+            $content = (string) $msg->content;
+
+            if ($index === $lastUserIndex) {
+                $prompt = $content;
+
+                continue;
+            }
+
+            if ($msg->role === 'assistant') {
+                if (trim($content) === '') {
+                    continue;
+                }
+
+                $history[] = new AssistantMessage($content);
+
+                continue;
+            }
+
+            $history[] = new UserMessage($content);
         }
 
-        $client = $this->clientFactory->forSystem($conversation->aiSystem);
-
-        if ($systemPrompt) {
-            $client->withSystem($systemPrompt);
-        }
-
-        $client->withMaxTokens($conversation->aiSystem->max_tokens);
+        Log::info('targeted-resume.continueConversation: agent selected', [
+            'conversation_id' => $conversation->id,
+            'ai_system_id' => $conversation->aiSystem->id,
+            'provider' => $conversation->aiSystem->provider,
+            'model' => $conversation->aiSystem->model,
+            'base_url' => $conversation->aiSystem->base_url,
+            'max_tokens' => $conversation->aiSystem->max_tokens,
+        ]);
 
         $toolRegistry = new TargetedResumeToolRegistry(
             $conversation,
@@ -159,16 +216,129 @@ class TargetedResumeService
         );
 
         $startTime = microtime(true);
-        $loopResult = null;
+        $baseTurnNumber = $this->nextTurnNumberForConversation($conversation);
 
         try {
-            yield from $this->runToolLoop($client, $apiMessages, $toolRegistry, maxIterations: 10, result: $loopResult, conversation: $conversation);
+            $agent = $this->agentFactory->forSystem(
+                $conversation->aiSystem,
+                instructions: $systemPrompt ?? '',
+                messages: $history,
+                tools: $toolRegistry->toLaravelAiTools(),
+                maxSteps: 10,
+            );
+
+            $translator = new StreamTranslator();
+            $textBlocks = [];
+            $reasoningBlocks = [];
+
+            for ($attempt = 0; $attempt < self::MAX_CONTINUATION_ATTEMPTS; $attempt++) {
+                $attemptTurnNumber = $attempt === 0
+                    ? (string) $baseTurnNumber
+                    : "{$baseTurnNumber}.{$attempt}";
+
+                $requestMessages = [];
+
+                foreach ($agent->messages() as $message) {
+                    $requestMessages[] = [
+                        'role' => $message->role->value,
+                        'content' => $message->content,
+                    ];
+                }
+
+                $requestMessages[] = ['role' => 'user', 'content' => $prompt];
+
+                $requestPayload = [
+                    'model' => $conversation->aiSystem->model,
+                    'max_tokens' => $conversation->aiSystem->max_tokens,
+                    'instructions' => $systemPrompt,
+                    'messages' => $requestMessages,
+                ];
+
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'request',
+                    'turn_number' => $attemptTurnNumber,
+                    'request_data' => $requestPayload,
+                    'created_at' => now(),
+                ]);
+
+                /** @var array<int, StreamEvent> $events */
+                $events = [];
+                $toolCalls = [];
+
+                foreach ($agent->stream($prompt) as $event) {
+                    $events[] = $event;
+
+                    if ($event instanceof ToolCallEvent) {
+                        $toolCalls[] = [
+                            'id' => $event->toolCall->id,
+                            'name' => $event->toolCall->name,
+                        ];
+
+                        // Mirrors the pre-0.6.0 loop so the builder panel can
+                        // show a tool activity indicator.
+                        yield 'data: '.json_encode([
+                            'type' => 'tool_use_progress',
+                            'text' => '',
+                            'tools' => [$event->toolCall->name],
+                        ])."\n\n";
+                    }
+
+                    foreach ($translator->translate($event) as $browserEvent) {
+                        if ($browserEvent['type'] === 'content_block_delta') {
+                            $textBlocks[] = $browserEvent['delta']['text'];
+                        } elseif ($browserEvent['type'] === 'reasoning_block_delta') {
+                            $reasoningBlocks[] = $browserEvent['delta']['reasoning'];
+                        }
+
+                        yield 'data: '.json_encode($browserEvent)."\n\n";
+                    }
+
+                    // Tool results are consumed inside the agent loop, so the
+                    // registry latches the reload request for us to drain here.
+                    if ($toolRegistry->consumePageReload()) {
+                        yield 'data: '.json_encode(['type' => 'page_reload'])."\n\n";
+                    }
+                }
+
+                $attemptUsage = StreamEnd::combineUsage($events);
+                AiLlmMessage::create([
+                    'ai_conversation_id' => $conversation->id,
+                    'direction' => 'response',
+                    'turn_number' => $attemptTurnNumber,
+                    'request_data' => $requestPayload,
+                    'response_data' => [
+                        'events' => array_map(
+                            static fn (StreamEvent $event): array => $event->toArray(),
+                            $events,
+                        ),
+                        'stop_reason' => $translator->stopReason(),
+                        'input_tokens' => $attemptUsage->promptTokens ?: null,
+                        'output_tokens' => $attemptUsage->completionTokens ?: null,
+                        'model' => $conversation->aiSystem->model,
+                        'tool_calls' => $toolCalls,
+                    ],
+                    'duration_ms' => (int) ((microtime(true) - $startTime) * 1000),
+                    'created_at' => now(),
+                ]);
+
+                if ($translator->lastReason() !== 'length') {
+                    break;
+                }
+
+                $agent->append(new UserMessage($prompt), new AssistantMessage(implode('', $textBlocks)));
+                $prompt = 'Continue.';
+            }
+
+            foreach ($translator->finish() as $browserEvent) {
+                yield 'data: '.json_encode($browserEvent)."\n\n";
+            }
 
             yield "data: [DONE]\n\n";
 
-            $fullResponse = $loopResult['text'] ?? '';
-            $inputTokens = $loopResult['inputTokens'] ?? null;
-            $outputTokens = $loopResult['outputTokens'] ?? null;
+            $fullResponse = implode('', $textBlocks);
+            $inputTokens = $translator->inputTokens() ?: null;
+            $outputTokens = $translator->outputTokens() ?: null;
 
             $pricingSnapshot = $this->conversationUsageService->pricingSnapshotForSystem(
                 $conversation->aiSystem,
@@ -207,6 +377,13 @@ class TargetedResumeService
 
             $this->conversationUsageService->syncConversation($conversation->fresh());
         } catch (\Exception $e) {
+            Log::error('targeted-resume.continueConversation: failed', [
+                'conversation_id' => $conversation->id,
+                'model' => $conversation->aiSystem->model,
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ]);
+
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
             AiInteractionLog::create([
@@ -220,7 +397,7 @@ class TargetedResumeService
                 'error_message' => $e->getMessage(),
             ]);
 
-            yield "data: " . json_encode(['type' => 'error', 'message' => $e->getMessage()]) . "\n\n";
+            yield 'data: '.json_encode(['type' => 'error', 'message' => $e->getMessage()])."\n\n";
         }
     }
 
@@ -232,6 +409,15 @@ class TargetedResumeService
         $context = $conversation->context ?? [];
         $parsedResume = $this->parseTailoredResumeContent($tailoredContent);
         $existingTargetedResume = $conversation->targetedResume;
+
+        Log::info('targeted-resume.saveTailoredResume: starting save', [
+            'conversation_id' => $conversation->id,
+            'existing_targeted_resume_id' => $existingTargetedResume?->id,
+            'existing_status' => $existingTargetedResume?->status?->value,
+            'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
+            'parsed_title' => $parsedResume['title'],
+            'markdown_length' => strlen($parsedResume['markdown']),
+        ]);
 
         $targetedResume = TargetedResume::updateOrCreate(
             ['ai_conversation_id' => $conversation->id],
@@ -256,28 +442,61 @@ class TargetedResumeService
             ]
         );
 
-        $docxResult = $this->documentService->generateDocx($targetedResume);
+        Log::info('targeted-resume.saveTailoredResume: resume persisted', [
+            'conversation_id' => $conversation->id,
+            'targeted_resume_id' => $targetedResume->id,
+            'was_recently_created' => $targetedResume->wasRecentlyCreated,
+            'status' => $targetedResume->status->value,
+        ]);
 
-        if (!$docxResult['success']) {
-            throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
+        try {
+            Log::debug('targeted-resume.saveTailoredResume: generating DOCX', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            $docxResult = $this->documentService->generateDocx($targetedResume);
+
+            if (! $docxResult['success']) {
+                throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
+            }
+
+            Log::debug('targeted-resume.saveTailoredResume: generating PDF', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            $pdfResult = $this->documentService->generatePdf($targetedResume);
+
+            if (! $pdfResult['success']) {
+                throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
+            }
+
+            $conversation->update(['status' => AiConversationStatus::Completed]);
+
+            Log::info('targeted-resume.saveTailoredResume: conversation completed', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+            ]);
+
+            return $targetedResume->fresh();
+        } catch (\Throwable $throwable) {
+            Log::error('targeted-resume.saveTailoredResume: failed', [
+                'conversation_id' => $conversation->id,
+                'targeted_resume_id' => $targetedResume->id,
+                'exception' => $throwable::class,
+                'message' => $throwable->getMessage(),
+            ]);
+
+            throw $throwable;
         }
-
-        $pdfResult = $this->documentService->generatePdf($targetedResume);
-
-        if (!$pdfResult['success']) {
-            throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
-        }
-
-        $conversation->update(['status' => AiConversationStatus::Completed]);
-
-
-        return $targetedResume->fresh();
     }
 
     /**
      * @return array{title: ?string, markdown: string}
      */
-    protected function parseTailoredResumeContent(string $tailoredContent): array {
+    protected function parseTailoredResumeContent(string $tailoredContent): array
+    {
         $normalizedContent = str_replace("\r\n", "\n", trim($tailoredContent));
         $title = null;
 
@@ -297,10 +516,11 @@ class TargetedResumeService
         ];
     }
 
-    protected function extractTitleFromSummary(string $tailoredContent): ?string {
+    protected function extractTitleFromSummary(string $tailoredContent): ?string
+    {
         $parts = preg_split('/^#\s+Summary\s*$/mi', $tailoredContent, 2);
 
-        if (!is_array($parts) || count($parts) < 2) {
+        if (! is_array($parts) || count($parts) < 2) {
             return null;
         }
 
@@ -341,7 +561,8 @@ class TargetedResumeService
         return null;
     }
 
-    protected function normalizeTailoredResumeTitle(?string $title): ?string {
+    protected function normalizeTailoredResumeTitle(?string $title): ?string
+    {
         $normalizedTitle = trim((string) $title, " \t\n\r\0\x0B-:,");
 
         return $normalizedTitle !== '' ? $normalizedTitle : null;
@@ -354,7 +575,7 @@ class TargetedResumeService
     {
         $targetedResume = $conversation->targetedResume;
 
-        if (!$targetedResume) {
+        if (! $targetedResume) {
             throw new \RuntimeException('Please finalize the targeted resume before creating a cover letter.');
         }
 
@@ -379,12 +600,12 @@ class TargetedResumeService
         );
 
         $docxResult = $this->coverLetterDocumentService->generateDocx($coverLetter);
-        if (!$docxResult['success']) {
+        if (! $docxResult['success']) {
             throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the cover letter DOCX.');
         }
 
         $pdfResult = $this->coverLetterDocumentService->generatePdf($coverLetter);
-        if (!$pdfResult['success']) {
+        if (! $pdfResult['success']) {
             throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the cover letter PDF.');
         }
 
@@ -441,7 +662,7 @@ class TargetedResumeService
         $closing = 'Sincerely,';
 
         // Check first line for a greeting
-        if (!empty($lines) && preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $lines[0])) {
+        if (! empty($lines) && preg_match('/^(Dear\b|To Whom|Hello|Hi\b|Greetings)/i', $lines[0])) {
             $greeting = trim(array_shift($lines));
         }
 
@@ -470,7 +691,7 @@ class TargetedResumeService
      */
     public function buildSystemPrompt(): string
     {
-        return $this->buildResumePortionPrompt() . "\n\n---\n\n## Cover Letter Guidelines\n\n" . $this->buildCoverLetterPortionPrompt();
+        return $this->buildResumePortionPrompt()."\n\n---\n\n## Cover Letter Guidelines\n\n".$this->buildCoverLetterPortionPrompt();
     }
 
     /**
@@ -478,7 +699,7 @@ class TargetedResumeService
      */
     public function buildResumePortionPrompt(): string
     {
-        return <<<PROMPT
+        return <<<'PROMPT'
 # Targeted Resume & Cover Letter
 
 You are an expert career advisor, resume tailoring specialist, and cover letter ghostwriter for Jason Vertucio. You help candidates optimize their resumes for specific job postings and produce cover letters that sound like Jay wrote them himself — not like an AI filled in a template. Your main job is to get the resume past automated ATS.
@@ -487,20 +708,20 @@ You are an expert career advisor, resume tailoring specialist, and cover letter 
 
 Use these tools to load data and take actions at the appropriate steps:
 
-- `get_resume_data` — Call this first to load the candidate's full resume data (experience, skills, salary history, education, projects).
-- `get_job_description` — Call this to access the full job posting text and any known title or company name.
-- `get_resume_memories` — Call this to load learned preferences and insights from previous sessions.
-- `update_fit_assessment` — Call this after Step 4 to persist the fit score, fit summary, company name, and job title. Do NOT write "Fit Score: N" in your text response; use this tool instead so the data is saved.
-- `save_tailored_resume` — Call this when the user approves the tailored resume. It generates DOCX and PDF automatically.
-- `save_cover_letter` — Call this when the user approves the cover letter. It generates DOCX and PDF automatically.
-- `update_status` - Call this when the user reports a status change in their job application (e.g. "I applied", "I have an interview on June 12th", "I got rejected"). Accepts status (applied, interviewing, interviewed, offered, accepted, hired, rejected), an optional date, and optional notes. For `interviewing`, the date should be the scheduled interview date.
+- `get-resume-data` — Call this first to load the candidate's full resume data (experience, skills, salary history, education, projects).
+- `get-job-description` — Call this to access the full job posting text and any known title or company name.
+- `get-resume-memories` — Call this to load learned preferences and insights from previous sessions.
+- `update-fit-assessment` — Call this after Step 4 to persist the fit score, fit summary, company name, and job title. Do NOT write "Fit Score: N" in your text response; use this tool instead so the data is saved.
+- `save-tailored-resume` — Call this when the user approves the tailored resume. It generates DOCX and PDF automatically.
+- `save-cover-letter` — Call this when the user approves the cover letter. It generates DOCX and PDF automatically.
+- `update-status` - Call this when the user reports a status change in their job application (e.g. "I applied", "I have an interview on June 12th", "I got rejected"). Accepts status (applied, interviewing, interviewed, offered, accepted, hired, rejected), an optional date, and optional notes. For `interviewing`, the date should be the scheduled interview date.
 
 ## Your Role
 
 You will be given a job posting. Follow this multi-step process:
 
 ### Step 0: Load Context
-Before responding, call `get_resume_data`, `get_job_description`, and `get_resume_memories` to load everything you need.
+Before responding, call `get-resume-data`, `get-job-description`, and `get-resume-memories` to load everything you need.
 
 ### Step 1: Company Analysis
 Begin your first response with these lines when you can infer them from the job description:
@@ -519,7 +740,7 @@ When the position is remote, assess the candidate's eligibility based on their l
 Ask if there is any additional experience, skills, or accomplishments NOT in the resume that could strengthen the application. Wait for the candidate's response.
 
 ### Step 4: Fit Assessment
-Assess fit for the role. Call `update_fit_assessment` with the fit score (1-100), a brief fit summary, and the confirmed company name and job title. Then present the assessment to the user.
+Assess fit for the role. Call `update-fit-assessment` with the fit score (1-100), a brief fit summary, and the confirmed company name and job title. Then present the assessment to the user.
 
 If the job description includes a salary range, also provide:
 Salary Assessment: <Below Market|At Market|Above Market|Significant Increase> - <brief explanation comparing to the candidate's compensation history from the resume data>
@@ -574,7 +795,7 @@ When tailoring:
 - When a year is not defined for education, omit the year range entirely. For example: `### Institution`
 - Use Markdown only for new tailored resumes
 
-When the candidate approves the resume, call `save_tailored_resume` with the full markdown content.
+When the candidate approves the resume, call `save-tailored-resume` with the full markdown content.
 
 ### Step 6: Cover Letter & Application Assistance
 After providing the tailored resume, offer to write a cover letter for the position. If the candidate agrees, follow the Cover Letter guidelines below and generate a cover letter wrapped in a code block with the language tag `cover-letter`.
@@ -586,7 +807,7 @@ After providing the tailored resume, offer to write a cover letter for the posit
 
 Draft the cover letter, then ask for review and feedback. Iterate until approved. Do not defend choices — just revise.
 
-When the candidate approves the cover letter, call `save_cover_letter` with the full content.
+When the candidate approves the cover letter, call `save-cover-letter` with the full content.
 
 Also offer to help with any other application questions the candidate may encounter.
 
@@ -596,41 +817,6 @@ Also offer to help with any other application questions the candidate may encoun
 - When providing the tailored resume, wrap it in a code block with the language tag `tailored-resume`
 - When providing the cover letter, wrap it in a code block with the language tag `cover-letter`
 - Do NOT fabricate experience or qualifications
-
----
-
-## Cover Letter Guidelines
-
-### Voice & Tone
-
-- Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.
-- No corporate jargon. No filler. No padding.
-- Sentence fragments are fine when they create natural rhythm, the way a speaker pauses for emphasis.
-- Occasional personality is encouraged. Jay has a dry wit and a pragmatic worldview. Let that come through when appropriate.
-- Never sycophantic. Never desperate. The tone is: "I'm good at what I do, here's why I'd be good at what you do."
-
-### Structure
-
-- Three paragraphs preferred. Four if absolutely necessary. Never five.
-- No greeting beyond "Hi [name]" or "Hello [name]" when a name is available. No "Dear Hiring Manager" unless there is truly no alternative.
-- No "Sincerely" or "Best regards" closings. End with something human — a forward-looking statement, a direct ask, or a short closer that sounds like Jay.
-- The cover letter does NOT summarize the resume. It provides motivation, fit, and voice. If a bullet point on the resume already says it, the cover letter should not repeat it. It can reference the same work, but only to frame it differently — why it mattered, what it taught him, how it connects to the role.
-
-### What to Avoid
-
-- Em dashes where a comma would work. Absolutely no hyphens pretending to be em dashes.
-- The word "actually" used as a pivot ("It's not X, it's actually Y").
-- "I believe," "I am passionate about," "I am excited to," or any other filler openers that signal template usage.
-- Gerund-heavy constructions ("Leveraging my experience in..." / "Utilizing my skills to...").
-- Mirroring the job posting's language back verbatim. Paraphrase. Show understanding, not copy-paste.
-- Any phrase that reads like it came from a LinkedIn influencer post.
-- Over-qualifying or being apologetic about gaps. If React experience is 1 year vs. 6 years of Vue, frame it as pattern transfer and current production work, not as a weakness to explain away.
-
-### What to Include
-
-- A specific reason Jay wants THIS job at THIS company. Not generic "mission-driven" language — something concrete that connects his experience or values to the company's work.
-- One or two concrete examples from his career that demonstrate relevant capability. These should be framed as stories or outcomes, not resume bullets reworded into prose.
-- An honest self-assessment of fit. If the role stretches into areas where Jay has less depth, acknowledge it briefly and pivot to why that's manageable.
 PROMPT;
     }
 
@@ -639,7 +825,7 @@ PROMPT;
      */
     public function buildCoverLetterPortionPrompt(): string
     {
-        return <<<PROMPT
+        return <<<'PROMPT'
 ### Voice & Tone
 
 - Conversational, direct, confident. Write like someone talking to a hiring manager they respect but aren't intimidated by.
@@ -673,7 +859,8 @@ PROMPT;
 PROMPT;
     }
 
-    public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation {
+    public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation
+    {
         $context = $conversation->context ?? [];
 
         $title = trim((string) ($data['title'] ?? ''));
@@ -713,18 +900,19 @@ PROMPT;
         return $conversation->fresh(['targetedResume']);
     }
 
-    private function syncConversationMetadataFromAssistantResponse(AiConversation $conversation, string $response): void {
+    private function syncConversationMetadataFromAssistantResponse(AiConversation $conversation, string $response): void
+    {
         $context = $conversation->context ?? [];
         $updates = [];
 
-        if (!Arr::get($context, 'company_name_manual')) {
+        if (! Arr::get($context, 'company_name_manual')) {
             $companyName = $this->extractCompanyName($response);
             if ($companyName !== null) {
                 $updates['company_name'] = $companyName;
             }
         }
 
-        if (!Arr::get($context, 'job_title_manual')) {
+        if (! Arr::get($context, 'job_title_manual')) {
             $jobTitle = $this->extractJobTitle($response);
             if ($jobTitle !== null) {
                 $updates['job_title'] = $jobTitle;
@@ -747,7 +935,7 @@ PROMPT;
 
         $conversation->context = array_merge($context, $updates);
 
-        if (!Arr::get($context, 'title_manual')) {
+        if (! Arr::get($context, 'title_manual')) {
             $conversation->title = $this->buildConversationTitle(
                 $updates['company_name'] ?? ($context['company_name'] ?? null),
                 $updates['job_title'] ?? ($context['job_title'] ?? null),
@@ -757,7 +945,8 @@ PROMPT;
         $conversation->save();
     }
 
-    private function extractCompanyName(string $response): ?string {
+    private function extractCompanyName(string $response): ?string
+    {
         if (preg_match('/^Company:\s*(.+)$/im', $response, $matches) === 1) {
             return $this->cleanExtractedMetadata($matches[1]);
         }
@@ -765,7 +954,8 @@ PROMPT;
         return null;
     }
 
-    private function extractJobTitle(string $response): ?string {
+    private function extractJobTitle(string $response): ?string
+    {
         if (preg_match('/^(?:Job Title|Position|Role):\s*(.+)$/im', $response, $matches) === 1) {
             return $this->cleanExtractedMetadata($matches[1]);
         }
@@ -773,7 +963,8 @@ PROMPT;
         return null;
     }
 
-    private function extractFitScore(string $response): ?int {
+    private function extractFitScore(string $response): ?int
+    {
         if (preg_match('/(?:fit score|score)[:\s]*(\d{1,3})(?:\s*[\/%]|\s*out of\s*100)?/i', $response, $matches) !== 1) {
             return null;
         }
@@ -783,7 +974,8 @@ PROMPT;
         return $fitScore >= 1 && $fitScore <= 100 ? $fitScore : null;
     }
 
-    private function extractFitSummary(string $response): ?string {
+    private function extractFitSummary(string $response): ?string
+    {
         if (preg_match('/^Fit Summary:\s*(.+)$/im', $response, $matches) === 1) {
             return $this->cleanExtractedMetadata($matches[1]);
         }
@@ -791,13 +983,15 @@ PROMPT;
         return null;
     }
 
-    private function cleanExtractedMetadata(string $value): ?string {
+    private function cleanExtractedMetadata(string $value): ?string
+    {
         $cleaned = trim(preg_replace('/^[\-*#>\s`]+|[\s`]+$/', '', $value) ?? $value);
 
         return $cleaned !== '' ? $cleaned : null;
     }
 
-    private function buildConversationTitle(?string $companyName, ?string $jobTitle): string {
+    private function buildConversationTitle(?string $companyName, ?string $jobTitle): string
+    {
         if ($companyName && $jobTitle) {
             return "{$companyName} - {$jobTitle}";
         }
@@ -812,6 +1006,7 @@ PROMPT;
 
         return 'Targeted Resume';
     }
+
     /**
      * Build the initial user message that starts analysis with the job description.
      */

@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\ResumeTechnicalProfileCategory;
+use App\Models\ResumeTechnicalProfileSkill;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ResumeTechnicalProfileSkill>
+ * @extends Factory<ResumeTechnicalProfileSkill>
  */
 class ResumeTechnicalProfileSkillFactory extends Factory
 {

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\ResumeTechnicalProfileSkillFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ResumeTechnicalProfileSkill extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResumeTechnicalProfileSkillFactory> */
+    /** @use HasFactory<ResumeTechnicalProfileSkillFactory> */
     use HasFactory;
 
     protected $fillable = [

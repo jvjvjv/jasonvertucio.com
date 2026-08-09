@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use App\Enums\TargetedResumeApplicationStatus;
 use App\Enums\TargetedResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTargetedResumeRequest;
+use App\Http\Requests\UpdateTargetedResumeConversationRequest;
 use App\Models\AiConversation;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\CoverLetter;
 use App\Models\JobUrl;
 use App\Models\ResumeVersion;
@@ -19,16 +18,19 @@ use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TargetedResumeController extends Controller
 {
     public function __construct(
         private TargetedResumeService $targetedResumeService,
-    ) {
-    }
+    ) {}
 
     /**
      * List all targeted resumes with optional filters.
@@ -41,7 +43,7 @@ class TargetedResumeController extends Controller
         $search = $request->input('search', '');
 
         $query = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion', 'targetedResume.latestStatusUpdate'])
-            ->withCount(['messages' => fn($q) => $q->where('role', '!=', 'system')])
+            ->withCount(['messages' => fn ($q) => $q->where('role', '!=', 'system')])
             ->where('feature', 'targeted-resume');
 
         if (! empty($statuses)) {
@@ -50,10 +52,16 @@ class TargetedResumeController extends Controller
 
             $query->where(function ($q) use ($conversationStatuses, $resumeStatuses) {
                 if (! empty($conversationStatuses)) {
-                    $q->whereIn('status', $conversationStatuses);
+                    $q->where(function ($conversationQuery) use ($conversationStatuses) {
+                        $conversationQuery->whereIn('status', $conversationStatuses)
+                            ->where(function ($resumeScope) {
+                                $resumeScope->whereDoesntHave('targetedResume')
+                                    ->orWhereHas('targetedResume', fn ($resumeQuery) => $resumeQuery->where('status', TargetedResumeStatus::Draft->value));
+                            });
+                    });
                 }
                 if (! empty($resumeStatuses)) {
-                    $q->orWhereHas('targetedResume', fn($sub) => $sub->whereIn('status', $resumeStatuses));
+                    $q->orWhereHas('targetedResume', fn ($sub) => $sub->whereIn('status', $resumeStatuses));
                 }
             });
         }
@@ -61,16 +69,16 @@ class TargetedResumeController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('targetedResume', function ($sub) use ($search) {
-                    $sub->where('company_name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('position', 'LIKE', '%' . $search . '%');
+                    $sub->where('company_name', 'LIKE', '%'.$search.'%')
+                        ->orWhere('position', 'LIKE', '%'.$search.'%');
                 });
 
-                $q->orWhere('context->company_name', 'LIKE', '%' . $search . '%')
-                  ->orWhere('context->job_title', 'LIKE', '%' . $search . '%');
+                $q->orWhere('context->company_name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('context->job_title', 'LIKE', '%'.$search.'%');
 
                 $q->orWhereHas('messages', function ($sub) use ($search) {
                     $sub->where('role', '!=', 'system')
-                        ->where('content', 'LIKE', '%' . $search . '%');
+                        ->where('content', 'LIKE', '%'.$search.'%');
                 });
             });
         }
@@ -269,18 +277,26 @@ class TargetedResumeController extends Controller
             'message' => ['nullable', 'string'],
         ]);
 
+        Log::info('targeted-resume.chat: stream requested', [
+            'conversation_id' => $conversation->id,
+            'user_id' => auth()->id(),
+            'message_present' => $request->filled('message'),
+            'message_length' => strlen((string) $request->input('message', '')),
+        ]);
+
         // Re-activate conversations that were marked as passed
         if ($conversation->status === AiConversationStatus::Pass) {
             $conversation->update(['status' => AiConversationStatus::Active]);
         }
 
         return response()->stream(function () use ($request, $conversation) {
+            $streamStart = microtime(true);
             set_time_limit(0);
 
-            echo 'data: ' . json_encode([
+            echo 'data: '.json_encode([
                 'type' => 'status',
                 'message' => 'Preparing analysis...',
-            ]) . "\n\n";
+            ])."\n\n";
             if (ob_get_level() > 0) {
                 ob_flush();
             }
@@ -299,9 +315,18 @@ class TargetedResumeController extends Controller
                     }
                     flush();
                 }
+
+                Log::info('targeted-resume.chat: stream completed', [
+                    'conversation_id' => $conversation->id,
+                    'duration_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                ]);
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Targeted resume stream failed', ['error' => $e->getMessage()]);
-                echo 'data: ' . json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.']) . "\n\n";
+                Log::error('targeted-resume.chat: stream failed', [
+                    'conversation_id' => $conversation->id,
+                    'duration_ms' => (int) ((microtime(true) - $streamStart) * 1000),
+                    'error' => $e->getMessage(),
+                ]);
+                echo 'data: '.json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.'])."\n\n";
                 echo "data: [DONE]\n\n";
                 if (ob_get_level() > 0) {
                     ob_flush();
@@ -374,7 +399,8 @@ class TargetedResumeController extends Controller
         ]);
     }
 
-    public function updateMetadata(\App\Http\Requests\UpdateTargetedResumeConversationRequest $request, AiConversation $conversation): \Illuminate\Http\RedirectResponse {
+    public function updateMetadata(UpdateTargetedResumeConversationRequest $request, AiConversation $conversation): RedirectResponse
+    {
         $this->targetedResumeService->updateConversationMetadata($conversation, $request->validated());
 
         return redirect()
@@ -389,9 +415,9 @@ class TargetedResumeController extends Controller
     {
         $docxResult = $documentService->generateDocx($targetedResume);
 
-        if (!$docxResult['success']) {
+        if (! $docxResult['success']) {
             return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)
-                ->with('error', 'DOCX generation failed: ' . ($docxResult['error'] ?? 'Unknown error'));
+                ->with('error', 'DOCX generation failed: '.($docxResult['error'] ?? 'Unknown error'));
         }
 
         $pdfResult = $documentService->generatePdf($targetedResume);
@@ -407,7 +433,7 @@ class TargetedResumeController extends Controller
     /**
      * Download a targeted resume document.
      */
-    public function download(TargetedResume $targetedResume, string $format): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function download(TargetedResume $targetedResume, string $format): BinaryFileResponse
     {
         $path = match ($format) {
             'docx' => $targetedResume->docx_path,
@@ -415,11 +441,11 @@ class TargetedResumeController extends Controller
             default => abort(404),
         };
 
-        if (!$path || !file_exists($path)) {
+        if (! $path || ! file_exists($path)) {
             abort(404, 'Document not found. It may not have been generated yet.');
         }
 
-        $filename = $targetedResume->generateFilename() . '.' . $format;
+        $filename = $targetedResume->generateFilename().'.'.$format;
 
         return response()->download($path, $filename);
     }
@@ -441,7 +467,7 @@ class TargetedResumeController extends Controller
     public function addStatusUpdate(Request $request, AiConversation $conversation): JsonResponse
     {
         $request->validate([
-            'status' => ['required', 'string', 'in:' . implode(',', array_column(TargetedResumeApplicationStatus::cases(), 'value'))],
+            'status' => ['required', 'string', 'in:'.implode(',', array_column(TargetedResumeApplicationStatus::cases(), 'value'))],
             'notes' => ['nullable', 'string', 'max:1000'],
             'occurred_at' => ['nullable', 'date'],
         ]);
@@ -451,7 +477,7 @@ class TargetedResumeController extends Controller
         if (! $targetedResume) {
             $resumeVersionId = $conversation->context['resume_version_id'] ?? ResumeVersion::query()->orderByDesc('id')->value('id');
 
-            if (!$resumeVersionId) {
+            if (! $resumeVersionId) {
                 return response()->json(['message' => 'A resume version is required before logging an application status.'], 422);
             }
 
@@ -495,7 +521,8 @@ class TargetedResumeController extends Controller
     /**
      * Update notes/date for an existing application status history row.
      */
-    public function updateStatusUpdate(Request $request, AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse {
+    public function updateStatusUpdate(Request $request, AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse
+    {
         $request->validate([
             'notes' => ['nullable', 'string', 'max:1000'],
             'occurred_at' => ['required', 'date'],
@@ -503,7 +530,7 @@ class TargetedResumeController extends Controller
 
         $targetedResume = $conversation->targetedResume;
 
-        if (!$targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
+        if (! $targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
             return response()->json(['message' => 'Status update not found for this conversation.'], 404);
         }
 
@@ -520,10 +547,11 @@ class TargetedResumeController extends Controller
     /**
      * Delete an application status history row.
      */
-    public function deleteStatusUpdate(AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse {
+    public function deleteStatusUpdate(AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse
+    {
         $targetedResume = $conversation->targetedResume;
 
-        if (!$targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
+        if (! $targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
             return response()->json(['message' => 'Status update not found for this conversation.'], 404);
         }
 
@@ -555,10 +583,8 @@ class TargetedResumeController extends Controller
         ]);
     }
 
-    /**
-     * @return JsonResponse
-     */
-    private function statusUpdateResponse(TargetedResume $targetedResume, TargetedResumeApplicationStatus $status): JsonResponse {
+    private function statusUpdateResponse(TargetedResume $targetedResume, TargetedResumeApplicationStatus $status): JsonResponse
+    {
         return response()->json([
             'success' => true,
             'status' => $status->value,
@@ -570,8 +596,9 @@ class TargetedResumeController extends Controller
     /**
      * @return array<int, array{id: int, status: string, notes: string|null, occurred_at: string|null}>
      */
-    private function serializeStatusUpdates(TargetedResume $targetedResume): array {
-        return $targetedResume->statusUpdates->map(fn($u) => [
+    private function serializeStatusUpdates(TargetedResume $targetedResume): array
+    {
+        return $targetedResume->statusUpdates->map(fn ($u) => [
             'id' => $u->id,
             'status' => $u->status->value,
             'notes' => $u->notes,

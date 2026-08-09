@@ -65,7 +65,7 @@ class ResumeShareCode extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('expires_at')
-              ->orWhere('expires_at', '>=', now()->toDateString());
+                ->orWhere('expires_at', '>=', now()->toDateString());
         });
     }
 
@@ -98,7 +98,7 @@ class ResumeShareCode extends Model
      */
     public function isValid(): bool
     {
-        return !$this->trashed() && !$this->isExpired();
+        return ! $this->trashed() && ! $this->isExpired();
     }
 
     /**
@@ -133,7 +133,7 @@ class ResumeShareCode extends Model
             'name' => $name ?? '',
             'email' => $email,
             'expires_at' => $expiresAt,
-            'notify_on_update' => $notifyOnUpdate && !empty($email),
+            'notify_on_update' => $notifyOnUpdate && ! empty($email),
         ]);
     }
 }

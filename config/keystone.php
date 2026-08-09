@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+
 return [
 
     /*
@@ -25,7 +27,7 @@ return [
     */
 
     'user' => [
-        'model' => \App\Models\User::class,
+        'model' => User::class,
         'primary_key_type' => 'uuid',
         'table_name' => 'users',
     ],

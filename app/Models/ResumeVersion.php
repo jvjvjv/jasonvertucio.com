@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ResumeVersionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ResumeVersion extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResumeVersionFactory> */
+    /** @use HasFactory<ResumeVersionFactory> */
     use HasFactory;
 
     protected $fillable = [

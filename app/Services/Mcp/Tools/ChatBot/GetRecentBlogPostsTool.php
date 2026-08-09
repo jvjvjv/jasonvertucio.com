@@ -2,46 +2,40 @@
 
 namespace App\Services\Mcp\Tools\ChatBot;
 
-use Illuminate\Database\Eloquent\Builder;
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use Canvas\Models\Post;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\JsonSchema\Types\Type;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Tool;
 
-class GetRecentBlogPostsTool implements AiToolHandlerContract
+#[Name('get-recent-blog-posts')]
+#[Description('Load recent blog posts with titles, summaries, and URLs. Supports search by keyword in title, summary, or body.')]
+class GetRecentBlogPostsTool extends Tool
 {
-    public function name(): string
-    {
-        return 'get_recent_blog_posts';
-    }
-
-    public function description(): string
-    {
-        return 'Load recent blog posts with titles, summaries, and URLs. Supports search by keyword in title, summary, or body.';
-    }
-
-    public function schema(): array
+    /**
+     * @return array<string, Type>
+     */
+    public function schema(JsonSchema $schema): array
     {
         return [
-            'type' => 'object',
-            'properties' => [
-                'limit' => [
-                    'type' => 'integer',
-                    'minimum' => 1,
-                    'maximum' => 20,
-                    'description' => 'Number of posts to return (default 10)',
-                ],
-                'search' => [
-                    'type' => 'string',
-                    'description' => 'Optional search term to filter posts by title, summary, or body content.',
-                ],
-            ],
-            'required' => [],
+            'limit' => $schema->integer()
+                ->min(1)
+                ->max(20)
+                ->description('Number of posts to return (default 10)'),
+            'search' => $schema->string()
+                ->description('Optional search term to filter posts by title, summary, or body content.'),
         ];
     }
 
-    public function handle(array $input): array
+    public function handle(Request $request): Response|ResponseFactory
     {
-        $limit = min((int) ($input['limit'] ?? 10), 20);
-        $search = trim((string) ($input['search'] ?? ''));
+        $limit = min((int) ($request->get('limit') ?? 10), 20);
+        $search = trim((string) ($request->get('search') ?? ''));
 
         $posts = Post::published()
             ->with('topic')
@@ -59,21 +53,21 @@ class GetRecentBlogPostsTool implements AiToolHandlerContract
                     // Use full-text search for body (better performance on large text fields)
                     $query->orWhere(function ($q) use ($search) {
                         $q->from('canvas_posts');
-                        $q->whereRaw("MATCH(body) AGAINST(? IN NATURAL LANGUAGE MODE)", [$search]);
+                        $q->whereRaw('MATCH(body) AGAINST(? IN NATURAL LANGUAGE MODE)', [$search]);
                     });
                 }
             })
             ->get(['id', 'title', 'summary', 'slug', 'published_at']);
 
-        return [
+        return Response::structured([
             'posts' => $posts->map(static fn (Post $post): array => [
                 'title' => $post->title,
                 'summary' => $post->summary,
                 'slug' => $post->slug,
-                'url' => '/blog/' . $post->slug,
+                'url' => '/blog/'.$post->slug,
                 'published_at' => $post->published_at?->toDateString(),
                 'topic' => $post->topic->first()?->name,
             ])->values()->toArray(),
-        ];
+        ]);
     }
 }

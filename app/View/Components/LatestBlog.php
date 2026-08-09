@@ -2,10 +2,10 @@
 
 namespace App\View\Components;
 
-use Illuminate\View\Component;
+use Canvas\Models\Post;
 use Closure;
 use Illuminate\Contracts\View\View;
-use Canvas\Models\Post;
+use Illuminate\View\Component;
 
 class LatestBlog extends Component
 {
@@ -24,7 +24,7 @@ class LatestBlog extends Component
 
     public function shouldDisplay(): bool
     {
-        if (!$this->post) {
+        if (! $this->post) {
             return false;
         }
 

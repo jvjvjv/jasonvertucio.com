@@ -18,7 +18,7 @@ class DatabaseResumeVersionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DatabaseResumeVersionService(new DatabaseResumeDataService());
+        $this->service = new DatabaseResumeVersionService(new DatabaseResumeDataService);
     }
 
     public function test_get_current_version_returns_default_when_none_set(): void

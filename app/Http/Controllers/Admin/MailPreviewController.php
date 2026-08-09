@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\File;
-use ReflectionClass;
 use Illuminate\Mail\Mailable;
+use Illuminate\Support\Facades\File;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use ReflectionClass;
 
-class MailPreviewController {
-    public function index(): InertiaResponse {
+class MailPreviewController
+{
+    public function index(): InertiaResponse
+    {
         $mailables = $this->discoverMailables();
 
         return Inertia::render('mail-preview/Index', [
@@ -17,11 +19,12 @@ class MailPreviewController {
         ]);
     }
 
-    public function show($mailable): InertiaResponse {
+    public function show($mailable): InertiaResponse
+    {
         $mailables = $this->discoverMailables();
         $class = collect($mailables)->firstWhere('class', $mailable);
 
-        if (!$class) {
+        if (! $class) {
             abort(404, 'Mailable not found');
         }
 
@@ -42,11 +45,12 @@ class MailPreviewController {
         }
     }
 
-    public function preview($mailable) {
+    public function preview($mailable)
+    {
         $mailables = $this->discoverMailables();
         $class = collect($mailables)->firstWhere('class', $mailable);
 
-        if (!$class) {
+        if (! $class) {
             abort(404, 'Mailable not found');
         }
 
@@ -56,27 +60,28 @@ class MailPreviewController {
 
             return response($preview, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
         } catch (\Exception $e) {
-            return response('Error: ' . $e->getMessage(), 500);
+            return response('Error: '.$e->getMessage(), 500);
         }
     }
 
-    private function discoverMailables(): array {
+    private function discoverMailables(): array
+    {
         $mailPath = app_path('Mail');
         $mailables = [];
 
-        if (!File::exists($mailPath)) {
+        if (! File::exists($mailPath)) {
             return $mailables;
         }
 
         $files = File::allFiles($mailPath);
 
         foreach ($files as $file) {
-            $class = 'App\\Mail\\' . $file->getFilenameWithoutExtension();
+            $class = 'App\\Mail\\'.$file->getFilenameWithoutExtension();
 
             if (class_exists($class) && is_subclass_of($class, Mailable::class)) {
                 $reflection = new ReflectionClass($class);
 
-                if (!$reflection->isAbstract()) {
+                if (! $reflection->isAbstract()) {
                     $mailables[] = [
                         'name' => $file->getFilenameWithoutExtension(),
                         'class' => $class,
@@ -89,7 +94,8 @@ class MailPreviewController {
         return collect($mailables)->sortBy('name')->values()->all();
     }
 
-    private function instantiateMailable($class) {
+    private function instantiateMailable($class)
+    {
         // Check for preview() factory method first
         if (method_exists($class, 'preview')) {
             return $class::preview();
@@ -98,8 +104,8 @@ class MailPreviewController {
         $reflection = new ReflectionClass($class);
         $constructor = $reflection->getConstructor();
 
-        if (!$constructor || $constructor->getNumberOfRequiredParameters() === 0) {
-            return new $class();
+        if (! $constructor || $constructor->getNumberOfRequiredParameters() === 0) {
+            return new $class;
         }
 
         throw new \Exception("Mailable '{$class}' requires constructor parameters. Add a static preview() method to provide sample data.");

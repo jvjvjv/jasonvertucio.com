@@ -2,7 +2,6 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
@@ -32,7 +31,12 @@ export default function ReasoningPanel({
                         sx={{ p: 0.5 }}
                     >
                         <PsychologyIcon
-                            sx={{ fontSize: 16, color: "text.disabled" }}
+                            sx={{
+                                fontSize: 16,
+                                color: isActive
+                                    ? "primary.main"
+                                    : "text.disabled",
+                            }}
                         />
                     </IconButton>
                 </Tooltip>
@@ -120,12 +124,6 @@ export default function ReasoningPanel({
                     {content}
                 </Typography>
             </Box>
-            {isActive ? (
-                <LinearProgress
-                    sx={{ height: 2 }}
-                    aria-label="Model is thinking"
-                />
-            ) : null}
         </Box>
     );
 }

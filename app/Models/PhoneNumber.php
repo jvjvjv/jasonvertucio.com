@@ -11,6 +11,7 @@ class PhoneNumber extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = ['phone_number', 'active'];
+
     protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 
     protected $casts = [

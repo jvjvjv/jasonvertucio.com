@@ -14,6 +14,9 @@ export default defineConfig({
       protocol: 'ws',
       clientPort: 5173,
     },
+    watch: {
+      ignored: ['**/vendor/**', '**/storage/**', '**/.git/**'],
+    },
   },
     plugins: [
         laravel({

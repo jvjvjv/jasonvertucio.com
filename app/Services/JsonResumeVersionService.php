@@ -2,6 +2,4 @@
 
 namespace App\Services;
 
-class JsonResumeVersionService extends DatabaseResumeVersionService
-{
-}
+class JsonResumeVersionService extends DatabaseResumeVersionService {}

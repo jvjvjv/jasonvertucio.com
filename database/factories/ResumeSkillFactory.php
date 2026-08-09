@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\ResumeSkill;
 use App\Models\ResumeSkillCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ResumeSkill>
+ * @extends Factory<ResumeSkill>
  */
 class ResumeSkillFactory extends Factory
 {

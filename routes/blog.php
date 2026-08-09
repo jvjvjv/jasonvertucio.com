@@ -11,6 +11,5 @@ Route::group(['prefix' => 'blog'], function ($route) {
     $route->get('/topics/{slug}', [BlogController::class, 'topicList'])->name('topicList');
     $route->get('/tags/{slug}', [BlogController::class, 'tagList'])->name('tagList');
 
-    $route->get("/{slug}", [BlogController::class, 'post'])->name('post');
+    $route->get('/{slug}', [BlogController::class, 'post'])->name('post');
 });
-

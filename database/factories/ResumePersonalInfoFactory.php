@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\ResumePersonalInfo;
 use App\Models\ResumeVersion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ResumePersonalInfo>
+ * @extends Factory<ResumePersonalInfo>
  */
 class ResumePersonalInfoFactory extends Factory
 {

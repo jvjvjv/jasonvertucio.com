@@ -13,7 +13,9 @@ class CoverLetterDocumentService
     protected const NAMESPACE_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 
     protected string $templatePath;
+
     protected string $scriptPath;
+
     protected string $outputDir;
 
     public function __construct()
@@ -31,16 +33,16 @@ class CoverLetterDocumentService
     public function generateDocx(CoverLetter $coverLetter): array
     {
         $filename = $coverLetter->generateFilename();
-        $outputPath = $this->outputDir . '/' . $filename . '.docx';
-        $preparedTemplatePath = storage_path('app/temp/cover-letter-template-' . uniqid() . '.docx');
+        $outputPath = $this->outputDir.'/'.$filename.'.docx';
+        $preparedTemplatePath = storage_path('app/temp/cover-letter-template-'.uniqid().'.docx');
 
-        if (!file_exists($this->outputDir)) {
+        if (! file_exists($this->outputDir)) {
             mkdir($this->outputDir, 0755, true);
         }
 
-        $tempDataPath = storage_path('app/temp/cover-letter-data-' . uniqid() . '.json');
+        $tempDataPath = storage_path('app/temp/cover-letter-data-'.uniqid().'.json');
         $tempDir = dirname($tempDataPath);
-        if (!file_exists($tempDir)) {
+        if (! file_exists($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
@@ -61,19 +63,21 @@ class CoverLetterDocumentService
             $output = shell_exec($command);
             $result = json_decode($output, true);
 
-            if (!$result) {
+            if (! $result) {
                 Log::error('Cover letter DOCX generation failed: Invalid JSON output', [
                     'output' => $output,
                     'command' => $command,
                 ]);
+
                 return [
                     'success' => false,
-                    'error' => 'Invalid output from generator script: ' . $output,
+                    'error' => 'Invalid output from generator script: '.$output,
                 ];
             }
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 Log::error('Cover letter DOCX generation failed', $result);
+
                 return $result;
             }
 
@@ -98,13 +102,13 @@ class CoverLetterDocumentService
      * This normalizes supported placeholders back into single {token} runs so
      * docxtemplater can bind them correctly.
      *
-     * @param array<int, string> $supportedTokens
+     * @param  array<int, string>  $supportedTokens
      */
     protected function prepareTemplateForDocxtemplater(string $destinationPath, array $supportedTokens): void
     {
         copy($this->templatePath, $destinationPath);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($destinationPath) !== true) {
             return;
         }
@@ -112,6 +116,7 @@ class CoverLetterDocumentService
         $xml = $zip->getFromName('word/document.xml');
         if ($xml === false) {
             $zip->close();
+
             return;
         }
 
@@ -121,11 +126,11 @@ class CoverLetterDocumentService
     }
 
     /**
-     * @param array<int, string> $supportedTokens
+     * @param  array<int, string>  $supportedTokens
      */
     protected function normalizeSplitPlaceholders(string $xml, array $supportedTokens): string
     {
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         if (! $dom->loadXML($xml)) {
             return $xml;
         }
@@ -168,7 +173,7 @@ class CoverLetterDocumentService
                 continue;
             }
 
-            $nodes[$i]->nodeValue = '{' . $token . '}';
+            $nodes[$i]->nodeValue = '{'.$token.'}';
             for ($k = $i + 1; $k <= $endIndex; $k++) {
                 $nodes[$k]->nodeValue = '';
             }
@@ -186,7 +191,7 @@ class CoverLetterDocumentService
      */
     public function generatePdf(CoverLetter $coverLetter): array
     {
-        if (!$coverLetter->docxExists()) {
+        if (! $coverLetter->docxExists()) {
             return [
                 'success' => false,
                 'error' => 'DOCX file not found. Generate DOCX first.',
@@ -194,7 +199,7 @@ class CoverLetterDocumentService
         }
 
         $filename = $coverLetter->generateFilename();
-        $pdfPath = $this->outputDir . '/' . $filename . '.pdf';
+        $pdfPath = $this->outputDir.'/'.$filename.'.pdf';
 
         try {
             $command = sprintf(
@@ -214,11 +219,11 @@ class CoverLetterDocumentService
 
                 return [
                     'success' => false,
-                    'error' => 'LibreOffice conversion failed: ' . implode("\n", $output),
+                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
                 ];
             }
 
-            if (!file_exists($pdfPath)) {
+            if (! file_exists($pdfPath)) {
                 return [
                     'success' => false,
                     'error' => 'PDF file was not created.',

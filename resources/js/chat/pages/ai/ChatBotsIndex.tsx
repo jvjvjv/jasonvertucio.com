@@ -7,14 +7,11 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 
-import type { BotItem, ModelStatusItem } from "./types";
+import type { ModelStatusItem } from "./types";
+import type { ChatBotsIndexProps } from "@/types/code-talker";
 
 import { api } from "@/api";
 import ChatBotCard from "@/components/ChatBotCard";
-
-interface ChatBotsIndexProps {
-    bots: BotItem[];
-}
 
 interface SharedPageProps {
     [key: string]: unknown;

@@ -23,14 +23,14 @@ class StoreCoverLetterRequest extends FormRequest
     {
         return [
             'resume_version_id' => ['required', 'integer', 'exists:resume_versions,id'],
-            'company_name'    => ['required', 'string', 'max:255'],
-            'position'        => ['required', 'string', 'max:255'],
-            'date'            => ['required', 'date'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'position' => ['required', 'string', 'max:255'],
+            'date' => ['required', 'date'],
             'company_address' => ['nullable', 'string'],
-            'greeting'        => ['required', 'string', 'max:255'],
-            'message_body'    => ['required', 'string'],
-            'closing'         => ['nullable', 'string', 'max:255'],
-            'signature'       => ['nullable', 'string', 'max:255'],
+            'greeting' => ['required', 'string', 'max:255'],
+            'message_body' => ['required', 'string'],
+            'closing' => ['nullable', 'string', 'max:255'],
+            'signature' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

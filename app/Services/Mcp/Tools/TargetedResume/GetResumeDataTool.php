@@ -2,30 +2,41 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use Jvjvjv\CodeTalker\Contracts\Mcp\AiToolHandlerContract;
 use App\Contracts\ResumeDataServiceContract;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\JsonSchema\Types\Type;
+use Jvjvjv\CodeTalker\Support\ToolContext;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 
-class GetResumeDataTool implements AiToolHandlerContract
+#[Name('get-resume-data')]
+#[Description("Load the candidate's full resume data (experience, skills, education, projects) before tailoring.")]
+class GetResumeDataTool extends AuthorizedResumeTool
 {
-    public function __construct(private ResumeDataServiceContract $resumeDataService) {}
-
-    public function name(): string
-    {
-        return 'get_resume_data';
+    public function __construct(
+        ToolContext $context,
+        private ResumeDataServiceContract $resumeDataService,
+    ) {
+        parent::__construct($context);
     }
 
-    public function description(): string
+    /**
+     * @return array<string, Type>
+     */
+    public function schema(JsonSchema $schema): array
     {
-        return "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.";
+        return [];
     }
 
-    public function schema(): array
+    public function handle(Request $request): Response|ResponseFactory
     {
-        return ['type' => 'object', 'properties' => (object) [], 'required' => []];
-    }
+        if ($response = $this->guard()) {
+            return $response;
+        }
 
-    public function handle(array $input): array
-    {
-        return $this->resumeDataService->getAllEditableData();
+        return Response::structured($this->resumeDataService->getAllEditableData());
     }
 }

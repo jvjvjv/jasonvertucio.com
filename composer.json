@@ -41,6 +41,7 @@
   "require-dev": {
     "filp/whoops": "^2.18.4",
     "laravel/boost": "^2.3.1",
+    "laravel/pint": "^1.29",
     "mockery/mockery": "^1.6.12",
     "phpunit/phpunit": "^10.5.63"
   },
@@ -87,6 +88,8 @@
     "test": [
       "@php artisan config:clear --ansi",
       "@php vendor/bin/phpunit --columns max --testdox --color=always"
-    ]
+    ],
+    "format": "pint",
+    "format:test": "pint --test"
   }
 }

@@ -61,4 +61,17 @@ return [
 
     'download_expiration' => env('APP_DEBUG') ? 60 : 5,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ghosted Threshold
+    |--------------------------------------------------------------------------
+    |
+    | Number of days an application can sit in the "applied" state with no
+    | further status update before it is treated as "ghosted". This is a
+    | computed display status; it is never stored on the record.
+    |
+    */
+
+    'ghosted_after_days' => (int) env('RESUME_GHOSTED_AFTER_DAYS', 30),
+
 ];

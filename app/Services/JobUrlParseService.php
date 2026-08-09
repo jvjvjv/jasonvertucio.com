@@ -2,29 +2,32 @@
 
 namespace App\Services;
 
-use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Laravel\Ai\Messages\AssistantMessage;
+use Laravel\Ai\Messages\UserMessage;
+use Laravel\Ai\Responses\Data\FinishReason;
 use Symfony\Component\DomCrawler\Crawler;
 
-
-class JobUrlParseService {
+class JobUrlParseService
+{
     private const MAX_HTML_LENGTH = 100000;
 
     public function __construct(
-        private AiClientFactory $clientFactory,
-    ) {
-    }
+        private AgentFactory $agentFactory,
+    ) {}
 
     /**
-      * Parse a job URL and extract job information.
-      *
-      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
+     * Parse a job URL and extract job information.
+     *
+     * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
-    public function parseUrl(string $url, AiSystem $aiSystem): array {
+    public function parseUrl(string $url, AiSystem $aiSystem): array
+    {
         $domain = $this->extractDomain($url);
         $html = $this->fetchHtml($url);
 
@@ -51,9 +54,10 @@ class JobUrlParseService {
     /**
      * Extract job data using CSS selectors from an active parser.
      *
-        * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string}|null
+     * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string}|null
      */
-    private function extractWithSelectors(string $html, JobUrlParser $parser): ?array {
+    private function extractWithSelectors(string $html, JobUrlParser $parser): ?array
+    {
         $crawler = new Crawler($html);
 
         try {
@@ -91,14 +95,13 @@ class JobUrlParseService {
     }
 
     /**
-      * Use AI to extract job data from HTML.
-      *
-      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
+     * Use AI to extract job data from HTML.
+     *
+     * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
-    public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array {
+    public function extractWithAi(string $html, string $url, string $domain, AiSystem $aiSystem, ?string $feedback = null): array
+    {
         $cleanedHtml = $this->cleanHtml($html);
-
-        $client = $this->clientFactory->forSystem($aiSystem);
 
         $systemPrompt = $this->buildSystemPrompt();
 
@@ -108,30 +111,28 @@ class JobUrlParseService {
             $userContent .= "\n\n---\nIMPORTANT: This is a re-parse. The previous extraction was inaccurate.\nFeedback on what was wrong: {$feedback}\nPlease try again, taking this feedback into account.";
         }
 
-        $messages = [
-            ['role' => 'user', 'content' => $userContent],
-        ];
+        $agent = $this->agentFactory->forSystem(
+            $aiSystem,
+            instructions: $systemPrompt,
+            maxTokens: $aiSystem->context_length ?? $aiSystem->max_tokens,
+        );
 
         $accumulatedText = '';
+        $prompt = $userContent;
 
         for ($i = 0; $i < 5; $i++) {
-            $response = $client
-                ->withSystem($systemPrompt)
-                ->withMaxTokens($aiSystem->context_length ?? $aiSystem->max_tokens)
-                ->message($messages);
+            $response = $agent->prompt($prompt);
 
-            foreach ($response['content'] ?? [] as $block) {
-                if (($block['type'] ?? '') === 'text') {
-                    $accumulatedText .= $block['text'];
-                }
-            }
+            $accumulatedText .= $response->text;
 
-            if (($response['stop_reason'] ?? '') !== 'max_tokens' || $accumulatedText === '') {
+            $finishReason = $response->steps->last()?->finishReason;
+
+            if ($finishReason !== FinishReason::Length || $accumulatedText === '') {
                 break;
             }
 
-            $messages[] = ['role' => 'assistant', 'content' => $accumulatedText];
-            $messages[] = ['role' => 'user', 'content' => 'Continue.'];
+            $agent->append(new UserMessage($prompt), new AssistantMessage($accumulatedText));
+            $prompt = 'Continue.';
         }
 
         $parsed = $this->parseAiResponse(['content' => [['type' => 'text', 'text' => $accumulatedText]]]);
@@ -168,7 +169,8 @@ class JobUrlParseService {
     /**
      * Mark a parser as active and deactivate all other parsers for the same domain.
      */
-    public function confirmParser(JobUrlParser $parser): void {
+    public function confirmParser(JobUrlParser $parser): void
+    {
         JobUrlParser::query()
             ->where('domain', $parser->domain)
             ->where('id', '!=', $parser->id)
@@ -180,16 +182,18 @@ class JobUrlParseService {
     /**
      * Keep a parser as inactive.
      */
-    public function rejectParser(JobUrlParser $parser, ?string $feedback = null): void {
+    public function rejectParser(JobUrlParser $parser, ?string $feedback = null): void
+    {
         $parser->update(['status' => 'inactive']);
     }
 
     /**
-      * Re-parse using stored HTML with user feedback.
-      *
-      * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
+     * Re-parse using stored HTML with user feedback.
+     *
+     * @return array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string, job_url_id: string, parser_id: int, used_existing_parser: bool}
      */
-    public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array {
+    public function reparseWithFeedback(JobUrlParser $parser, string $feedback, AiSystem $aiSystem): array
+    {
         $html = $parser->html;
 
         if (empty($html)) {
@@ -205,9 +209,10 @@ class JobUrlParseService {
     /**
      * Store a parsed job URL record linked to its parser.
      *
-     * @param array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string} $extracted
+     * @param  array{job_title: string, company_name: string, job_location: string, job_description: string, reasoning: string}  $extracted
      */
-    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): JobUrl {
+    private function storeJobUrl(string $url, JobUrlParser $parser, array $extracted): JobUrl
+    {
         return JobUrl::create([
             'job_url_parser_id' => $parser->id,
             'url' => $url,
@@ -218,7 +223,8 @@ class JobUrlParseService {
     /**
      * Fetch HTML content from a URL.
      */
-    private function fetchHtml(string $url): string {
+    private function fetchHtml(string $url): string
+    {
         $response = Http::timeout(15)
             ->withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -231,7 +237,7 @@ class JobUrlParseService {
 
         $contentType = $response->header('Content-Type') ?? '';
 
-        if (!str_contains($contentType, 'text/html') && !str_contains($contentType, 'application/xhtml')) {
+        if (! str_contains($contentType, 'text/html') && ! str_contains($contentType, 'application/xhtml')) {
             throw new \RuntimeException('The URL did not return an HTML page.');
         }
 
@@ -247,7 +253,8 @@ class JobUrlParseService {
     /**
      * Extract the domain from a URL, stripping "www." prefix.
      */
-    public function extractDomain(string $url): string {
+    public function extractDomain(string $url): string
+    {
         $host = parse_url($url, PHP_URL_HOST) ?? '';
 
         return preg_replace('/^www\./', '', strtolower($host));
@@ -256,7 +263,8 @@ class JobUrlParseService {
     /**
      * Clean HTML by removing non-content elements and truncating.
      */
-    public function cleanHtml(string $html): string {
+    public function cleanHtml(string $html): string
+    {
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
         $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
         $html = preg_replace('/<svg\b[^>]*>.*?<\/svg>/is', '', $html);
@@ -275,7 +283,8 @@ class JobUrlParseService {
     /**
      * Build the system prompt for AI extraction.
      */
-    private function buildSystemPrompt(): string {
+    private function buildSystemPrompt(): string
+    {
         return <<<'PROMPT'
 You are a job posting parser. You will receive the HTML content of a job posting webpage.
 
@@ -309,10 +318,11 @@ PROMPT;
     /**
      * Convert HTML content to Markdown format.
      *
-     * @param string $html The HTML content to convert
+     * @param  string  $html  The HTML content to convert
      * @return string The converted Markdown content
      */
-    public static function htmlToMarkdown(string $html): string {
+    public static function htmlToMarkdown(string $html): string
+    {
         // Remove script and style tags
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
         $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
@@ -322,13 +332,13 @@ PROMPT;
 
         // Convert headings (h1-h6) to markdown headers
         for ($level = 6; $level >= 1; $level--) {
-            $pattern = '/<h' . $level . '[^>]*>(.*?)<\/h' . $level . '>/is';
-            $replacement = str_repeat('#', $level) . ' $1' . PHP_EOL . PHP_EOL;
+            $pattern = '/<h'.$level.'[^>]*>(.*?)<\/h'.$level.'>/is';
+            $replacement = str_repeat('#', $level).' $1'.PHP_EOL.PHP_EOL;
             $html = preg_replace($pattern, $replacement, $html);
         }
 
         // Convert paragraphs
-        $html = preg_replace('/<p[^>]*>(.*?)<\/p>/is', '$1' . PHP_EOL . PHP_EOL, $html);
+        $html = preg_replace('/<p[^>]*>(.*?)<\/p>/is', '$1'.PHP_EOL.PHP_EOL, $html);
 
         // Convert line breaks to newlines
         $html = preg_replace('/<br\s*\/?>/i', PHP_EOL, $html);
@@ -346,7 +356,7 @@ PROMPT;
         $html = preg_replace('/<ol[^>]*>/', "\n", $html);
 
         // Convert list items
-        $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', '- $1' . PHP_EOL, $html);
+        $html = preg_replace('/<li[^>]*>(.*?)<\/li>/is', '- $1'.PHP_EOL, $html);
 
         // Convert anchors but keep the URL in parentheses
         $html = preg_replace('/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/is', '$2 ($1)', $html);
@@ -365,7 +375,8 @@ PROMPT;
      *
      * @return array<string, string>
      */
-    private function parseAiResponse(array $response): array {
+    private function parseAiResponse(array $response): array
+    {
         $text = '';
 
         foreach ($response['content'] ?? [] as $block) {
@@ -376,7 +387,7 @@ PROMPT;
 
         $parsed = json_decode($text, true);
 
-        Log::debug('AI response text: ' . $text);
+        Log::debug('AI response text: '.$text);
 
         if ($parsed !== null) {
             return $parsed;

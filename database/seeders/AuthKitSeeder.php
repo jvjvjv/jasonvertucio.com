@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use BSPDX\Keystone\Models\KeystoneRole as Role;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use BSPDX\Keystone\Models\KeystoneRole as Role;
+use BSPDX\Keystone\Services\PermissionRegistrar;
+use Illuminate\Database\Seeder;
 
 class KeystoneSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class KeystoneSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app(\BSPDX\Keystone\Services\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Create permissions
         $permissions = [

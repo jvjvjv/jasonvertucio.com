@@ -16,7 +16,7 @@ class FacebookCallbackController extends Controller
             return response(null, 401);
         }
 
-        if ($request->hub_mode === "subscribe") {
+        if ($request->hub_mode === 'subscribe') {
             return response($request->hub_challenge, 200);
         }
 
@@ -31,7 +31,7 @@ class FacebookCallbackController extends Controller
                     'name' => $value['from']['name'],
                     'email' => $value['from']['id'],
                     'message' => $value['message'],
-                    'created_at' => $value['created_time']
+                    'created_at' => $value['created_time'],
                 ]);
                 break;
             case 'plugin_comment_reply':
@@ -44,7 +44,7 @@ class FacebookCallbackController extends Controller
                     'name' => $value['from']['name'],
                     'email' => $value['from']['id'],
                     'message' => $value['message'],
-                    'created_at' => $value['created_time']
+                    'created_at' => $value['created_time'],
                 ]);
                 break;
             default:
@@ -53,7 +53,7 @@ class FacebookCallbackController extends Controller
 
         return response([
             'method' => $request->method(),
-            'data' => $request->input()
+            'data' => $request->input(),
         ], 200);
     }
 }

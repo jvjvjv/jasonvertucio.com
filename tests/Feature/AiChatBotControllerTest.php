@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\AiChatBot;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
-use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
 
 class AiChatBotControllerTest extends TestCase
@@ -85,6 +85,34 @@ class AiChatBotControllerTest extends TestCase
             'temperature' => '0.45',
             'require_visitor_identity' => true,
         ]);
+
+        // allowed_roles is host-only: it exists on the host form request and
+        // model, not the package's. The controller extends the package
+        // controller, so this guards against the field being silently dropped.
+        $bot = AiChatBot::where('slug', 'lead-intake')->firstOrFail();
+        $this->assertSame(['admin'], $bot->allowed_roles);
+    }
+
+    public function test_update_preserves_allowed_roles(): void
+    {
+        $user = $this->authenticatedUser();
+        $bot = AiChatBot::factory()->create([
+            'slug' => 'role-gated',
+            'allowed_roles' => ['admin'],
+        ]);
+
+        $response = $this->actingAs($user)->put(route('admin.ai.bots.update', $bot), [
+            'name' => $bot->name,
+            'slug' => 'role-gated',
+            'access_path' => $bot->access_path,
+            'ai_system_id' => $bot->ai_system_id,
+            'prompt_template' => 'You are {{bot_name}}.',
+            'allowed_roles' => ['admin', 'editor'],
+            'is_active' => true,
+        ]);
+
+        $response->assertRedirect(route('admin.ai.bots.index'));
+        $this->assertSame(['admin', 'editor'], $bot->fresh()->allowed_roles);
     }
 
     public function test_store_rejects_reserved_root_slug(): void
@@ -123,23 +151,24 @@ class AiChatBotControllerTest extends TestCase
             ],
         ]);
         $response->assertJsonFragment([
-            'name' => 'get_recent_blog_posts',
+            'name' => 'get-recent-blog-posts',
             'description' => 'Load recent blog posts with titles, summaries, and URLs. Supports search by keyword in title, summary, or body.',
         ]);
         $response->assertJsonFragment([
-            'name' => 'fetch_web_page',
+            'name' => 'fetch-web-page',
             'description' => 'Fetch a web page by URL and return its readable text content using the JayScraper research user agent.',
         ]);
         $response->assertJsonFragment([
-            'name' => 'get_resume_data',
+            'name' => 'get-resume-data',
             'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
         ]);
     }
 
-    public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void {
+    public function test_mcp_tools_filters_to_the_selected_system_allowlist(): void
+    {
         $user = $this->authenticatedUser();
         $system = AiSystem::factory()->create([
-            'allowed_tools' => ['get_recent_blog_posts'],
+            'allowed_tools' => ['get-recent-blog-posts'],
         ]);
 
         $response = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', [
@@ -149,10 +178,10 @@ class AiChatBotControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(1, 'tools');
         $response->assertJsonFragment([
-            'name' => 'get_recent_blog_posts',
+            'name' => 'get-recent-blog-posts',
         ]);
         $response->assertJsonMissing([
-            'name' => 'get_resume_data',
+            'name' => 'get-resume-data',
         ]);
     }
 }

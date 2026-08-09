@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\JobUrl;
 use App\Models\JobUrlParser;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class JobUrlParserControllerTest extends TestCase

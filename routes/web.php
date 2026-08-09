@@ -1,9 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\FacebookCallbackController;
+use App\Http\Controllers\HomeController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +24,6 @@ Route::get('/about/{any?}', function () {
 
 // Facebook callback route -- I don't think I use this anymore
 Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
-
 
 require base_path('routes/auth.php');
 require base_path('routes/admin.php');

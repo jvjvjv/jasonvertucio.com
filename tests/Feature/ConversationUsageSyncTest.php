@@ -2,21 +2,21 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Carbon;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ConversationUsageSyncTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function testSyncCommandUpdatesUsageForRecentlyActiveConversations(): void
+    public function test_sync_command_updates_usage_for_recently_active_conversations(): void
     {
         $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);
         $originalUpdatedAt = now()->subMinute()->setMicrosecond(0);
@@ -63,7 +63,7 @@ class ConversationUsageSyncTest extends TestCase
         );
     }
 
-    public function testBackfillCommandPopulatesHistoricalConversationUsage(): void
+    public function test_backfill_command_populates_historical_conversation_usage(): void
     {
         $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);
         $conversation = AiConversation::factory()->completed()->create([
@@ -96,7 +96,7 @@ class ConversationUsageSyncTest extends TestCase
         $this->assertNotNull($conversation->usage_synced_at);
     }
 
-    public function testBackfillCommandUsesSystemPricingProfileOverride(): void
+    public function test_backfill_command_uses_system_pricing_profile_override(): void
     {
         $system = AiSystem::factory()->create([
             'model' => 'claude-sonnet-4-6',
@@ -138,7 +138,7 @@ class ConversationUsageSyncTest extends TestCase
         $this->assertSame('2.000000', (string) $conversation->usage_cost_usd);
     }
 
-    public function testBackfillCommandUsesInteractionPriceSnapshotsWhenAvailable(): void
+    public function test_backfill_command_uses_interaction_price_snapshots_when_available(): void
     {
         $system = AiSystem::factory()->create([
             'model' => 'claude-sonnet-4-6',
@@ -179,7 +179,7 @@ class ConversationUsageSyncTest extends TestCase
         $this->assertSame('4.000000', (string) $conversation->usage_cost_usd);
     }
 
-    public function testSyncCommandSkipsOlderActiveConversationsOutsideWindow(): void
+    public function test_sync_command_skips_older_active_conversations_outside_window(): void
     {
         $system = AiSystem::factory()->create(['model' => 'claude-sonnet-4-6']);
         $conversation = AiConversation::factory()->active()->create([
@@ -219,7 +219,7 @@ class ConversationUsageSyncTest extends TestCase
         $this->assertNull($conversation->usage_synced_at);
     }
 
-    public function testConversationLastMessageAtTracksLatestUserAndAssistantMessages(): void
+    public function test_conversation_last_message_at_tracks_latest_user_and_assistant_messages(): void
     {
         $conversation = AiConversation::factory()->create([
             'updated_at' => now()->subDay(),

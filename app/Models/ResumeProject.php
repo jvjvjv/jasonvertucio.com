@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ResumeProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ResumeProject extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResumeProjectFactory> */
+    /** @use HasFactory<ResumeProjectFactory> */
     use HasFactory;
 
     protected $fillable = [

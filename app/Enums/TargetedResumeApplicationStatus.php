@@ -2,7 +2,8 @@
 
 namespace App\Enums;
 
-enum TargetedResumeApplicationStatus: string {
+enum TargetedResumeApplicationStatus: string
+{
     case Applied = 'applied';
     case Interviewing = 'interviewing';
     case Interviewed = 'interviewed';
@@ -11,7 +12,8 @@ enum TargetedResumeApplicationStatus: string {
     case Hired = 'hired';
     case Rejected = 'rejected';
 
-    public function isTerminal(): bool {
+    public function isTerminal(): bool
+    {
         return match ($this) {
             self::Accepted, self::Hired, self::Rejected => true,
             default => false,
@@ -21,7 +23,8 @@ enum TargetedResumeApplicationStatus: string {
     /**
      * @return array<int, self>
      */
-    public function allowedNext(): array {
+    public function allowedNext(): array
+    {
         return match ($this) {
             self::Applied => [self::Interviewing, self::Offered, self::Rejected],
             self::Interviewing => [self::Interviewed, self::Rejected],

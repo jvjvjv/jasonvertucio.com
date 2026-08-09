@@ -169,7 +169,9 @@ export default function DataTable<T extends { id: number | string }>({
                                         ...(onRowClick
                                             ? { cursor: "pointer" }
                                             : {}),
-                                        ...((rowSx?.(row) as object) ?? {}),
+                                        ...(rowSx
+                                            ? (rowSx(row) as object)
+                                            : {}),
                                     }}
                                 >
                                     {columns.map((col) => (

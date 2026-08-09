@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Log;
 trait GeneratesResumeDocuments
 {
     protected string $savedDocumentsPath;
+
     protected string $templatePath;
+
     protected string $scriptPath;
 
     /**
@@ -33,7 +35,7 @@ trait GeneratesResumeDocuments
     {
         $version = $this->getCurrentVersion();
         $filename = $this->getDocxFilename($version);
-        $path = $this->savedDocumentsPath . '/' . $filename;
+        $path = $this->savedDocumentsPath.'/'.$filename;
 
         return file_exists($path) ? $path : null;
     }
@@ -45,7 +47,7 @@ trait GeneratesResumeDocuments
     {
         $version = $this->getCurrentVersion();
         $filename = "{$version} Jason Vertucio.pdf";
-        $path = $this->savedDocumentsPath . '/' . $filename;
+        $path = $this->savedDocumentsPath.'/'.$filename;
 
         return file_exists($path) ? $path : null;
     }
@@ -74,17 +76,17 @@ trait GeneratesResumeDocuments
     public function generateDocx(): array
     {
         $version = $this->getCurrentVersion();
-        $outputPath = $this->savedDocumentsPath . '/' . $this->getDocxFilename($version);
+        $outputPath = $this->savedDocumentsPath.'/'.$this->getDocxFilename($version);
 
         // Ensure output directory exists
-        if (!file_exists($this->savedDocumentsPath)) {
+        if (! file_exists($this->savedDocumentsPath)) {
             mkdir($this->savedDocumentsPath, 0755, true);
         }
 
         // Create temp file for resume data
-        $tempDataPath = storage_path('app/temp/resume-data-' . uniqid() . '.json');
+        $tempDataPath = storage_path('app/temp/resume-data-'.uniqid().'.json');
         $tempDir = dirname($tempDataPath);
-        if (!file_exists($tempDir)) {
+        if (! file_exists($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
@@ -108,19 +110,21 @@ trait GeneratesResumeDocuments
             // Parse result
             $result = json_decode($output, true);
 
-            if (!$result) {
+            if (! $result) {
                 Log::error('Resume DOCX generation failed: Invalid JSON output', [
                     'output' => $output,
                     'command' => $command,
                 ]);
+
                 return [
                     'success' => false,
-                    'error' => 'Invalid output from generator script: ' . $output,
+                    'error' => 'Invalid output from generator script: '.$output,
                 ];
             }
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 Log::error('Resume DOCX generation failed', $result);
+
                 return $result;
             }
 
@@ -143,7 +147,7 @@ trait GeneratesResumeDocuments
     {
         $docxPath = $this->getLatestDocxPath();
 
-        if (!$docxPath) {
+        if (! $docxPath) {
             return [
                 'success' => false,
                 'error' => 'DOCX file not found. Generate DOCX first.',
@@ -153,7 +157,7 @@ trait GeneratesResumeDocuments
         $version = $this->getCurrentVersion();
         $pdfFilename = "{$version} Jason Vertucio.pdf";
         $outputDir = $this->savedDocumentsPath;
-        $pdfPath = $outputDir . '/' . $pdfFilename;
+        $pdfPath = $outputDir.'/'.$pdfFilename;
 
         try {
             // Build LibreOffice command
@@ -174,11 +178,11 @@ trait GeneratesResumeDocuments
 
                 return [
                     'success' => false,
-                    'error' => 'LibreOffice conversion failed: ' . implode("\n", $output),
+                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
                 ];
             }
 
-            if (!file_exists($pdfPath)) {
+            if (! file_exists($pdfPath)) {
                 return [
                     'success' => false,
                     'error' => 'PDF file was not created.',

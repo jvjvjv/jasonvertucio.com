@@ -31,29 +31,29 @@ class TargetedResumeDocumentServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->templatePath = dirname(__DIR__, 3) . '/resources/resume/2026 targeted resume template.docx';
+        $this->templatePath = dirname(__DIR__, 3).'/resources/resume/2026 targeted resume template.docx';
 
-        if (!file_exists($this->templatePath)) {
-            $this->markTestSkipped('Template file not found: ' . $this->templatePath);
+        if (! file_exists($this->templatePath)) {
+            $this->markTestSkipped('Template file not found: '.$this->templatePath);
         }
 
-        $this->tempDir = sys_get_temp_dir() . '/targeted-resume-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir().'/targeted-resume-test-'.uniqid();
         mkdir($this->tempDir, 0755, true);
 
-        $this->service = new TargetedResumeDocumentService(new MarkdownToOpenXmlConverter());
+        $this->service = new TargetedResumeDocumentService(new MarkdownToOpenXmlConverter);
     }
 
     protected function tearDown(): void
     {
         if (is_dir($this->tempDir)) {
-            array_map('unlink', glob($this->tempDir . '/*'));
+            array_map('unlink', glob($this->tempDir.'/*'));
             rmdir($this->tempDir);
         }
 
         parent::tearDown();
     }
 
-    public function testSimplePlaceholdersAreReplaced(): void
+    public function test_simple_placeholders_are_replaced(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'Jason Vertucio',
@@ -78,7 +78,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertStringNotContainsString('{url}', $xml);
     }
 
-    public function testResumePlaceholderIsReplacedWithStyledParagraphs(): void
+    public function test_resume_placeholder_is_replaced_with_styled_paragraphs(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'Test',
@@ -102,7 +102,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertStringContainsString('Built microservices', $xml);
     }
 
-    public function testGeneratedDocxIsValidZip(): void
+    public function test_generated_docx_is_valid_zip(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'Test',
@@ -113,16 +113,16 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'resume' => '# Summary',
         ]);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $this->assertTrue($zip->open($outputPath) === true, 'Output should be a valid ZIP');
         $this->assertNotFalse($zip->getFromName('word/document.xml'), 'Should contain word/document.xml');
         $this->assertNotFalse($zip->getFromName('word/styles.xml'), 'Should contain word/styles.xml');
         $zip->close();
     }
 
-    public function testStylesXmlIsPreservedUnchanged(): void
+    public function test_styles_xml_is_preserved_unchanged(): void
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zip->open($this->templatePath);
         $originalStyles = $zip->getFromName('word/styles.xml');
         $zip->close();
@@ -136,7 +136,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'resume' => "# Experience\n## Engineer\n### Corp - NYC - 2020",
         ]);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zip->open($outputPath);
         $outputStyles = $zip->getFromName('word/styles.xml');
         $zip->close();
@@ -144,7 +144,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertSame($originalStyles, $outputStyles, 'styles.xml should be preserved unchanged');
     }
 
-    public function testXmlSpecialCharsInPlaceholdersAreEscaped(): void
+    public function test_xml_special_chars_in_placeholders_are_escaped(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'O\'Brien & Associates',
@@ -157,12 +157,12 @@ class TargetedResumeDocumentServiceTest extends TestCase
 
         $xml = $this->readDocumentXml($outputPath);
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         $result = $dom->loadXML($xml);
         $this->assertTrue($result, 'Output XML should be well-formed even with special characters');
     }
 
-    public function testKeyTechnologiesStyleApplied(): void
+    public function test_key_technologies_style_applied(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'Test',
@@ -179,7 +179,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertStringContainsString('Key Technologies: PHP, Laravel, React', $xml);
     }
 
-    public function testDocumentXmlRemainsWellFormed(): void
+    public function test_document_xml_remains_well_formed(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'Jason Vertucio',
@@ -192,7 +192,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
 
         $xml = $this->readDocumentXml($outputPath);
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         $result = $dom->loadXML($xml);
         $this->assertTrue($result, 'Generated document.xml must be well-formed XML');
 
@@ -203,7 +203,8 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertSame(1, $sectPr->length, 'Document should still have exactly one sectPr');
     }
 
-    public function testBuildTemplateDataPrefersTailoredResumeTitleOverBaseResumeTitle(): void {
+    public function test_build_template_data_prefers_tailored_resume_title_over_base_resume_title(): void
+    {
         $resumeVersion = ResumeVersion::factory()->create();
         ResumePersonalInfo::factory()->create([
             'version_id' => $resumeVersion->id,
@@ -223,7 +224,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertSame('Senior Frontend Engineer', $data['title']);
     }
 
-    public function testBuildTemplateDataIncludesUrl(): void
+    public function test_build_template_data_includes_url(): void
     {
         $resumeVersion = ResumeVersion::factory()->create();
         ResumePersonalInfo::factory()->create([
@@ -247,15 +248,15 @@ class TargetedResumeDocumentServiceTest extends TestCase
     /**
      * Generate a DOCX by directly manipulating the template (bypassing model/database).
      *
-    * @param array{name: string, title: string, email: string, phone: string, url: string, resume: string} $data
+     * @param  array{name: string, title: string, email: string, phone: string, url: string, resume: string}  $data
      */
     protected function generateDocx(array $data): string
     {
-        $outputPath = $this->tempDir . '/test-output.docx';
+        $outputPath = $this->tempDir.'/test-output.docx';
 
         copy($this->templatePath, $outputPath);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $this->assertTrue($zip->open($outputPath) === true);
 
         $xml = $zip->getFromName('word/document.xml');
@@ -275,7 +276,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
 
     protected function readDocumentXml(string $docxPath): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zip->open($docxPath);
         $xml = $zip->getFromName('word/document.xml');
         $zip->close();

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\ResumeExperienceBulletFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ResumeExperienceBullet extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResumeExperienceBulletFactory> */
+    /** @use HasFactory<ResumeExperienceBulletFactory> */
     use HasFactory;
 
     protected $fillable = [

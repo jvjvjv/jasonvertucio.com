@@ -1,9 +1,7 @@
 <?php
 
 use App\Http\Controllers\ResumeController;
-
 use App\Http\Middleware\ResumeShareCodeMiddleware;
-
 
 // Manual code entry page for unauthenticated users
 Route::get('/resume/enter-code', [ResumeController::class, 'enterCode'])->name('resume.enter-code');
@@ -19,4 +17,3 @@ Route::middleware([ResumeShareCodeMiddleware::class])->prefix('resume')->group(f
         Route::get('/pdf', [ResumeController::class, 'downloadPdf'])->name('pdf');
     });
 });
-

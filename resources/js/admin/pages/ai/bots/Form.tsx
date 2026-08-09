@@ -277,7 +277,7 @@ export default function Form({
                     ))}
                 </TextField>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-                    {data.allowed_roles?.map((role) => (
+                    {data.allowed_roles.map((role) => (
                         <Chip
                             key={role}
                             label={role}
@@ -319,22 +319,6 @@ export default function Form({
                         />
                     }
                     label="Require visitor name and email before the first message"
-                />
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={data.tools_enabled}
-                            disabled={toolsEnabledBySystem}
-                            onChange={(event) => {
-                                setData("tools_enabled", event.target.checked);
-                            }}
-                        />
-                    }
-                    label={
-                        toolsEnabledBySystem
-                            ? "Enable MCP tools for this bot (provided by the selected system)"
-                            : "Enable MCP tools for this bot"
-                    }
                 />
                 <FormControlLabel
                     control={

@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\LocalMediaController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------

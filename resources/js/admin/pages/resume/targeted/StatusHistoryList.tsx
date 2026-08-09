@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import type { StatusUpdate } from "@/types";
 
 import StatusChip from "@/admin/components/StatusChip";
+import { formatCalendarDate } from "@/utils/date";
 
 interface StatusHistoryListProps {
     statusUpdates: StatusUpdate[];
@@ -100,13 +101,9 @@ export default function StatusHistoryList({
                                         variant="caption"
                                         color="text.secondary"
                                     >
-                                        {new Date(
+                                        {formatCalendarDate(
                                             statusUpdate.occurred_at,
-                                        ).toLocaleDateString(undefined, {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                        })}
+                                        )}
                                     </Typography>
                                 )}
                                 {editingStatusId === statusUpdate.id ? (

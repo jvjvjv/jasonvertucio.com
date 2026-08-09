@@ -2,19 +2,22 @@
 
 namespace Tests\Feature;
 
-use Jvjvjv\CodeTalker\Contracts\AiClientContract;
-use Jvjvjv\CodeTalker\Contracts\CanLoadModels;
-use App\Contracts\ResumeDataServiceContract;
+use Generator;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Http;
 use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
-use Jvjvjv\CodeTalker\Services\AiClientFactory;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
-use Jvjvjv\CodeTalker\Services\ConversationUsageService;
-use App\Services\TargetedResumeService;
-use Generator;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\StreamableAgentResponse;
+use Laravel\Ai\Streaming\Events\StreamEnd;
+use Laravel\Ai\Streaming\Events\StreamStart;
+use Laravel\Ai\Streaming\Events\TextDelta;
 use Mockery;
 use Tests\TestCase;
 
@@ -50,29 +53,26 @@ class AiChatBotOverrideTest extends TestCase
             ])->id,
         ]);
 
-        $client = Mockery::mock(AiClientContract::class);
-        $client->shouldReceive('withSystem')->once()->andReturnSelf();
-        $client->shouldReceive('withMaxTokens')->once()->andReturnSelf();
-        $client->shouldReceive('withTemperature')->once()->with(0.35)->andReturnSelf();
-        $client->shouldReceive('withTools')->never();
-        $client->shouldReceive('stream')->once()->andReturn($this->fakeStream());
+        $agent = Mockery::mock(CodeTalkerAgent::class);
+        $agent->shouldReceive('messages')->andReturn([]);
+        $agent->shouldReceive('stream')->once()->andReturn($this->fakeStream());
+        $agent->shouldReceive('append')->never();
 
-        $clientFactory = Mockery::mock(AiClientFactory::class);
-        $clientFactory->shouldReceive('forSystem')->once()->andReturn($client);
+        // The bot's 0.35 must win over the system's 0.70 when the agent is built.
+        $agentFactory = Mockery::mock(AgentFactory::class);
+        $agentFactory->shouldReceive('forSystem')
+            ->once()
+            ->with(Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), 0.35)
+            ->andReturn($agent);
 
         $memoryService = Mockery::mock(AiMemoryService::class);
         $memoryService->shouldReceive('getMemoriesForPrompt')->once()->andReturn('');
+        $memoryService->shouldReceive('processCompletedConversation')->zeroOrMoreTimes();
 
-        $resumeDataService = Mockery::mock(ResumeDataServiceContract::class);
-        $targetedResumeService = Mockery::mock(TargetedResumeService::class);
+        $this->app->instance(AgentFactory::class, $agentFactory);
+        $this->app->instance(AiMemoryService::class, $memoryService);
 
-        $service = new AiChatBotConversationService(
-            $clientFactory,
-            $memoryService,
-            new ConversationUsageService(),
-            $resumeDataService,
-            $targetedResumeService,
-        );
+        $service = app(AiChatBotConversationService::class);
 
         $conversation = $service->startConversation($bot->fresh());
 
@@ -83,73 +83,75 @@ class AiChatBotOverrideTest extends TestCase
 
     public function test_warm_up_chat_bot_uses_context_length_override(): void
     {
-        $system = new AiSystem([
+        // The model reports as unloaded until /models/load is called, so the
+        // warm-up path actually runs instead of short-circuiting.
+        $loaded = false;
+
+        Http::fake(function ($request) use (&$loaded) {
+            if (str_contains($request->url(), '/api/v1/models/load')) {
+                $loaded = true;
+
+                return Http::response([
+                    'status' => 'loaded',
+                    'instance_id' => 'openai/gpt-oss-20b',
+                    'load_time_seconds' => 0.1,
+                ]);
+            }
+
+            return Http::response([
+                'models' => [
+                    [
+                        'type' => 'llm',
+                        'key' => 'openai/gpt-oss-20b',
+                        'display_name' => 'GPT OSS 20B',
+                        'loaded_instances' => $loaded ? [['id' => 'instance-1']] : [],
+                    ],
+                ],
+            ]);
+        });
+
+        $system = AiSystem::factory()->create([
             'provider' => 'lm-studio',
             'model' => 'openai/gpt-oss-20b',
+            'base_url' => 'http://localhost:1234',
             'context_length' => 4096,
         ]);
 
-        $bot = new AiChatBot([
+        $bot = AiChatBot::factory()->create([
+            'ai_system_id' => $system->id,
             'context_length' => 8192,
         ]);
-        $bot->setRelation('aiSystem', $system);
 
-        $client = new class implements AiClientContract, CanLoadModels {
-            public bool $loaded = false;
-            public ?int $loadedContextLength = null;
+        $service = app(AiModelReadinessService::class);
 
-            public function withSystem(string $system): self { return $this; }
-            public function withModel(string $model): self { return $this; }
-            public function withMaxTokens(int $maxTokens): self { return $this; }
-            public function withTemperature(float $temperature): self { return $this; }
-            public function withTools(array $tools): self { return $this; }
-            public function message(array $messages): array { return []; }
-            public function stream(array $messages): Generator { if (false) { yield []; } }
-            public function listModels(): array { return []; }
-            public function formatAssistantToolCallTurn(string $textContent, array $toolCalls): array { return []; }
-            public function formatToolResultTurn(array $toolResults): array { return []; }
-            public function isModelLoaded(string $model): bool { return $this->loaded; }
-            public function loadModel(string $model, ?int $contextLength = null): array {
-                $this->loaded = true;
-                $this->loadedContextLength = $contextLength;
-
-                return [
-                    'status' => 'loaded',
-                    'instance_id' => $model,
-                    'load_time_seconds' => 0.1,
-                ];
-            }
-        };
-
-        $clientFactory = Mockery::mock(AiClientFactory::class);
-        $clientFactory->shouldReceive('forSystem')->atLeast()->once()->andReturn($client);
-
-        $service = new AiModelReadinessService($clientFactory);
-
-        $status = $service->warmUpChatBot($bot);
+        $status = $service->warmUpChatBot($bot->fresh());
 
         $this->assertTrue($status['warmup_attempted']);
         $this->assertSame('loaded', $status['state']);
-        $this->assertSame(8192, $client->loadedContextLength);
+
+        // The bot's 8192 override must reach LM Studio, not the system's 4096.
+        Http::assertSent(function ($request): bool {
+            return str_contains($request->url(), '/api/v1/models/load')
+                && $request['context_length'] === 8192;
+        });
     }
 
-    private function fakeStream(): Generator
+    private function fakeStream(): StreamableAgentResponse
     {
-        yield [
-            'type' => 'message_start',
-            'message' => [
-                'usage' => ['input_tokens' => 10],
-            ],
-        ];
-        yield [
-            'type' => 'content_block_delta',
-            'delta' => ['text' => 'Jason builds backend systems.'],
-        ];
-        yield [
-            'type' => 'message_delta',
-            'usage' => ['output_tokens' => 20],
-        ];
-        yield ['type' => 'message_stop'];
+        return new StreamableAgentResponse(
+            'id-1',
+            static function (): Generator {
+                yield new StreamStart('id-1', 'lm-studio', 'openai/gpt-oss-20b', time());
+                yield new TextDelta('e1', 'm1', 'Jason builds backend systems.', time());
+                yield new StreamEnd(
+                    'id-1',
+                    'stop',
+                    new Usage(promptTokens: 10, completionTokens: 20),
+                    time(),
+                );
+            },
+            new Meta(provider: 'lm-studio', model: 'openai/gpt-oss-20b'),
+        );
     }
 
     protected function tearDown(): void

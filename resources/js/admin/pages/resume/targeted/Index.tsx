@@ -2,8 +2,10 @@ import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
@@ -29,13 +31,26 @@ import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
+import { formatCalendarDate } from "@/utils/date";
 
 interface StatusOption {
     value: string;
     label: string;
 }
+
+const NOT_APPLIED_STATUSES = ["draft", "active", "pass", "finalized"];
+const APPLIED_STATUSES = [
+    "applied",
+    "interviewing",
+    "interviewed",
+    "offered",
+    "accepted",
+    "hired",
+    "rejected",
+];
 
 interface IndexProps {
     conversations: Conversation[];
@@ -65,6 +80,22 @@ export default function Index({
         router.get(
             "/admin/resume/targeted-builder",
             { status: updated, search: filters.search },
+            { preserveState: true },
+        );
+    };
+
+    const applyStatusPreset = (statuses: string[]) => {
+        router.get(
+            "/admin/resume/targeted-builder",
+            { status: statuses, search: filters.search },
+            { preserveState: true },
+        );
+    };
+
+    const clearStatuses = () => {
+        router.get(
+            "/admin/resume/targeted-builder",
+            { status: [], search: filters.search },
             { preserveState: true },
         );
     };
@@ -146,6 +177,33 @@ export default function Index({
                         ))}
                     </Select>
                 </FormControl>
+                <IconButton
+                    size="small"
+                    onClick={clearStatuses}
+                    disabled={filters.statuses.length === 0}
+                    title="Clear statuses"
+                    aria-label="Clear statuses"
+                >
+                    <CloseIcon fontSize="small" />
+                </IconButton>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                        applyStatusPreset(NOT_APPLIED_STATUSES);
+                    }}
+                >
+                    Not applied
+                </Button>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                        applyStatusPreset(APPLIED_STATUSES);
+                    }}
+                >
+                    Applied
+                </Button>
                 <Box sx={{ flexGrow: 1 }} />
                 <ResponsiveButton
                     icon={<AddIcon />}
@@ -184,20 +242,21 @@ export default function Index({
                                     const companyName =
                                         resume?.company_name ??
                                         (conv.context?.company_name as
-                                            | string
-                                            | undefined) ??
+                                            string | undefined) ??
                                         "—";
                                     const position =
                                         resume?.position ??
                                         (conv.context?.job_title as
-                                            | string
-                                            | undefined) ??
+                                            string | undefined) ??
                                         "";
                                     const displayStatus =
-                                        resume?.status &&
-                                        resume.status !== "draft"
-                                            ? resume.status
-                                            : conv.status;
+                                        resolveTargetedResumeDisplayStatus({
+                                            conversationStatus: conv.status,
+                                            resumeStatus: resume?.status,
+                                            latestStatusOccurredAt:
+                                                resume?.latest_status_update
+                                                    ?.occurred_at,
+                                        });
 
                                     return (
                                         <TableRow key={conv.id} hover>
@@ -243,17 +302,10 @@ export default function Index({
                                                         resume
                                                             ?.latest_status_update
                                                             ?.occurred_at &&
-                                                        new Date(
+                                                        formatCalendarDate(
                                                             resume
                                                                 .latest_status_update
                                                                 .occurred_at,
-                                                        ).toLocaleDateString(
-                                                            undefined,
-                                                            {
-                                                                year: "numeric",
-                                                                month: "short",
-                                                                day: "numeric",
-                                                            },
                                                         )
                                                     }
                                                 />

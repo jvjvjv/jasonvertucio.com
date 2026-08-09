@@ -42,39 +42,7 @@ class AiChatBot extends BaseAiChatBot
     }
 
     /**
-     * @return array<int, string>
-     */
-    public static function reservedRootSlugs(): array
-    {
-        return [
-            '_boost',
-            'about',
-            'admin',
-            'api',
-            'blog',
-            'canvas',
-            'chat',
-            'chats',
-            'forgot-password',
-            'login',
-            'logout',
-            'mlopnadjs22tn',
-            'paper',
-            'passkey',
-            'profile',
-            'register',
-            'reset-password',
-            'resume',
-            'sanctum',
-            'two-factor-challenge',
-            'user',
-            'wp-admin',
-            'wp-login.php',
-        ];
-    }
-
-    /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      */
     public function scopeActive(Builder $query): Builder
     {

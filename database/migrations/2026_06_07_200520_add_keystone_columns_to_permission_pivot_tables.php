@@ -19,14 +19,14 @@ return new class extends Migration
     public function up(): void
     {
         foreach ($this->tables as $tableName) {
-            if (!Schema::hasColumn($tableName, 'tenant_id')) {
+            if (! Schema::hasColumn($tableName, 'tenant_id')) {
                 Schema::table($tableName, function (Blueprint $table) use ($tableName) {
                     $table->uuid('tenant_id')->nullable()->after('model_id');
                     $table->index('tenant_id', "{$tableName}_tenant_id_index");
                 });
             }
 
-            if (!Schema::hasColumn($tableName, 'created_at')) {
+            if (! Schema::hasColumn($tableName, 'created_at')) {
                 Schema::table($tableName, function (Blueprint $table) {
                     $table->timestamps();
                 });

@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use BSPDX\Keystone\Http\Controllers\PasskeyAuthController;
 use BSPDX\Keystone\Http\Controllers\RolePermissionController;
 use BSPDX\Keystone\Http\Controllers\TwoFactorAuthController;
-use BSPDX\Keystone\Http\Controllers\PasskeyAuthController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
