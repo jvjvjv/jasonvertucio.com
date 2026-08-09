@@ -39,9 +39,9 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 { src: 'resources/config/config.json', dest: '' },
-                { src: 'resources/img/*', dest: 'img' },
-                { src: 'resources/wp-includes/*', dest: 'wp-includes' },
-                { src: 'resources/wp-admin/*', dest: 'wp-admin' },
+                { src: 'resources/img/*', dest: '../img' },
+                { src: 'resources/wp-includes/*', dest: '../wp-includes' },
+                { src: 'resources/wp-admin/*', dest: '../wp-admin' },
                 { src: 'node_modules/@fortawesome/fontawesome-free/webfonts/*', dest: 'webfonts' },
             ],
         }),
