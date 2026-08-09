@@ -1,0 +1,114 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_USER: ${{ vars.DEPLOY_SSH_USER || 'jason' }}
+      SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIRECTORY || '/var/www/jasonvertucio.com' }}
+      DEPLOY_GROUP: ${{ vars.DEPLOY_GROUP || 'apache' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build production assets
+        run: npm run prod
+
+      - name: Remove Vite hot file
+        run: rm -f public/hot
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Enter maintenance mode
+        run: |
+          ssh "${SSH_USER}@${SSH_HOST}" "cd '${DEPLOY_DIR}' && php artisan down"
+
+      - name: Sync files
+        run: |
+          rsync -avr \
+            --progress \
+            --delete-after \
+            --chown="${SSH_USER}:${DEPLOY_GROUP}" \
+            --filter="P /public/btoatob" \
+            --exclude='node_modules' \
+            --exclude='/vendor' \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env*' \
+            --exclude='/public/hot' \
+            --exclude='/storage/logs/*' \
+            --exclude='/storage/framework/cache/*' \
+            --exclude='/storage/framework/sessions/*' \
+            --exclude='/storage/framework/views/*' \
+            --exclude='/storage/app/resumes/*' \
+            --exclude='/storage/app/temp/*' \
+            --exclude='.vscode' \
+            --exclude='.idea' \
+            --exclude='.cert' \
+            --exclude='*.sh' \
+            --exclude='.gitignore' \
+            ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_DIR}"
+
+      - name: Run remote deployment steps
+        run: |
+          ssh "${SSH_USER}@${SSH_HOST}" "DEPLOY_DIR='${DEPLOY_DIR}' DEPLOY_GROUP='${DEPLOY_GROUP}' bash -s" <<'ENDSSH'
+            set -euo pipefail
+            cd "${DEPLOY_DIR}"
+
+            echo "Stopping queue worker..."
+            supervisorctl stop jv-resume-worker:*
+
+            composer install --optimize-autoloader --no-dev --ansi
+            npm ci --omit=dev
+            php artisan migrate --force
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            mkdir -p "${DEPLOY_DIR}/storage/app/resumes"
+            mkdir -p "${DEPLOY_DIR}/storage/app/temp"
+
+            chgrp -R "${DEPLOY_GROUP}" "${DEPLOY_DIR}"
+            chmod -R g+w "${DEPLOY_DIR}/resources/resume"
+            chmod -R g+w "${DEPLOY_DIR}/storage"
+            chmod -R g+w "${DEPLOY_DIR}/bootstrap/cache"
+
+            echo "Bringing back online..."
+            php artisan up
+
+            echo "Starting queue worker..."
+            supervisorctl start jv-resume-worker:*
+          ENDSSH
+
+      - name: Deployment complete
+        run: echo "Deployed $(date +'%Y-%m-%d %H:%M:%S')"
