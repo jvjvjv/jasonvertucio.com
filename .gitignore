@@ -19,7 +19,13 @@ npm-debug.log
 yarn-error.log
 
 # Other ... stuff.
-public
+/public/*
+!/public/css
+/public/css/*
+!/public/css/canvas-ui.css
+!/public/js
+/public/js/*
+!/public/js/canvas-ui.js
 prod.*
 *.sh
 !/scripts/*.sh
