@@ -36,6 +36,9 @@ Route::middleware(['auth', 'can:edit-resume'])
     ->group(function () {
         Route::post('/editor', [ResumeEditorController::class, 'update'])->name('admin.resume.editor.save');
 
+        Route::put('/targeted-resume/{targetedResume}', [TargetedResumeController::class, 'updateMarkdown'])
+            ->name('admin.resume.targeted-resume.update-markdown');
+
         Route::prefix('targeted-builder')
             ->name('admin.resume.targeted.')
             ->group(function () {

@@ -43,6 +43,7 @@ export interface ChatMessage {
     reasoning_content?: string | null;
     blocks?: MessageBlock[] | null;
     created_at?: string;
+    metadata?: { [key: string]: unknown } | null;
 }
 
 export interface ModelStatus {

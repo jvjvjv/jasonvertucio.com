@@ -202,6 +202,7 @@ class TargetedResumeController extends Controller
             ->map(fn ($msg) => [
                 'role' => $msg->role,
                 'content' => $msg->content,
+                'metadata' => $msg->metadata,
                 'created_at' => $msg->created_at?->toIso8601String(),
             ])
             ->toArray();
@@ -428,6 +429,35 @@ class TargetedResumeController extends Controller
         }
 
         return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)->with('success', $message);
+    }
+
+    /**
+     * Persist a manually edited targeted resume markdown and regenerate its
+     * DOCX/PDF artifacts.
+     */
+    public function updateMarkdown(Request $request, TargetedResume $targetedResume): JsonResponse
+    {
+        $request->validate([
+            'markdown' => ['required', 'string'],
+        ]);
+
+        $result = $this->targetedResumeService->updateTailoredMarkdown(
+            $targetedResume,
+            $request->input('markdown'),
+        );
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['error'],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'targeted_resume_id' => $result['targetedResume']->id,
+            'message' => 'Targeted resume updated successfully.',
+        ]);
     }
 
     /**

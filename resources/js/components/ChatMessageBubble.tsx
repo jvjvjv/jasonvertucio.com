@@ -43,6 +43,8 @@ interface ChatMessageBubbleProps {
     activeBlockType?: "text" | "reasoning" | null;
     /** Legacy single-blob reasoning (used when blocks is absent). */
     reasoningContent?: string | null;
+    /** Marks this message as a manual out-of-band edit rather than something typed into chat. */
+    isManualEdit?: boolean;
 }
 
 export const userMarkdownOverrides = {
@@ -71,6 +73,7 @@ export default function ChatMessageBubble({
     toolPanels = [],
     activeBlockType = null,
     reasoningContent = null,
+    isManualEdit = false,
     sx,
 }: ChatMessageBubbleProps) {
     const isUser = role === "user";
@@ -158,6 +161,18 @@ export default function ChatMessageBubble({
             )}
             onDoubleClick={handlePreDblClick}
         >
+            {isManualEdit && (
+                <Box
+                    sx={{
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        opacity: 0.8,
+                        mb: 0.5,
+                    }}
+                >
+                    ✎ Edited manually
+                </Box>
+            )}
             {toolPanels.map((panel, i) => (
                 <ToolsPanel
                     key={i}

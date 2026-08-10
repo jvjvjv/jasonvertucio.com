@@ -134,6 +134,10 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                         item.msg.reasoning_content ?? null
                                     }
                                     isAuthenticated={isAuthenticated}
+                                    isManualEdit={
+                                        item.msg.metadata?.origin ===
+                                        "manual_edit"
+                                    }
                                     sx={chatBubbleStyle}
                                 />
                             </Box>
