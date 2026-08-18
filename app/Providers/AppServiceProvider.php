@@ -52,14 +52,6 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         Comment::observe(CommentObserver::class);
 
-        // Workaround for a bspdx/keystone bug: KeystoneServiceProvider::register()
-        // writes `passkeys.models.passkey` before spatie/laravel-passkeys merges its
-        // own config. That merge is a shallow array_merge, so Keystone's single-key
-        // `models` array replaces Spatie's wholesale and `authenticatable` is lost,
-        // leaving Config::getAuthenticatableModel() to blow up on null. boot() runs
-        // after every register(), so restoring the key here is safe.
-        config(['passkeys.models.authenticatable' => config('keystone.user.model')]);
-
         Route::model('aiChatBot', AiChatBot::class);
 
         // Force HTTPS in local development when using local-ssl-proxy

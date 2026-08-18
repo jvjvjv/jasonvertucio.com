@@ -455,7 +455,7 @@
                 hideError();
 
                 try {
-                    const response = await fetch('{{ route(name: "keystone.login.totp") }}', {
+                    const response = await fetch('{{ route("login.totp") }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
