@@ -26,6 +26,13 @@ yarn-error.log
 !/public/js
 /public/js/*
 !/public/js/canvas-ui.js
+!/public/favicon.ico
+!/public/favicon.svg
+!/public/favicon-96x96.png
+!/public/apple-touch-icon.png
+!/public/web-app-manifest-192x192.png
+!/public/web-app-manifest-512x512.png
+!/public/site.webmanifest
 prod.*
 *.sh
 !/scripts/*.sh
