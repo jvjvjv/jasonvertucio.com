@@ -29,7 +29,7 @@
     "google-gemini-php/client": "^2.7",
     "guzzlehttp/guzzle": "^7.10.0",
     "inertiajs/inertia-laravel": "^2.0",
-    "jvjvjv/code-talker": "^0",
+    "jvjvjv/code-talker": "^0.12.1",
     "laravel/fortify": "^1.36.1",
     "laravel/framework": "^12.54.1",
     "laravel/sanctum": "^4.3.3",

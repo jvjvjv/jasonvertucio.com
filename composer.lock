@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0e40a8bb9b37bdccfe3aea7517dc1e96",
+    "content-hash": "ee70712922c12cfbd60ab94e3d51b172",
     "packages": [
         {
             "name": "anthropic-ai/sdk",
@@ -1780,16 +1780,16 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "v0.12.0",
+            "version": "v0.12.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jvjvjv/CodeTalker.git",
-                "reference": "a74bfd5ab9b8bb30aca9ed0a0329a0e02bc1e0a1"
+                "reference": "cd13eab9d462761aa0819ba497ab66a6a7f01b3e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/a74bfd5ab9b8bb30aca9ed0a0329a0e02bc1e0a1",
-                "reference": "a74bfd5ab9b8bb30aca9ed0a0329a0e02bc1e0a1",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/cd13eab9d462761aa0819ba497ab66a6a7f01b3e",
+                "reference": "cd13eab9d462761aa0819ba497ab66a6a7f01b3e",
                 "shasum": ""
             },
             "require": {
@@ -1844,9 +1844,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jvjvjv/CodeTalker/issues",
-                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.12.0"
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.12.1"
             },
-            "time": "2026-08-26T04:59:48+00:00"
+            "time": "2026-08-26T15:33:55+00:00"
         },
         {
             "name": "laravel/ai",
