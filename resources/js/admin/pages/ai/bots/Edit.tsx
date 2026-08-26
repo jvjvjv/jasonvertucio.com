@@ -58,18 +58,18 @@ export default function Edit({ bot, systems, roles }: EditProps) {
     };
 
     const handleDelete = () => {
-        confirm(`Delete AI chat bot "${bot.name}"?`, () => {
+        confirm(`Delete AI agent "${bot.name}"?`, () => {
             router.delete(`/admin/ai/chat-bots/${bot.slug}`);
         });
     };
 
     return (
         <AdminLayout>
-            <Head title={`${bot.name} | Chat Bots`} />
+            <Head title={`${bot.name} | Agents`} />
             <PageHeader
                 title={`Edit: ${bot.name}`}
                 backHref="/admin/ai/chat-bots"
-                backLabel="Back to AI Chat Bots"
+                backLabel="Back to Agents"
             />
 
             <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
@@ -120,7 +120,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                                     variant="contained"
                                     disabled={form.processing}
                                 >
-                                    Update Bot
+                                    Update Agent
                                 </Button>
                             </Box>
                         </Box>

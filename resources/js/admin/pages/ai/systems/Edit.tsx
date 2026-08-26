@@ -93,7 +93,7 @@ export default function Edit({
                     variant="outlined"
                     size="small"
                 >
-                    Chat Bots ({aiSystem.chat_bots_count || 0})
+                    Agents ({aiSystem.chat_bots_count || 0})
                 </Button>
                 <Button
                     component={InertiaLink}
@@ -173,7 +173,7 @@ export default function Edit({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, chat bots on this system cannot use MCP tools."
+                    description="Select the MCP tools this system may expose. If none are selected, agents on this system cannot use MCP tools."
                 />
             </Box>
             <ConfirmDialog {...dialogProps} />

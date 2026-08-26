@@ -166,7 +166,7 @@ export default function Index({ bots, filters }: IndexProps) {
     const aiSystemId = filters?.ai_system_id;
 
     const handleDelete = (bot: AiChatBot) => {
-        confirm(`Delete AI chat bot "${bot.name}"?`, () => {
+        confirm(`Delete AI agent "${bot.name}"?`, () => {
             router.delete(`/admin/ai/chat-bots/${bot.slug}`);
         });
     };
@@ -175,9 +175,9 @@ export default function Index({ bots, filters }: IndexProps) {
 
     return (
         <AdminLayout>
-            <Head title="Chat Bots | AI Tools" />
+            <Head title="Agents | AI Tools" />
             <PageHeader
-                title="AI Chat Bots"
+                title="Agents"
                 backHref="/admin/ai"
                 backLabel="Back to AI Tools"
             />
@@ -211,7 +211,7 @@ export default function Index({ bots, filters }: IndexProps) {
                     href="/admin/ai/chat-bots/new"
                     variant="contained"
                 >
-                    Add Bot
+                    Add Agent
                 </Button>
             </Box>
 
@@ -253,7 +253,7 @@ export default function Index({ bots, filters }: IndexProps) {
                 emptyState={
                     <Box sx={{ textAlign: "center", py: 4 }}>
                         <Typography color="text.secondary">
-                            No AI chat bots configured yet.
+                            No AI agents configured yet.
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 0.5 }}>
                             <Link

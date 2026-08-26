@@ -131,7 +131,7 @@ export default function ChatBot({
                                         },
                                     }}
                                 >
-                                    Chatbots are experimental. Responses may be
+                                    Agents are experimental. Responses may be
                                     inaccurate or fail to generate. Use with
                                     caution.
                                 </Typography>

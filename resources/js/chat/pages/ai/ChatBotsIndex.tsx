@@ -75,10 +75,10 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
             <Box sx={{ maxWidth: 1080, mx: "auto", px: 2, py: 4 }}>
                 <Stack spacing={1} sx={{ mb: 3 }}>
                     <Typography variant="h3" component="h1">
-                        Available Chatbots
+                        Available Agents
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                        Start a new chat with any chatbot available to you.
+                        Start a new chat with any agent available to you.
                     </Typography>
                 </Stack>
 
@@ -86,7 +86,7 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
                     <Card variant="outlined">
                         <CardContent>
                             <Typography variant="body1" color="text.secondary">
-                                No chatbots are currently available.
+                                No agents are currently available.
                             </Typography>
                         </CardContent>
                     </Card>

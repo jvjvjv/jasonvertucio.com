@@ -121,7 +121,7 @@ export default function Create({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, chat bots on this system cannot use MCP tools."
+                    description="Select the MCP tools this system may expose. If none are selected, agents on this system cannot use MCP tools."
                 />
             </Box>
         </AdminLayout>

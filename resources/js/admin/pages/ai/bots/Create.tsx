@@ -53,11 +53,11 @@ export default function Create({ systems, roles }: CreateProps) {
 
     return (
         <AdminLayout>
-            <Head title="New | Chat Bots" />
+            <Head title="New | Agents" />
             <PageHeader
-                title="Add AI Chat Bot"
+                title="Add Agent"
                 backHref="/admin/ai/chat-bots"
-                backLabel="Back to AI Chat Bots"
+                backLabel="Back to Agents"
             />
 
             <Card>
@@ -92,7 +92,7 @@ export default function Create({ systems, roles }: CreateProps) {
                                 variant="contained"
                                 disabled={form.processing}
                             >
-                                Save Bot
+                                Save Agent
                             </Button>
                         </Box>
                     </Box>
