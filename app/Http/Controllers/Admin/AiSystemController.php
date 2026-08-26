@@ -216,9 +216,14 @@ class AiSystemController extends Controller
                 'loaded' => (bool) ($m['loaded'] ?? false),
                 'max_context_length' => $m['max_context_length'] ?? null,
                 'capabilities' => [
-                    'reasoning' => (bool) data_get($m, 'capabilities.reasoning', false),
+                    // Only LM Studio's model list reports capabilities at all; leaving
+                    // `reasoning`/`tools` unset (rather than defaulting to false) for every
+                    // other provider lets the frontend tell "unsupported" apart from
+                    // "unknown" — all of Anthropic/OpenAI/Gemini/Grok support tool calling,
+                    // so a blanket `false` there would be wrong, not just uninformative.
+                    'reasoning' => data_get($m, 'capabilities.reasoning'),
                     'vision' => (bool) data_get($m, 'capabilities.vision', false),
-                    'tools' => (bool) data_get($m, 'capabilities.tools', false),
+                    'tools' => data_get($m, 'capabilities.tools'),
                 ],
             ])->sortBy('name')->values()->toArray();
 

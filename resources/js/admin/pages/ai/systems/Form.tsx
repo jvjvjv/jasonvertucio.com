@@ -10,7 +10,7 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import FeatureDefaultsCheckboxes from "./FeatureDefaultsCheckboxes";
 import JSONConfigEditor from "./JSONConfigEditor";
@@ -23,9 +23,9 @@ import type { AiSystemPrompt } from "@/types";
 import { api } from "@/api";
 
 interface ModelCapabilities {
-    reasoning?: boolean;
+    reasoning?: boolean | null;
     vision?: boolean;
-    tools?: boolean;
+    tools?: boolean | null;
     max_context_length?: number | null;
 }
 
@@ -309,6 +309,24 @@ export default function AiSystemForm({
               max_context_length: selectedModel.max_context_length ?? null,
           }
         : data.model_capabilities;
+    // Strict `false`, not falsy — `null`/`undefined` means the provider never
+    // reported reasoning/tools capability at all (e.g. Anthropic), so leave enabled.
+    const reasoningUnsupported = selectedModelCapabilities?.reasoning === false;
+    const toolsUnsupported = selectedModelCapabilities?.tools === false;
+
+    useEffect(() => {
+        if (reasoningUnsupported && data.enable_thinking) {
+            setData("enable_thinking", false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reasoningUnsupported]);
+
+    useEffect(() => {
+        if (toolsUnsupported && data.supports_tools) {
+            setData("supports_tools", false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [toolsUnsupported]);
 
     // Prompt id locked by feature defaults: targeted-resume locks to 4, cover-letter locks to 5
     const featureLockedPromptId: number | null = data.feature_defaults.includes(
@@ -657,8 +675,10 @@ export default function AiSystemForm({
 
             <ModelCapabilitiesCheckboxes
                 supportsTools={data.supports_tools}
+                disableSupportsTools={toolsUnsupported}
                 supportsJsonMode={data.supports_json_mode}
                 enableThinking={data.enable_thinking}
+                disableEnableThinking={reasoningUnsupported}
                 isLocalEndpoint={data.is_local_endpoint}
                 isActive={data.is_active}
                 onSupportsToolsChange={(checked) => {

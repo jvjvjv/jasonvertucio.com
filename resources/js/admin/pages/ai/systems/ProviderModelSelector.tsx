@@ -9,9 +9,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 interface ModelCapabilities {
-    reasoning?: boolean;
+    reasoning?: boolean | null;
     vision?: boolean;
-    tools?: boolean;
+    tools?: boolean | null;
     max_context_length?: number | null;
 }
 
