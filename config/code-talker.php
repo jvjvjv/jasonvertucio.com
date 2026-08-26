@@ -22,13 +22,20 @@ return [
     | Route Middleware
     |--------------------------------------------------------------------------
     |
-    | Middleware applied to the public chat routes and admin AI routes.
+    | Retained for host apps still loading a published copy of a removed
+    | package route file. The package registers no routes of its own.
     |
     */
 
     'middleware' => ['web'],
 
-    'admin_middleware' => ['web', 'auth', 'can:manage-ai-tools', HandleChatInertiaRequests::class],
+    /*
+    | The package no longer registers admin routes. This key is retained for
+    | host apps still loading a published copy of the old admin route file,
+    | which reads it. New admin screens should declare their own middleware.
+    */
+
+    'admin_middleware' => ['web', 'auth', 'can:manage-ai-tools'],
 
     /*
     |--------------------------------------------------------------------------
@@ -55,6 +62,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Feature Keys
+    |--------------------------------------------------------------------------
+    |
+    | The feature keys an AiSystem may be made the default for. Leave empty to
+    | accept any non-empty string. Populate it to have the management services
+    | validate feature defaults against a known list.
+    |
+    */
+
+    'feature_keys' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Scheduled Jobs
     |--------------------------------------------------------------------------
     |
@@ -64,6 +84,20 @@ return [
     */
 
     'schedule' => true,
+
+    'services' => [
+        'brave' => [
+            'search_api_key' => env('BRAVE_SEARCH_API_KEY', ''),
+        ],
+        'bing' => [
+            'search_api_key' => env('BING_SEARCH_API_KEY', ''),
+            'endpoint' => env('BING_SEARCH_ENDPOINT', 'https://api.bing.microsoft.com/v7.0/search'),
+        ],
+        'google' => [
+            'search_api_key' => env('GOOGLE_SEARCH_API_KEY', ''),
+            'search_engine_id' => env('GOOGLE_SEARCH_ENGINE_ID', ''),
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -88,6 +122,68 @@ return [
         // ceiling is passed the turn is aborted and logged as an error. Set to
         // 0 (or a negative value) to disable the guard.
         'max_stream_seconds' => (int) env('CODE_TALKER_MAX_STREAM_SECONDS', 300),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chat Bot Tools
+    |--------------------------------------------------------------------------
+    |
+    | Per-tool settings for the built-in chat-bot tools. Tools are still gated
+    | per system by AiSystem::allowed_tools; these entries configure a tool the
+    | model has already been granted.
+    |
+    | http_request.credentials maps a host to the headers the package attaches
+    | when requesting it. Credentials live here, and never in the model's tool
+    | inputs, so a token cannot be read, leaked, or invented by the model. Match
+    | is on the exact host, case-insensitively.
+    |
+    |     'credentials' => [
+    |         'api.example.com' => ['Authorization' => 'Bearer '.env('EXAMPLE_API_TOKEN')],
+    |         'files.internal'  => ['X-Api-Key' => env('INTERNAL_FILES_KEY')],
+    |     ],
+    |
+    | Security note: http-request requires the model to declare its own request
+    | policy and refuses a request without one. That makes intent explicit and
+    | auditable — it is NOT a defence against a prompt-injected model, which can
+    | declare a permissive policy. Keep http-request out of allowed_tools for
+    | any bot that takes untrusted input.
+    |
+    */
+
+    'tools' => [
+
+        'http_request' => [
+            'credentials' => [
+                //
+            ],
+        ],
+
+        // Caps shared by fetch-web-page and http-request. max_body_length is
+        // the raw bytes read off the wire before the body is cut, applied
+        // unconditionally. max_content_length is the characters of decoded
+        // content returned, applied unless a tool call declines truncation.
+        'web_fetcher' => [
+            'max_body_length' => (int) env('CODE_TALKER_MAX_BODY_LENGTH', 150000),
+            'max_content_length' => (int) env('CODE_TALKER_MAX_CONTENT_LENGTH', 20000),
+
+            // The domain allow-list for a caller with no AiSystem at all —
+            // the external MCP server (Claude Desktop, etc.), which has no
+            // conversation and so no AiChatBot/AiSystem to carry its own
+            // web_tool_policy. Comma-separated hostnames, e.g.
+            // "api.example.com,1f916.ai". Empty means unrestricted, same as
+            // an AiSystem with no web_tool_policy. This is consulted only
+            // when there is no conversation; a chat-bot conversation's own
+            // AiSystem is always the sole authority for that call, never
+            // widened or narrowed by this. Required (with allow_domain
+            // membership) for an MCP caller to ever satisfy
+            // WebFetcher::allowsCredentialHeaders() — see the README.
+            'allowed_domains' => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('CODE_TALKER_MCP_ALLOWED_DOMAINS', ''))
+            ))),
+        ],
+
     ],
 
     /*
