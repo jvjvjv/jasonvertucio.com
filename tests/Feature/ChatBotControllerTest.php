@@ -307,6 +307,11 @@ class ChatBotControllerTest extends TestCase
         $service->shouldReceive('continueConversation')
             ->zeroOrMoreTimes()
             ->andReturn($this->fakeStream());
+        // ChatBotController::message() calls this outside production — the
+        // test environment counts, so the mock needs to permit it.
+        $service->shouldReceive('usingToolPayloads')
+            ->zeroOrMoreTimes()
+            ->andReturnSelf();
 
         $this->app->instance(AiChatBotConversationService::class, $service);
 

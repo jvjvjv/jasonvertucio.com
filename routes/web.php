@@ -32,5 +32,12 @@ require base_path('routes/admin-resume.php');
 require base_path('routes/resume.php');
 require base_path('routes/blog.php');
 require base_path('routes/honeypots.php');
+require base_path('routes/codetalker-admin.php');
 
 require base_path('routes/api-web.php');
+
+// code-talker 0.11.0 no longer registers routes itself (see
+// routes/codetalker-chatbots.php's own header comment). Must load last: its
+// root-level `/{aiChatBot:slug}` wildcard would otherwise swallow every
+// literal route registered above.
+require base_path('routes/codetalker-chatbots.php');

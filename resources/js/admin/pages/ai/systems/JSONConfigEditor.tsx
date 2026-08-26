@@ -6,7 +6,6 @@ interface JSONConfigEditorProps {
     data: {
         config: string;
         credentials: string;
-        pricing_profile: string;
         auth_type: string;
         endpoint_type: string;
         stream_protocol: string;
@@ -19,7 +18,6 @@ interface JSONConfigEditorProps {
     systemPromptModes: string[];
     onConfigChange: (_value: string) => void;
     onCredentialsChange: (_value: string) => void;
-    onPricingProfileChange: (_value: string) => void;
     onAuthTypeChange: (_value: string) => void;
     onEndpointTypeChange: (_value: string) => void;
     onStreamProtocolChange: (_value: string) => void;
@@ -35,7 +33,6 @@ export default function JSONConfigEditor({
     systemPromptModes,
     onConfigChange,
     onCredentialsChange,
-    onPricingProfileChange,
     onAuthTypeChange,
     onEndpointTypeChange,
     onStreamProtocolChange,
@@ -177,25 +174,6 @@ export default function JSONConfigEditor({
                 helperText={
                     errors.credentials ??
                     "Optional encrypted credential payload for provider-specific keys"
-                }
-                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
-                sx={{ mb: 2 }}
-            />
-
-            <TextField
-                label="Pricing Profile (JSON)"
-                size="small"
-                fullWidth
-                multiline
-                rows={4}
-                value={data.pricing_profile}
-                onChange={(e) => {
-                    onPricingProfileChange(e.target.value);
-                }}
-                error={!!errors.pricing_profile}
-                helperText={
-                    errors.pricing_profile ??
-                    "Optional per-system pricing override"
                 }
                 slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
                 sx={{ mb: 2 }}

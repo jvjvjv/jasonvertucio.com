@@ -16,6 +16,7 @@ import FeatureDefaultsCheckboxes from "./FeatureDefaultsCheckboxes";
 import JSONConfigEditor from "./JSONConfigEditor";
 import ModelCapabilitiesCheckboxes from "./ModelCapabilitiesCheckboxes";
 import ProviderModelSelector from "./ProviderModelSelector";
+import WebToolPolicyEditor from "./WebToolPolicyEditor";
 
 import type { AiSystemPrompt } from "@/types";
 
@@ -62,10 +63,10 @@ interface FormData {
     system_prompt_mode: string;
     supports_tools: boolean;
     allowed_tools: string[];
+    web_tool_policy: string;
     supports_json_mode: boolean;
     enable_thinking: boolean;
     is_local_endpoint: boolean;
-    pricing_profile: string;
     is_active: boolean;
     feature_defaults: string[];
 }
@@ -632,9 +633,6 @@ export default function AiSystemForm({
                 onCredentialsChange={(value) => {
                     setData("credentials", value);
                 }}
-                onPricingProfileChange={(value) => {
-                    setData("pricing_profile", value);
-                }}
                 onAuthTypeChange={(value) => {
                     setData("auth_type", value);
                 }}
@@ -646,6 +644,14 @@ export default function AiSystemForm({
                 }}
                 onSystemPromptModeChange={(value) => {
                     setData("system_prompt_mode", value);
+                }}
+            />
+
+            <WebToolPolicyEditor
+                value={data.web_tool_policy}
+                error={errors.web_tool_policy}
+                onChange={(value) => {
+                    setData("web_tool_policy", value);
                 }}
             />
 

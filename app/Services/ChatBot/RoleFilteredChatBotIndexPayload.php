@@ -6,24 +6,18 @@ use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotIndexPayload;
-use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotRouteUrls;
 
 /**
  * The `ai/ChatBotsIndex` props, narrowed to the bots this viewer's roles allow.
  *
- * The package lists every active bot because it has no role concept; the host
- * model does, via `allowed_roles`. The whole build is replaced rather than
- * filtered afterwards so the query runs against the host model in the first
- * place — package instances have no `allowsRole()` to call.
- *
- * `$urls` is re-declared because the parent's copy is private.
+ * Host-owned reimplementation of the package's removed (0.11.0)
+ * `Jvjvjv\CodeTalker\Services\ChatBot\ChatBotIndexPayload`, since the package
+ * has no role concept — the host model does, via `allowed_roles`.
  */
-class RoleFilteredChatBotIndexPayload extends ChatBotIndexPayload
+class RoleFilteredChatBotIndexPayload
 {
     public function __construct(private ChatBotRouteUrls $urls)
     {
-        parent::__construct($urls);
     }
 
     /**

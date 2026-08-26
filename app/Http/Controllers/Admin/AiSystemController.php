@@ -70,7 +70,10 @@ class AiSystemController extends Controller
         unset($data['feature_defaults']);
 
         $this->resolveCustomSystemPrompt($data);
-        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
+        // 'pricing_profile' is deprecated (no longer editable via the admin
+        // UI, slated for removal) but stays in this list so an existing
+        // value round-trips untouched rather than silently being dropped.
+        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
         $this->aiSystemCapabilityService->hydrateForPersistence($data);
 
@@ -112,7 +115,10 @@ class AiSystemController extends Controller
         unset($data['feature_defaults']);
 
         $this->resolveCustomSystemPrompt($data);
-        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
+        // 'pricing_profile' is deprecated (no longer editable via the admin
+        // UI, slated for removal) but stays in this list so an existing
+        // value round-trips untouched rather than silently being dropped.
+        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
         $data['provider'] = $aiSystem->provider;
         $data['model'] = $aiSystem->model;
 

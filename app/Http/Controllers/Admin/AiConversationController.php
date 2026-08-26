@@ -152,6 +152,8 @@ class AiConversationController extends Controller
                     'id' => $message->id,
                     'role' => $message->role,
                     'content' => $message->content,
+                    'reasoning_content' => $message->reasoning_content,
+                    'blocks' => $message->blocks,
                     'metadata' => $message->metadata,
                     'created_at' => $message->created_at?->format('M j, Y g:i A'),
                 ]),

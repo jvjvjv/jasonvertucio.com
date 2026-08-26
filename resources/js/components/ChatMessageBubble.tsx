@@ -5,6 +5,7 @@ import { markdownSx } from "../admin/utils/markdownSx";
 import mergeSx from "../utils/mergeSx";
 
 import BlockContent from "./chat-message-bubble/BlockContent";
+import CopyMessageButton from "./chat-message-bubble/CopyMessageButton";
 import LegacyContent from "./chat-message-bubble/LegacyContent";
 import ToolsPanel from "./ToolsPanel";
 
@@ -60,6 +61,16 @@ export const userMarkdownOverrides = {
     "& hr": { borderTopColor: "rgba(255,255,255,0.35)" },
     "& table td": { padding: "0.25rem" },
 };
+
+/** Renders reasoning content as a markdown blockquote with a bold+italic "Reasoning" intro, for the copy button. */
+function formatReasoningAsBlockquote(text: string): string {
+    const quoted = text
+        .split("\n")
+        .map((line) => (line === "" ? ">" : `> ${line}`))
+        .join("\n");
+
+    return `> **_Reasoning_**\n>\n${quoted}`;
+}
 
 export default function ChatMessageBubble({
     content = "",
@@ -127,6 +138,24 @@ export default function ChatMessageBubble({
 
     const hasBlocks = !isUser && !!blocks && blocks.length > 0;
 
+    /** Plain text for the copy button — reasoning first, then the response, in the order shown. */
+    const copyText = hasBlocks
+        ? blocks
+              .map((block) =>
+                  block.type === "reasoning"
+                      ? formatReasoningAsBlockquote(block.content)
+                      : block.content,
+              )
+              .join("\n\n")
+        : [
+              !isUser && reasoningContent
+                  ? formatReasoningAsBlockquote(reasoningContent)
+                  : null,
+              content,
+          ]
+              .filter((part): part is string => !!part)
+              .join("\n\n");
+
     const body = hasBlocks ? (
         <BlockContent
             blocks={blocks}
@@ -152,13 +181,10 @@ export default function ChatMessageBubble({
 
     return (
         <Box
-            sx={mergeSx(
-                hasBlocks
-                    ? baseBubbleSx
-                    : // LegacyContent positions its reasoning toggle absolutely.
-                      { ...baseBubbleSx, position: "relative" },
-                sx,
-            )}
+            // position: relative always, not just for LegacyContent's own
+            // absolutely-positioned reasoning toggle — CopyMessageButton below
+            // needs it too, for both content modes.
+            sx={mergeSx({ ...baseBubbleSx, position: "relative" }, sx)}
             onDoubleClick={handlePreDblClick}
         >
             {isManualEdit && (
@@ -178,12 +204,25 @@ export default function ChatMessageBubble({
                     key={i}
                     pretext={panel.pretext}
                     tools={panel.tools}
+                    input={panel.input}
+                    output={panel.output}
+                    successful={panel.successful}
                     isActive={
                         isStreaming && !hasBlocks && i === toolPanels.length - 1
                     }
                 />
             ))}
             {body}
+            {!isStreaming && (
+                <CopyMessageButton
+                    text={copyText}
+                    color={
+                        isChatVariant && isUser
+                            ? "primary.contrastText"
+                            : "text.disabled"
+                    }
+                />
+            )}
         </Box>
     );
 }

@@ -3,14 +3,9 @@
 namespace App\Providers;
 
 use App\Contracts\ResumeDataServiceContract;
-use App\Http\Requests\Admin\StoreAiChatBotRequest;
-use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Observers\CommentObserver;
-use App\Services\ChatBot\HostChatBotPagePayload;
-use App\Services\ChatBot\RoleFilteredChatBotIndexPayload;
-use App\Services\ChatBot\RoleFilteredChatBotStatusResolver;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use App\Services\TargetedResumeService;
 use Illuminate\Support\Facades\Route;
@@ -18,33 +13,21 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Jvjvjv\CodeTalker\CodeTalkerServiceProvider;
-use Jvjvjv\CodeTalker\Http\Requests\Admin\StoreAiChatBotRequest as BaseStoreAiChatBotRequest;
-use Jvjvjv\CodeTalker\Http\Requests\Admin\UpdateAiChatBotRequest as BaseUpdateAiChatBotRequest;
-use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotIndexPayload as BaseChatBotIndexPayload;
-use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotPagePayload as BaseChatBotPagePayload;
-use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotStatusResolver as BaseChatBotStatusResolver;
+use Jvjvjv\CodeTalker\Services\Conversation\CodeTalkerConversationStore;
+use Laravel\Ai\Contracts\ConversationStore;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Admin\AiChatBotController extends the package controller, so its
-        // store()/update() must type-hint the package form requests (PHP
-        // forbids narrowing a parameter type). These bindings make the
-        // container hand back the host subclasses, which add the
-        // `allowed_roles` validation rules the host needs.
-        $this->app->bind(BaseStoreAiChatBotRequest::class, StoreAiChatBotRequest::class);
-        $this->app->bind(BaseUpdateAiChatBotRequest::class, UpdateAiChatBotRequest::class);
-
-        // The package's ChatBotController resolves its payload builders from the
-        // container, which is where the host's chat-bot customizations live: the
-        // package has no role concept, so these subclasses filter the bot list and
-        // statuses by `allowed_roles`, and add the `allowed_roles` / `previousHref`
-        // props the chat UI expects. Bound (not shared) so the page payload keeps
-        // receiving the current request.
-        $this->app->bind(BaseChatBotIndexPayload::class, RoleFilteredChatBotIndexPayload::class);
-        $this->app->bind(BaseChatBotPagePayload::class, HostChatBotPagePayload::class);
-        $this->app->bind(BaseChatBotStatusResolver::class, RoleFilteredChatBotStatusResolver::class);
+        // Package providers are auto-discovered and registered alphabetically
+        // (Illuminate\Foundation\PackageManifest), so laravel/ai's own
+        // register() runs after jvjvjv/code-talker's and re-binds
+        // ConversationStore to its default DatabaseConversationStore,
+        // clobbering the package's CodeTalkerConversationStore binding.
+        // AppServiceProvider registers last (config('app.providers') is
+        // appended after the package manifest), so rebinding here wins.
+        $this->app->singleton(ConversationStore::class, CodeTalkerConversationStore::class);
     }
 
     public function boot(): void

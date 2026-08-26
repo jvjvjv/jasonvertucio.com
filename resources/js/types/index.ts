@@ -1,3 +1,4 @@
+import type { MessageBlock } from "./code-talker";
 import type { PageProps } from "@inertiajs/core";
 
 export interface AuthUser {
@@ -86,9 +87,14 @@ export interface AiSystem {
     system_prompt_mode?: string | null;
     supports_tools?: boolean;
     allowed_tools?: string[] | null;
+    web_tool_policy?: {
+        allowed_domains?: string[];
+        credentials?: { [host: string]: { [header: string]: string } };
+    } | null;
     supports_json_mode?: boolean;
     enable_thinking?: boolean | null;
     is_local_endpoint?: boolean;
+    /** @deprecated No longer editable through the admin UI; slated for removal. */
     pricing_profile?: { [key: string]: unknown } | null;
     is_active: boolean;
     interaction_logs_count: number;
@@ -216,6 +222,8 @@ export interface Message {
     id?: number;
     role: string;
     content: string;
+    reasoning_content?: string | null;
+    blocks?: MessageBlock[] | null;
     metadata?: { [key: string]: unknown } | null;
     created_at?: string | null;
 }

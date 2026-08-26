@@ -44,10 +44,10 @@ export default function Create({
         system_prompt_mode: "",
         supports_tools: false,
         allowed_tools: [],
+        web_tool_policy: "",
         supports_json_mode: false,
         enable_thinking: false,
         is_local_endpoint: false,
-        pricing_profile: "",
         is_active: true,
         feature_defaults: [],
     });

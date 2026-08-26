@@ -10,12 +10,10 @@ use Illuminate\Support\Facades\Route;
 | Chat Bot Routes
 |--------------------------------------------------------------------------
 |
-| Published override of the package's codetalker-chatbots.php. The package
-| loads this file via its booted() callback when it exists in routes/, giving
-| the app full control over which controller handles these routes.
-|
-| The root-level wildcard ({aiChatBot:slug}) must remain at the end of this
-| file so it does not swallow more-specific literal routes.
+| code-talker 0.11.0 no longer registers routes itself (see the package's
+| CHANGELOG, "All routes are removed"). This app owns route dispatch fully;
+| it's required directly from routes/web.php, last, so the root-level wildcard
+| below does not swallow more-specific literal routes registered above it.
 |
 */
 

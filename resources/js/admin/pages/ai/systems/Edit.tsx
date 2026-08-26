@@ -50,12 +50,12 @@ export default function Edit({
         system_prompt_mode: aiSystem.system_prompt_mode ?? "",
         supports_tools: aiSystem.supports_tools ?? false,
         allowed_tools: aiSystem.allowed_tools ?? [],
+        web_tool_policy: aiSystem.web_tool_policy
+            ? JSON.stringify(aiSystem.web_tool_policy, null, 2)
+            : "",
         supports_json_mode: aiSystem.supports_json_mode ?? false,
         enable_thinking: aiSystem.enable_thinking ?? false,
         is_local_endpoint: aiSystem.is_local_endpoint ?? false,
-        pricing_profile: aiSystem.pricing_profile
-            ? JSON.stringify(aiSystem.pricing_profile, null, 2)
-            : "",
         is_active: aiSystem.is_active,
         feature_defaults: aiSystem.feature_defaults_list,
     });

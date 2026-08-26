@@ -126,6 +126,10 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     <ChatMessageBubble
                                         role={message.role}
                                         content={message.content}
+                                        blocks={message.blocks ?? null}
+                                        reasoningContent={
+                                            message.reasoning_content ?? null
+                                        }
                                         variant="history"
                                         sentAt={message.created_at ?? null}
                                         isAuthenticated={!!authUser}
