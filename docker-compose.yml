@@ -1,25 +1,28 @@
 services:
   # ─── Database ──────────────────────────────────────────────────────────────
-  db:
-    image: mariadb:11
-    container_name: jv-db
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
-      MARIADB_DATABASE: "${DB_DATABASE:-jasonvertucio}"
-      MARIADB_USER: "${DB_USERNAME:-jasonvertucio}"
-      MARIADB_PASSWORD: "${DB_PASSWORD:-jvsecret}"
-    volumes:
-      - db_data:/var/lib/mysql
-    ports:
-      - "3308:3306"
-    networks:
-      - jv
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # Commented out: using WSL's own MySQL instead for now (app's DB_HOST
+  # already defaults to host.docker.internal, so no other change is needed).
+  # Uncomment to go back to a containerized database.
+  # db:
+  #   image: mariadb:11
+  #   container_name: jv-db
+  #   restart: unless-stopped
+  #   environment:
+  #     MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
+  #     MARIADB_DATABASE: "${DB_DATABASE:-jasonvertucio}"
+  #     MARIADB_USER: "${DB_USERNAME:-jasonvertucio}"
+  #     MARIADB_PASSWORD: "${DB_PASSWORD:-jvsecret}"
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+  #   ports:
+  #     - "3308:3306"
+  #   networks:
+  #     - jv
+  #   healthcheck:
+  #     test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
   # ─── Redis ─────────────────────────────────────────────────────────────────
   redis:
@@ -27,7 +30,16 @@ services:
     container_name: jv-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      # Host port 7000, not 6379: WSL's own redis-server unit is enabled and
+      # will grab 6379 on the next boot. Several other candidate ports
+      # (6380-6500, 7379, 10000, ...) also failed with "ports are not
+      # available" — Windows' Hyper-V dynamic port exclusion covers several
+      # disjoint ranges on this machine, not one contiguous block (`netsh
+      # interface ipv4 show excludedportrange protocol=tcp` on the Windows
+      # side would confirm and is the real fix if this port stops working
+      # after a Windows reboot). Inside the `jv` network the app still reaches
+      # this container as redis:6379.
+      - "7000:6379"
     networks:
       - jv
 
@@ -44,19 +56,40 @@ services:
       - .:/var/www/app
       - vendor:/var/www/app/vendor
       - node_modules:/var/www/app/node_modules
+      # composer.json's local path repo for jvjvjv/code-talker points at
+      # "../code-talker", relative to composer.json. That only resolves
+      # inside the container if this sibling directory is mounted at the
+      # matching relative path (/var/www/app/../code-talker == /var/www/code-talker)
+      # — otherwise composer install fails every container start ("Source
+      # path ../code-talker is not found") and the app never comes up.
+      - ../code-talker:/var/www/code-talker
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
-      APP_URL: "http://localhost:8003"
+      # Drives every absolute URL Laravel generates (asset(), route(), the
+      # built Vite asset paths, ...) — not just what you type in the address
+      # bar. Matches how this is actually reached (Pi-hole redirects
+      # jasonvertucio.local network-wide to this container), not "localhost",
+      # which only resolves correctly from the Docker host itself.
+      APP_URL: "http://jasonvertucio.local:8003"
       DB_CONNECTION: mysql
-      # Default: connect to host MySQL. Change to "db" to use the container.
-      DB_HOST: "${DB_HOST:-host.docker.internal}"
+      # Hardcoded, not "${DB_HOST:-host.docker.internal}": docker compose
+      # auto-loads the repo-root .env (same file Laravel reads), whose
+      # DB_HOST=localhost means "this machine" from the host dev process's
+      # point of view. Inside the container "localhost" means the container
+      # itself, so that value must never leak in here — host.docker.internal
+      # is what actually reaches WSL's MySQL from inside Docker Desktop.
+      DB_HOST: host.docker.internal
       DB_PORT: 3306
       DB_DATABASE: "${DB_DATABASE:-jasonvertucio}"
       DB_USERNAME: "${DB_USERNAME:-jasonvertucio}"
       DB_PASSWORD: "${DB_PASSWORD:-jvsecret}"
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # Laravel defaults to the "predis" client (config/database.php), which
+      # isn't a composer dependency here. The image builds the phpredis PECL
+      # extension specifically so the container can use that instead.
+      REDIS_CLIENT: phpredis
       CACHE_STORE: redis
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
@@ -65,15 +98,15 @@ services:
       - "8003:8003"
       - "5175:5173"
     depends_on:
-      db:
-        condition: service_healthy
+      # db: (commented out above; re-add this when the db service is back)
+      #   condition: service_healthy
       redis:
         condition: service_started
     networks:
       - jv
 
 volumes:
-  db_data:
+  # db_data: (commented out above along with the db service)
   vendor:
   node_modules:
 

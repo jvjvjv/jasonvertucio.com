@@ -23,6 +23,10 @@ RUN apk add --no-cache \
     git \
     unzip \
     zip \
+    # phpize build toolchain (autoconf/gcc/g++/make/...) — needed by `pecl
+    # install redis`/`pecl install xdebug` below, which build from source.
+    $PHPIZE_DEPS \
+    linux-headers \
     # GD / image processing
     freetype-dev \
     libjpeg-turbo-dev \
@@ -86,6 +90,14 @@ COPY docker/php/xdebug.ini  /usr/local/etc/php/conf.d/99-xdebug.ini
 # Nginx config
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 
+# PHP-FPM pool: listen on the unix socket nginx's fastcgi_pass expects,
+# instead of the base image's default 127.0.0.1:9000. Both files are needed:
+# www.conf carries the pool's other settings, zzz-listen.conf re-asserts the
+# socket after the base image's own zz-docker.conf (loaded later
+# alphabetically) resets `listen` back to 9000.
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY docker/php/zzz-listen.conf /usr/local/etc/php-fpm.d/zzz-listen.conf
+
 # Supervisor config
 COPY docker/supervisord.dev.conf /etc/supervisor/conf.d/supervisord.conf
 
@@ -106,6 +118,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY docker/php/php-prod.ini /usr/local/etc/php/conf.d/99-app-prod.ini
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY docker/php/zzz-listen.conf /usr/local/etc/php-fpm.d/zzz-listen.conf
 COPY docker/supervisord.prod.conf /etc/supervisor/conf.d/supervisord.conf
 
 WORKDIR /var/www/app
