@@ -7,6 +7,8 @@ use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
+use Jvjvjv\CodeTalker\Models\AiConversation;
+use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Tests\TestCase;
 
 /**
@@ -113,5 +115,95 @@ class HostChatBotPagePayloadTest extends TestCase
             'referer is this page' => ['@self'],
             'referer is another host' => ['https://elsewhere.example.com/somewhere'],
         ];
+    }
+
+    /**
+     * @return array{0: AiChatBot, 1: string}
+     */
+    private function conversationWithToolActivity(): array
+    {
+        $bot = AiChatBot::factory()->create([
+            'allowed_roles' => [],
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $conversation = AiConversation::factory()->create([
+            'ai_chat_bot_id' => $bot->id,
+        ]);
+
+        AiConversationMessage::create([
+            'ai_conversation_id' => $conversation->id,
+            'role' => 'assistant',
+            'content' => 'Here is what I found.',
+            'tool_calls' => [
+                ['id' => 'call_1', 'name' => 'web_search', 'arguments' => ['query' => 'weather in Boise']],
+            ],
+            'tool_results' => [
+                ['id' => 'call_1', 'name' => 'web_search', 'arguments' => ['query' => 'weather in Boise'], 'result' => 'Sunny, 72F'],
+            ],
+        ]);
+
+        return [$bot, $conversation->generateChatHash()];
+    }
+
+    public function test_chat_page_exposes_tool_activity_for_a_message_that_used_tools(): void
+    {
+        [$bot, $hash] = $this->conversationWithToolActivity();
+
+        $response = $this->get(route('chat-bot.by-hash', ['slug' => $bot->slug, 'hash' => $hash]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBot', false)
+            ->where('messages.0.tool_panels', [
+                ['pretext' => '', 'tools' => ['web_search'], 'input' => ['query' => 'weather in Boise'], 'output' => 'Sunny, 72F'],
+            ])
+        );
+    }
+
+    public function test_chat_page_omits_tool_activity_for_a_message_that_used_no_tools(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'allowed_roles' => [],
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $conversation = AiConversation::factory()->create([
+            'ai_chat_bot_id' => $bot->id,
+        ]);
+
+        AiConversationMessage::create([
+            'ai_conversation_id' => $conversation->id,
+            'role' => 'assistant',
+            'content' => 'Just an answer, no tools.',
+        ]);
+
+        $response = $this->get(route('chat-bot.by-hash', [
+            'slug' => $bot->slug,
+            'hash' => $conversation->generateChatHash(),
+        ]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBot', false)
+            ->where('messages.0.tool_panels', null)
+        );
+    }
+
+    public function test_chat_page_redacts_tool_arguments_and_output_in_production(): void
+    {
+        [$bot, $hash] = $this->conversationWithToolActivity();
+
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $response = $this->get(route('chat-bot.by-hash', ['slug' => $bot->slug, 'hash' => $hash]));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBot', false)
+            ->where('messages.0.tool_panels', [
+                ['pretext' => '', 'tools' => ['web_search']],
+            ])
+        );
     }
 }

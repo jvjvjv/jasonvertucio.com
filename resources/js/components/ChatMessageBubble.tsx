@@ -35,9 +35,11 @@ interface ChatMessageBubbleProps {
     blocks?: MessageBlock[] | null;
     /**
      * Tool activity for the turn, rendered at the top of the bubble so it shares
-     * the message's width and chrome. Host-only and live-only: the tool event
-     * wipes the block sequence, so nothing precedes these, and they are dropped
-     * when the turn ends because the server never persists tool calls.
+     * the message's width and chrome. Host-only, not part of the package's
+     * `MessageBlock` contract: while streaming, a tool event wipes the block
+     * sequence, so nothing precedes these. For a historical message, this is
+     * read back from `AiConversationMessage.tool_calls`/`tool_results` (which
+     * the package does persist) via the host's `ChatMessage.tool_panels`.
      */
     toolPanels?: ToolPanel[];
     /** Which block type is currently being streamed (only meaningful when isStreaming). */

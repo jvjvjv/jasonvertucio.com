@@ -129,6 +129,9 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                     role={item.msg.role}
                                     content={item.msg.content}
                                     blocks={item.msg.blocks ?? null}
+                                    toolPanels={
+                                        item.msg.tool_panels ?? undefined
+                                    }
                                     maxWidth="100%"
                                     reasoningContent={
                                         item.msg.reasoning_content ?? null

@@ -13,6 +13,7 @@ import {
 import { type VirtuosoHandle } from "react-virtuoso";
 
 import type { MessageBlock } from "@/components/ChatMessageBubble";
+import type { ToolPanel } from "@/components/ToolsPanel";
 import type { ChatStreamEvent } from "@/types/code-talker";
 import type { ReactNode, KeyboardEvent } from "react";
 
@@ -33,15 +34,19 @@ const FAR_FUTURE = new Date(8.64e15).toISOString();
  * Deliberately NOT the package's `ChatMessage` from `@/types/code-talker`.
  *
  * That type describes what the server sends; this one also covers messages the
- * client builds mid-turn, so it diverges in three ways: `role` allows "system",
- * `reasoning_content`/`blocks` are optional rather than nullable-required, and
- * `created_at` is stamped locally when a message is appended optimistically.
+ * client builds mid-turn, so it diverges in four ways: `role` allows "system",
+ * `reasoning_content`/`blocks` are optional rather than nullable-required,
+ * `created_at` is stamped locally when a message is appended optimistically,
+ * and `tool_panels` carries this turn's tool activity — a host-only concern
+ * with no equivalent in the package contract (see `ToolUseProgressEvent`
+ * below).
  */
 export interface ChatMessage {
     role: "user" | "assistant" | "system";
     content: string;
     reasoning_content?: string | null;
     blocks?: MessageBlock[] | null;
+    tool_panels?: ToolPanel[] | null;
     created_at?: string;
     metadata?: { [key: string]: unknown } | null;
 }

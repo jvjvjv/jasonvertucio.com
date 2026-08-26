@@ -47,7 +47,7 @@ class HostChatBotPagePayload
                 'total_cost_usd' => $this->presenter->totalCostUsd($aiChatBot),
                 'allowed_roles' => $aiChatBot->allowed_roles ?? [],
             ],
-            'messages' => $this->presenter->transcript($conversation),
+            'messages' => $this->transcriptWithToolPanels($conversation),
             'history' => $history,
             'messageUrl' => $this->urls->for($aiChatBot, 'message'),
             'resetUrl' => $this->urls->for($aiChatBot, 'reset'),
@@ -65,6 +65,89 @@ class HostChatBotPagePayload
         }
 
         return $payload;
+    }
+
+    /**
+     * The package transcript, enriched with each message's tool activity.
+     *
+     * `ChatBotPresenter::transcript()` doesn't expose `tool_calls`/`tool_results`
+     * (host-only concern, not part of the package's page-payload contract), so
+     * this re-queries just those two columns with the exact same filter/order
+     * the presenter uses and zips them in by position — safe because both
+     * queries run back-to-back within one request against the same rows.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function transcriptWithToolPanels(?AiConversation $conversation): array
+    {
+        $transcript = $this->presenter->transcript($conversation);
+
+        if ($conversation === null || $transcript === []) {
+            return $transcript;
+        }
+
+        $toolColumns = $conversation->messages()
+            ->where('role', '!=', 'system')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get(['tool_calls', 'tool_results'])
+            ->values();
+
+        $includePayloads = ! app()->environment('production');
+
+        foreach ($transcript as $index => &$message) {
+            $message['tool_panels'] = $this->toolPanelsFor(
+                $toolColumns[$index]->tool_calls ?? null,
+                $toolColumns[$index]->tool_results ?? null,
+                $includePayloads,
+            );
+        }
+
+        return $transcript;
+    }
+
+    /**
+     * Pair each tool call with its result (matched by id — laravel/ai's
+     * TextGenerationLoop::executeToolCalls() constructs every ToolResult with
+     * the calling ToolCall's id) into the host's `ToolPanel` shape. A call with
+     * no matching result yet (e.g. a turn cut off mid-tool-use) is still
+     * included, with no output.
+     *
+     * @param  array<int, array<string, mixed>>|null  $toolCalls
+     * @param  array<int, array<string, mixed>>|null  $toolResults
+     * @return array<int, array<string, mixed>>|null
+     */
+    private function toolPanelsFor(?array $toolCalls, ?array $toolResults, bool $includePayloads): ?array
+    {
+        if (blank($toolCalls)) {
+            return null;
+        }
+
+        $resultsById = collect($toolResults ?? [])->keyBy('id');
+
+        return collect($toolCalls)
+            ->map(function (array $call) use ($resultsById, $includePayloads): array {
+                // `pretext` is required by the frontend's `ToolPanel` shape
+                // (always '' in the live tool_use_progress frame too — see
+                // ConversationTurnRunner.php) — must be present even though
+                // it's never actually populated with text.
+                $panel = ['pretext' => '', 'tools' => [$call['name']]];
+
+                if (! $includePayloads) {
+                    return $panel;
+                }
+
+                $panel['input'] = $call['arguments'];
+
+                $result = $resultsById->get($call['id']);
+
+                if ($result !== null) {
+                    $panel['output'] = $result['result'];
+                }
+
+                return $panel;
+            })
+            ->all();
     }
 
     /**

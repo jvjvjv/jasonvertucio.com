@@ -134,6 +134,11 @@ export default function useChatStream({
             setError("");
 
             let liveBlocks: MessageBlock[] = [];
+            // Mirrors streamingToolPanels state so persistLiveBlocks() (a plain
+            // closure, not a render) can read this turn's tool activity
+            // synchronously instead of a stale value captured at render time —
+            // same reason liveBlocks mirrors streamingBlocks above.
+            let liveToolPanels: ToolPanel[] = [];
             let sawPageReloadEvent = false;
             let sawAnyStreamData = false;
             let streamErrorReason: ChatStreamErrorReason | undefined;
@@ -165,7 +170,9 @@ export default function useChatStream({
             // reasoning/text that already rendered live shouldn't vanish
             // just because the turn ultimately failed.
             const persistLiveBlocks = (): void => {
-                if (liveBlocks.length === 0) return;
+                if (liveBlocks.length === 0 && liveToolPanels.length === 0) {
+                    return;
+                }
 
                 const finalText = liveBlocks
                     .filter((b) => b.type === "text")
@@ -179,6 +186,10 @@ export default function useChatStream({
                             role: "assistant" as const,
                             content: finalText,
                             blocks: liveBlocks,
+                            tool_panels:
+                                liveToolPanels.length > 0
+                                    ? liveToolPanels
+                                    : undefined,
                             created_at: new Date().toISOString(),
                         },
                     ];
@@ -241,49 +252,48 @@ export default function useChatStream({
                             // most recent call frame for this tool that
                             // doesn't have a result yet, rather than adding a
                             // second panel for the same call.
-                            setStreamingToolPanels((prev) => {
-                                const fromEnd = [...prev]
-                                    .reverse()
-                                    .findIndex(
-                                        (p) =>
-                                            p.output === undefined &&
-                                            p.tools.some((t) =>
-                                                event.tools.includes(t),
-                                            ),
-                                    );
+                            const fromEnd = [...liveToolPanels]
+                                .reverse()
+                                .findIndex(
+                                    (p) =>
+                                        p.output === undefined &&
+                                        p.tools.some((t) =>
+                                            event.tools.includes(t),
+                                        ),
+                                );
 
-                                if (fromEnd === -1) {
-                                    return [
-                                        ...prev,
-                                        {
-                                            pretext: event.text,
-                                            tools: event.tools,
-                                            output: event.output,
-                                            successful: event.successful,
-                                        },
-                                    ];
-                                }
-
-                                const index = prev.length - 1 - fromEnd;
-                                const next = [...prev];
+                            if (fromEnd === -1) {
+                                liveToolPanels = [
+                                    ...liveToolPanels,
+                                    {
+                                        pretext: event.text,
+                                        tools: event.tools,
+                                        output: event.output,
+                                        successful: event.successful,
+                                    },
+                                ];
+                            } else {
+                                const index =
+                                    liveToolPanels.length - 1 - fromEnd;
+                                const next = [...liveToolPanels];
                                 next[index] = {
                                     ...next[index],
                                     output: event.output,
                                     successful: event.successful,
                                 };
-
-                                return next;
-                            });
+                                liveToolPanels = next;
+                            }
                         } else {
-                            setStreamingToolPanels((prev) => [
-                                ...prev,
+                            liveToolPanels = [
+                                ...liveToolPanels,
                                 {
                                     pretext: event.text,
                                     tools: event.tools,
                                     input: event.input,
                                 },
-                            ]);
+                            ];
                         }
+                        setStreamingToolPanels(liveToolPanels);
                         liveBlocks = [];
                         setStreamingBlocks([]);
                     } else if (event.type === "status") {
