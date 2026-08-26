@@ -235,13 +235,55 @@ export default function useChatStream({
                             appendToBlocks("text", event.delta.text);
                         }
                     } else if (event.type === "tool_use_progress") {
-                        setStreamingToolPanels((prev) => [
-                            ...prev,
-                            {
-                                pretext: event.text,
-                                tools: event.tools,
-                            },
-                        ]);
+                        if ("output" in event) {
+                            // A result frame (usingToolPayloads() only — see
+                            // ChatBotController::message()) merges onto the
+                            // most recent call frame for this tool that
+                            // doesn't have a result yet, rather than adding a
+                            // second panel for the same call.
+                            setStreamingToolPanels((prev) => {
+                                const fromEnd = [...prev]
+                                    .reverse()
+                                    .findIndex(
+                                        (p) =>
+                                            p.output === undefined &&
+                                            p.tools.some((t) =>
+                                                event.tools.includes(t),
+                                            ),
+                                    );
+
+                                if (fromEnd === -1) {
+                                    return [
+                                        ...prev,
+                                        {
+                                            pretext: event.text,
+                                            tools: event.tools,
+                                            output: event.output,
+                                            successful: event.successful,
+                                        },
+                                    ];
+                                }
+
+                                const index = prev.length - 1 - fromEnd;
+                                const next = [...prev];
+                                next[index] = {
+                                    ...next[index],
+                                    output: event.output,
+                                    successful: event.successful,
+                                };
+
+                                return next;
+                            });
+                        } else {
+                            setStreamingToolPanels((prev) => [
+                                ...prev,
+                                {
+                                    pretext: event.text,
+                                    tools: event.tools,
+                                    input: event.input,
+                                },
+                            ]);
+                        }
                         liveBlocks = [];
                         setStreamingBlocks([]);
                     } else if (event.type === "status") {

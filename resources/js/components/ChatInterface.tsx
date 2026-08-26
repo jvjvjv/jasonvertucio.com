@@ -59,11 +59,19 @@ export interface ModelStatus {
  *
  * Host-only, not part of the package contract — see
  * `app/Services/TargetedResumeService.php:281`.
+ *
+ * `input`/`output`/`successful` are present only when the server has
+ * `ChatBotController::message()`'s `usingToolPayloads()` opt-in enabled
+ * (non-production only — see that controller) — a call frame carries `input`,
+ * a result frame carries `output`/`successful`, never both at once.
  */
 export interface ToolUseProgressEvent {
     type: "tool_use_progress";
     text: string;
     tools: string[];
+    input?: unknown;
+    output?: unknown;
+    successful?: boolean;
 }
 
 /**
