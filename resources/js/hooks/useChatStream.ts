@@ -1,3 +1,4 @@
+import { router } from "@inertiajs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatMessage, StreamEvent } from "@/components/ChatInterface";
@@ -140,7 +141,6 @@ export default function useChatStream({
             // same reason liveBlocks mirrors streamingBlocks above.
             let liveToolPanels: ToolPanel[] = [];
             let sawPageReloadEvent = false;
-            let sawAnyStreamData = false;
             let streamErrorReason: ChatStreamErrorReason | undefined;
 
             const appendToBlocks = (
@@ -218,8 +218,6 @@ export default function useChatStream({
                     abortController.signal,
                 )) {
                     if (!jsonStr || jsonStr === "[DONE]") continue;
-
-                    sawAnyStreamData = true;
 
                     let event: StreamEvent;
                     try {
@@ -319,22 +317,22 @@ export default function useChatStream({
                 const clientInitiatedAbort =
                     err instanceof DOMException && err.name === "AbortError";
 
-                // Only a genuine client-side interruption (browser tab
-                // closed, fetch aborted, page reload) is benign. Backend
-                // `type: "error"` events always carry a `reason` code and
-                // are real failures — e.g. max_stream_duration — even
-                // though their message text may also contain the word
-                // "aborted".
-                const isBenignStreamReadInterruption =
-                    clientInitiatedAbort ||
-                    (streamErrorReason === undefined &&
-                        (sawPageReloadEvent || sawAnyStreamData) &&
-                        /failed to read from stream|abort|aborted/i.test(
-                            message,
-                        ));
+                // A tool-triggered page_reload can also end the read in a
+                // way that looks like an abort; that specific combination
+                // stays benign since the reload is an intentional signal,
+                // not a failure. Anything else that interrupts the stream —
+                // a dropped connection, a backend `type: "error"` event —
+                // is a genuine failure: the backend may have generated (and
+                // persisted) a reply the browser never received, so it's
+                // resynced from the server below rather than silently lost.
+                const isBenignPageReloadAbort =
+                    streamErrorReason === undefined &&
+                    sawPageReloadEvent &&
+                    /failed to read from stream|abort|aborted/i.test(message);
 
-                if (!isBenignStreamReadInterruption) {
+                if (!clientInitiatedAbort && !isBenignPageReloadAbort) {
                     setError(message);
+                    router.reload({ only: ["messages"] });
                 }
 
                 persistLiveBlocks();

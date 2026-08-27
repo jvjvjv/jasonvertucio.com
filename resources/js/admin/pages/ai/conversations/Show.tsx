@@ -173,11 +173,11 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     <UsageChip usage={conversation.usage} />
                                 </Box>
                                 <Box>
-                                    <strong>Agent:</strong>{" "}
+                                    <strong>Persona:</strong>{" "}
                                     {conversation.ai_chat_bot ? (
                                         <Link
                                             component={InertiaLink}
-                                            href={`/admin/ai/chat-bots/${conversation.ai_chat_bot.id}`}
+                                            href={`/admin/ai/personas/${conversation.ai_chat_bot.slug}`}
                                             underline="hover"
                                         >
                                             {conversation.ai_chat_bot.name}
