@@ -4,6 +4,9 @@ namespace App\Http\Requests;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Models\AiSystem;
 
 class UpdateAiSystemRequest extends FormRequest
 {
@@ -18,12 +21,33 @@ class UpdateAiSystemRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, array<int, string>>
+     * A freshly duplicated system (duplicated_at is set) is still on its
+     * first edit, so provider/model/api_key are validated exactly like
+     * StoreAiSystemRequest instead of being immutable. Once that first save
+     * clears duplicated_at, subsequent updates go back to omitting them.
+     *
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
+        /** @var AiSystem $aiSystem */
+        $aiSystem = $this->route('aiSystem');
+
+        $pendingFirstEditRules = $aiSystem?->duplicated_at !== null
+            ? [
+                'provider' => ['required', 'string', Rule::in(AiProvider::values())],
+                'api_key' => [
+                    Rule::requiredIf(fn (): bool => ! in_array($this->input('provider'), [AiProvider::OpenAICompatible->value, AiProvider::LmStudio->value], true)),
+                    'nullable',
+                    'string',
+                ],
+                'model' => ['required', 'string', 'max:255'],
+            ]
+            : [];
+
         return [
             'name' => ['required', 'string', 'max:255'],
+            ...$pendingFirstEditRules,
             'model_capabilities' => ['nullable', 'array'],
             'model_capabilities.reasoning' => ['nullable', 'boolean'],
             'model_capabilities.vision' => ['nullable', 'boolean'],

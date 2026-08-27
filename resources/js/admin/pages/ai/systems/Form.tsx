@@ -81,6 +81,9 @@ interface AiSystemFormProps {
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
     isEdit?: boolean;
+    // A freshly duplicated system that hasn't been saved yet — Provider,
+    // Model, and API Key behave like Create instead of being locked.
+    pendingFirstEdit?: boolean;
 }
 
 const ALL_FEATURES = ["targeted-resume", "cover-letter"];
@@ -198,6 +201,7 @@ export default function AiSystemForm({
     existingDefaults,
     systemPrompts: initialSystemPrompts,
     isEdit = false,
+    pendingFirstEdit = false,
 }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [fetchingModels, setFetchingModels] = useState(false);
@@ -407,6 +411,7 @@ export default function AiSystemForm({
                 fetchingModels={fetchingModels}
                 fetchError={fetchError}
                 isEdit={isEdit}
+                pendingFirstEdit={pendingFirstEdit}
                 apiKeyRequired={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
                 apiKeyHelperText={apiKeyHelperText}
                 modelPlaceholder={modelPlaceholder}

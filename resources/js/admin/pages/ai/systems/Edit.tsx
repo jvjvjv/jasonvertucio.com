@@ -20,12 +20,14 @@ interface EditProps {
     aiSystem: AiSystem;
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
+    pendingFirstEdit: boolean;
 }
 
 export default function Edit({
     aiSystem,
     existingDefaults,
     systemPrompts,
+    pendingFirstEdit,
 }: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
@@ -123,6 +125,7 @@ export default function Edit({
                             existingDefaults={existingDefaults}
                             systemPrompts={systemPrompts}
                             isEdit
+                            pendingFirstEdit={pendingFirstEdit}
                         />
 
                         <Box

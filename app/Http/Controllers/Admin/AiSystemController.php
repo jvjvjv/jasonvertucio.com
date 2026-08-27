@@ -102,6 +102,7 @@ class AiSystemController extends Controller
             'aiSystem' => $aiSystem,
             'existingDefaults' => $existingDefaults,
             'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
+            'pendingFirstEdit' => $aiSystem->duplicated_at !== null,
         ]);
     }
 
@@ -114,13 +115,21 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
+        // A freshly duplicated system has never been through a real edit, so
+        // its first save is allowed to change provider/model/API key just
+        // like Create — after this save it locks like any other system.
+        $isPendingFirstEdit = $aiSystem->duplicated_at !== null;
+
         $this->resolveCustomSystemPrompt($data);
         // 'pricing_profile' is deprecated (no longer editable via the admin
         // UI, slated for removal) but stays in this list so an existing
         // value round-trips untouched rather than silently being dropped.
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
-        $data['provider'] = $aiSystem->provider;
-        $data['model'] = $aiSystem->model;
+
+        if (! $isPendingFirstEdit) {
+            $data['provider'] = $aiSystem->provider;
+            $data['model'] = $aiSystem->model;
+        }
 
         if (! array_key_exists('base_url', $data) || blank($data['base_url'])) {
             $data['base_url'] = $aiSystem->base_url;
@@ -129,8 +138,14 @@ class AiSystemController extends Controller
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
         $this->aiSystemCapabilityService->hydrateForPersistence($data);
 
-        unset($data['provider'], $data['model']);
+        if (! $isPendingFirstEdit) {
+            unset($data['provider'], $data['model']);
+        }
 
+        // duplicated_at is deliberately not fillable (see AiSystem model), so
+        // it's cleared by direct property assignment rather than through the
+        // mass-assigned $data array.
+        $aiSystem->duplicated_at = null;
         $aiSystem->update($data);
 
         $this->syncFeatureDefaults($aiSystem, $featureDefaults);
@@ -261,6 +276,7 @@ class AiSystemController extends Controller
     {
         $clone = $aiSystem->replicate(['id']);
         $clone->name = $aiSystem->name.' (copy)';
+        $clone->duplicated_at = now();
         $clone->save();
 
         return redirect()->route('admin.ai.systems.edit', $clone)

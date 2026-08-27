@@ -45,6 +45,7 @@ interface ProviderModelSelectorProps {
     fetchingModels: boolean;
     fetchError: string;
     isEdit: boolean;
+    pendingFirstEdit: boolean;
     apiKeyRequired: boolean;
     apiKeyHelperText: string;
     modelPlaceholder: string;
@@ -73,6 +74,7 @@ export default function ProviderModelSelector({
     fetchingModels,
     fetchError,
     isEdit,
+    pendingFirstEdit,
     apiKeyRequired,
     apiKeyHelperText,
     modelPlaceholder,
@@ -90,6 +92,10 @@ export default function ProviderModelSelector({
     onContextLengthChange,
     onTemperatureChange,
 }: ProviderModelSelectorProps) {
+    // A freshly duplicated system hasn't been saved yet, so its first edit
+    // still allows changing Provider, Model, and API Key, like Create.
+    const fieldsLocked = isEdit && !pendingFirstEdit;
+
     return (
         <>
             <Box
@@ -121,11 +127,11 @@ export default function ProviderModelSelector({
                     onChange={(e) => {
                         onProviderChange(e.target.value);
                     }}
-                    disabled={isEdit}
+                    disabled={fieldsLocked}
                     error={!!errors.provider}
                     helperText={
                         errors.provider ??
-                        (isEdit
+                        (fieldsLocked
                             ? "Provider cannot be changed after creation."
                             : undefined)
                     }
@@ -155,11 +161,11 @@ export default function ProviderModelSelector({
                     onChange={(e) => {
                         onApiKeyChange(e.target.value);
                     }}
-                    disabled={isEdit}
+                    disabled={fieldsLocked}
                     onBlur={onApiKeyBlur}
                     error={!!errors.api_key}
                     helperText={
-                        isEdit
+                        fieldsLocked
                             ? "API key is stored securely and can only be changed by duplicating this system."
                             : apiKeyHelperText
                     }
@@ -176,12 +182,12 @@ export default function ProviderModelSelector({
                         onChange={(e) => {
                             onModelChange(e.target.value);
                         }}
-                        disabled={isEdit}
+                        disabled={fieldsLocked}
                         error={!!errors.model}
                         placeholder={modelPlaceholder}
                         helperText={
                             (errors.model ?? fetchError) ||
-                            (isEdit
+                            (fieldsLocked
                                 ? "Model cannot be changed after creation."
                                 : undefined)
                         }
