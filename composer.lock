@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ee70712922c12cfbd60ab94e3d51b172",
+    "content-hash": "0e40a8bb9b37bdccfe3aea7517dc1e96",
     "packages": [
         {
             "name": "anthropic-ai/sdk",
@@ -194,16 +194,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.394.0",
+            "version": "3.394.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "8a85b79ee9e9009bf19fa31659451124855447ad"
+                "reference": "577edcbe852e463a1a52c269917303f850359e4e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/8a85b79ee9e9009bf19fa31659451124855447ad",
-                "reference": "8a85b79ee9e9009bf19fa31659451124855447ad",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/577edcbe852e463a1a52c269917303f850359e4e",
+                "reference": "577edcbe852e463a1a52c269917303f850359e4e",
                 "shasum": ""
             },
             "require": {
@@ -285,9 +285,9 @@
             "support": {
                 "forum": "https://github.com/aws/aws-sdk-php/discussions",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.394.0"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.394.1"
             },
-            "time": "2026-08-25T19:22:47+00:00"
+            "time": "2026-08-26T18:32:55+00:00"
         },
         {
             "name": "bacon/bacon-qr-code",
@@ -1780,16 +1780,16 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "v0.12.1",
+            "version": "v0.14.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jvjvjv/CodeTalker.git",
-                "reference": "cd13eab9d462761aa0819ba497ab66a6a7f01b3e"
+                "reference": "83d0662e79444ed73746da71be8e060bb9d278f9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/cd13eab9d462761aa0819ba497ab66a6a7f01b3e",
-                "reference": "cd13eab9d462761aa0819ba497ab66a6a7f01b3e",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/83d0662e79444ed73746da71be8e060bb9d278f9",
+                "reference": "83d0662e79444ed73746da71be8e060bb9d278f9",
                 "shasum": ""
             },
             "require": {
@@ -1844,9 +1844,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jvjvjv/CodeTalker/issues",
-                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.12.1"
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.14.0"
             },
-            "time": "2026-08-26T15:33:55+00:00"
+            "time": "2026-08-27T15:27:39+00:00"
         },
         {
             "name": "laravel/ai",
