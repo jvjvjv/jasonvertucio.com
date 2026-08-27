@@ -54,22 +54,22 @@ export default function Edit({ bot, systems, roles }: EditProps) {
 
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.put(`/admin/ai/chat-bots/${bot.slug}`);
+        form.put(`/admin/ai/personas/${bot.slug}`);
     };
 
     const handleDelete = () => {
-        confirm(`Delete AI agent "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
+        confirm(`Delete AI persona "${bot.name}"?`, () => {
+            router.delete(`/admin/ai/personas/${bot.slug}`);
         });
     };
 
     return (
         <AdminLayout>
-            <Head title={`${bot.name} | Agents`} />
+            <Head title={`${bot.name} | Personas`} />
             <PageHeader
                 title={`Edit: ${bot.name}`}
-                backHref="/admin/ai/chat-bots"
-                backLabel="Back to Agents"
+                backHref="/admin/ai/personas"
+                backLabel="Back to Personas"
             />
 
             <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
@@ -110,7 +110,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                             <Box sx={{ display: "flex", gap: 2 }}>
                                 <Button
                                     component={InertiaLink}
-                                    href="/admin/ai/chat-bots"
+                                    href="/admin/ai/personas"
                                     color="inherit"
                                 >
                                     Cancel
@@ -120,7 +120,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                                     variant="contained"
                                     disabled={form.processing}
                                 >
-                                    Update Agent
+                                    Update Persona
                                 </Button>
                             </Box>
                         </Box>

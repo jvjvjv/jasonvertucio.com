@@ -36,7 +36,7 @@ class ConversationUsageSyncTest extends TestCase
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
-            'ai_chat_bot_id' => null,
+            'ai_persona_id' => null,
             'user_id' => null,
             'feature' => $conversation->feature,
             'input_tokens' => 1000,
@@ -75,7 +75,7 @@ class ConversationUsageSyncTest extends TestCase
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
-            'ai_chat_bot_id' => null,
+            'ai_persona_id' => null,
             'user_id' => null,
             'feature' => $conversation->feature,
             'input_tokens' => 2000,
@@ -118,7 +118,7 @@ class ConversationUsageSyncTest extends TestCase
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
-            'ai_chat_bot_id' => null,
+            'ai_persona_id' => null,
             'user_id' => null,
             'feature' => $conversation->feature,
             'input_tokens' => 2000,
@@ -160,7 +160,7 @@ class ConversationUsageSyncTest extends TestCase
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
-            'ai_chat_bot_id' => null,
+            'ai_persona_id' => null,
             'user_id' => null,
             'feature' => $conversation->feature,
             'input_tokens' => 2000,
@@ -198,7 +198,7 @@ class ConversationUsageSyncTest extends TestCase
         AiInteractionLog::create([
             'ai_system_id' => $system->id,
             'ai_conversation_id' => $conversation->id,
-            'ai_chat_bot_id' => null,
+            'ai_persona_id' => null,
             'user_id' => null,
             'feature' => $conversation->feature,
             'input_tokens' => 100,

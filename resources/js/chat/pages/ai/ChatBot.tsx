@@ -131,7 +131,7 @@ export default function ChatBot({
                                         },
                                     }}
                                 >
-                                    Agents are experimental. Responses may be
+                                    Personas are experimental. Responses may be
                                     inaccurate or fail to generate. Use with
                                     caution.
                                 </Typography>

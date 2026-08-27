@@ -75,9 +75,9 @@ class RoleFilteredChatBotIndexPayload
 
         return AiConversation::query()
             ->where('user_id', $user->id)
-            ->whereIn('ai_chat_bot_id', $bots->pluck('id')->all())
+            ->whereIn('ai_persona_id', $bots->pluck('id')->all())
             ->orderByLastMessageAtDesc()
             ->get()
-            ->groupBy('ai_chat_bot_id');
+            ->groupBy('ai_persona_id');
     }
 }

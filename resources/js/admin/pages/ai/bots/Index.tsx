@@ -44,7 +44,7 @@ const columns: ColumnDef<ChatBotRow>[] = [
         render: (row) => (
             <Link
                 component={InertiaLink}
-                href={`/admin/ai/chat-bots/${row.slug}`}
+                href={`/admin/ai/personas/${row.slug}`}
                 underline="hover"
                 color="primary"
                 sx={{ fontWeight: 600 }}
@@ -166,8 +166,8 @@ export default function Index({ bots, filters }: IndexProps) {
     const aiSystemId = filters?.ai_system_id;
 
     const handleDelete = (bot: AiChatBot) => {
-        confirm(`Delete AI agent "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
+        confirm(`Delete AI persona "${bot.name}"?`, () => {
+            router.delete(`/admin/ai/personas/${bot.slug}`);
         });
     };
 
@@ -175,9 +175,9 @@ export default function Index({ bots, filters }: IndexProps) {
 
     return (
         <AdminLayout>
-            <Head title="Agents | AI Tools" />
+            <Head title="Personas | AI Tools" />
             <PageHeader
-                title="Agents"
+                title="Personas"
                 backHref="/admin/ai"
                 backLabel="Back to AI Tools"
             />
@@ -208,10 +208,10 @@ export default function Index({ bots, filters }: IndexProps) {
                 </Box>
                 <Button
                     component={InertiaLink}
-                    href="/admin/ai/chat-bots/new"
+                    href="/admin/ai/personas/new"
                     variant="contained"
                 >
-                    Add Agent
+                    Add Persona
                 </Button>
             </Box>
 
@@ -229,7 +229,7 @@ export default function Index({ bots, filters }: IndexProps) {
                     </Typography>
                     <Button
                         component={InertiaLink}
-                        href="/admin/ai/chat-bots"
+                        href="/admin/ai/personas"
                         size="small"
                         variant="outlined"
                         color="inherit"
@@ -253,12 +253,12 @@ export default function Index({ bots, filters }: IndexProps) {
                 emptyState={
                     <Box sx={{ textAlign: "center", py: 4 }}>
                         <Typography color="text.secondary">
-                            No AI agents configured yet.
+                            No AI personas configured yet.
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 0.5 }}>
                             <Link
                                 component={InertiaLink}
-                                href="/admin/ai/chat-bots/new"
+                                href="/admin/ai/personas/new"
                                 underline="hover"
                             >
                                 Add your first one
@@ -292,7 +292,7 @@ export default function Index({ bots, filters }: IndexProps) {
                         </IconButton>
                         <IconButton
                             component={InertiaLink}
-                            href={`/admin/ai/chat-bots/${bot.slug}`}
+                            href={`/admin/ai/personas/${bot.slug}`}
                             size="small"
                             color="primary"
                             title={`Edit ${getSystemLabel(bot)}`}

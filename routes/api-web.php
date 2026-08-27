@@ -23,7 +23,7 @@ use App\Http\Controllers\Admin\TargetedResumeController;
 Route::middleware(['auth', 'can:manage-ai-tools'])
     ->prefix('api/admin/ai')
     ->group(function () {
-        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools']);
+        Route::get('/personas/mcp-tools', [AiChatBotController::class, 'mcpTools']);
         Route::put('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'apiUpdate']);
         Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels']);
         Route::get('/systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);

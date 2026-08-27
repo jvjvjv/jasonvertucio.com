@@ -56,7 +56,7 @@ class ChatBotSessionStore
 
         $conversation = AiConversation::query()
             ->where('public_id', $conversationPublicId)
-            ->where('ai_chat_bot_id', $aiChatBot->id)
+            ->where('ai_persona_id', $aiChatBot->id)
             ->with('messages')
             ->first();
 

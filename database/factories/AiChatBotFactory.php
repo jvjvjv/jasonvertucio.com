@@ -28,7 +28,7 @@ class AiChatBotFactory extends Factory
             'slug' => fake()->unique()->slug(),
             'access_path' => 'chat',
             'description' => fake()->sentence(),
-            'prompt_template' => 'You are {{bot_name}}. Respond helpfully to the visitor.',
+            'prompt_template' => 'You are {{persona_name}}. Respond helpfully to the visitor.',
             'allowed_roles' => [],
             'is_active' => true,
             'require_visitor_identity' => false,

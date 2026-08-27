@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
-use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiPersonaConversationService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Mockery;
 use Tests\TestCase;
@@ -81,7 +81,7 @@ class ChatBotControllerTest extends TestCase
             'public_id' => (string) Str::ulid(),
             'user_id' => $user->id,
             'ai_system_id' => $privateAllowedBot->ai_system_id,
-            'ai_chat_bot_id' => $privateAllowedBot->id,
+            'ai_persona_id' => $privateAllowedBot->id,
             'feature' => $privateAllowedBot->featureKey(),
             'title' => 'Older Conversation',
             'status' => 'active',
@@ -95,7 +95,7 @@ class ChatBotControllerTest extends TestCase
             'public_id' => (string) Str::ulid(),
             'user_id' => $user->id,
             'ai_system_id' => $privateAllowedBot->ai_system_id,
-            'ai_chat_bot_id' => $privateAllowedBot->id,
+            'ai_persona_id' => $privateAllowedBot->id,
             'feature' => $privateAllowedBot->featureKey(),
             'title' => 'Newer Conversation',
             'status' => 'active',
@@ -180,7 +180,7 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('statusForChatBot')
+        $readiness->shouldReceive('statusForPersona')
             ->once()
             ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill'));
 
@@ -200,7 +200,7 @@ class ChatBotControllerTest extends TestCase
         ]);
 
         $readiness = Mockery::mock(AiModelReadinessService::class);
-        $readiness->shouldReceive('warmUpChatBot')
+        $readiness->shouldReceive('warmUpPersona')
             ->once()
             ->andReturnUsing(fn (): array => $this->loadedStatus('openai-compatible', 'deepseek-r1-distill') + [
                 'warmup_attempted' => true,
@@ -296,11 +296,11 @@ class ChatBotControllerTest extends TestCase
         $conversation = AiConversation::factory()->create([
             'user_id' => null,
             'ai_system_id' => $bot->ai_system_id,
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
             'feature' => $bot->featureKey(),
         ]);
 
-        $service = Mockery::mock(AiChatBotConversationService::class);
+        $service = Mockery::mock(AiPersonaConversationService::class);
         $service->shouldReceive('startConversation')
             ->once()
             ->andReturn($conversation);
@@ -313,7 +313,7 @@ class ChatBotControllerTest extends TestCase
             ->zeroOrMoreTimes()
             ->andReturnSelf();
 
-        $this->app->instance(AiChatBotConversationService::class, $service);
+        $this->app->instance(AiPersonaConversationService::class, $service);
 
         $response = $this->post(route('chat-bots.root.message', $bot), [
             'message' => 'Start talking',
@@ -339,14 +339,14 @@ class ChatBotControllerTest extends TestCase
         $firstConversation = AiConversation::factory()->create([
             'user_id' => null,
             'ai_system_id' => $bot->ai_system_id,
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
             'feature' => $bot->featureKey(),
         ]);
 
         $secondConversation = AiConversation::factory()->create([
             'user_id' => null,
             'ai_system_id' => $bot->ai_system_id,
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
             'feature' => $bot->featureKey(),
         ]);
 
@@ -378,7 +378,7 @@ class ChatBotControllerTest extends TestCase
         $conversation = AiConversation::factory()->create([
             'user_id' => null,
             'ai_system_id' => $bot->ai_system_id,
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
             'feature' => $bot->featureKey(),
         ]);
 

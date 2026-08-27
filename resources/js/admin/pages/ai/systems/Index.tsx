@@ -128,7 +128,7 @@ export default function Index({ systems }: IndexProps) {
         const botCount = system.chat_bots_count;
         const message =
             botCount > 0
-                ? `"${system.name}" is used by ${botCount} agent(s). Deleting it will deactivate those agents. The system data will be preserved. Continue?`
+                ? `"${system.name}" is used by ${botCount} persona(s). Deleting it will deactivate those personas. The system data will be preserved. Continue?`
                 : `Delete AI system "${system.name}"? This cannot be undone.`;
 
         confirm(
@@ -170,10 +170,10 @@ export default function Index({ systems }: IndexProps) {
                 <Box sx={{ display: "flex", gap: 1 }}>
                     <Button
                         component={InertiaLink}
-                        href="/admin/ai/chat-bots"
+                        href="/admin/ai/personas"
                         variant="outlined"
                     >
-                        Agents
+                        Personas
                     </Button>
                     <Button
                         component={InertiaLink}

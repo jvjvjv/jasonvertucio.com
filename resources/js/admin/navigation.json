@@ -65,7 +65,7 @@
         { "can": "manage-ai-tools", "href": "/admin/resume/targeted-builder", "icon": "TrackChanges", "label": "Targeted Resume Builder", "description": "Use AI to tailor your resume for specific job postings" },
         { "can": "manage-ai-tools", "href": "/admin/ai/systems",              "icon": "Memory",       "label": "AI Systems",              "description": "Manage AI providers, API keys, and feature defaults" },
         { "can": "manage-ai-tools", "href": "/admin/ai/system-prompts",       "icon": "Description",  "label": "System Prompts",          "description": "Manage reusable system prompts for AI systems" },
-        { "can": "manage-ai-tools", "href": "/admin/ai/chat-bots",            "icon": "SmartToy",     "label": "AI Chat Bots",            "description": "Create and manage reusable AI chat bots and their access rules" },
+        { "can": "manage-ai-tools", "href": "/admin/ai/personas",            "icon": "SmartToy",     "label": "AI Personas",             "description": "Create and manage reusable AI personas and their access rules" },
         { "can": "manage-ai-tools", "href": "/admin/ai/conversations",        "icon": "Forum",        "label": "AI Conversations",        "description": "Browse AI conversations, review message history, and delete old threads" },
         { "can": "manage-ai-tools", "href": "/admin/ai/memories",             "icon": "Psychology",   "label": "AI Memory",               "description": "View and manage learned insights from AI conversations" },
         { "can": "manage-ai-tools", "href": "/admin/ai/job-url-parsers",      "icon": "Rule",         "label": "Job URL Parsers",         "description": "Review, approve, and edit saved parsers generated from job posting URLs" }

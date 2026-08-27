@@ -89,11 +89,11 @@ export default function Edit({
             <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                 <Button
                     component={InertiaLink}
-                    href={`/admin/ai/chat-bots?ai_system_id=${aiSystem.id}`}
+                    href={`/admin/ai/personas?ai_system_id=${aiSystem.id}`}
                     variant="outlined"
                     size="small"
                 >
-                    Agents ({aiSystem.chat_bots_count || 0})
+                    Personas ({aiSystem.chat_bots_count || 0})
                 </Button>
                 <Button
                     component={InertiaLink}
@@ -173,7 +173,7 @@ export default function Edit({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, agents on this system cannot use MCP tools."
+                    description="Select the MCP tools this system may expose. If none are selected, personas on this system cannot use MCP tools."
                 />
             </Box>
             <ConfirmDialog {...dialogProps} />

@@ -68,7 +68,7 @@ export default function ChatBotCard({
                             color="text.secondary"
                         >
                             {bot.description ??
-                                "No description is available for this agent yet."}
+                                "No description is available for this persona yet."}
                         </Typography>
                     </Stack>
 

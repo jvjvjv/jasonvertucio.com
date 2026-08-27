@@ -14,11 +14,11 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\Management\AiChatBotManager;
+use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 
 /**
  * code-talker 0.11.0 removed the package's admin `AiChatBotController` — this
- * controller is now fully host-owned, built on `AiChatBotManager` for the
+ * controller is now fully host-owned, built on `AiPersonaManager` for the
  * write operations (create/update/delete) and `allowed_roles`/Keystone role
  * selection remaining host-only concerns.
  */
@@ -26,7 +26,7 @@ class AiChatBotController extends Controller
 {
     use ProvidesAdminNavigation;
 
-    public function __construct(private AiChatBotManager $bots)
+    public function __construct(private AiPersonaManager $bots)
     {
     }
 
@@ -72,7 +72,7 @@ class AiChatBotController extends Controller
         return Inertia::render('ai/bots/Index', [
             'bots' => $bots,
             'filters' => ['ai_system_id' => $aiSystemId],
-            'navBlocks' => $this->navBlocksFor('/admin/ai/chat-bots', $request),
+            'navBlocks' => $this->navBlocksFor('/admin/ai/personas', $request),
         ]);
     }
 

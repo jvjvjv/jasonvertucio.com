@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiChatBot;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
-use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\AiPersonaConversationService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
 use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
@@ -72,7 +72,7 @@ class AiChatBotOverrideTest extends TestCase
         $this->app->instance(AgentFactory::class, $agentFactory);
         $this->app->instance(AiMemoryService::class, $memoryService);
 
-        $service = app(AiChatBotConversationService::class);
+        $service = app(AiPersonaConversationService::class);
 
         $conversation = $service->startConversation($bot->fresh());
 
@@ -124,7 +124,7 @@ class AiChatBotOverrideTest extends TestCase
 
         $service = app(AiModelReadinessService::class);
 
-        $status = $service->warmUpChatBot($bot->fresh());
+        $status = $service->warmUpPersona($bot->fresh());
 
         $this->assertTrue($status['warmup_attempted']);
         $this->assertSame('loaded', $status['state']);

@@ -48,16 +48,16 @@ export default function Create({ systems, roles }: CreateProps) {
         selectedSystem?.supports_tools === true || form.data.tools_enabled;
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.post("/admin/ai/chat-bots");
+        form.post("/admin/ai/personas");
     };
 
     return (
         <AdminLayout>
-            <Head title="New | Agents" />
+            <Head title="New | Personas" />
             <PageHeader
-                title="Add Agent"
-                backHref="/admin/ai/chat-bots"
-                backLabel="Back to Agents"
+                title="Add Persona"
+                backHref="/admin/ai/personas"
+                backLabel="Back to Personas"
             />
 
             <Card>
@@ -82,7 +82,7 @@ export default function Create({ systems, roles }: CreateProps) {
                         >
                             <Button
                                 component={InertiaLink}
-                                href="/admin/ai/chat-bots"
+                                href="/admin/ai/personas"
                                 color="inherit"
                             >
                                 Cancel
@@ -92,7 +92,7 @@ export default function Create({ systems, roles }: CreateProps) {
                                 variant="contained"
                                 disabled={form.processing}
                             >
-                                Save Agent
+                                Save Persona
                             </Button>
                         </Box>
                     </Box>

@@ -30,7 +30,7 @@ export default function TailoredResumeEditor({
         <Box sx={{ p: { xs: 1.5, md: 3 } }}>
             <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
                 Edit the finalized resume markdown directly. Saving regenerates
-                the DOCX and PDF, and lets the chat agent know the resume was
+                the DOCX and PDF, and lets the AI persona know the resume was
                 changed outside of chat.
             </Typography>
 

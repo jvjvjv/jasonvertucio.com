@@ -69,14 +69,14 @@ class AiChatBotControllerTest extends TestCase
             'ai_system_id' => $system->id,
             'context_length' => 8192,
             'temperature' => 0.45,
-            'prompt_template' => 'You are {{bot_name}}.',
+            'prompt_template' => 'You are {{persona_name}}.',
             'allowed_roles' => ['admin'],
             'is_active' => true,
             'require_visitor_identity' => true,
         ]);
 
         $response->assertRedirect(route('admin.ai.bots.index'));
-        $this->assertDatabaseHas('ai_chat_bots', [
+        $this->assertDatabaseHas('ai_personas', [
             'name' => 'Lead Intake',
             'slug' => 'lead-intake',
             'access_path' => 'root',
@@ -106,7 +106,7 @@ class AiChatBotControllerTest extends TestCase
             'slug' => 'role-gated',
             'access_path' => $bot->access_path,
             'ai_system_id' => $bot->ai_system_id,
-            'prompt_template' => 'You are {{bot_name}}.',
+            'prompt_template' => 'You are {{persona_name}}.',
             'allowed_roles' => ['admin', 'editor'],
             'is_active' => true,
         ]);
@@ -126,7 +126,7 @@ class AiChatBotControllerTest extends TestCase
             'access_path' => 'root',
             'description' => 'Conflicts with an existing route.',
             'ai_system_id' => $system->id,
-            'prompt_template' => 'You are {{bot_name}}.',
+            'prompt_template' => 'You are {{persona_name}}.',
             'allowed_roles' => [],
             'is_active' => true,
             'require_visitor_identity' => false,

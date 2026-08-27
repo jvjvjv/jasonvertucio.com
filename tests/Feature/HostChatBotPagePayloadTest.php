@@ -128,7 +128,7 @@ class HostChatBotPagePayloadTest extends TestCase
         ]);
 
         $conversation = AiConversation::factory()->create([
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
         ]);
 
         AiConversationMessage::create([
@@ -169,7 +169,7 @@ class HostChatBotPagePayloadTest extends TestCase
         ]);
 
         $conversation = AiConversation::factory()->create([
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
         ]);
 
         AiConversationMessage::create([

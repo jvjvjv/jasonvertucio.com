@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiChatBot;
 use Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
-use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
 use Jvjvjv\CodeTalker\Services\AiMemoryService;
+use Jvjvjv\CodeTalker\Services\AiPersonaConversationService;
 use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
 use Jvjvjv\CodeTalker\Services\LaravelAi\CodeTalkerAgent;
 use Laravel\Ai\Responses\Data\Meta;
@@ -29,7 +29,7 @@ class AiChatBotConversationServiceTest extends TestCase
 
         $this->bindAgentReturning($this->fakeStream());
 
-        $service = app(AiChatBotConversationService::class);
+        $service = app(AiPersonaConversationService::class);
 
         $conversation = $service->startConversation($bot);
 
@@ -58,7 +58,7 @@ class AiChatBotConversationServiceTest extends TestCase
 
         $this->bindAgentReturning($this->usageAwareStream());
 
-        $service = app(AiChatBotConversationService::class);
+        $service = app(AiPersonaConversationService::class);
 
         $conversation = $service->startConversation($bot->fresh());
 

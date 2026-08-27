@@ -33,7 +33,7 @@ class AiSystemController extends Controller
      */
     public function index(): InertiaResponse
     {
-        $systems = AiSystem::withCount(['interactionLogs', 'chatBots'])
+        $systems = AiSystem::withCount(['interactionLogs', 'personas as chat_bots_count'])
             ->with('featureDefaults')
             ->orderBy('name')
             ->get();
@@ -91,7 +91,7 @@ class AiSystemController extends Controller
     public function edit(AiSystem $aiSystem): InertiaResponse
     {
         $aiSystem->load('featureDefaults');
-        $aiSystem->loadCount('chatBots');
+        $aiSystem->loadCount(['personas as chat_bots_count']);
         $aiSystem->feature_defaults_list = $aiSystem->featureDefaults->pluck('feature')->toArray();
 
         $existingDefaults = AiSystemFeatureDefault::where('ai_system_id', '!=', $aiSystem->id)
@@ -147,10 +147,10 @@ class AiSystemController extends Controller
     public function destroy(AiSystem $aiSystem): RedirectResponse
     {
         $name = $aiSystem->name;
-        $botCount = $aiSystem->chatBots()->count();
+        $botCount = $aiSystem->personas()->count();
 
         if ($botCount > 0) {
-            $aiSystem->chatBots()->update(['is_active' => false]);
+            $aiSystem->personas()->update(['is_active' => false]);
         }
 
         $aiSystem->delete();

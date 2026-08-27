@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Jvjvjv\CodeTalker\Models\AiConversation as BaseAiConversation;
-use Jvjvjv\CodeTalker\Services\AiChatBotConversationService;
+use Jvjvjv\CodeTalker\Services\AiPersonaConversationService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Jvjvjv\CodeTalker\Services\ChatBot\SseFrameEncoder;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,7 +26,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * code-talker 0.11.0 removed the package's own `ChatBotController` and every
  * collaborator it used to resolve from the container — the package is now a
- * pure service layer (`AiChatBotConversationService`, `SseFrameEncoder`,
+ * pure service layer (`AiPersonaConversationService`, `SseFrameEncoder`,
  * `AiModelReadinessService`). This controller owns route dispatch, per-browser
  * conversation continuity, and SSE streaming outright, reproducing the removed
  * package controller's behavior (see `openspec/changes/upgrade-code-talker-0-11`).
@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ChatBotController extends Controller
 {
     public function __construct(
-        private AiChatBotConversationService $conversationService,
+        private AiPersonaConversationService $conversationService,
         private AiModelReadinessService $modelReadinessService,
         private ChatBotAccessGuard $accessGuard,
         private ChatBotSessionStore $sessions,
@@ -95,7 +95,7 @@ class ChatBotController extends Controller
             abort(404);
         }
 
-        $bot = $conversation->aiChatBot;
+        $bot = $conversation->aiPersona;
 
         $this->accessGuard->authorize($request, $bot);
 
@@ -120,7 +120,7 @@ class ChatBotController extends Controller
         $this->accessGuard->authorize($request, $aiChatBot);
 
         return response()->json([
-            'status' => $this->modelReadinessService->statusForChatBot($aiChatBot),
+            'status' => $this->modelReadinessService->statusForPersona($aiChatBot),
         ]);
     }
 
@@ -129,7 +129,7 @@ class ChatBotController extends Controller
         $this->accessGuard->authorize($request, $aiChatBot);
 
         return response()->json([
-            'status' => $this->modelReadinessService->warmUpChatBot($aiChatBot),
+            'status' => $this->modelReadinessService->warmUpPersona($aiChatBot),
         ]);
     }
 
@@ -165,6 +165,12 @@ class ChatBotController extends Controller
         $events = $this->conversationService->continueConversation($conversation, $message);
 
         $response = new StreamedResponse(function () use ($events): void {
+            // connection_aborted() (used by the conversation service's default
+            // cancellation check) only reports the client disconnect once output
+            // has been flushed to a dead connection *and* PHP is told not to kill
+            // the script outright on that disconnect — hence this call.
+            ignore_user_abort(true);
+
             foreach ($this->sseEncoder->encode($events) as $frame) {
                 echo $frame;
                 if (ob_get_level() > 0) {
@@ -229,7 +235,7 @@ class ChatBotController extends Controller
         }
 
         $conversation = $this->conversationService->startConversation(
-            bot: $aiChatBot,
+            persona: $aiChatBot,
             user: $request->user(),
             visitorName: $request->string('name')->toString() ?: null,
             visitorEmail: $request->string('email')->toString() ?: null,
