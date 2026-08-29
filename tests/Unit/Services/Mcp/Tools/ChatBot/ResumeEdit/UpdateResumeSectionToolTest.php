@@ -133,6 +133,29 @@ class UpdateResumeSectionToolTest extends TestCase
         $this->assertStringContainsString('Updated my name.', $message->content);
     }
 
+    public function test_it_recovers_a_leading_json_value_when_the_model_leaks_trailing_garbage(): void
+    {
+        $this->liveVersion();
+        $user = User::factory()->create();
+        $user->givePermissionTo('edit-resume');
+
+        // Reproduces a real failure: a local model's own tool-call XML syntax
+        // ("</parameter><parameter=summary>...") leaked into the `data` string
+        // after the valid JSON closed.
+        $data = json_encode(['top' => [], 'other' => []])
+            ."</parameter>\n<parameter=summary>\nStreamlined the skills section.";
+
+        $result = $this->handle(ToolContext::forUser($user->id), [
+            'section' => 'skills',
+            'data' => $data,
+        ]);
+
+        $this->assertTrue($result['success']);
+
+        $candidate = ResumeEditCandidate::first();
+        $this->assertSame(['top' => [], 'other' => []], $candidate->snapshot['skills']);
+    }
+
     public function test_it_rejects_an_unknown_section(): void
     {
         $this->liveVersion();

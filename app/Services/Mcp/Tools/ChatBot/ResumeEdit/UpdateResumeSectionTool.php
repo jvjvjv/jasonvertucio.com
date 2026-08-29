@@ -75,7 +75,24 @@ class UpdateResumeSectionTool extends AuthorizedResumeEditTool
             return Response::error('Invalid section. Must be one of: '.implode(', ', self::SECTIONS));
         }
 
-        $decoded = json_decode((string) ($request->get('data') ?? ''), true);
+        $rawData = (string) ($request->get('data') ?? '');
+        $decoded = json_decode($rawData, true);
+
+        if (! is_array($decoded)) {
+            // Some models (especially smaller local ones) lose the JSON grammar
+            // partway through a long string argument and leak their own
+            // tool-call formatting after the closing brace/bracket. Recover by
+            // decoding just the first balanced JSON value and discarding the
+            // trailing garbage, instead of failing the whole edit outright.
+            $decoded = $this->decodeLeadingJsonValue($rawData);
+
+            if (is_array($decoded)) {
+                Log::warning('chat-bot.update-resume-section: recovered JSON with trailing garbage discarded', [
+                    'conversation_id' => $this->context->conversation?->id,
+                    'raw_length' => strlen($rawData),
+                ]);
+            }
+        }
 
         if (! is_array($decoded)) {
             return Response::error('data must be valid JSON matching the section shape.');
@@ -117,6 +134,68 @@ class UpdateResumeSectionTool extends AuthorizedResumeEditTool
 
             return Response::error('Failed to save the resume edit. Check the application log for details.');
         }
+    }
+
+    /**
+     * Decode the first balanced JSON object/array found at the start of the
+     * string, ignoring any trailing content after it closes. Returns null if
+     * no balanced value is found or it doesn't decode to an array.
+     */
+    private function decodeLeadingJsonValue(string $value): mixed
+    {
+        $depth = 0;
+        $start = null;
+        $inString = false;
+        $escaped = false;
+
+        for ($i = 0, $length = strlen($value); $i < $length; $i++) {
+            $char = $value[$i];
+
+            if ($start === null) {
+                if ($char === '{' || $char === '[') {
+                    $start = $i;
+                    $depth = 1;
+                }
+
+                continue;
+            }
+
+            if ($escaped) {
+                $escaped = false;
+
+                continue;
+            }
+
+            if ($char === '\\') {
+                $escaped = true;
+
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = ! $inString;
+
+                continue;
+            }
+
+            if ($inString) {
+                continue;
+            }
+
+            if ($char === '{' || $char === '[') {
+                $depth++;
+            } elseif ($char === '}' || $char === ']') {
+                $depth--;
+
+                if ($depth === 0) {
+                    $decoded = json_decode(substr($value, $start, $i - $start + 1), true);
+
+                    return is_array($decoded) ? $decoded : null;
+                }
+            }
+        }
+
+        return null;
     }
 
     private function recordEditMessage(?int $conversationId, string $section, string $summary): void
