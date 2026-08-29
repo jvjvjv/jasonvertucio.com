@@ -160,7 +160,9 @@ class AiChatBotControllerTest extends TestCase
         ]);
         $response->assertJsonFragment([
             'name' => 'get-resume-data',
-            'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring.",
+            'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring or editing. "
+                .'Includes `resume_version` (the live resume version string) and `pending_revision_number` (the highest-revision '
+                .'pending AI-drafted candidate for that version, or null if none exists — call update-resume-section to continue it).',
         ]);
     }
 

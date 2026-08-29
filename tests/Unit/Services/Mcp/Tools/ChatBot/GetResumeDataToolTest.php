@@ -3,6 +3,8 @@
 namespace Tests\Unit\Services\Mcp\Tools\ChatBot;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Models\ResumeEditCandidate;
+use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Services\Mcp\Tools\ChatBot\GetResumeDataTool;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -67,5 +69,26 @@ class GetResumeDataToolTest extends TestCase
 
         $this->assertSame(['amount' => 120000.0, 'period' => 'per_year'], $result['experience'][0]['salaryStart']);
         $this->assertSame(['amount' => 150000.0, 'period' => 'per_year'], $result['experience'][0]['salaryEnd']);
+    }
+
+    public function test_it_reports_the_live_version_and_no_pending_revision_when_none_exists(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+
+        $result = $this->handle(ToolContext::forUser(null));
+
+        $this->assertSame($version->version, $result['resume_version']);
+        $this->assertNull($result['pending_revision_number']);
+    }
+
+    public function test_it_reports_the_highest_pending_revision_number(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+        ResumeEditCandidate::factory()->create(['base_resume_version_id' => $version->id, 'revision_number' => 1]);
+        ResumeEditCandidate::factory()->create(['base_resume_version_id' => $version->id, 'revision_number' => 2]);
+
+        $result = $this->handle(ToolContext::forUser(null));
+
+        $this->assertSame(2, $result['pending_revision_number']);
     }
 }

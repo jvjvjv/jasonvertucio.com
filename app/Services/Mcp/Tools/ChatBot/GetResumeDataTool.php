@@ -3,6 +3,8 @@
 namespace App\Services\Mcp\Tools\ChatBot;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Models\ResumeEditCandidate;
+use App\Models\ResumeVersion;
 use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -15,7 +17,11 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
 #[Name('get-resume-data')]
-#[Description("Load the candidate's full resume data (experience, skills, education, projects) before tailoring.")]
+#[Description(
+    "Load the candidate's full resume data (experience, skills, education, projects) before tailoring or editing. "
+    .'Includes `resume_version` (the live resume version string) and `pending_revision_number` (the highest-revision '
+    .'pending AI-drafted candidate for that version, or null if none exists — call update-resume-section to continue it).'
+)]
 class GetResumeDataTool extends Tool
 {
     public function __construct(
@@ -43,6 +49,19 @@ class GetResumeDataTool extends Tool
                 return $experience;
             }, $resumeData['experience'] ?? []);
         }
+
+        $liveVersion = ResumeVersion::current()->first();
+        $resumeData['resume_version'] = $liveVersion?->version;
+
+        $pendingCandidate = $liveVersion
+            ? ResumeEditCandidate::query()
+                ->where('base_resume_version_id', $liveVersion->id)
+                ->pending()
+                ->orderByDesc('revision_number')
+                ->first()
+            : null;
+
+        $resumeData['pending_revision_number'] = $pendingCandidate?->revision_number;
 
         return Response::structured($resumeData);
     }
