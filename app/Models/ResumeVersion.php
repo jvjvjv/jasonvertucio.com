@@ -79,4 +79,9 @@ class ResumeVersion extends Model
     {
         return $this->hasMany(TargetedResume::class);
     }
+
+    public function editCandidates(): HasMany
+    {
+        return $this->hasMany(ResumeEditCandidate::class, 'base_resume_version_id');
+    }
 }

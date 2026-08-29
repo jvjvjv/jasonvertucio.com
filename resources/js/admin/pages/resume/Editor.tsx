@@ -41,6 +41,7 @@ export default function Editor({
     availableVersions,
     mailConfigured,
     notificationRecipientCount,
+    pendingCandidates,
 }: EditorProps) {
     const [activeTab, setActiveTab] = useState(0);
     const [version, setVersion] = useState(initialVersion);
@@ -193,6 +194,43 @@ export default function Editor({
                 backLabel="Back to Resume Management"
             />
 
+            {pendingCandidates.length > 0 && (
+                <Card
+                    sx={{
+                        mb: 2,
+                        bgcolor: "warning.light",
+                        color: "warning.contrastText",
+                    }}
+                >
+                    <CardContent>
+                        <Typography variant="subtitle1">
+                            {pendingCandidates.length} AI-drafted revision
+                            {pendingCandidates.length > 1
+                                ? "s are"
+                                : " is"}{" "}
+                            pending review. Manual edits are disabled until
+                            resolved.
+                        </Typography>
+                        <List dense disablePadding>
+                            {pendingCandidates.map((c) => (
+                                <ListItem key={c.id} sx={{ py: 0.25, pl: 0 }}>
+                                    <Button
+                                        size="small"
+                                        onClick={() => {
+                                            router.get(
+                                                `/resume?revision=${c.id}`,
+                                            );
+                                        }}
+                                    >
+                                        Review revision #{c.revision_number}
+                                    </Button>
+                                </ListItem>
+                            ))}
+                        </List>
+                    </CardContent>
+                </Card>
+            )}
+
             {errors.length > 0 && (
                 <Card
                     sx={{
@@ -343,10 +381,14 @@ export default function Editor({
                 <Fab
                     color="primary"
                     variant="extended"
-                    disabled={saving}
+                    disabled={saving || pendingCandidates.length > 0}
                     onClick={handleSave}
                 >
-                    {saving ? "Saving..." : "Save Changes"}
+                    {pendingCandidates.length > 0
+                        ? "Resolve pending revision first"
+                        : saving
+                          ? "Saving..."
+                          : "Save Changes"}
                 </Fab>
             </Box>
 

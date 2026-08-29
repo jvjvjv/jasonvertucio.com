@@ -6,7 +6,10 @@ use App\Contracts\ResumeDataServiceContract;
 use App\Contracts\ResumeVersionServiceContract;
 use App\Http\Controllers\Controller;
 use App\Mail\ResumeUpdated;
+use App\Models\ResumeEditCandidate;
 use App\Models\ResumeShareCode;
+use App\Models\ResumeVersion;
+use App\Services\ResumeEditCandidateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +23,7 @@ class ResumeEditorController extends Controller
     public function __construct(
         protected ResumeDataServiceContract $dataService,
         protected ResumeVersionServiceContract $versionService,
+        protected ResumeEditCandidateService $candidateService,
     ) {}
 
     /**
@@ -35,10 +39,14 @@ class ResumeEditorController extends Controller
 
     /**
      * GET /admin/resume/editor
-     * Show the resume editor with all JSON data
+     * Show the resume editor with all JSON data. Reviewing/approving/rejecting
+     * a specific AI-drafted candidate revision happens on the public resume
+     * preview page (`/resume?revision=`) instead of here.
      */
     public function edit(): InertiaResponse
     {
+        $liveVersion = ResumeVersion::current()->first();
+
         $data = $this->dataService->getAllEditableData();
         $version = $this->versionService->getCurrentVersion();
         $docxExists = $this->versionService->docxExistsForCurrentVersion();
@@ -47,6 +55,14 @@ class ResumeEditorController extends Controller
         // Get count of recipients who will be notified on update
         $notificationRecipientCount = ResumeShareCode::shouldNotifyOnUpdate()->count();
 
+        $pendingCandidates = $liveVersion
+            ? ResumeEditCandidate::query()
+                ->where('base_resume_version_id', $liveVersion->id)
+                ->pending()
+                ->orderBy('revision_number')
+                ->get(['id', 'revision_number', 'last_edited_at'])
+            : collect();
+
         return Inertia::render('resume/Editor', [
             'data' => $data,
             'version' => $version,
@@ -54,6 +70,7 @@ class ResumeEditorController extends Controller
             'availableVersions' => $availableVersions,
             'mailConfigured' => $this->isMailConfigured(),
             'notificationRecipientCount' => $notificationRecipientCount,
+            'pendingCandidates' => $pendingCandidates,
         ]);
     }
 
@@ -73,6 +90,23 @@ class ResumeEditorController extends Controller
             'data.projects' => ['required', 'array'],
             'notify_recipients' => ['boolean'],
         ]);
+
+        $liveVersion = ResumeVersion::current()->first();
+
+        if ($liveVersion !== null && $this->candidateService->hasPendingCandidateFor($liveVersion)) {
+            $message = 'An AI-drafted resume revision is pending review. Approve or reject it before making manual edits.';
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $message,
+                ], 409);
+            }
+
+            return redirect()
+                ->route('admin.resume.editor')
+                ->with('error', $message);
+        }
 
         try {
             // Save version
@@ -153,5 +187,55 @@ class ResumeEditorController extends Controller
                 ->route('admin.resume.editor')
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Where to send the admin back to after resolving a candidate: the admin
+     * editor (default) or the public resume preview page, chosen by the
+     * `redirect_to` field the reviewing page submits.
+     */
+    private function candidateResolvedRedirectTarget(Request $request): string
+    {
+        return $request->input('redirect_to') === 'preview'
+            ? route('resume.index')
+            : route('admin.resume.editor');
+    }
+
+    /**
+     * POST /admin/resume/candidates/{candidate}/approve
+     * Materialize a pending AI-drafted candidate as the new live resume version.
+     */
+    public function approveCandidate(Request $request, ResumeEditCandidate $candidate): RedirectResponse
+    {
+        $target = $this->candidateResolvedRedirectTarget($request);
+
+        if ($candidate->status !== 'pending') {
+            return redirect($target)->with('error', 'This candidate has already been resolved.');
+        }
+
+        $result = $this->candidateService->approve($candidate, $request->user()->id);
+
+        $message = isset($result['error'])
+            ? 'Candidate approved, but document generation failed: '.$result['error']
+            : 'Candidate approved and is now the live resume.';
+
+        return redirect($target)->with(isset($result['error']) ? 'error' : 'success', $message);
+    }
+
+    /**
+     * POST /admin/resume/candidates/{candidate}/reject
+     * Permanently delete a pending AI-drafted candidate. No undo.
+     */
+    public function rejectCandidate(Request $request, ResumeEditCandidate $candidate): RedirectResponse
+    {
+        $target = $this->candidateResolvedRedirectTarget($request);
+
+        if ($candidate->status !== 'pending') {
+            return redirect($target)->with('error', 'This candidate has already been resolved.');
+        }
+
+        $this->candidateService->reject($candidate);
+
+        return redirect($target)->with('success', 'Candidate rejected and permanently deleted.');
     }
 }

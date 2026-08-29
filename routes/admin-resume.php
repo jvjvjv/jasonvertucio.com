@@ -13,6 +13,10 @@ Route::middleware(['auth', 'can:edit-resume', HandleInertiaRequests::class])
     ->group(function () {
         Route::get('/editor', [ResumeEditorController::class, 'edit'])->name('editor');
 
+        // AI-persona resume-edit candidate review
+        Route::post('/candidates/{candidate}/approve', [ResumeEditorController::class, 'approveCandidate'])->name('candidates.approve');
+        Route::post('/candidates/{candidate}/reject', [ResumeEditorController::class, 'rejectCandidate'])->name('candidates.reject');
+
         // Application Metrics
         Route::get('/metrics', [ResumeMetricsController::class, 'index'])->name('metrics');
 

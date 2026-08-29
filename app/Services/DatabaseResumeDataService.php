@@ -214,6 +214,22 @@ class DatabaseResumeDataService implements ResumeDataServiceContract
     }
 
     /**
+     * Get education data formatted for display (year-only dates, no editor-only fields).
+     */
+    public function getEducationData(): array
+    {
+        $version = $this->getCurrentVersion();
+
+        if (! $version) {
+            return [];
+        }
+
+        $version->load('educations');
+
+        return $this->transformEducations($version->educations);
+    }
+
+    /**
      * Get the current ResumeVersion model.
      */
     protected function getCurrentVersion(): ?ResumeVersion
