@@ -27,6 +27,7 @@ interface ModelCapabilities {
     vision?: boolean;
     tools?: boolean | null;
     max_context_length?: number | null;
+    size_bytes?: number | null;
 }
 
 interface ModelOption {
@@ -34,6 +35,7 @@ interface ModelOption {
     name: string;
     loaded?: boolean;
     max_context_length?: number | null;
+    size_bytes?: number | null;
     capabilities?: ModelCapabilities;
 }
 
@@ -311,6 +313,7 @@ export default function AiSystemForm({
         ? {
               ...(selectedModel.capabilities ?? {}),
               max_context_length: selectedModel.max_context_length ?? null,
+              size_bytes: selectedModel.size_bytes ?? null,
           }
         : data.model_capabilities;
     // Strict `false`, not falsy — `null`/`undefined` means the provider never

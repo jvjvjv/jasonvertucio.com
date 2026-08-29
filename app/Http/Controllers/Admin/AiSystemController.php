@@ -230,6 +230,9 @@ class AiSystemController extends Controller
                 'name' => $m['display_name'] ?? $m['id'],
                 'loaded' => (bool) ($m['loaded'] ?? false),
                 'max_context_length' => $m['max_context_length'] ?? null,
+                // Only present for providers that report a local model file's size on
+                // disk (currently LM Studio's native API); null everywhere else.
+                'size_bytes' => $m['size_bytes'] ?? null,
                 'capabilities' => [
                     // Only LM Studio's model list reports capabilities at all; leaving
                     // `reasoning`/`tools` unset (rather than defaulting to false) for every

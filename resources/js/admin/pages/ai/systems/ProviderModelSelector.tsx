@@ -13,11 +13,28 @@ interface ModelCapabilities {
     vision?: boolean;
     tools?: boolean | null;
     max_context_length?: number | null;
+    size_bytes?: number | null;
 }
 
 interface ModelOption {
     id: string;
     name: string;
+    size_bytes?: number | null;
+}
+
+// Only providers that expose local model files on disk (e.g. LM Studio's
+// native API) report a size; everything else leaves `size_bytes` null.
+function formatFileSize(sizeBytes: number): string {
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let value = sizeBytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+    }
+
+    return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
 interface ProviderOption {
@@ -202,6 +219,9 @@ export default function ProviderModelSelector({
                         {availableModels.map((model) => (
                             <MenuItem key={model.id} value={model.id}>
                                 {model.name} ({model.id})
+                                {model.size_bytes
+                                    ? ` — ${formatFileSize(model.size_bytes)}`
+                                    : ""}
                             </MenuItem>
                         ))}
                     </TextField>
@@ -243,6 +263,15 @@ export default function ProviderModelSelector({
                                 <Chip
                                     size="small"
                                     label={`Max context ${selectedModelCapabilities.max_context_length.toLocaleString()}`}
+                                    variant="outlined"
+                                />
+                            )}
+                            {!!selectedModelCapabilities.size_bytes && (
+                                <Chip
+                                    size="small"
+                                    label={formatFileSize(
+                                        selectedModelCapabilities.size_bytes,
+                                    )}
                                     variant="outlined"
                                 />
                             )}
