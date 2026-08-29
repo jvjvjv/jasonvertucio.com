@@ -24,11 +24,7 @@ class ResumeEditCandidateService
      */
     public function resolveOrCreateCandidateForEdit(ResumeVersion $base, ?AiConversation $conversation): ResumeEditCandidate
     {
-        $latestPending = ResumeEditCandidate::query()
-            ->where('base_resume_version_id', $base->id)
-            ->pending()
-            ->orderByDesc('revision_number')
-            ->first();
+        $latestPending = $this->latestPendingCandidateFor($base);
 
         $windowHours = (int) config('resume.ai_edit_batch_window_hours', 12);
 
@@ -142,6 +138,31 @@ class ResumeEditCandidateService
             ->where('base_resume_version_id', $base->id)
             ->pending()
             ->exists();
+    }
+
+    /**
+     * The candidate new persona edits would attach to for this base version:
+     * the highest-revision `pending` candidate, or null if none exists.
+     */
+    public function latestPendingCandidateFor(ResumeVersion $base): ?ResumeEditCandidate
+    {
+        return ResumeEditCandidate::query()
+            ->where('base_resume_version_id', $base->id)
+            ->pending()
+            ->orderByDesc('revision_number')
+            ->first();
+    }
+
+    /**
+     * Look up a specific candidate revision for a base version, regardless of
+     * status (used to let a tool caller inspect a particular draft by number).
+     */
+    public function findCandidateByRevisionNumber(ResumeVersion $base, int $revisionNumber): ?ResumeEditCandidate
+    {
+        return ResumeEditCandidate::query()
+            ->where('base_resume_version_id', $base->id)
+            ->where('revision_number', $revisionNumber)
+            ->first();
     }
 
     /**

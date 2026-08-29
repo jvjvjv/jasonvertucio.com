@@ -162,7 +162,13 @@ class AiChatBotControllerTest extends TestCase
             'name' => 'get-resume-data',
             'description' => "Load the candidate's full resume data (experience, skills, education, projects) before tailoring or editing. "
                 .'Includes `resume_version` (the live resume version string) and `pending_revision_number` (the highest-revision '
-                .'pending AI-drafted candidate for that version, or null if none exists — call update-resume-section to continue it).',
+                .'pending AI-drafted candidate for that version, or null if none exists — tell the user a revision is already in '
+                .'progress if this is set, and call update-resume-section to continue it rather than starting a new one). Pass '
+                .'`revision_number` to load that specific draft revision\'s data instead of the live resume, e.g. to review what '
+                .'a pending revision actually contains.',
+        ]);
+        $response->assertJsonFragment([
+            'name' => 'get-resume-data-for-job',
         ]);
     }
 
