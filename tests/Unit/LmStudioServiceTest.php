@@ -72,6 +72,7 @@ class LmStudioServiceTest extends TestCase
                 'display_name' => 'Gemma 4 E4B',
                 'loaded' => true,
                 'max_context_length' => 131072,
+                'size_bytes' => null,
                 'capabilities' => [
                     'vision' => true,
                     'tools' => true,
