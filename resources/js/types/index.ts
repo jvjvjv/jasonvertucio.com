@@ -142,7 +142,8 @@ export interface Memory {
     feature: string;
     category: string;
     key: string;
-    content?: string;
+    /** Non-nullable column, never hidden on the model — always serialized. */
+    content: string;
     confidence: number;
     is_active: boolean;
 }

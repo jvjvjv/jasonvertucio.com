@@ -296,11 +296,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                                 {memory.confidence}
                                             </Typography>
                                             <Typography sx={{ mt: 0.5 }}>
-                                                {(
-                                                    memory as Memory & {
-                                                        content?: string;
-                                                    }
-                                                ).content ?? ""}
+                                                {memory.content}
                                             </Typography>
                                         </Box>
                                     ))

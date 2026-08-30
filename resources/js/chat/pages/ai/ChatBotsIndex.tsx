@@ -28,8 +28,13 @@ interface StatusResponse {
     status?: ModelStatusItem;
 }
 
+/**
+ * Statuses arrive per bot, asynchronously and independently, so a slug is
+ * absent until its own request lands (and stays absent if it fails) — the
+ * value type says so rather than claiming every slug resolves.
+ */
 interface StatusesBySlug {
-    [key: string]: ModelStatusItem;
+    [key: string]: ModelStatusItem | undefined;
 }
 
 export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {

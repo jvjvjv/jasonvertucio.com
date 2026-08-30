@@ -165,13 +165,11 @@ export default function Index({ bots, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
     const aiSystemId = filters?.ai_system_id;
 
-    const handleDelete = (bot: AiChatBot) => {
+    const handleDelete = (bot: ChatBotRow) => {
         confirm(`Delete AI persona "${bot.name}"?`, () => {
             router.delete(`/admin/ai/personas/${bot.slug}`);
         });
     };
-
-    console.log(bots);
 
     return (
         <AdminLayout>
