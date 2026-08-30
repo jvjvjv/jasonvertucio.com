@@ -6,6 +6,7 @@ use App\Contracts\ResumeDataServiceContract;
 use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeEditCandidate;
 use App\Models\ResumeVersion;
+use App\Services\Resume\ResumeSectionValidator;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Jvjvjv\CodeTalker\Models\AiConversation;
@@ -16,6 +17,7 @@ class ResumeEditCandidateService
     public function __construct(
         protected ResumeDataServiceContract $dataService,
         protected ResumeVersionServiceContract $versionService,
+        protected ResumeSectionValidator $sectionValidator,
     ) {}
 
     /**
@@ -55,10 +57,18 @@ class ResumeEditCandidateService
     /**
      * Apply a partial edit to one section of a candidate's snapshot.
      *
+     * The section is shape-checked first: a snapshot is rendered straight into
+     * the resume views, so a malformed section written here doesn't surface at
+     * the call site, it surfaces as a 500 on the review page.
+     *
      * @param  array<string, mixed>  $sectionData
+     *
+     * @throws InvalidArgumentException when the section shape is wrong
      */
     public function applySectionEdit(ResumeEditCandidate $candidate, string $section, array $sectionData): ResumeEditCandidate
     {
+        $this->sectionValidator->validate($section, $sectionData);
+
         $snapshot = $candidate->snapshot;
         $snapshot[$section] = $sectionData;
 

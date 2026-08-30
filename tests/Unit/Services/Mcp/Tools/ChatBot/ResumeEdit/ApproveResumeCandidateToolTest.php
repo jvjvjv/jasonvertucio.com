@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
 use App\Services\Mcp\Tools\ChatBot\ResumeEdit\ApproveResumeCandidateTool;
+use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Models\AiConversation;
@@ -25,7 +26,11 @@ class ApproveResumeCandidateToolTest extends TestCase
     {
         $dataService = new DatabaseResumeDataService;
 
-        return new ResumeEditCandidateService($dataService, new DatabaseResumeVersionService($dataService));
+        return new ResumeEditCandidateService(
+            $dataService,
+            new DatabaseResumeVersionService($dataService),
+            new ResumeSectionValidator,
+        );
     }
 
     private function liveVersion(): ResumeVersion
@@ -149,7 +154,9 @@ class ApproveResumeCandidateToolTest extends TestCase
 
         $message = AiConversationMessage::where('ai_conversation_id', $conversation->id)->latest('id')->first();
         $this->assertNotNull($message);
-        $this->assertSame('user', $message->role);
+        // The persona ran the approval, so the note belongs to its side of the
+        // transcript — see UpdateResumeSectionToolTest for the same reasoning.
+        $this->assertSame('assistant', $message->role);
         $this->assertSame('ai_resume_edit_approval', $message->metadata['origin']);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
+use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use InvalidArgumentException;
@@ -26,7 +27,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         $dataService = new DatabaseResumeDataService;
         $versionService = new DatabaseResumeVersionService($dataService);
 
-        $this->service = new ResumeEditCandidateService($dataService, $versionService);
+        $this->service = new ResumeEditCandidateService($dataService, $versionService, new ResumeSectionValidator);
     }
 
     private function liveVersion(): ResumeVersion

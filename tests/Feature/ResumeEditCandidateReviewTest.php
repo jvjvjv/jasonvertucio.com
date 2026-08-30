@@ -122,6 +122,39 @@ class ResumeEditCandidateReviewTest extends TestCase
         $this->assertTrue($base->fresh()->is_current);
     }
 
+    /**
+     * A draft written before the section shapes were validated can still be
+     * sitting in the table. Approving it must fail with something the reviewer
+     * can read, not a 500 or a silent no-op, so the only way out of a bad draft
+     * isn't editing the database by hand.
+     */
+    public function test_approving_a_malformed_candidate_reports_the_problem(): void
+    {
+        $admin = $this->admin();
+        $base = $this->liveVersion();
+        $candidate = ResumeEditCandidate::factory()->create([
+            'base_resume_version_id' => $base->id,
+            'revision_number' => 1,
+            'snapshot' => [
+                'personal' => ['name' => 'Jason Vertucio', 'title' => 'Engineer', 'email' => 'jason@example.com'],
+                'skills' => ['top' => [], 'other' => []],
+                'experience' => ['jobTitle' => 'Solo Object', 'company' => 'Acme'],
+                'education' => [['institution' => 'State University']],
+                'projects' => [['projectName' => 'Side Project']],
+            ],
+        ]);
+
+        $response = $this->actingAs($admin)->post("/admin/resume/candidates/{$candidate->id}/approve", [
+            'version' => app(ResumeEditCandidateService::class)->suggestedNextVersion($base),
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertSame('pending', $candidate->fresh()->status);
+        $this->assertTrue($base->fresh()->is_current);
+        $this->assertSame('Jason Vertucio', $base->fresh()->personalInfo->name);
+    }
+
     public function test_reject_endpoint_permanently_deletes_the_candidate(): void
     {
         $admin = $this->admin();

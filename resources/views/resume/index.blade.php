@@ -9,6 +9,18 @@
 @section('main')
 <div class="resume-container max-w-4xl mx-auto px-4 py-8">
 
+    {{-- Outcome of an approve/reject posted from the revision banner below --}}
+    @if(session('error'))
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-900">
+        {{ session('error') }}
+    </div>
+    @endif
+    @if(session('success'))
+    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-900">
+        {{ session('success') }}
+    </div>
+    @endif
+
     @if($candidate)
     <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p class="font-medium text-blue-900">
@@ -64,21 +76,27 @@
         $revisionLabel = $candidate
             ? 'Revision #'.$candidate['revision_number'].' ('.$candidate['status'].')'
             : (isset($version) && $version ? 'v'.$version : null);
+
+        // The live resume always carries every section, but a candidate
+        // revision is an unvalidated snapshot a persona proposed — the whole
+        // point of this page is to look at one, so a section that is missing or
+        // the wrong shape renders as far as it can rather than 500ing.
+        $personal = is_array($data['personal'] ?? null) ? $data['personal'] : [];
     @endphp
 
     {{-- Header with name, title, and summary --}}
     <x-resume.header
-        :name="$data['personal']['name']"
-        :title="$data['personal']['title']"
-        :summary="$data['personal']['summary']"
+        :name="$personal['name'] ?? ''"
+        :title="$personal['title'] ?? ''"
+        :summary="$personal['summary'] ?? ''"
         :revision-label="$revisionLabel"
     />
 
     {{-- Technical Skills --}}
-    <x-resume.skills :skills="$data['skills']" />
+    <x-resume.skills :skills="$data['skills'] ?? []" />
 
     {{-- Experience --}}
-    <x-resume.experience :experience="$data['experience']" />
+    <x-resume.experience :experience="$data['experience'] ?? []" />
 
     {{-- Education (only present for authorized viewers or a candidate revision) --}}
     @if(!empty($data['education']))
@@ -86,7 +104,7 @@
     @endif
 
     {{-- Selected Projects --}}
-    <x-resume.projects :projects="$data['projects']" />
+    <x-resume.projects :projects="$data['projects'] ?? []" />
 
     {{-- Print-only message - shows when user tries to print --}}
     <div class="print-message">

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
 use App\Services\Mcp\Tools\ChatBot\ResumeEdit\ListPendingResumeCandidatesTool;
+use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Services\Mcp\ToolResultConverter;
@@ -23,7 +24,11 @@ class ListPendingResumeCandidatesToolTest extends TestCase
     {
         $dataService = new DatabaseResumeDataService;
 
-        return new ResumeEditCandidateService($dataService, new DatabaseResumeVersionService($dataService));
+        return new ResumeEditCandidateService(
+            $dataService,
+            new DatabaseResumeVersionService($dataService),
+            new ResumeSectionValidator,
+        );
     }
 
     private function liveVersion(): ResumeVersion

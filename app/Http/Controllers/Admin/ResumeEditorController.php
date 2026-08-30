@@ -13,8 +13,10 @@ use App\Services\ResumeEditCandidateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -222,6 +224,15 @@ class ResumeEditorController extends Controller
             $result = $this->candidateService->approve($candidate, $request->user()->id, $validated['version']);
         } catch (\InvalidArgumentException $exception) {
             return redirect($target)->with('error', $exception->getMessage());
+        } catch (ValidationException $exception) {
+            // A draft written before section shapes were validated can still
+            // fail here. Flashed as `error` rather than left in the validation
+            // bag so the review page shows the reviewer why, instead of looking
+            // like the approval silently did nothing.
+            return redirect($target)->with(
+                'error',
+                'This revision cannot be published: '.implode(' ', Arr::flatten($exception->errors())),
+            );
         }
 
         $message = isset($result['error'])

@@ -3,10 +3,12 @@
 namespace App\Services\Mcp\Tools\ChatBot\ResumeEdit;
 
 use App\Models\ResumeVersion;
+use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Request;
@@ -21,8 +23,11 @@ use Laravel\Mcp\Server\Attributes\Name;
     .'This never changes the live resume directly — it creates or updates a draft revision that a human must '
     .'review and approve before it goes live. `data` is a JSON-encoded value matching the shape of that section '
     .'as returned by get-resume-data (e.g. for "personal": {"name","title","email","phone","linkedin","url","summary"}; '
-    .'for "skills": {"top":[{"title","list":[...]}],"other":[...]}; for "experience"/"education"/"projects": the full '
-    .'replacement array for that section).'
+    .'for "skills": {"top":[{"title","list":[...]}],"other":[...]}). '
+    .'"experience", "education" and "projects" are LISTS: send the complete replacement array of every entry that '
+    .'should remain in the section, including the ones you are not changing — never a single entry on its own. '
+    .'Each experience entry needs "jobTitle" and "company"; each education entry needs "institution"; each projects '
+    .'entry needs "projectName".'
 )]
 class UpdateResumeSectionTool extends AuthorizedResumeEditTool
 {
@@ -31,6 +36,7 @@ class UpdateResumeSectionTool extends AuthorizedResumeEditTool
     public function __construct(
         ToolContext $context,
         private ResumeEditCandidateService $candidateService,
+        private ResumeSectionValidator $sectionValidator,
     ) {
         parent::__construct($context);
     }
@@ -96,6 +102,21 @@ class UpdateResumeSectionTool extends AuthorizedResumeEditTool
 
         if (! is_array($decoded)) {
             return Response::error('data must be valid JSON matching the section shape.');
+        }
+
+        // Checked before a candidate is resolved so a malformed edit neither
+        // corrupts an existing draft nor leaves a new empty one behind. The
+        // message is written for the model to read and retry against.
+        try {
+            $this->sectionValidator->validate($section, $decoded);
+        } catch (InvalidArgumentException $exception) {
+            Log::warning('chat-bot.update-resume-section: rejected a malformed section payload', [
+                'conversation_id' => $this->context->conversation?->id,
+                'section' => $section,
+                'reason' => $exception->getMessage(),
+            ]);
+
+            return Response::error($exception->getMessage());
         }
 
         $base = ResumeVersion::current()->first();
@@ -198,6 +219,13 @@ class UpdateResumeSectionTool extends AuthorizedResumeEditTool
         return null;
     }
 
+    /**
+     * Record the edit in the transcript as the persona's own action.
+     *
+     * `assistant`, not `user`: the persona made this edit. Recorded as `user` it
+     * rendered in the human's bubble, and replayed to the model as history it
+     * read as the human claiming to have made the edit.
+     */
     private function recordEditMessage(?int $conversationId, string $section, string $summary): void
     {
         if ($conversationId === null) {
@@ -208,8 +236,8 @@ class UpdateResumeSectionTool extends AuthorizedResumeEditTool
 
         AiConversationMessage::create([
             'ai_conversation_id' => $conversationId,
-            'role' => 'user',
-            'content' => "I edited the main resume via the resume-edit tool ({$section}): {$description}",
+            'role' => 'assistant',
+            'content' => "I drafted an edit to the main resume's {$section} section via the resume-edit tool: {$description}",
             'metadata' => [
                 'origin' => 'ai_resume_edit',
                 'section' => $section,

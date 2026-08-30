@@ -87,6 +87,11 @@ class ApproveResumeCandidateTool extends AuthorizedResumeEditTool
         ]);
     }
 
+    /**
+     * Record the approval in the transcript as the persona's own action —
+     * `assistant`, not `user`, for the same reason as the edit message in
+     * UpdateResumeSectionTool: the persona ran the tool, not the human.
+     */
     private function recordApprovalMessage(?int $conversationId, int $revisionNumber, string $version): void
     {
         if ($conversationId === null) {
@@ -95,7 +100,7 @@ class ApproveResumeCandidateTool extends AuthorizedResumeEditTool
 
         AiConversationMessage::create([
             'ai_conversation_id' => $conversationId,
-            'role' => 'user',
+            'role' => 'assistant',
             'content' => "I approved resume revision #{$revisionNumber} via the approve-resume-candidate tool, publishing it as version {$version}.",
             'metadata' => [
                 'origin' => 'ai_resume_edit_approval',
