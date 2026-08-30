@@ -131,5 +131,13 @@
             'hasPasskeys' => $hasPasskeys
         ])
     </section>
+
+    {{-- Tool Payload Visibility --}}
+    @can('manage-ai-tools')
+        <section class="keystone-profile-section">
+            <h2>Chat Tool Details</h2>
+            @include('profile.components.tool-visibility-preference', ['user' => $user])
+        </section>
+    @endcan
 </div>
 @endsection

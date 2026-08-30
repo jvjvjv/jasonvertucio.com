@@ -93,7 +93,10 @@ class HostChatBotPagePayload
             ->get(['tool_calls', 'tool_results'])
             ->values();
 
-        $includePayloads = ! app()->environment('production');
+        // Mirrors the live-stream gate in ChatBotController::message() — the
+        // historical transcript must redact exactly what the stream did.
+        $user = $this->request->user();
+        $includePayloads = (bool) ($user?->can('manage-ai-tools') && $user->show_tool_payloads);
 
         foreach ($transcript as $index => &$message) {
             $message['tool_panels'] = $this->toolPanelsFor(

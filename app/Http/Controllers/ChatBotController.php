@@ -157,8 +157,13 @@ class ChatBotController extends Controller
         // Tool arguments/results can carry whatever the model or a fetched
         // page put in them — including a credential the model is handling on
         // the visitor's behalf, for a system with allow_credential_headers
-        // enabled. Debugging aid only; never expose this in production.
-        if (! app()->environment('production')) {
+        // enabled. Only a user who both holds manage-ai-tools and has opted in
+        // sees them; the permission is re-checked here every request, so
+        // revoking it takes effect immediately even if the stored preference
+        // is still enabled. Guests short-circuit to false.
+        $user = $request->user();
+
+        if ($user?->can('manage-ai-tools') && $user->show_tool_payloads) {
             $this->conversationService->usingToolPayloads();
         }
 

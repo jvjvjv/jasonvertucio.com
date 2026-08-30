@@ -17,6 +17,9 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     Route::put('/profile/auth-preferences', [ProfileController::class, 'updateAuthPreferences'])
         ->name('profile.auth-preferences.update');
+
+    Route::put('/profile/tool-visibility', [ProfileController::class, 'updateToolVisibility'])
+        ->name('profile.tool-visibility.update');
 });
 
 /*

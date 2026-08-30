@@ -146,19 +146,61 @@ class HostChatBotPagePayloadTest extends TestCase
         return [$bot, $conversation->generateChatHash()];
     }
 
-    public function test_chat_page_exposes_tool_activity_for_a_message_that_used_tools(): void
+    /**
+     * A user holding `manage-ai-tools`, with the payload preference as given.
+     */
+    private function toolUser(bool $showToolPayloads): User
     {
-        [$bot, $hash] = $this->conversationWithToolActivity();
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
 
-        $response = $this->get(route('chat-bot.by-hash', ['slug' => $bot->slug, 'hash' => $hash]));
+        $user = User::factory()->create(['show_tool_payloads' => $showToolPayloads]);
+        $user->givePermissionTo('manage-ai-tools');
+
+        return $user;
+    }
+
+    /**
+     * The tool panel as it appears when payloads are visible.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function panelsWithPayloads(): array
+    {
+        return [
+            ['pretext' => '', 'tools' => ['web_search'], 'input' => ['query' => 'weather in Boise'], 'output' => 'Sunny, 72F'],
+        ];
+    }
+
+    /**
+     * The same panel with arguments and results stripped.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function panelsRedacted(): array
+    {
+        return [
+            ['pretext' => '', 'tools' => ['web_search']],
+        ];
+    }
+
+    private function assertToolPanels(string $slug, string $hash, array $expected): void
+    {
+        $response = $this->get(route('chat-bot.by-hash', ['slug' => $slug, 'hash' => $hash]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('ai/ChatBot', false)
-            ->where('messages.0.tool_panels', [
-                ['pretext' => '', 'tools' => ['web_search'], 'input' => ['query' => 'weather in Boise'], 'output' => 'Sunny, 72F'],
-            ])
+            ->where('messages.0.tool_panels', $expected)
         );
+    }
+
+    public function test_chat_page_exposes_tool_activity_for_a_permitted_opted_in_user(): void
+    {
+        [$bot, $hash] = $this->conversationWithToolActivity();
+
+        $this->actingAs($this->toolUser(true));
+
+        $this->assertToolPanels($bot->slug, $hash, $this->panelsWithPayloads());
     }
 
     public function test_chat_page_omits_tool_activity_for_a_message_that_used_no_tools(): void
@@ -190,20 +232,46 @@ class HostChatBotPagePayloadTest extends TestCase
         );
     }
 
-    public function test_chat_page_redacts_tool_arguments_and_output_in_production(): void
+    public function test_chat_page_redacts_tool_payloads_for_a_permitted_user_who_opted_out(): void
     {
         [$bot, $hash] = $this->conversationWithToolActivity();
 
-        $this->app->detectEnvironment(fn () => 'production');
+        $this->actingAs($this->toolUser(false));
 
-        $response = $this->get(route('chat-bot.by-hash', ['slug' => $bot->slug, 'hash' => $hash]));
+        $this->assertToolPanels($bot->slug, $hash, $this->panelsRedacted());
+    }
 
-        $response->assertOk();
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('ai/ChatBot', false)
-            ->where('messages.0.tool_panels', [
-                ['pretext' => '', 'tools' => ['web_search']],
-            ])
-        );
+    public function test_chat_page_redacts_tool_payloads_for_a_user_without_the_permission(): void
+    {
+        [$bot, $hash] = $this->conversationWithToolActivity();
+
+        // Preference forced on in the database — the permission is the actual
+        // grant, so this user must still see nothing.
+        $this->actingAs(User::factory()->create(['show_tool_payloads' => true]));
+
+        $this->assertToolPanels($bot->slug, $hash, $this->panelsRedacted());
+    }
+
+    public function test_chat_page_redacts_tool_payloads_for_a_guest(): void
+    {
+        [$bot, $hash] = $this->conversationWithToolActivity();
+
+        $this->assertToolPanels($bot->slug, $hash, $this->panelsRedacted());
+    }
+
+    public function test_revoking_the_permission_hides_tool_payloads_on_the_next_request(): void
+    {
+        [$bot, $hash] = $this->conversationWithToolActivity();
+
+        $user = $this->toolUser(true);
+        $this->actingAs($user);
+
+        $this->assertToolPanels($bot->slug, $hash, $this->panelsWithPayloads());
+
+        $user->revokePermissionTo('manage-ai-tools');
+
+        // The stored preference is untouched; only the permission changed.
+        $this->assertTrue($user->fresh()->show_tool_payloads);
+        $this->assertToolPanels($bot->slug, $hash, $this->panelsRedacted());
     }
 }
