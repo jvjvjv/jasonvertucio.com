@@ -8,8 +8,8 @@ use App\Services\ChatBot\ChatBotAccessGuard;
 use App\Services\ChatBot\ChatBotRouteUrls;
 use App\Services\ChatBot\ChatBotSessionStore;
 use App\Services\ChatBot\HostChatBotPagePayload;
-use App\Services\ChatBot\RoleFilteredChatBotIndexPayload;
-use App\Services\ChatBot\RoleFilteredChatBotStatusResolver;
+use App\Services\ChatBot\PermissionFilteredChatBotIndexPayload;
+use App\Services\ChatBot\PermissionFilteredChatBotStatusResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,8 +39,8 @@ class ChatBotController extends Controller
         private ChatBotAccessGuard $accessGuard,
         private ChatBotSessionStore $sessions,
         private HostChatBotPagePayload $pagePayload,
-        private RoleFilteredChatBotIndexPayload $indexPayload,
-        private RoleFilteredChatBotStatusResolver $statusResolver,
+        private PermissionFilteredChatBotIndexPayload $indexPayload,
+        private PermissionFilteredChatBotStatusResolver $statusResolver,
         private ChatBotRouteUrls $urls,
         private SseFrameEncoder $sseEncoder,
     ) {

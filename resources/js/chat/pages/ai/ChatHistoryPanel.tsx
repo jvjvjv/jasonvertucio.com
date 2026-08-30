@@ -14,7 +14,7 @@ interface HistoryItem {
 }
 
 interface Bot {
-    allowed_roles: string[];
+    required_permission: string | null;
     require_visitor_identity: boolean;
     total_cost_usd: number;
 }

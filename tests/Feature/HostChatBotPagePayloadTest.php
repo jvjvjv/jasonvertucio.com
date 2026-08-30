@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AiChatBot;
 use App\Models\User;
-use BSPDX\Keystone\Models\KeystoneRole as Role;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Models\AiConversation;
@@ -23,14 +23,14 @@ class HostChatBotPagePayloadTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_chat_page_exposes_allowed_roles_for_a_restricted_bot(): void
+    public function test_chat_page_exposes_required_permission_for_a_restricted_bot(): void
     {
-        Role::firstOrCreate(['name' => 'editor']);
+        Permission::firstOrCreate(['name' => 'manage-ai-tools']);
         $user = User::factory()->create();
-        $user->assignRole('editor');
+        $user->givePermissionTo('manage-ai-tools');
 
         $bot = AiChatBot::factory()->create([
-            'allowed_roles' => ['editor'],
+            'required_permission' => 'manage-ai-tools',
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -39,14 +39,14 @@ class HostChatBotPagePayloadTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('ai/ChatBot', false)
-            ->where('bot.allowed_roles', ['editor'])
+            ->where('bot.required_permission', 'manage-ai-tools')
         );
     }
 
-    public function test_chat_page_exposes_an_empty_allowed_roles_array_for_a_public_bot(): void
+    public function test_chat_page_exposes_a_null_required_permission_for_a_public_bot(): void
     {
         $bot = AiChatBot::factory()->create([
-            'allowed_roles' => [],
+            'required_permission' => null,
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -55,14 +55,14 @@ class HostChatBotPagePayloadTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('ai/ChatBot', false)
-            ->where('bot.allowed_roles', [])
+            ->where('bot.required_permission', null)
         );
     }
 
     public function test_previous_href_preserves_a_same_host_referer(): void
     {
         $bot = AiChatBot::factory()->create([
-            'allowed_roles' => [],
+            'required_permission' => null,
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -84,7 +84,7 @@ class HostChatBotPagePayloadTest extends TestCase
     public function test_previous_href_falls_back_to_the_index(?string $refererPath): void
     {
         $bot = AiChatBot::factory()->create([
-            'allowed_roles' => [],
+            'required_permission' => null,
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -123,7 +123,7 @@ class HostChatBotPagePayloadTest extends TestCase
     private function conversationWithToolActivity(): array
     {
         $bot = AiChatBot::factory()->create([
-            'allowed_roles' => [],
+            'required_permission' => null,
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 
@@ -164,7 +164,7 @@ class HostChatBotPagePayloadTest extends TestCase
     public function test_chat_page_omits_tool_activity_for_a_message_that_used_no_tools(): void
     {
         $bot = AiChatBot::factory()->create([
-            'allowed_roles' => [],
+            'required_permission' => null,
             'access_path' => AiChatBot::ACCESS_PATH_CHAT,
         ]);
 

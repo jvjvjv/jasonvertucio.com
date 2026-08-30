@@ -70,7 +70,7 @@ class AiChatBotControllerTest extends TestCase
             'context_length' => 8192,
             'temperature' => 0.45,
             'prompt_template' => 'You are {{persona_name}}.',
-            'allowed_roles' => ['admin'],
+            'required_permission' => 'manage-ai-tools',
             'is_active' => true,
             'require_visitor_identity' => true,
         ]);
@@ -86,33 +86,57 @@ class AiChatBotControllerTest extends TestCase
             'require_visitor_identity' => true,
         ]);
 
-        // allowed_roles is host-only: it exists on the host form request and
-        // model, not the package's. The controller extends the package
+        // required_permission is host-only: it exists on the host form request
+        // and model, not the package's. The controller extends the package
         // controller, so this guards against the field being silently dropped.
         $bot = AiChatBot::where('slug', 'lead-intake')->firstOrFail();
-        $this->assertSame(['admin'], $bot->allowed_roles);
+        $this->assertSame('manage-ai-tools', $bot->required_permission);
     }
 
-    public function test_update_preserves_allowed_roles(): void
+    public function test_store_accepts_the_authenticated_bucket(): void
     {
         $user = $this->authenticatedUser();
+        $system = AiSystem::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('admin.ai.bots.store'), [
+            'name' => 'Member Helper',
+            'slug' => 'member-helper',
+            'access_path' => 'chat',
+            'description' => 'For any signed-in visitor.',
+            'ai_system_id' => $system->id,
+            'prompt_template' => 'You are {{persona_name}}.',
+            'required_permission' => 'authenticated',
+            'is_active' => true,
+            'require_visitor_identity' => false,
+        ]);
+
+        $response->assertRedirect(route('admin.ai.bots.index'));
+        $bot = AiChatBot::where('slug', 'member-helper')->firstOrFail();
+        $this->assertSame('authenticated', $bot->required_permission);
+    }
+
+    public function test_update_preserves_required_permission(): void
+    {
+        $user = $this->authenticatedUser();
+        Permission::firstOrCreate(['name' => 'edit-resume']);
+
         $bot = AiChatBot::factory()->create([
-            'slug' => 'role-gated',
-            'allowed_roles' => ['admin'],
+            'slug' => 'permission-gated',
+            'required_permission' => 'manage-ai-tools',
         ]);
 
         $response = $this->actingAs($user)->put(route('admin.ai.bots.update', $bot), [
             'name' => $bot->name,
-            'slug' => 'role-gated',
+            'slug' => 'permission-gated',
             'access_path' => $bot->access_path,
             'ai_system_id' => $bot->ai_system_id,
             'prompt_template' => 'You are {{persona_name}}.',
-            'allowed_roles' => ['admin', 'editor'],
+            'required_permission' => 'edit-resume',
             'is_active' => true,
         ]);
 
         $response->assertRedirect(route('admin.ai.bots.index'));
-        $this->assertSame(['admin', 'editor'], $bot->fresh()->allowed_roles);
+        $this->assertSame('edit-resume', $bot->fresh()->required_permission);
     }
 
     public function test_store_rejects_reserved_root_slug(): void
@@ -127,7 +151,7 @@ class AiChatBotControllerTest extends TestCase
             'description' => 'Conflicts with an existing route.',
             'ai_system_id' => $system->id,
             'prompt_template' => 'You are {{persona_name}}.',
-            'allowed_roles' => [],
+            'required_permission' => null,
             'is_active' => true,
             'require_visitor_identity' => false,
         ]);

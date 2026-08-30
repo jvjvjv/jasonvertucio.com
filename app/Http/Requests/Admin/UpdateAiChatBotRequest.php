@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\AiChatBot;
+use BSPDX\Keystone\Models\KeystonePermission;
 use Illuminate\Foundation\Http\FormRequest;
 use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 
@@ -16,9 +17,13 @@ class UpdateAiChatBotRequest extends FormRequest
         /** @var AiChatBot|null $bot */
         $bot = $this->route('aiChatBot');
 
+        $allowedValues = array_merge(
+            [AiChatBot::PERMISSION_AUTHENTICATED],
+            KeystonePermission::pluck('name')->all(),
+        );
+
         return array_merge(AiPersonaManager::updateRules($this->all(), $bot), [
-            'allowed_roles' => ['nullable', 'array'],
-            'allowed_roles.*' => ['string'],
+            'required_permission' => ['nullable', 'string', 'in:'.implode(',', $allowedValues)],
         ]);
     }
 }

@@ -18,15 +18,13 @@ class CheckChatBotAccess
             return $next($request);
         }
 
-        $allowedRoles = $bot->allowed_roles ?? [];
-
-        if ($allowedRoles === []) {
+        if ($bot->required_permission === null) {
             return $next($request);
         }
 
         $user = $request->user();
 
-        abort_unless($user instanceof User && $user->hasAnyRole($allowedRoles), 403);
+        abort_unless($user instanceof User && $bot->allowsAccess($user), 403);
 
         return $next($request);
     }

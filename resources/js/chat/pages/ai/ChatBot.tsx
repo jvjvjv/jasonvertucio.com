@@ -23,12 +23,12 @@ import { formatCost } from "@/utils/currency";
  * Everything inherited — `messages`, `history`, the five endpoint URLs,
  * `chatUrl`/`chatUrlBase`, `showIdentityForm` — comes from the package and is
  * not restated here. The three members below are the host's delta:
- * `allowed_roles` and `previousHref` are added by the payload subclasses in
+ * `required_permission` and `previousHref` are added by the payload subclasses in
  * `app/Services/ChatBot/` (see the `host-chat-bot-presentation` spec), and
  * `chatHash` is present only on the hash-link route.
  */
 interface ChatBotProps extends ChatBotPageProps {
-    bot: ChatBotSummary & { allowed_roles: string[] };
+    bot: ChatBotSummary & { required_permission: string | null };
     chatHash?: string | null;
     previousHref?: string | null;
 }

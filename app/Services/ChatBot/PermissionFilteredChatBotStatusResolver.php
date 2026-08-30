@@ -9,10 +9,10 @@ use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
 use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotStatusResolver;
 
 /**
- * Readiness statuses keyed by slug, narrowed to the bots this viewer's roles allow.
+ * Readiness statuses keyed by slug, narrowed to the bots this viewer's permission allows.
  *
- * Mirrors the role filtering in RoleFilteredChatBotIndexPayload so the statuses
- * endpoint cannot disclose bots the index already hides. Bots commonly share an
+ * Mirrors the permission filtering in PermissionFilteredChatBotIndexPayload so the
+ * statuses endpoint cannot disclose bots the index already hides. Bots commonly share an
  * AiSystem and a readiness check can reach the provider, so each system is only
  * checked once per request.
  *
@@ -20,7 +20,7 @@ use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotStatusResolver;
  * parent's `statusesBySlug()` takes no arguments, so the viewer arrives via the
  * injected request instead.
  */
-class RoleFilteredChatBotStatusResolver extends ChatBotStatusResolver
+class PermissionFilteredChatBotStatusResolver extends ChatBotStatusResolver
 {
     public function __construct(
         private AiModelReadinessService $modelReadiness,
@@ -59,10 +59,10 @@ class RoleFilteredChatBotStatusResolver extends ChatBotStatusResolver
     }
 
     /**
-     * A bot with no `allowed_roles` is public; otherwise the viewer must hold one.
+     * A bot with no `required_permission` is public; otherwise the viewer must hold it.
      */
     private function canAccess(AiChatBot $bot, ?User $user): bool
     {
-        return empty($bot->allowed_roles) || $bot->allowsRole($user);
+        return $bot->allowsAccess($user);
     }
 }

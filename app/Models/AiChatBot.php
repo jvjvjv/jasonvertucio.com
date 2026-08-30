@@ -10,6 +10,15 @@ use Jvjvjv\CodeTalker\Models\AiPersona as BaseAiPersona;
 
 class AiChatBot extends BaseAiPersona
 {
+    /**
+     * A `required_permission` value of "authenticated" is not a Keystone
+     * permission — it's the same special "any signed-in user" bucket
+     * `SiteSettingsController` uses for nav links, reused here so a persona
+     * can require login without being tied to a specific permission.
+     */
+    public const PERMISSION_AUTHENTICATED = 'authenticated';
+
+
     // The base AiPersona model has no explicit $table — it relies on Eloquent's
     // convention, which derives the name from the leaf class. Keeping this
     // class named AiChatBot (rather than renaming to match the package) means
@@ -25,14 +34,10 @@ class AiChatBot extends BaseAiPersona
         'access_path',
         'description',
         'prompt_template',
-        'allowed_roles',
+        'required_permission',
         'is_active',
         'require_visitor_identity',
         'tools_enabled',
-    ];
-
-    protected $casts = [
-        'allowed_roles' => 'array',
     ];
 
     /**
@@ -41,7 +46,6 @@ class AiChatBot extends BaseAiPersona
     protected function casts(): array
     {
         return [
-            'allowed_roles' => 'array',
             'context_length' => 'integer',
             'temperature' => 'decimal:2',
             'is_active' => 'boolean',
@@ -74,18 +78,20 @@ class AiChatBot extends BaseAiPersona
         return $this->hasMany(AiInteractionLog::class, 'ai_persona_id');
     }
 
-    public function allowsRole(?User $user): bool
+    public function allowsAccess(?User $user): bool
     {
+        if ($this->required_permission === null) {
+            return true;
+        }
+
         if ($user === null) {
             return false;
         }
 
-        $allowedRoles = $this->allowed_roles ?? [];
-
-        if ($allowedRoles === []) {
+        if ($this->required_permission === self::PERMISSION_AUTHENTICATED) {
             return true;
         }
 
-        return $user->hasAnyRole($allowedRoles);
+        return $user->can($this->required_permission);
     }
 }

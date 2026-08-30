@@ -10,7 +10,7 @@ use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotPresenter;
 /**
  * The `ai/ChatBot` page props: the package's baseline transcript/history/URL
  * fields, plus the two the host UI needs and the package does not know about:
- * `bot.allowed_roles` for BotAccessCard, and `previousHref` for the back link.
+ * `bot.required_permission` for BotAccessCard, and `previousHref` for the back link.
  *
  * Host-owned reimplementation of the package's removed (0.11.0)
  * `Jvjvjv\CodeTalker\Services\ChatBot\ChatBotPagePayload`, built on the
@@ -45,7 +45,7 @@ class HostChatBotPagePayload
                 'description' => $aiChatBot->description,
                 'require_visitor_identity' => $aiChatBot->require_visitor_identity,
                 'total_cost_usd' => $this->presenter->totalCostUsd($aiChatBot),
-                'allowed_roles' => $aiChatBot->allowed_roles ?? [],
+                'required_permission' => $aiChatBot->required_permission,
             ],
             'messages' => $this->transcriptWithToolPanels($conversation),
             'history' => $history,

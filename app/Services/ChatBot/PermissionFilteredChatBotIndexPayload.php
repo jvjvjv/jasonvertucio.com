@@ -8,13 +8,13 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * The `ai/ChatBotsIndex` props, narrowed to the bots this viewer's roles allow.
+ * The `ai/ChatBotsIndex` props, narrowed to the bots this viewer's permission allows.
  *
  * Host-owned reimplementation of the package's removed (0.11.0)
  * `Jvjvjv\CodeTalker\Services\ChatBot\ChatBotIndexPayload`, since the package
- * has no role concept — the host model does, via `allowed_roles`.
+ * has no permission concept — the host model does, via `required_permission`.
  */
-class RoleFilteredChatBotIndexPayload
+class PermissionFilteredChatBotIndexPayload
 {
     public function __construct(private ChatBotRouteUrls $urls)
     {
@@ -56,11 +56,11 @@ class RoleFilteredChatBotIndexPayload
     }
 
     /**
-     * A bot with no `allowed_roles` is public; otherwise the viewer must hold one.
+     * A bot with no `required_permission` is public; otherwise the viewer must hold it.
      */
     private function canAccess(AiChatBot $bot, ?User $user): bool
     {
-        return empty($bot->allowed_roles) || $bot->allowsRole($user);
+        return $bot->allowsAccess($user);
     }
 
     /**

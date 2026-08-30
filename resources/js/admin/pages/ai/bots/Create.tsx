@@ -22,10 +22,10 @@ interface CreateProps {
         temperature: number | null;
         supports_tools: boolean;
     }[];
-    roles: string[];
+    permissions: string[];
 }
 
-export default function Create({ systems, roles }: CreateProps) {
+export default function Create({ systems, permissions }: CreateProps) {
     const form = useForm<FormData>({
         name: "",
         slug: "",
@@ -35,7 +35,7 @@ export default function Create({ systems, roles }: CreateProps) {
         context_length: null,
         temperature: "",
         prompt_template: "You are {{bot_name}}. {{bot_description}}",
-        allowed_roles: [],
+        required_permission: null,
         is_active: true,
         require_visitor_identity: false,
         tools_enabled: false,
@@ -68,7 +68,7 @@ export default function Create({ systems, roles }: CreateProps) {
                             setData={form.setData}
                             errors={form.errors}
                             systems={systems}
-                            roles={roles}
+                            permissions={permissions}
                             originalName=""
                         />
 

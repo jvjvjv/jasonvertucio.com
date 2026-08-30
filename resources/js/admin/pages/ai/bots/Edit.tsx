@@ -26,10 +26,10 @@ interface EditProps {
         temperature: number | null;
         supports_tools: boolean;
     }[];
-    roles: string[];
+    permissions: string[];
 }
 
-export default function Edit({ bot, systems, roles }: EditProps) {
+export default function Edit({ bot, systems, permissions }: EditProps) {
     const form = useForm<FormData>({
         name: bot.name,
         slug: bot.slug,
@@ -39,7 +39,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         context_length: bot.context_length ?? null,
         temperature: bot.temperature?.toString() ?? "",
         prompt_template: bot.prompt_template ?? "",
-        allowed_roles: bot.allowed_roles ?? [],
+        required_permission: bot.required_permission ?? null,
         is_active: bot.is_active,
         require_visitor_identity: bot.require_visitor_identity,
         tools_enabled: bot.tools_enabled,
@@ -91,7 +91,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                             setData={form.setData}
                             errors={form.errors}
                             systems={systems}
-                            roles={roles}
+                            permissions={permissions}
                             originalName={bot.name}
                         />
 

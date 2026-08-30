@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
  * the site root, and vice versa.
  *
  * Host-owned reimplementation of the package's removed (0.11.0)
- * `Jvjvjv\CodeTalker\Services\ChatBot\ChatBotAccessGuard`. Role-based
+ * `Jvjvjv\CodeTalker\Services\ChatBot\ChatBotAccessGuard`. Permission-based
  * authorization is handled separately by `CheckChatBotAccess` middleware.
  */
 class ChatBotAccessGuard

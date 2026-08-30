@@ -116,7 +116,7 @@ const columns: ColumnDef<ChatBotRow>[] = [
         label: "Access",
         render: (row) => (
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                {row.allowed_roles.length === 0 && (
+                {row.required_permission == null && (
                     <Chip
                         label="Public"
                         size="small"
@@ -124,10 +124,10 @@ const columns: ColumnDef<ChatBotRow>[] = [
                         variant="outlined"
                     />
                 )}
-                {row.allowed_roles.length > 0 && (
-                    <Tooltip title={"Roles: " + row.allowed_roles.join(", ")}>
+                {row.required_permission != null && (
+                    <Tooltip title={"Permission: " + row.required_permission}>
                         <Chip
-                            label="Role-based"
+                            label="Restricted"
                             size="small"
                             color="info"
                             variant="outlined"

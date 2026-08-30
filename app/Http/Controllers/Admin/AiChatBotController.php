@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
-use BSPDX\Keystone\Models\KeystoneRole;
+use BSPDX\Keystone\Models\KeystonePermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,8 +19,8 @@ use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 /**
  * code-talker 0.11.0 removed the package's admin `AiChatBotController` — this
  * controller is now fully host-owned, built on `AiPersonaManager` for the
- * write operations (create/update/delete) and `allowed_roles`/Keystone role
- * selection remaining host-only concerns.
+ * write operations (create/update/delete) and `required_permission`/Keystone
+ * permission selection remaining host-only concerns.
  */
 class AiChatBotController extends Controller
 {
@@ -52,7 +52,7 @@ class AiChatBotController extends Controller
                 'slug' => $bot->slug,
                 'access_path' => $bot->access_path,
                 'public_url' => $bot->publicPath(),
-                'allowed_roles' => $bot->allowed_roles ?? [],
+                'required_permission' => $bot->required_permission,
                 'description' => $bot->description,
                 'is_active' => $bot->is_active,
                 'ai_system' => $bot->aiSystem,
@@ -83,7 +83,7 @@ class AiChatBotController extends Controller
     {
         return Inertia::render('ai/bots/Create', [
             'systems' => $this->systems(),
-            'roles' => $this->roles(),
+            'permissions' => $this->permissions(),
         ]);
     }
 
@@ -108,7 +108,7 @@ class AiChatBotController extends Controller
         return Inertia::render('ai/bots/Edit', [
             'bot' => $aiChatBot,
             'systems' => $this->systems(),
-            'roles' => $this->roles(),
+            'permissions' => $this->permissions(),
         ]);
     }
 
@@ -158,9 +158,9 @@ class AiChatBotController extends Controller
     /**
      * @return array<int, string>
      */
-    private function roles(): array
+    private function permissions(): array
     {
-        return KeystoneRole::query()->orderBy('name')->pluck('name')->all();
+        return KeystonePermission::query()->orderBy('name')->pluck('name')->all();
     }
 
     /**
