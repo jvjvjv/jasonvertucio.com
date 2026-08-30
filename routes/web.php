@@ -29,6 +29,7 @@ require base_path('routes/auth.php');
 require base_path('routes/passkeys.php');
 require base_path('routes/admin.php');
 require base_path('routes/admin-resume.php');
+require base_path('routes/admin-roles.php');
 require base_path('routes/resume.php');
 require base_path('routes/blog.php');
 require base_path('routes/honeypots.php');

@@ -1,3 +1,4 @@
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import CodeIcon from "@mui/icons-material/Code";
 import DescriptionIcon from "@mui/icons-material/Description";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
@@ -16,6 +17,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import type { ReactNode } from "react";
 
 const registry: { [key: string]: ReactNode } = {
+    AdminPanelSettings: <AdminPanelSettingsIcon fontSize="large" />,
     Code: <CodeIcon fontSize="large" />,
     Description: <DescriptionIcon fontSize="large" />,
     DriveFileRenameOutline: <DriveFileRenameOutlineIcon fontSize="large" />,

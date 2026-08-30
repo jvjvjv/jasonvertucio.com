@@ -40,6 +40,13 @@
               "icon": "PushPin",
               "label": "Site Navigation",
               "description": "Manage sidebar navigation links and their order"
+          },
+          {
+              "can": "view-roles",
+              "href": "/admin/roles-permissions",
+              "icon": "AdminPanelSettings",
+              "label": "Roles & Permissions",
+              "description": "Create and edit roles and permissions, and choose which permissions each role holds"
           }
       ]
     },
@@ -76,6 +83,13 @@
       "name": "Site Navigation",
       "appBar": true,
       "can": "edit-settings",
+      "navigationItems": []
+    },
+    {
+      "route": "/admin/roles-permissions",
+      "name": "Roles & Permissions",
+      "appBar": true,
+      "can": "view-roles",
       "navigationItems": []
     }
   ]
