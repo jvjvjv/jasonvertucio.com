@@ -1,5 +1,5 @@
 <div class="keystone-password-form">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-password-form {
             /* Base styles */

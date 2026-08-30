@@ -1,5 +1,5 @@
 <div class="keystone-recovery-codes" id="recovery-codes-container">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-recovery-codes {
             margin-top: 1rem;
@@ -185,7 +185,7 @@
         statusEl.innerHTML = '<span>Regenerating codes...</span>';
 
         try {
-            const response = await fetch('{{ route("two-factor.recovery-codes.regenerate") }}', {
+            const response = await fetch('{{ route("two-factor.regenerate-recovery-codes") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

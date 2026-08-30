@@ -1,7 +1,7 @@
 @props(['roles', 'permissions'])
 
 <div class="keystone-roles-permissions">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-roles-permissions {
             /* Base styles */

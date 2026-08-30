@@ -1,7 +1,7 @@
 @props(['enabled' => false])
 
 <div class="keystone-two-factor">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-two-factor {
             /* Base styles */
@@ -112,7 +112,7 @@
                 <span id="toggle-codes-text">View Recovery Codes</span>
             </button>
 
-            <form method="POST" action="{{ route('two-factor.destroy') }}" class="keystone-inline">
+            <form method="POST" action="{{ route('two-factor.disable') }}" class="keystone-inline">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="keystone-btn keystone-btn-danger"

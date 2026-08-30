@@ -1,7 +1,7 @@
 @props(['user', 'hasTwoFactor', 'hasPasskeys'])
 
 <div class="keystone-auth-preferences">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-auth-preferences {
             /* Base styles */

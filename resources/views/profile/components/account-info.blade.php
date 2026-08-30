@@ -1,7 +1,7 @@
 @props(['user'])
 
 <div class="keystone-account-info">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-account-info {
             /* Base styles */

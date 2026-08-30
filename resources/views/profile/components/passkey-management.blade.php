@@ -1,7 +1,7 @@
 @props(['passkeys'])
 
 <div class="keystone-passkeys">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-passkeys {
             /* Base styles */

@@ -1,5 +1,5 @@
 <div class="keystone-2fa-setup" id="2fa-setup">
-    @include('auth.keystone-styles')
+    @include('components.auth.keystone-styles')
     <style>
         .keystone-2fa-setup {
             padding: 1rem;
@@ -229,7 +229,7 @@
         const errorEl = document.getElementById('setup-error');
 
         try {
-            const response = await fetch('{{ route("two-factor.store") }}', {
+            const response = await fetch('{{ route("two-factor.enable") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

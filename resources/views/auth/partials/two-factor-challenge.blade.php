@@ -4,7 +4,7 @@
 @endphp
 
 <div class="keystone-form-container">
-  @include('auth.keystone-styles')
+  @include('components.auth.keystone-styles')
   <form method="POST" action="{{ $action }}" class="keystone-form" id="two-factor-form">
         @csrf
 
