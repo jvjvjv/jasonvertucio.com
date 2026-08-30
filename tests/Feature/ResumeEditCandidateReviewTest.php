@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ResumeEditCandidate;
 use App\Models\ResumeVersion;
 use App\Models\User;
+use App\Services\ResumeEditCandidateService;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -96,12 +97,29 @@ class ResumeEditCandidateReviewTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($admin)->post("/admin/resume/candidates/{$candidate->id}/approve");
+        $response = $this->actingAs($admin)->post("/admin/resume/candidates/{$candidate->id}/approve", [
+            'version' => app(ResumeEditCandidateService::class)->suggestedNextVersion($base),
+        ]);
 
         $response->assertRedirect();
         $this->assertSame('approved', $candidate->fresh()->status);
         $this->assertFalse($base->fresh()->is_current);
         $this->assertSame('Approved Name', ResumeVersion::current()->first()->personalInfo->name);
+    }
+
+    public function test_approve_endpoint_rejects_a_version_that_does_not_exceed_the_base(): void
+    {
+        $admin = $this->admin();
+        $base = $this->liveVersion();
+        $candidate = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'revision_number' => 1]);
+
+        $response = $this->actingAs($admin)->post("/admin/resume/candidates/{$candidate->id}/approve", [
+            'version' => $base->version,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame('pending', $candidate->fresh()->status);
+        $this->assertTrue($base->fresh()->is_current);
     }
 
     public function test_reject_endpoint_permanently_deletes_the_candidate(): void

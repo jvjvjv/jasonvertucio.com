@@ -9,6 +9,7 @@ use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use InvalidArgumentException;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -103,7 +104,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
         $this->service->applySectionEdit($candidate, 'personal', ['name' => 'Approved Name', 'title' => 'Engineer', 'email' => 'jason@example.com']);
 
-        $this->service->approve($candidate, $approver->id);
+        $this->service->approve($candidate, $approver->id, $this->service->suggestedNextVersion($base));
 
         $newLive = ResumeVersion::current()->first();
         $this->assertNotSame($base->id, $newLive->id);
@@ -123,7 +124,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         $siblingB = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'revision_number' => $keep->revision_number + 2]);
         $otherBaseCandidate = ResumeEditCandidate::factory()->create(['revision_number' => 1]);
 
-        $this->service->approve($keep, $approver->id);
+        $this->service->approve($keep, $approver->id, $this->service->suggestedNextVersion($base));
 
         $this->assertSame('approved', $keep->fresh()->status);
         $this->assertDatabaseMissing('resume_edit_candidates', ['id' => $siblingA->id]);
@@ -139,7 +140,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
         $this->service->applySectionEdit($candidate, 'personal', ['name' => 'New Name', 'title' => 'Engineer', 'email' => 'jason@example.com']);
 
-        $this->service->approve($candidate, $approver->id);
+        $this->service->approve($candidate, $approver->id, $this->service->suggestedNextVersion($base));
 
         $candidate->refresh();
         $this->assertSame('approved', $candidate->status);
@@ -160,7 +161,55 @@ class ResumeEditCandidateServiceTest extends TestCase
 
         $this->expectException(RuntimeException::class);
 
-        $this->service->approve($candidate, $approver->id);
+        $this->service->approve($candidate, $approver->id, $this->service->suggestedNextVersion($base));
+    }
+
+    private function liveVersionWithVersionString(string $version): ResumeVersion
+    {
+        $base = $this->liveVersion();
+        $base->update(['version' => $version]);
+
+        return $base->fresh();
+    }
+
+    public function test_approve_accepts_a_reviewer_chosen_major_or_minor_version(): void
+    {
+        $base = $this->liveVersionWithVersionString('2026.1.4');
+        $approver = User::factory()->create();
+        $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
+
+        $this->service->approve($candidate, $approver->id, '2026.2.0');
+
+        $newLive = ResumeVersion::current()->first();
+        $this->assertSame('2026.2.0', $newLive->version);
+    }
+
+    public function test_approve_rejects_a_version_that_does_not_exceed_the_base_version(): void
+    {
+        $base = $this->liveVersionWithVersionString('2026.1.4');
+        $approver = User::factory()->create();
+        $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
+
+        try {
+            $this->service->approve($candidate, $approver->id, '2026.1.4');
+            $this->fail('Expected an InvalidArgumentException to be thrown.');
+        } catch (InvalidArgumentException) {
+            // expected
+        }
+
+        $this->assertSame('pending', $candidate->fresh()->status);
+        $this->assertTrue($base->fresh()->is_current);
+    }
+
+    public function test_approve_rejects_a_malformed_version_string(): void
+    {
+        $base = $this->liveVersion();
+        $approver = User::factory()->create();
+        $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service->approve($candidate, $approver->id, 'not-a-version');
     }
 
     public function test_reject_permanently_deletes_the_candidate_and_leaves_live_version_untouched(): void

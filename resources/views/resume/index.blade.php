@@ -20,10 +20,14 @@
         </p>
         @endif
         @if($candidate['status'] === 'pending')
-        <div class="mt-3 flex gap-2">
-            <form method="POST" action="{{ route('admin.resume.candidates.approve', $candidate['id']) }}">
+        <div class="mt-3 flex gap-2 items-center">
+            <form method="POST" action="{{ route('admin.resume.candidates.approve', $candidate['id']) }}" class="flex gap-2 items-center">
                 @csrf
                 <input type="hidden" name="redirect_to" value="preview">
+                <label for="approve-version" class="text-sm text-blue-900">Publish as version</label>
+                <input type="text" id="approve-version" name="version" value="{{ $candidate['suggested_version'] }}"
+                       pattern="\d{4}\.\d+\.\d+" required
+                       class="px-2 py-1 border border-blue-300 rounded text-sm w-32">
                 <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium cursor-pointer">
                     Approve
                 </button>

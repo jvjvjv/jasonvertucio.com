@@ -7,6 +7,7 @@ use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeEditCandidate;
 use App\Models\ResumeVersion;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use RuntimeException;
 
@@ -71,22 +72,23 @@ class ResumeEditCandidateService
 
     /**
      * Approve a pending candidate: materialize its snapshot as the new live
-     * resume version, regenerate documents, mark it approved, and permanently
-     * reject every other pending candidate branched from the same base
-     * version (they were seeded from data this approval has now superseded).
+     * resume version at the given version, regenerate documents, mark it
+     * approved, and permanently reject every other pending candidate branched
+     * from the same base version (they were seeded from data this approval
+     * has now superseded).
      *
      * @return array{success: bool, error?: string}
      */
-    public function approve(ResumeEditCandidate $candidate, string $approvedByUserId): array
+    public function approve(ResumeEditCandidate $candidate, string $approvedByUserId, string $version): array
     {
         if ($candidate->status !== 'pending') {
             throw new RuntimeException('Only a pending candidate can be approved.');
         }
 
-        $nextVersion = $this->nextPatchVersion($candidate->baseResumeVersion->version);
+        $this->assertValidApprovalVersion($version, $candidate->baseResumeVersion->version);
 
-        DB::transaction(function () use ($candidate, $nextVersion, $approvedByUserId) {
-            $this->versionService->setVersion($nextVersion);
+        DB::transaction(function () use ($candidate, $version, $approvedByUserId) {
+            $this->versionService->setVersion($version);
             $this->dataService->saveAllEditableData($candidate->snapshot);
 
             $candidate->update([
@@ -166,6 +168,16 @@ class ResumeEditCandidateService
     }
 
     /**
+     * The version to suggest as a default when approving a candidate branched
+     * from the given base version: the base version's patch segment bumped
+     * by one.
+     */
+    public function suggestedNextVersion(ResumeVersion $base): string
+    {
+        return $this->nextPatchVersion($base->version);
+    }
+
+    /**
      * Bump the patch segment of a `YYYY.MAJOR.MINOR` version string.
      */
     private function nextPatchVersion(string $version): string
@@ -173,5 +185,22 @@ class ResumeEditCandidateService
         [$year, $major, $minor] = array_map('intval', explode('.', $version));
 
         return sprintf('%d.%d.%d', $year, $major, $minor + 1);
+    }
+
+    /**
+     * Ensure a version supplied for approval matches the required
+     * `YYYY.MAJOR.MINOR` format and is strictly greater than the base
+     * version, comparing year/major/minor component-wise (not as strings, so
+     * e.g. `2026.2.0` correctly sorts after `2026.10.0`).
+     */
+    private function assertValidApprovalVersion(string $version, string $baseVersion): void
+    {
+        if (! preg_match('/^\d{4}\.\d+\.\d+$/', $version)) {
+            throw new InvalidArgumentException('Version must match the format YYYY.MAJOR.MINOR.');
+        }
+
+        if (version_compare($version, $baseVersion) <= 0) {
+            throw new InvalidArgumentException("Version {$version} must be greater than the base version {$baseVersion}.");
+        }
     }
 }

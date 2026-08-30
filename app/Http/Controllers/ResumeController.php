@@ -8,6 +8,7 @@ use App\Models\ResumeDownload;
 use App\Models\ResumeEditCandidate;
 use App\Models\ResumeShareCode;
 use App\Models\ResumeVersion;
+use App\Services\ResumeEditCandidateService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ class ResumeController extends Controller
     public function __construct(
         protected ResumeDataServiceContract $resumeData,
         protected ResumeVersionServiceContract $versionService,
+        protected ResumeEditCandidateService $candidateService,
     ) {}
 
     /**
@@ -100,6 +102,9 @@ class ResumeController extends Controller
                 'revision_number' => $candidate->revision_number,
                 'status' => $candidate->status,
                 'is_stale' => $liveVersion === null || $candidate->base_resume_version_id !== $liveVersion->id,
+                'suggested_version' => $candidate->baseResumeVersion
+                    ? $this->candidateService->suggestedNextVersion($candidate->baseResumeVersion)
+                    : null,
             ] : null,
             'pendingCandidates' => $isAuthorizedViewer && ! $candidate && $liveVersion
                 ? ResumeEditCandidate::query()

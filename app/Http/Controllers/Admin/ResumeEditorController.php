@@ -203,7 +203,8 @@ class ResumeEditorController extends Controller
 
     /**
      * POST /admin/resume/candidates/{candidate}/approve
-     * Materialize a pending AI-drafted candidate as the new live resume version.
+     * Materialize a pending AI-drafted candidate as the new live resume version
+     * at the version submitted by the reviewer.
      */
     public function approveCandidate(Request $request, ResumeEditCandidate $candidate): RedirectResponse
     {
@@ -213,7 +214,15 @@ class ResumeEditorController extends Controller
             return redirect($target)->with('error', 'This candidate has already been resolved.');
         }
 
-        $result = $this->candidateService->approve($candidate, $request->user()->id);
+        $validated = $request->validate([
+            'version' => ['required', 'string', 'regex:/^\d{4}\.\d+\.\d+$/'],
+        ]);
+
+        try {
+            $result = $this->candidateService->approve($candidate, $request->user()->id, $validated['version']);
+        } catch (\InvalidArgumentException $exception) {
+            return redirect($target)->with('error', $exception->getMessage());
+        }
 
         $message = isset($result['error'])
             ? 'Candidate approved, but document generation failed: '.$result['error']
