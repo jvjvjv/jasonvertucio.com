@@ -114,8 +114,8 @@ export default function LinkCard({
                         sx={{
                             px: 1,
                             py: 0.25,
-                            bgcolor: "warning.light",
-                            color: "warning.dark",
+                            bgcolor: "info.light",
+                            color: "info.text",
                             borderRadius: 1,
                             display: { xs: "none", sm: "inline" },
                         }}
