@@ -2,81 +2,87 @@
     "html_title": "Jason Vertucio: Web Applications Engineer",
     "aria_title": "Jason Vertucio: Web Applications Engineer",
     "links": [
-        {
-            "href": "/admin",
-            "label": "Admin",
-            "hover": "Administration dashboard",
-            "can": "create-users"
-        },
-        {
-            "href": "/canvas",
-            "label": "Canvas",
-            "hover": "Manage the Canvas Blog",
-            "can": "manage-blog"
-        },
-        {
-            "divider": true
-        },
-        {
-            "href": "/#about",
-            "label": "#About",
-            "ariaLabel": "About Me",
-            "hover": "About me!"
-        },
-        {
-            "href": "/#projects",
-            "label": "#Projects",
-            "ariaLabel": "Projects",
-            "hover": "Some of the work I've linked in the sidebar."
-        },
-        {
-            "href": "/#skills",
-            "label": "#Skills",
-            "ariaLabel": "Skills",
-            "hover": "A varied list of tech skillsets."
-        },
-        {
-            "href": "/#interests",
-            "label": "#Interests",
-            "ariaLabel": "Interests",
-            "hover": "Stuff I like to do that isn't work related."
-        },
-        {
-            "divider": true
-        },
-        {
-            "href": "/blog",
-            "label": "Blog",
-            "ariaLabel": "Blog",
-            "hover": "My blog, which is mostly empty as I don't write much."
-        },
-        {
-            "href": "https://ghostletter.jasonvertucio.com",
-            "label": "Ghost Letter",
-            "hover": "A web application for sharing ephemeral images with friends.",
-            "target": "_blank"
-        },
-        {
-            "href": "https://balancecloud.app",
-            "label": "BalanceCloud",
-            "ariaLabel": "Balance Cloud: A digital, privacy-first ledger app.",
-            "hover": "A web application so I can manually manage my budget (requires sign up).",
-            "target": "_blank"
-        },
-        {
-            "divider": true
-        },
-        {
-            "href": "/profile",
-            "label": "My Profile",
-            "hover": "View and manage your profile",
-            "can": "authenticated"
-        },
-        {
-            "href": "/logout",
-            "label": "Log out",
-            "can": "authenticated"
-        }
+      {
+        "href": "/admin",
+        "label": "Admin",
+        "hover": "Administration dashboard",
+        "can": "create-users"
+      },
+      {
+        "href": "/canvas",
+        "label": "Canvas",
+        "hover": "Manage the Canvas Blog",
+        "can": "manage-blog"
+      },
+      {
+        "divider": true
+      },
+      {
+        "href": "/#about",
+        "label": "#About",
+        "ariaLabel": "About Me",
+        "hover": "About me!"
+      },
+      {
+        "href": "/#projects",
+        "label": "#Projects",
+        "ariaLabel": "Projects",
+        "hover": "Some of the work I've linked in the sidebar."
+      },
+      {
+        "href": "/#skills",
+        "label": "#Skills",
+        "ariaLabel": "Skills",
+        "hover": "A varied list of tech skillsets."
+      },
+      {
+        "href": "/#interests",
+        "label": "#Interests",
+        "ariaLabel": "Interests",
+        "hover": "Stuff I like to do that isn't work related."
+      },
+      {
+        "divider": true
+      },
+      {
+        "href": "/blog",
+        "label": "Blog",
+        "ariaLabel": "Blog",
+        "hover": "My blog, which is mostly empty as I don't write much."
+      },
+      {
+        "href": "https://ghostletter.jasonvertucio.com",
+        "label": "Ghost Letter",
+        "hover": "A web application for sharing ephemeral images with friends.",
+        "target": "_blank"
+      },
+      {
+        "href": "https://balancecloud.app",
+        "label": "BalanceCloud",
+        "ariaLabel": "Balance Cloud: A digital, privacy-first ledger app.",
+        "hover": "A web application so I can manually manage my budget (requires sign up).",
+        "target": "_blank"
+      },
+      {
+        "href": "https://www.upwork.com/services/product/development-it-a-custom-laravel-vue-js-web-application-2094654131678472700",
+        "label": "Upwork",
+        "hover": "Build a custom website like this one",
+        "target": "_blank"
+      },
+      {
+        "divider": true
+      },
+      {
+        "href": "/profile",
+        "label": "My Profile",
+        "hover": "View and manage your profile",
+        "can": "authenticated"
+      },
+      {
+        "href": "/logout",
+        "label": "Log out",
+        "can": "authenticated"
+      }
     ],
     "about_me": {
         "name": {
@@ -104,30 +110,36 @@
             "Proven track record modernizing legacy systems, driving WCAG 2.1 AA accessibility compliance, and mentoring development teams in fast-paced Agile environments with weekly production deployments."
         ],
         "social": [
-            {
-                "label": "View my LinkedIn profile",
-                "type": "linkedin",
-                "link": "https://www.linkedin.com/in/jasonvertucio/",
-                "fa_icon": "fa-linkedin-in"
-            },
-            {
-                "label": "Connect with me on X",
-                "type": "x",
-                "link": "https://x.com/jasondidathing",
-                "fa_icon": "fa-x-twitter"
-            },
-            {
-                "label": "Let's chat on Bluesky",
-                "type": "bluesky",
-                "link": "https://bsky.app/profile/jasonvertucio.com",
-                "fa_icon": "fa-bluesky"
-            },
-            {
-                "label": "See my IMDb profile",
-                "type": "IMDb",
-                "link": "https://www.imdb.com/name/nm5264006/",
-                "fa_icon": "fa-imdb"
-            }
+          {
+            "label": "View my LinkedIn profile",
+            "type": "linkedin",
+            "link": "https://www.linkedin.com/in/jasonvertucio/",
+            "fa_icon": "fa-linkedin-in"
+          },
+          {
+            "label": "Contract me for small projects",
+            "type": "upwork",
+            "link": "https://www.upwork.com/services/product/development-it-a-custom-laravel-vue-js-web-application-2094654131678472700",
+            "fa_icon": "fa-upwork"
+          },
+          {
+            "label": "Connect with me on X",
+            "type": "x",
+            "link": "https://x.com/jasondidathing",
+            "fa_icon": "fa-x-twitter"
+          },
+          {
+            "label": "Let's chat on Bluesky",
+            "type": "bluesky",
+            "link": "https://bsky.app/profile/jasonvertucio.com",
+            "fa_icon": "fa-bluesky"
+          },
+          {
+            "label": "See my IMDb profile",
+            "type": "IMDb",
+            "link": "https://www.imdb.com/name/nm5264006/",
+            "fa_icon": "fa-imdb"
+          }
         ]
     },
     "projects": [
