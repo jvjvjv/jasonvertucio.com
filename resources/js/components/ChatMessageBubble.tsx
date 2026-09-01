@@ -48,6 +48,12 @@ interface ChatMessageBubbleProps {
     reasoningContent?: string | null;
     /** Marks this message as a manual out-of-band edit rather than something typed into chat. */
     isManualEdit?: boolean;
+    /**
+     * The turn behind this message never finished — the browser hung up, or the
+     * server's duration guard cut it off (code-talker 0.15.0+ persists such a
+     * turn instead of discarding it). Content may be empty or stop mid-sentence.
+     */
+    isIncomplete?: boolean;
 }
 
 export const userMarkdownOverrides = {
@@ -87,6 +93,7 @@ export default function ChatMessageBubble({
     activeBlockType = null,
     reasoningContent = null,
     isManualEdit = false,
+    isIncomplete = false,
     sx,
 }: ChatMessageBubbleProps) {
     const isUser = role === "user";
@@ -139,6 +146,12 @@ export default function ChatMessageBubble({
     };
 
     const hasBlocks = !isUser && !!blocks && blocks.length > 0;
+
+    // An interrupted turn can be persisted with nothing in it at all — the
+    // model was still processing the prompt, or had only got as far as calling
+    // a tool. There is then no body to render, so the notice below carries the
+    // whole message rather than annotating one.
+    const hasVisibleBody = hasBlocks || content !== "" || toolPanels.length > 0;
 
     /** Plain text for the copy button — reasoning first, then the response, in the order shown. */
     const copyText = hasBlocks
@@ -201,6 +214,33 @@ export default function ChatMessageBubble({
                     ✎ Edited manually
                 </Box>
             )}
+            {isIncomplete && (
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: 0.75,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        // Deliberately not warning.dark as the text colour: at
+                        // this size that fails AA against the bubble. The colour
+                        // lives in the rule, which only has to clear the 3:1
+                        // non-text threshold.
+                        color: "text.primary",
+                        borderLeft: 3,
+                        borderColor: "warning.dark",
+                        pl: 1,
+                        mb: hasVisibleBody ? 0.75 : 0,
+                    }}
+                >
+                    <span aria-hidden="true">⚠</span>
+                    <span>
+                        {hasVisibleBody
+                            ? "Interrupted — this reply was never finished."
+                            : "Interrupted before the model replied. Send the message again to retry."}
+                    </span>
+                </Box>
+            )}
             {toolPanels.map((panel, i) => (
                 <ToolsPanel
                     key={i}
@@ -215,7 +255,7 @@ export default function ChatMessageBubble({
                 />
             ))}
             {body}
-            {!isStreaming && (
+            {!isStreaming && copyText !== "" && (
                 <CopyMessageButton
                     text={copyText}
                     color={

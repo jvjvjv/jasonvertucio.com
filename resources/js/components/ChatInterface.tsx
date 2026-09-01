@@ -18,7 +18,9 @@ import type { ChatStreamEvent } from "@/types/code-talker";
 import type { ReactNode, KeyboardEvent } from "react";
 
 import { api } from "@/api";
-import ChatVirtualList from "@/components/chat-interface/ChatVirtualList";
+import ChatVirtualList, {
+    hasUnansweredTrailingMessage,
+} from "@/components/chat-interface/ChatVirtualList";
 import SessionExpiryBanner from "@/components/chat-interface/SessionExpiryBanner";
 import ChatInputArea from "@/components/ChatInputArea";
 import ModelStatusDisplay from "@/components/ModelStatusDisplay";
@@ -34,12 +36,12 @@ const FAR_FUTURE = new Date(8.64e15).toISOString();
  * Deliberately NOT the package's `ChatMessage` from `@/types/code-talker`.
  *
  * That type describes what the server sends; this one also covers messages the
- * client builds mid-turn, so it diverges in four ways: `role` allows "system",
+ * client builds mid-turn, so it diverges in five ways: `role` allows "system",
  * `reasoning_content`/`blocks` are optional rather than nullable-required,
- * `created_at` is stamped locally when a message is appended optimistically,
- * and `tool_panels` carries this turn's tool activity — a host-only concern
- * with no equivalent in the package contract (see `ToolUseProgressEvent`
- * below).
+ * `incomplete` is optional because a client-built message has no server verdict
+ * yet, `created_at` is stamped locally when a message is appended
+ * optimistically, and `tool_panels` carries this turn's tool activity — a
+ * host-only concern assembled from the stream's `tool_use_progress` frames.
  */
 export interface ChatMessage {
     role: "user" | "assistant" | "system";
@@ -49,6 +51,13 @@ export interface ChatMessage {
     tool_panels?: ToolPanel[] | null;
     created_at?: string;
     metadata?: { [key: string]: unknown } | null;
+    /**
+     * The reply was never finished — the browser hung up, or the server's
+     * duration guard cut it off. Since code-talker 0.15.0 such a turn is
+     * persisted rather than discarded, so `content` may be empty or stop
+     * mid-sentence. Render it as interrupted, not as an answer.
+     */
+    incomplete?: boolean;
 }
 
 export interface ModelStatus {
@@ -60,46 +69,18 @@ export interface ModelStatus {
 }
 
 /**
- * Progress frame emitted while the agent calls a tool.
+ * Every frame the chat stream can deliver.
  *
- * Host-only, not part of the package contract — see
- * `app/Services/TargetedResumeService.php:281`.
- *
- * `input`/`output`/`successful` are present only when the server has
- * `ChatBotController::message()`'s `usingToolPayloads()` opt-in enabled
- * (non-production only — see that controller) — a call frame carries `input`,
- * a result frame carries `output`/`successful`, never both at once.
- */
-export interface ToolUseProgressEvent {
-    type: "tool_use_progress";
-    text: string;
-    tools: string[];
-    input?: unknown;
-    output?: unknown;
-    successful?: boolean;
-}
-
-/**
- * Tells the browser a tool changed server state and the page should refresh.
- *
- * Host-only, not part of the package contract — see
- * `app/Services/TargetedResumeService.php:300`, which drains the latch set by
- * `TargetedResumeToolRegistry::consumePageReload()`.
- */
-export interface PageReloadEvent {
-    type: "page_reload";
-}
-
-/**
- * Every frame the chat stream can deliver: the package's published contract
- * plus the two events this app emits itself.
+ * `tool_use_progress` and `page_reload` were declared here as host-only events
+ * — `app/Services/TargetedResumeService.php` emits both from its own turn loop.
+ * code-talker 0.13.0 adopted them, so they now arrive as part of
+ * `ChatStreamEvent` and this is an alias kept for the call sites importing it.
  *
  * Deliberately has no index signature — an unrecognized property should be a
  * build error, not `unknown`. Unhandled event *types* are still inert at
  * runtime, so a newer package stays forward-compatible.
  */
-export type StreamEvent =
-    ChatStreamEvent | ToolUseProgressEvent | PageReloadEvent;
+export type StreamEvent = ChatStreamEvent;
 
 export interface ChatInterfaceHandle {
     sendMessage: (messageOverride?: string) => Promise<void>;
@@ -215,9 +196,14 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         const virtuosoRef = useRef<VirtuosoHandle>(null);
 
         // Capture the initial last index so Virtuoso starts scrolled to the bottom.
-        // Add 1 when aboveMessages is present because it occupies virtual index 0.
+        // Add 1 when aboveMessages is present because it occupies virtual index 0,
+        // and again when the transcript arrives ending on an unanswered message —
+        // the notice explaining that is the last item, and landing above it would
+        // put the explanation off-screen at exactly the moment it's needed.
         const [initialTopMostItemIndex] = useState(() => {
-            const offset = slots?.aboveMessages ? 1 : 0;
+            const offset =
+                (slots?.aboveMessages ? 1 : 0) +
+                (hasUnansweredTrailingMessage(initialMessages, false) ? 1 : 0);
             return initialMessages.length > 0
                 ? initialMessages.length - 1 + offset
                 : 0;

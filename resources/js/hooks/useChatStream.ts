@@ -105,6 +105,33 @@ export default function useChatStream({
         };
     }, []);
 
+    // A turn lives and dies with this connection. The server only notices the
+    // browser hung up the next time it writes to the socket — which, against a
+    // slow local model, can be minutes after the fact — and everything the turn
+    // produced up to that point is then discarded rather than persisted. So a
+    // reload mid-turn doesn't pause the reply, it loses it outright. Make that a
+    // deliberate choice rather than an accident.
+    //
+    // Only guards a real page unload; an Inertia visit doesn't fire this, and
+    // neither does the router.reload() in the error path below (by then the
+    // turn is already over).
+    useEffect(() => {
+        if (!isStreaming) return;
+
+        // preventDefault() is what asks for the prompt; browsers supply their
+        // own copy and ignore any message the page tries to set. (The legacy
+        // `returnValue = ""` companion is deprecated and no longer needed.)
+        const warnBeforeUnload = (event: BeforeUnloadEvent): void => {
+            event.preventDefault();
+        };
+
+        window.addEventListener("beforeunload", warnBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", warnBeforeUnload);
+        };
+    }, [isStreaming]);
+
     const sendMessage = useCallback(
         async (messageOverride?: string) => {
             const text = messageOverride ?? messageText.trim();
@@ -169,7 +196,12 @@ export default function useChatStream({
             // when it errors out mid-turn (e.g. a max-duration abort) —
             // reasoning/text that already rendered live shouldn't vanish
             // just because the turn ultimately failed.
-            const persistLiveBlocks = (): void => {
+            //
+            // `incomplete` mirrors the flag the server puts on the same turn
+            // (code-talker 0.15.0+), so a reply that stops mid-sentence is
+            // marked as interrupted right away rather than only after a
+            // reload re-reads it from the transcript.
+            const persistLiveBlocks = (incomplete = false): void => {
                 if (liveBlocks.length === 0 && liveToolPanels.length === 0) {
                     return;
                 }
@@ -191,6 +223,7 @@ export default function useChatStream({
                                     ? liveToolPanels
                                     : undefined,
                             created_at: new Date().toISOString(),
+                            incomplete,
                         },
                     ];
                     onMessagesChangeRef.current?.(next);
@@ -335,7 +368,11 @@ export default function useChatStream({
                     router.reload({ only: ["messages"] });
                 }
 
-                persistLiveBlocks();
+                // Reaching the catch at all means the turn didn't run to
+                // completion — a Stop, a dropped connection, or a backend
+                // error frame. The server flags its own copy the same way, so
+                // whatever is kept here is marked to match.
+                persistLiveBlocks(true);
             } finally {
                 abortControllerRef.current = null;
 

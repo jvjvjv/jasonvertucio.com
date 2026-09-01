@@ -1780,16 +1780,16 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "v0.14.1",
+            "version": "v0.15.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jvjvjv/CodeTalker.git",
-                "reference": "6c3077806865a280fdc7fa252f7b26a784058e65"
+                "reference": "c98a69a4716bab585c4bd4af13777193911e4216"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/6c3077806865a280fdc7fa252f7b26a784058e65",
-                "reference": "6c3077806865a280fdc7fa252f7b26a784058e65",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/c98a69a4716bab585c4bd4af13777193911e4216",
+                "reference": "c98a69a4716bab585c4bd4af13777193911e4216",
                 "shasum": ""
             },
             "require": {
@@ -1844,9 +1844,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jvjvjv/CodeTalker/issues",
-                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.14.1"
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.15.0"
             },
-            "time": "2026-08-30T13:40:24+00:00"
+            "time": "2026-08-31T21:07:30+00:00"
         },
         {
             "name": "laravel/ai",

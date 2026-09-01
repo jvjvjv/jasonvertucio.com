@@ -19,9 +19,31 @@ class Navigation extends Component
         $this->links = $links;
     }
 
-    public function link_label($link)
+    /**
+     * The link's accessible name, used as each anchor's `title`.
+     *
+     * An explicit `ariaLabel` wins; otherwise the label is qualified by its
+     * hover text. Both `ariaLabel` and `hover` are optional in
+     * `resources/config/config.json` — "Log out" carries neither — so a link
+     * missing them degrades to its bare label instead of raising an undefined
+     * key, which Laravel escalates to an exception and which took down every
+     * authenticated render of the page.
+     *
+     * @param array<string, mixed> $link
+     */
+    public function link_label(array $link): string
     {
-        return $link['ariaLabel'] ?? $link['label'].': '.$link['hover'];
+        if (isset($link['ariaLabel'])) {
+            return (string) $link['ariaLabel'];
+        }
+
+        $label = (string) ($link['label'] ?? '');
+
+        if (! isset($link['hover'])) {
+            return $label;
+        }
+
+        return $label.': '.$link['hover'];
     }
 
     /**
