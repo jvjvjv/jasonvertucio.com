@@ -52,7 +52,6 @@ return [
         '_boost',
         'blog',
         'canvas',
-        'mlopnadjs22tn',
         'paper',
         'passkey',
         'resume',

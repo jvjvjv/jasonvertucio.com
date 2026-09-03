@@ -44,11 +44,6 @@ return Application::configure(basePath: dirname(__DIR__))
             PreventFraming::class,
         ]);
 
-        // Facebook's comment webhook posts here with no CSRF token.
-        $middleware->validateCsrfTokens(except: [
-            '/mlopnadjs22tn',
-        ]);
-
         // Framework defaults: an unauthenticated non-JSON request redirects
         // nowhere (no path configured), and an already-authenticated guest
         // route redirects to a Laravel-standard path. This app wants /login

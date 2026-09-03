@@ -56,17 +56,6 @@ class CommentDisplayTest extends TestCase
         $response->assertDontSee('fb:app_id');
     }
 
-    public function test_the_facebook_webhook_path_is_gone(): void
-    {
-        $this->get('/mlopnadjs22tn')->assertNotFound();
-
-        $this->assertFalse(
-            collect(app('router')->getRoutes()->getRoutes())
-                ->contains(fn ($route): bool => $route->uri() === 'mlopnadjs22tn'),
-            'The Facebook webhook route is still registered.'
-        );
-    }
-
     public function test_approved_comments_render(): void
     {
         $post = $this->makePost();

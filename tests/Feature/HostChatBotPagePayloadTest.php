@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -78,9 +79,7 @@ class HostChatBotPagePayloadTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider fallbackRefererProvider
-     */
+    #[DataProvider('fallbackRefererProvider')]
     public function test_previous_href_falls_back_to_the_index(?string $refererPath): void
     {
         $bot = AiChatBot::factory()->create([
