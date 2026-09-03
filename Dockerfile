@@ -14,7 +14,7 @@ ARG ALPINE_VERSION=3.21
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
 
 LABEL org.opencontainers.image.title="jasonvertucio.com"
-LABEL org.opencontainers.image.description="Laravel 12 portfolio site"
+LABEL org.opencontainers.image.description="Laravel 13 portfolio site"
 
 # System dependencies required by Laravel + PHP extensions
 RUN apk add --no-cache \

@@ -1,12 +1,12 @@
 # Jason Vertucio's Personal Website & Blog
 
-Jason Vertucio's personal website, blog, and portfolio built with **Laravel 12** and **Canvas**. This project serves as a modern web application featuring a CMS-powered blog, resume/portfolio section, and AI conversation tracking. As the site is designed to showcase Jason's work it may contain some competing frameworks especially in the history. I used to use Vue and Tailwind for the frontend, but I have been slowly migrating to Inertia.js with MUI Material and React. The public site is still Blade components where the auth tier leverages Inertia and React for a modern SPA-like experience within the Laravel ecosystem.
+Jason Vertucio's personal website, blog, and portfolio built with **Laravel 13** and **Canvas**. This project serves as a modern web application featuring a CMS-powered blog, resume/portfolio section, and AI conversation tracking. As the site is designed to showcase Jason's work it may contain some competing frameworks especially in the history. I used to use Vue and Tailwind for the frontend, but I have been slowly migrating to Inertia.js with MUI Material and React. The public site is still Blade components where the auth tier leverages Inertia and React for a modern SPA-like experience within the Laravel ecosystem.
 
 The blog is powered by Canvas, which provides a user-friendly interface for managing posts, categories, and tags. The resume/portfolio section is built with custom Laravel models and views, allowing for easy updates and maintenance. Additionally, the site includes AI conversation tracking to monitor token usage and costs for any AI interactions.
 
 ## Features
 
-- **Laravel 12** - Latest PHP framework features
+- **Laravel 13** - Latest PHP framework features
 - **Canvas 6.x** - Blog and content management system (successor to Wink)
 - **Inertia.js 2.x** - SPA-like experience with server-side rendering
 - **React 19** - Modern frontend library
@@ -18,8 +18,8 @@ The blog is powered by Canvas, which provides a user-friendly interface for mana
 ## Requirements
 
 - [Composer](https://getcomposer.org) - PHP dependency manager
-- [Node.js & NPM](https://nodejs.org) - JavaScript runtime (v18+)
-- [PHP 8.4+](https://php.net) - Required by Laravel 12
+- [Node.js & NPM](https://nodejs.org) - JavaScript runtime (v22+ recommended)
+- [PHP 8.4+](https://php.net) - Required by Laravel 13
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) - Optional but recommended
 
 ## Quick Start with Docker (Recommended)
@@ -44,13 +44,13 @@ The application will be available at **http://localhost:8003**.
 
 ### Database Configuration Options
 
-By default, the app connects to your **host machine's MySQL** via `host.docker.internal`. This is useful for using an existing database.
+By default, the app connects to your **host machine's MySQL** via `host.docker.internal`. This is useful for using an existing database. The containerized MariaDB service is currently disabled in `docker-compose.yml`.
 
-To use the containerized MariaDB instead:
+To use the containerized MariaDB instead, uncomment the `db` service and its related volume and dependency in `docker-compose.yml`, then update the app's `DB_HOST` environment value to `db`.
 
 ```bash
-# Use internal database service
-docker compose up --build -e DB_HOST=db
+# Rebuild and start after updating docker-compose.yml
+docker compose up --build
 ```
 
 Or create a `.env` file with these settings:
@@ -82,8 +82,7 @@ docker compose exec app php artisan user:make --admin
 | Service | Host Port | Container Port | Description                                   |
 | ------- | --------- | -------------- | --------------------------------------------- |
 | app     | 8003      | 80             | Laravel application with PHP-FPM, Nginx, Vite |
-| db      | 3308      | 3306           | MariaDB 11 (internal: 3306)                   |
-| redis   | 6379      | 6379           | Redis 7 Alpine for caching and queues         |
+| redis   | 7000      | 6379           | Redis 7 Alpine for caching and queues         |
 
 ### Useful Docker Commands
 
@@ -105,7 +104,7 @@ docker compose down
 # Restart with fresh database (removes volumes)
 docker compose down -v && docker compose up --build
 
-# Sync AI conversation usage data
+# Sync active AI conversation usage data
 docker compose exec app php artisan ai:sync-conversation-usage --minutes=10
 ```
 
@@ -159,12 +158,13 @@ If you prefer to run the application locally without Docker:
     php artisan user:create admin@example.com "Admin User" password123 --role=admin
     ```
 
-7. **Compile assets and start development server**
+7. **Start the development environment**
 
     ```bash
     npm run dev
-    php artisan serve
     ```
+
+    This starts Vite, the local HTTPS proxy, and Laravel. The Laravel server listens on port 8001, the proxy on port 8000, and Vite on port 5173.
 
 ## Available Artisan Commands
 
@@ -237,26 +237,27 @@ php artisan list
 
 ## Technologies Used
 
-| Technology                                          | Version | Purpose                          |
-| --------------------------------------------------- | ------- | -------------------------------- |
-| [Laravel](https://laravel.com)                      | 12.x    | PHP Framework                    |
-| [Canvas](https://trycanvas.app/)                    | 6.x     | Blog/CMS system                  |
-| [Inertia.js](https://inertiajs.com)                 | 2.x     | Server-side SPA rendering        |
-| [React](https://react.dev)                                 | 19.x    | Frontend library                 |
-| [Vite](https://vitejs.dev)                          | Latest  | Build tooling and asset bundling |
-| [MariaDB](https://mariadb.org)                      | 11.x    | Database (optional)              |
-| [MySQL](https://mysql.com)                          | 8.0+    | Database (host connection)       |
-| [Redis](https://redis.io)                           | 7.x     | Caching and queues               |
-| [bspdx/keystone](https://github.com/bspdx/keystone) | 0.6.x   | Role-based access control        |
+| Technology                                          | Version | Purpose                                        |
+| --------------------------------------------------- | ------- | ---------------------------------------------- |
+| [Laravel](https://laravel.com)                      | 13.x    | PHP Framework                                  |
+| [Canvas](https://trycanvas.app/)                    | 6.x     | Blog/CMS system                                |
+| [Inertia.js](https://inertiajs.com)                 | 2.x     | Server-side SPA rendering                      |
+| [React](https://react.dev)                          | 19.x    | Frontend library                               |
+| [Vite](https://vitejs.dev)                          | 7.x     | Build tooling and asset bundling               |
+| [MariaDB](https://mariadb.org)                      | 11.x    | Optional database (disabled in Docker Compose) |
+| [MySQL](https://mysql.com)                          | 8.0+    | Database (host connection)                     |
+| [Redis](https://redis.io)                           | 7.x     | Caching and queues                             |
+| [bspdx/keystone](https://github.com/bspdx/keystone) | 0.10.x  | Role-based access control                      |
 
 ## Development Notes
 
 ### Port Configuration
 
 - **Application (Docker)**: 8003 (Nginx)
-- **Application (Local)**: 8000 (`php artisan serve`)
-- **Vite Dev Server**: 5175 (external) / 5173 (internal container)
-- **MariaDB (Docker)**: Host 3308 → Container 3306
+- **Application (Local)**: 8001 (Laravel), 8000 (HTTPS proxy)
+- **Vite Dev Server (Docker)**: Host 5175 → Container 5173
+- **Vite Dev Server (Local)**: 5173
+- **Redis (Docker)**: Host 7000 → Container 6379
 
 ### Environment Variables
 
@@ -326,8 +327,8 @@ If unable to connect to host MySQL from Docker:
 # Check if host MySQL is running
 mysql -h 127.0.0.1 -u root -p
 
-# Use internal MariaDB instead
-docker compose up --build -e DB_HOST=db
+# Use internal MariaDB instead after enabling the db service in docker-compose.yml
+docker compose up --build
 ```
 
 ## License & Credits
@@ -338,4 +339,4 @@ This project is the personal website of **Jason Vertucio**. Built with Laravel, 
 
 ---
 
-_Last updated: May 2026_
+_Last updated: September 2026_
