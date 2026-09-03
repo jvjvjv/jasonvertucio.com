@@ -39,6 +39,9 @@ prod.*
 ~*.docx
 
 # AI helpers
+/.claude
+/.github/copilot-instructions.md
 AGENTS.md
+CLAUDE.md
 SKILL.md
 boost.json
