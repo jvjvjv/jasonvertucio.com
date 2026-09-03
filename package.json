@@ -28,6 +28,7 @@
     "@mui/x-date-pickers": "^8.27.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@uiw/react-md-editor": "^4.1.1",
     "@vitejs/plugin-react": "^5.2.0",
     "angular-expressions": "^1.5.2",
     "dayjs": "^1.11.20",

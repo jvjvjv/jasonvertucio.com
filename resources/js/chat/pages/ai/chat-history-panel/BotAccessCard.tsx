@@ -4,7 +4,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 interface Bot {
-    allowed_roles: string[];
+    required_permission: string | null;
     require_visitor_identity: boolean;
 }
 
@@ -21,10 +21,10 @@ export default function BotAccessCard({ bot }: BotAccessCardProps) {
                 </Typography>
                 <Stack spacing={0.75}>
                     <Typography variant="body2" color="text.secondary">
-                        {!(bot.allowed_roles.length > 0) &&
+                        {bot.required_permission == null &&
                         bot.require_visitor_identity
                             ? "Public bot"
-                            : bot.allowed_roles.length > 0 &&
+                            : bot.required_permission != null &&
                                 bot.require_visitor_identity
                               ? "Mostly public bot"
                               : "Restricted bot"}

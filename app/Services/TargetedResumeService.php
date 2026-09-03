@@ -493,6 +493,87 @@ class TargetedResumeService
     }
 
     /**
+     * Persist a manually edited targeted resume markdown (bypassing chat),
+     * regenerate its DOCX/PDF artifacts, and record the edit in the
+     * conversation history so the chat agent picks it up on its next turn.
+     *
+     * @return array{success: bool, targetedResume: TargetedResume, error: ?string}
+     */
+    public function updateTailoredMarkdown(TargetedResume $targetedResume, string $markdown): array
+    {
+        $parsedResume = $this->parseTailoredResumeContent($markdown);
+
+        $tailoredData = $targetedResume->tailored_data ?? [];
+        $tailoredData['title'] = $parsedResume['title'] ?? ($tailoredData['title'] ?? null);
+        $tailoredData['content'] = $parsedResume['markdown'];
+        $tailoredData['format'] = 'markdown';
+        $tailoredData['markdown'] = $parsedResume['markdown'];
+
+        $targetedResume->tailored_data = $tailoredData;
+        if ($parsedResume['title'] !== null) {
+            $targetedResume->title = $parsedResume['title'];
+        }
+        $targetedResume->save();
+
+        Log::info('targeted-resume.updateTailoredMarkdown: manual edit persisted', [
+            'targeted_resume_id' => $targetedResume->id,
+            'conversation_id' => $targetedResume->ai_conversation_id,
+            'markdown_length' => strlen($parsedResume['markdown']),
+        ]);
+
+        $this->recordManualEditMessage($targetedResume, $parsedResume['markdown']);
+
+        $docxResult = $this->documentService->generateDocx($targetedResume);
+        if (! $docxResult['success']) {
+            return [
+                'success' => false,
+                'targetedResume' => $targetedResume->fresh(),
+                'error' => $docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.',
+            ];
+        }
+
+        $pdfResult = $this->documentService->generatePdf($targetedResume);
+        if (! $pdfResult['success']) {
+            return [
+                'success' => false,
+                'targetedResume' => $targetedResume->fresh(),
+                'error' => $pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'targetedResume' => $targetedResume->fresh(),
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Append a synthetic user-role message to the conversation so the chat
+     * agent has this manual edit as context on its next turn. This does not
+     * trigger an agent turn (no LLM call is made here) - it only writes to
+     * history for the next `continueConversation()` call to read.
+     */
+    private function recordManualEditMessage(TargetedResume $targetedResume, string $markdown): void
+    {
+        $conversationId = $targetedResume->ai_conversation_id;
+
+        if ($conversationId === null) {
+            return;
+        }
+
+        AiConversationMessage::create([
+            'ai_conversation_id' => $conversationId,
+            'role' => 'user',
+            'content' => "I manually edited the targeted resume outside of chat. Here is the current version:\n\n{$markdown}",
+            'metadata' => [
+                'origin' => 'manual_edit',
+                'targeted_resume_id' => $targetedResume->id,
+            ],
+        ]);
+    }
+
+    /**
      * @return array{title: ?string, markdown: string}
      */
     protected function parseTailoredResumeContent(string $tailoredContent): array
@@ -708,7 +789,7 @@ You are an expert career advisor, resume tailoring specialist, and cover letter 
 
 Use these tools to load data and take actions at the appropriate steps:
 
-- `get-resume-data` — Call this first to load the candidate's full resume data (experience, skills, salary history, education, projects).
+- `get-resume-data-for-job` — Call this first to load the candidate's full resume data (experience, skills, salary history, education, projects).
 - `get-job-description` — Call this to access the full job posting text and any known title or company name.
 - `get-resume-memories` — Call this to load learned preferences and insights from previous sessions.
 - `update-fit-assessment` — Call this after Step 4 to persist the fit score, fit summary, company name, and job title. Do NOT write "Fit Score: N" in your text response; use this tool instead so the data is saved.
@@ -721,7 +802,7 @@ Use these tools to load data and take actions at the appropriate steps:
 You will be given a job posting. Follow this multi-step process:
 
 ### Step 0: Load Context
-Before responding, call `get-resume-data`, `get-job-description`, and `get-resume-memories` to load everything you need.
+Before responding, call `get-resume-data-for-job`, `get-job-description`, and `get-resume-memories` to load everything you need.
 
 ### Step 1: Company Analysis
 Begin your first response with these lines when you can infer them from the job description:

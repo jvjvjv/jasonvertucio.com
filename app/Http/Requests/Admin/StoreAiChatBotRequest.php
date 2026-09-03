@@ -2,18 +2,25 @@
 
 namespace App\Http\Requests\Admin;
 
-use Jvjvjv\CodeTalker\Http\Requests\Admin\StoreAiChatBotRequest as BaseRequest;
+use App\Models\AiChatBot;
+use BSPDX\Keystone\Models\KeystonePermission;
+use Illuminate\Foundation\Http\FormRequest;
+use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 
-class StoreAiChatBotRequest extends BaseRequest
+class StoreAiChatBotRequest extends FormRequest
 {
     /**
      * @return array<string, array<int, mixed>|string>
      */
     public function rules(): array
     {
-        return array_merge(parent::rules(), [
-            'allowed_roles' => ['nullable', 'array'],
-            'allowed_roles.*' => ['string'],
+        $allowedValues = array_merge(
+            [AiChatBot::PERMISSION_AUTHENTICATED],
+            KeystonePermission::pluck('name')->all(),
+        );
+
+        return array_merge(AiPersonaManager::createRules($this->all()), [
+            'required_permission' => ['nullable', 'string', 'in:'.implode(',', $allowedValues)],
         ]);
     }
 }

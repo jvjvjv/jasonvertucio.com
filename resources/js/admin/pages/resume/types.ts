@@ -60,6 +60,12 @@ export interface AvailableVersion {
     created: number;
 }
 
+export interface PendingCandidate {
+    id: number;
+    revision_number: number;
+    last_edited_at: string;
+}
+
 export interface EditorProps {
     data: ResumeData;
     version: string;
@@ -67,6 +73,7 @@ export interface EditorProps {
     availableVersions: AvailableVersion[];
     mailConfigured: boolean;
     notificationRecipientCount: number;
+    pendingCandidates: PendingCandidate[];
 }
 
 // --- Helper: reorder array items ---

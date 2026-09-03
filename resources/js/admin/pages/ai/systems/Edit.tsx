@@ -20,12 +20,14 @@ interface EditProps {
     aiSystem: AiSystem;
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
+    pendingFirstEdit: boolean;
 }
 
 export default function Edit({
     aiSystem,
     existingDefaults,
     systemPrompts,
+    pendingFirstEdit,
 }: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
@@ -50,12 +52,12 @@ export default function Edit({
         system_prompt_mode: aiSystem.system_prompt_mode ?? "",
         supports_tools: aiSystem.supports_tools ?? false,
         allowed_tools: aiSystem.allowed_tools ?? [],
+        web_tool_policy: aiSystem.web_tool_policy
+            ? JSON.stringify(aiSystem.web_tool_policy, null, 2)
+            : "",
         supports_json_mode: aiSystem.supports_json_mode ?? false,
         enable_thinking: aiSystem.enable_thinking ?? false,
         is_local_endpoint: aiSystem.is_local_endpoint ?? false,
-        pricing_profile: aiSystem.pricing_profile
-            ? JSON.stringify(aiSystem.pricing_profile, null, 2)
-            : "",
         is_active: aiSystem.is_active,
         feature_defaults: aiSystem.feature_defaults_list,
     });
@@ -89,11 +91,11 @@ export default function Edit({
             <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
                 <Button
                     component={InertiaLink}
-                    href={`/admin/ai/chat-bots?ai_system_id=${aiSystem.id}`}
+                    href={`/admin/ai/personas?ai_system_id=${aiSystem.id}`}
                     variant="outlined"
                     size="small"
                 >
-                    Chat Bots ({aiSystem.chat_bots_count || 0})
+                    Personas ({aiSystem.chat_bots_count || 0})
                 </Button>
                 <Button
                     component={InertiaLink}
@@ -123,6 +125,7 @@ export default function Edit({
                             existingDefaults={existingDefaults}
                             systemPrompts={systemPrompts}
                             isEdit
+                            pendingFirstEdit={pendingFirstEdit}
                         />
 
                         <Box
@@ -173,7 +176,7 @@ export default function Edit({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, chat bots on this system cannot use MCP tools."
+                    description="Select the MCP tools this system may expose. If none are selected, personas on this system cannot use MCP tools."
                 />
             </Box>
             <ConfirmDialog {...dialogProps} />

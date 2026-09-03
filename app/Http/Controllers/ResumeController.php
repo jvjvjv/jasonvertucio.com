@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Contracts\ResumeDataServiceContract;
 use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeDownload;
+use App\Models\ResumeEditCandidate;
 use App\Models\ResumeShareCode;
+use App\Models\ResumeVersion;
+use App\Services\ResumeEditCandidateService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +22,7 @@ class ResumeController extends Controller
     public function __construct(
         protected ResumeDataServiceContract $resumeData,
         protected ResumeVersionServiceContract $versionService,
+        protected ResumeEditCandidateService $candidateService,
     ) {}
 
     /**
@@ -51,7 +55,20 @@ class ResumeController extends Controller
      */
     public function index(Request $request): Response|View|JsonResponse
     {
-        $data = $this->resumeData->getDisplayData();
+        $isAuthorizedViewer = (bool) $request->user()?->can('edit-resume');
+        $candidate = null;
+
+        if ($request->filled('revision')) {
+            abort_unless($isAuthorizedViewer, 403);
+
+            $candidate = ResumeEditCandidate::findOrFail($request->integer('revision'));
+            $data = $candidate->snapshot;
+        } elseif ($isAuthorizedViewer) {
+            $data = $this->resumeData->getDisplayData();
+            $data['education'] = $this->resumeData->getEducationData();
+        } else {
+            $data = $this->resumeData->getDisplayData();
+        }
 
         // Share code users get full access (read + save), authenticated users need permission
         $canSave = session('resume_share_code')
@@ -71,12 +88,31 @@ class ResumeController extends Controller
                 ->header('Content-Type', 'text/plain; charset=utf-8');
         }
 
+        $liveVersion = ResumeVersion::current()->first();
+
         // Default: HTML
         return view('resume.index', [
             'data' => $data,
+            'version' => $liveVersion?->version,
             'canSave' => $canSave,
             'docxExists' => (bool) $this->versionService->getLatestDocxPath(),
             'pdfExists' => (bool) $this->versionService->getLatestPdfPath(),
+            'candidate' => $candidate ? [
+                'id' => $candidate->id,
+                'revision_number' => $candidate->revision_number,
+                'status' => $candidate->status,
+                'is_stale' => $liveVersion === null || $candidate->base_resume_version_id !== $liveVersion->id,
+                'suggested_version' => $candidate->baseResumeVersion
+                    ? $this->candidateService->suggestedNextVersion($candidate->baseResumeVersion)
+                    : null,
+            ] : null,
+            'pendingCandidates' => $isAuthorizedViewer && ! $candidate && $liveVersion
+                ? ResumeEditCandidate::query()
+                    ->where('base_resume_version_id', $liveVersion->id)
+                    ->pending()
+                    ->orderBy('revision_number')
+                    ->get(['id', 'revision_number'])
+                : collect(),
         ]);
     }
 

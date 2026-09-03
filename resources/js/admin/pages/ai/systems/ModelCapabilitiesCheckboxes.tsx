@@ -1,11 +1,14 @@
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import Tooltip from "@mui/material/Tooltip";
 
 interface ModelCapabilitiesCheckboxesProps {
     supportsTools: boolean;
+    disableSupportsTools?: boolean;
     supportsJsonMode: boolean;
     enableThinking: boolean;
+    disableEnableThinking?: boolean;
     isLocalEndpoint: boolean;
     isActive: boolean;
     onSupportsToolsChange: (_checked: boolean) => void;
@@ -17,8 +20,10 @@ interface ModelCapabilitiesCheckboxesProps {
 
 export default function ModelCapabilitiesCheckboxes({
     supportsTools,
+    disableSupportsTools = false,
     supportsJsonMode,
     enableThinking,
+    disableEnableThinking = false,
     isLocalEndpoint,
     isActive,
     onSupportsToolsChange,
@@ -37,17 +42,26 @@ export default function ModelCapabilitiesCheckboxes({
                     mb: 2,
                 }}
             >
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={supportsTools}
-                            onChange={(e) => {
-                                onSupportsToolsChange(e.target.checked);
-                            }}
-                        />
+                <Tooltip
+                    title={
+                        disableSupportsTools
+                            ? "The selected model does not report support for tools"
+                            : ""
                     }
-                    label="Supports Tools"
-                />
+                >
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={supportsTools && !disableSupportsTools}
+                                disabled={disableSupportsTools}
+                                onChange={(e) => {
+                                    onSupportsToolsChange(e.target.checked);
+                                }}
+                            />
+                        }
+                        label="Supports Tools"
+                    />
+                </Tooltip>
 
                 <FormControlLabel
                     control={
@@ -61,17 +75,28 @@ export default function ModelCapabilitiesCheckboxes({
                     label="Supports JSON Mode"
                 />
 
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={enableThinking}
-                            onChange={(e) => {
-                                onEnableThinkingChange(e.target.checked);
-                            }}
-                        />
+                <Tooltip
+                    title={
+                        disableEnableThinking
+                            ? "The selected model does not report support for reasoning"
+                            : ""
                     }
-                    label="Enable Thinking (reasoning models)"
-                />
+                >
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={
+                                    enableThinking && !disableEnableThinking
+                                }
+                                disabled={disableEnableThinking}
+                                onChange={(e) => {
+                                    onEnableThinkingChange(e.target.checked);
+                                }}
+                            />
+                        }
+                        label="Enable Thinking (reasoning models)"
+                    />
+                </Tooltip>
 
                 <FormControlLabel
                     control={

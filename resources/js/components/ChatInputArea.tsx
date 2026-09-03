@@ -5,6 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
 
 import { CHAT_COLUMN_MAX_WIDTH } from "./chat-interface/chatColumn";
 
@@ -39,6 +40,10 @@ export default function ChatInputArea({
     onStop,
     slots,
 }: ChatInputAreaProps) {
+    // Drives the composer's height: collapsed to one line when the composer is
+    // not being used, auto-growing up to a cap while it is.
+    const [isFocused, setIsFocused] = useState(false);
+
     return (
         <Box
             component="form"
@@ -66,17 +71,33 @@ export default function ChatInputArea({
                     <TextField
                         placeholder="Your message"
                         multiline
-                        minRows={2}
+                        minRows={1}
+                        // `maxRows`, not `minRows`, is what clamps the rendered
+                        // height to one line while unfocused: `minRows` only
+                        // sets a floor, so a multi-line draft would still show
+                        // in full. The draft itself is untouched either way.
+                        maxRows={isFocused ? 8 : 1}
                         value={messageText}
                         onChange={(e) => {
                             onChange(e.target.value);
                         }}
                         onKeyDown={onKeyDown}
+                        onFocus={() => {
+                            setIsFocused(true);
+                        }}
+                        onBlur={() => {
+                            setIsFocused(false);
+                        }}
                         fullWidth
                         sx={{
                             backgroundColor: "#ffffff",
                             "& .MuiInputBase-inputMultiline": {
                                 paddingBottom: "44px",
+                                // react-textarea-autosize writes `height` as an
+                                // inline style on every recalculation, so one
+                                // transition covers both the focus-driven
+                                // collapse/expand and per-keystroke growth.
+                                transition: "height 150ms ease",
                             },
                         }}
                     />

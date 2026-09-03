@@ -3,30 +3,32 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Concerns\ProvidesAdminNavigation;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreAiChatBotRequest;
+use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
-use BSPDX\Keystone\Models\KeystoneRole;
+use BSPDX\Keystone\Models\KeystonePermission;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController as BaseAiChatBotController;
-use Jvjvjv\CodeTalker\Http\Requests\Admin\StoreAiChatBotRequest as BaseStoreAiChatBotRequest;
-use Jvjvjv\CodeTalker\Http\Requests\Admin\UpdateAiChatBotRequest as BaseUpdateAiChatBotRequest;
-use Jvjvjv\CodeTalker\Models\AiChatBot as BaseAiChatBot;
 use Jvjvjv\CodeTalker\Models\AiSystem;
+use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 
 /**
- * Extends the package controller, overriding only what the host adds on top:
- * admin nav blocks, Keystone role selection, and the `allowed_roles` field.
- *
- * `destroy()` and `mcpTools()` are inherited unchanged. Every other method is
- * overridden because it touches `allowed_roles`, which exists only on the
- * host's AiChatBot model and form requests — inheriting them would silently
- * drop the field on write and omit it on read.
+ * code-talker 0.11.0 removed the package's admin `AiChatBotController` — this
+ * controller is now fully host-owned, built on `AiPersonaManager` for the
+ * write operations (create/update/delete) and `required_permission`/Keystone
+ * permission selection remaining host-only concerns.
  */
-class AiChatBotController extends BaseAiChatBotController
+class AiChatBotController extends Controller
 {
     use ProvidesAdminNavigation;
+
+    public function __construct(private AiPersonaManager $bots)
+    {
+    }
 
     /**
      * Display a list of AI chat bots.
@@ -50,7 +52,7 @@ class AiChatBotController extends BaseAiChatBotController
                 'slug' => $bot->slug,
                 'access_path' => $bot->access_path,
                 'public_url' => $bot->publicPath(),
-                'allowed_roles' => $bot->allowed_roles ?? [],
+                'required_permission' => $bot->required_permission,
                 'description' => $bot->description,
                 'is_active' => $bot->is_active,
                 'ai_system' => $bot->aiSystem,
@@ -70,7 +72,7 @@ class AiChatBotController extends BaseAiChatBotController
         return Inertia::render('ai/bots/Index', [
             'bots' => $bots,
             'filters' => ['ai_system_id' => $aiSystemId],
-            'navBlocks' => $this->navBlocksFor('/admin/ai/chat-bots', $request),
+            'navBlocks' => $this->navBlocksFor('/admin/ai/personas', $request),
         ]);
     }
 
@@ -81,14 +83,14 @@ class AiChatBotController extends BaseAiChatBotController
     {
         return Inertia::render('ai/bots/Create', [
             'systems' => $this->systems(),
-            'roles' => $this->roles(),
+            'permissions' => $this->permissions(),
         ]);
     }
 
     /**
      * Store a newly created bot.
      */
-    public function store(BaseStoreAiChatBotRequest $request): RedirectResponse
+    public function store(StoreAiChatBotRequest $request): RedirectResponse
     {
         $bot = AiChatBot::create($request->validated());
 
@@ -99,21 +101,21 @@ class AiChatBotController extends BaseAiChatBotController
     /**
      * Show the form for editing a bot.
      */
-    public function edit(BaseAiChatBot $aiChatBot): InertiaResponse
+    public function edit(AiChatBot $aiChatBot): InertiaResponse
     {
         $aiChatBot->loadCount('conversations');
 
         return Inertia::render('ai/bots/Edit', [
             'bot' => $aiChatBot,
             'systems' => $this->systems(),
-            'roles' => $this->roles(),
+            'permissions' => $this->permissions(),
         ]);
     }
 
     /**
      * Update the specified bot.
      */
-    public function update(BaseUpdateAiChatBotRequest $request, BaseAiChatBot $aiChatBot): RedirectResponse
+    public function update(UpdateAiChatBotRequest $request, AiChatBot $aiChatBot): RedirectResponse
     {
         $aiChatBot->update($request->validated());
 
@@ -122,17 +124,46 @@ class AiChatBotController extends BaseAiChatBotController
     }
 
     /**
-     * @return array<int, string>
+     * Delete the specified bot.
      */
-    private function roles(): array
+    public function destroy(AiChatBot $aiChatBot): RedirectResponse
     {
-        return KeystoneRole::query()->orderBy('name')->pluck('name')->all();
+        $name = $aiChatBot->name;
+
+        $this->bots->delete($aiChatBot);
+
+        return redirect()->route('admin.ai.bots.index')
+            ->with('success', "AI chat bot \"{$name}\" deleted successfully.");
     }
 
     /**
-     * Mirrors the package's private systems() helper, which subclasses cannot
-     * reach.
-     *
+     * The tools available to bots on an AI system, for the tool picker.
+     */
+    public function mcpTools(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
+            'include_all' => ['nullable', 'boolean'],
+        ]);
+
+        $tools = $this->bots->availableTools(
+            aiSystemId: $request->filled('ai_system_id') ? $request->integer('ai_system_id') : null,
+            includeAll: $request->boolean('include_all'),
+            userId: $request->user()?->getKey(),
+        );
+
+        return response()->json(['tools' => $tools]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function permissions(): array
+    {
+        return KeystonePermission::query()->orderBy('name')->pluck('name')->all();
+    }
+
+    /**
      * @return array<int, array{id: int, name: string, model: string, context_length: int|null, temperature: float|null, supports_tools: bool}>
      */
     private function systems(): array

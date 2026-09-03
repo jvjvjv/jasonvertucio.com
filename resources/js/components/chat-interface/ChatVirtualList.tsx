@@ -4,6 +4,7 @@ import { Virtuoso } from "react-virtuoso";
 
 import { CHAT_COLUMN_MAX_WIDTH } from "./chatColumn";
 import EmptyPlaceholder from "./EmptyPlaceholder";
+import NoReplyNotice from "./NoReplyNotice";
 
 import type { ChatMessage } from "@/components/ChatInterface";
 import type { MessageBlock } from "@/components/ChatMessageBubble";
@@ -16,11 +17,34 @@ import ChatMessageBubble from "@/components/ChatMessageBubble";
 type VirtualItem =
     | { _kind: "above-messages" }
     | { _kind: "message"; msg: ChatMessage; msgIndex: number }
+    | { _kind: "no-reply" }
     | {
           _kind: "stream";
           blocks: MessageBlock[];
           toolPanels: ToolPanel[];
       };
+
+/**
+ * Whether the transcript ends on an unanswered user message.
+ *
+ * Since code-talker 0.15.0 the server persists an interrupted turn instead of
+ * discarding it, so a new one leaves an assistant row flagged `incomplete`
+ * rather than nothing at all — that row is what explains itself, and this stays
+ * false. What remains for this to catch is conversations from before the
+ * upgrade, whose dropped turns left no row behind, plus a live turn that ends
+ * without the server's reply reaching us. While a turn is streaming the
+ * trailing user message is answered by the stream item, so this stays false.
+ */
+export function hasUnansweredTrailingMessage(
+    messages: ChatMessage[],
+    isStreaming: boolean,
+): boolean {
+    return (
+        !isStreaming &&
+        messages.length > 0 &&
+        messages[messages.length - 1].role === "user"
+    );
+}
 
 interface ChatVirtualListProps {
     messages: ChatMessage[];
@@ -75,6 +99,8 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                 blocks: streamingBlocks,
                 toolPanels: streamingToolPanels,
             });
+        } else if (hasUnansweredTrailingMessage(messages, isStreaming)) {
+            virtualItems.push({ _kind: "no-reply" });
         }
 
         const chromeHeight = isMobile ? 300 : 320;
@@ -129,13 +155,34 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                     role={item.msg.role}
                                     content={item.msg.content}
                                     blocks={item.msg.blocks ?? null}
+                                    toolPanels={
+                                        item.msg.tool_panels ?? undefined
+                                    }
                                     maxWidth="100%"
                                     reasoningContent={
                                         item.msg.reasoning_content ?? null
                                     }
                                     isAuthenticated={isAuthenticated}
+                                    isManualEdit={
+                                        item.msg.metadata?.origin ===
+                                        "manual_edit"
+                                    }
+                                    isIncomplete={item.msg.incomplete ?? false}
                                     sx={chatBubbleStyle}
                                 />
+                            </Box>
+                        );
+                    }
+
+                    if (item._kind === "no-reply") {
+                        return (
+                            <Box
+                                sx={{
+                                    px: { xs: 1.5, md: 3 },
+                                    py: 1.5,
+                                }}
+                            >
+                                <NoReplyNotice />
                             </Box>
                         );
                     }

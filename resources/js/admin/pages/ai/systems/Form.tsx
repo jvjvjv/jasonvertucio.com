@@ -10,22 +10,24 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import FeatureDefaultsCheckboxes from "./FeatureDefaultsCheckboxes";
 import JSONConfigEditor from "./JSONConfigEditor";
 import ModelCapabilitiesCheckboxes from "./ModelCapabilitiesCheckboxes";
 import ProviderModelSelector from "./ProviderModelSelector";
+import WebToolPolicyEditor from "./WebToolPolicyEditor";
 
 import type { AiSystemPrompt } from "@/types";
 
 import { api } from "@/api";
 
 interface ModelCapabilities {
-    reasoning?: boolean;
+    reasoning?: boolean | null;
     vision?: boolean;
-    tools?: boolean;
+    tools?: boolean | null;
     max_context_length?: number | null;
+    size_bytes?: number | null;
 }
 
 interface ModelOption {
@@ -33,6 +35,7 @@ interface ModelOption {
     name: string;
     loaded?: boolean;
     max_context_length?: number | null;
+    size_bytes?: number | null;
     capabilities?: ModelCapabilities;
 }
 
@@ -62,10 +65,10 @@ interface FormData {
     system_prompt_mode: string;
     supports_tools: boolean;
     allowed_tools: string[];
+    web_tool_policy: string;
     supports_json_mode: boolean;
     enable_thinking: boolean;
     is_local_endpoint: boolean;
-    pricing_profile: string;
     is_active: boolean;
     feature_defaults: string[];
 }
@@ -80,6 +83,9 @@ interface AiSystemFormProps {
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
     isEdit?: boolean;
+    // A freshly duplicated system that hasn't been saved yet — Provider,
+    // Model, and API Key behave like Create instead of being locked.
+    pendingFirstEdit?: boolean;
 }
 
 const ALL_FEATURES = ["targeted-resume", "cover-letter"];
@@ -197,6 +203,7 @@ export default function AiSystemForm({
     existingDefaults,
     systemPrompts: initialSystemPrompts,
     isEdit = false,
+    pendingFirstEdit = false,
 }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [fetchingModels, setFetchingModels] = useState(false);
@@ -306,8 +313,27 @@ export default function AiSystemForm({
         ? {
               ...(selectedModel.capabilities ?? {}),
               max_context_length: selectedModel.max_context_length ?? null,
+              size_bytes: selectedModel.size_bytes ?? null,
           }
         : data.model_capabilities;
+    // Strict `false`, not falsy — `null`/`undefined` means the provider never
+    // reported reasoning/tools capability at all (e.g. Anthropic), so leave enabled.
+    const reasoningUnsupported = selectedModelCapabilities?.reasoning === false;
+    const toolsUnsupported = selectedModelCapabilities?.tools === false;
+
+    useEffect(() => {
+        if (reasoningUnsupported && data.enable_thinking) {
+            setData("enable_thinking", false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reasoningUnsupported]);
+
+    useEffect(() => {
+        if (toolsUnsupported && data.supports_tools) {
+            setData("supports_tools", false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [toolsUnsupported]);
 
     // Prompt id locked by feature defaults: targeted-resume locks to 4, cover-letter locks to 5
     const featureLockedPromptId: number | null = data.feature_defaults.includes(
@@ -388,6 +414,7 @@ export default function AiSystemForm({
                 fetchingModels={fetchingModels}
                 fetchError={fetchError}
                 isEdit={isEdit}
+                pendingFirstEdit={pendingFirstEdit}
                 apiKeyRequired={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
                 apiKeyHelperText={apiKeyHelperText}
                 modelPlaceholder={modelPlaceholder}
@@ -632,9 +659,6 @@ export default function AiSystemForm({
                 onCredentialsChange={(value) => {
                     setData("credentials", value);
                 }}
-                onPricingProfileChange={(value) => {
-                    setData("pricing_profile", value);
-                }}
                 onAuthTypeChange={(value) => {
                     setData("auth_type", value);
                 }}
@@ -649,10 +673,20 @@ export default function AiSystemForm({
                 }}
             />
 
+            <WebToolPolicyEditor
+                value={data.web_tool_policy}
+                error={errors.web_tool_policy}
+                onChange={(value) => {
+                    setData("web_tool_policy", value);
+                }}
+            />
+
             <ModelCapabilitiesCheckboxes
                 supportsTools={data.supports_tools}
+                disableSupportsTools={toolsUnsupported}
                 supportsJsonMode={data.supports_json_mode}
                 enableThinking={data.enable_thinking}
+                disableEnableThinking={reasoningUnsupported}
                 isLocalEndpoint={data.is_local_endpoint}
                 isActive={data.is_active}
                 onSupportsToolsChange={(checked) => {

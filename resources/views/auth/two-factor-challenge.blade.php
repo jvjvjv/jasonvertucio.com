@@ -13,7 +13,7 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-lg p-8">
-            <x-keystone-two-factor-challenge />
+            @include('auth.partials.two-factor-challenge', ['action' => route('two-factor.login'), 'showRecoveryCodeOption' => true])
         </div>
     </div>
 </div>

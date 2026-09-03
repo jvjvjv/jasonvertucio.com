@@ -126,6 +126,10 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     <ChatMessageBubble
                                         role={message.role}
                                         content={message.content}
+                                        blocks={message.blocks ?? null}
+                                        reasoningContent={
+                                            message.reasoning_content ?? null
+                                        }
                                         variant="history"
                                         sentAt={message.created_at ?? null}
                                         isAuthenticated={!!authUser}
@@ -169,11 +173,11 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     <UsageChip usage={conversation.usage} />
                                 </Box>
                                 <Box>
-                                    <strong>Bot:</strong>{" "}
+                                    <strong>Persona:</strong>{" "}
                                     {conversation.ai_chat_bot ? (
                                         <Link
                                             component={InertiaLink}
-                                            href={`/admin/ai/chat-bots/${conversation.ai_chat_bot.id}`}
+                                            href={`/admin/ai/personas/${conversation.ai_chat_bot.slug}`}
                                             underline="hover"
                                         >
                                             {conversation.ai_chat_bot.name}
@@ -292,11 +296,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                                 {memory.confidence}
                                             </Typography>
                                             <Typography sx={{ mt: 0.5 }}>
-                                                {(
-                                                    memory as Memory & {
-                                                        content?: string;
-                                                    }
-                                                ).content ?? ""}
+                                                {memory.content}
                                             </Typography>
                                         </Box>
                                     ))

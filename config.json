@@ -1,0 +1,492 @@
+{
+    "html_title": "Jason Vertucio: Web Applications Engineer",
+    "aria_title": "Jason Vertucio: Web Applications Engineer",
+    "links": [
+        {
+            "href": "/admin",
+            "label": "Admin",
+            "hover": "Administration dashboard",
+            "can": "create-users"
+        },
+        {
+            "href": "/canvas",
+            "label": "Canvas",
+            "hover": "Manage the Canvas Blog",
+            "can": "manage-blog"
+        },
+        {
+            "divider": true
+        },
+        {
+            "href": "/#about",
+            "label": "#About",
+            "ariaLabel": "About Me",
+            "hover": "About me!"
+        },
+        {
+            "href": "/#projects",
+            "label": "#Projects",
+            "ariaLabel": "Projects",
+            "hover": "Some of the work I've linked in the sidebar."
+        },
+        {
+            "href": "/#skills",
+            "label": "#Skills",
+            "ariaLabel": "Skills",
+            "hover": "A varied list of tech skillsets."
+        },
+        {
+            "href": "/#interests",
+            "label": "#Interests",
+            "ariaLabel": "Interests",
+            "hover": "Stuff I like to do that isn't work related."
+        },
+        {
+            "divider": true
+        },
+        {
+            "href": "/blog",
+            "label": "Blog",
+            "ariaLabel": "Blog",
+            "hover": "My blog, which is mostly empty as I don't write much."
+        },
+        {
+            "href": "https://ghostletter.jasonvertucio.com",
+            "label": "Ghost Letter",
+            "hover": "A web application for sharing ephemeral images with friends.",
+            "target": "_blank"
+        },
+        {
+            "href": "https://balancecloud.app",
+            "label": "BalanceCloud",
+            "ariaLabel": "Balance Cloud: A digital, privacy-first ledger app.",
+            "hover": "A web application so I can manually manage my budget (requires sign up).",
+            "target": "_blank"
+        },
+        {
+            "href": "https://www.upwork.com/services/product/development-it-a-custom-laravel-vue-js-web-application-2094654131678472700",
+            "label": "Upwork",
+            "hover": "Build a custom website like this one",
+            "target": "_blank"
+        },
+        {
+            "divider": true
+        },
+        {
+            "href": "/profile",
+            "label": "My Profile",
+            "hover": "View and manage your profile",
+            "can": "authenticated"
+        },
+        {
+            "href": "/logout",
+            "label": "Log out",
+            "can": "authenticated"
+        }
+    ],
+    "about_me": {
+        "name": {
+            "given": "Jason",
+            "sur": "Vertucio"
+        },
+        "address": {
+            "city": "Philadelphia",
+            "state": "PA",
+            "zip": "19107"
+        },
+        "telegram": {
+            "label": "Contact me on Telegram!",
+            "url": "https://t.me/jasondidathing"
+        },
+        "email": {
+            "email_address": "me@jasonvertucio.com",
+            "subject": "Better change this or I'll think you're spamming me",
+            "body": "Hi\r\n"
+        },
+        "sections": [
+            "Senior Front-End Engineer with 20+ years building scalable web and mobile applications across industries—from streaming entertainment platforms serving millions to enterprise fleet management systems and environmental compliance tools.",
+            "Architected component libraries and design systems cutting development time by 40-75%. Led Vue 3/TypeScript migrations, consolidated codebases reducing maintenance by 60%, and established TDD practices achieving 100% unit test coverage across production applications.",
+            "Built end-to-end mobile products for iOS and Android with high-speed camera integration, real-time chat, geofencing, and secure payment processing. Developed streaming platforms with DRM implementation, white-label solutions, and cross-platform SSO architecture.",
+            "Proven track record modernizing legacy systems, driving WCAG 2.1 AA accessibility compliance, and mentoring development teams in fast-paced Agile environments with weekly production deployments."
+        ],
+        "social": [
+            {
+                "label": "View my LinkedIn profile",
+                "type": "linkedin",
+                "link": "https://www.linkedin.com/in/jasonvertucio/",
+                "fa_icon": "fa-linkedin-in"
+            },
+            {
+                "label": "Connect with me on X",
+                "type": "x",
+                "link": "https://x.com/jasondidathing",
+                "fa_icon": "fa-x-twitter"
+            },
+            {
+                "label": "Let's chat on Bluesky",
+                "type": "bluesky",
+                "link": "https://bsky.app/profile/jasonvertucio.com",
+                "fa_icon": "fa-bluesky"
+            },
+            {
+                "label": "See my IMDb profile",
+                "type": "IMDb",
+                "link": "https://www.imdb.com/name/nm5264006/",
+                "fa_icon": "fa-imdb"
+            }
+        ]
+    },
+    "projects": [
+        {
+            "title": "My Blog",
+            "description": "The blog is built using Canvas, assembled using custom Blade components. I'm not much of a writer, so don't expect much great content there."
+        },
+        {
+            "title": "Ghost Letter",
+            "description": "A full-stack demo application to send disappearing messages to your friends! Best when used on a mobile device. Built with Laravel and next.js. <em>Note: Sign in as <code>demo01</code> with password <code>demo01</code></em>."
+        },
+        {
+            "title": "BalanceCloud",
+            "description": "A mobile-first, responsive web application for managing your bank accounts. Built with Quasar and Laravel."
+        },
+        {
+            "title": "Btoa(toB)",
+            "description": "A web application for encoding and decoding Base64 JSON objects. Built with AlpineJS. I made this to help out with some parameter encoding/decoding of API requests at one of my jobs. It got a lot of use among the team."
+        },
+        {
+            "title": "To Do App",
+            "description": "Everyong has built a simple to-do list. This application was first built with AngularJS, because it is rather ancient &mdash; but later migrated to AlpineJS which was more lightweight. Designed to fit my second monitor, e.g. a TV that faces outward, so at a glace I and anyone I work with can see my daily progress. Also, sound effects because they're fun."
+        }
+    ],
+    "experience": [
+        {
+            "id": "6",
+            "company": "Subaru of America",
+            "location": "Camden, NJ",
+            "date": "2025 - Present",
+            "description": null,
+            "highlights": [
+                "Architected dynamic SNET Form framework for React apps, slashing form creation by 75% and nearly halving VIP Program project development time",
+                "Built component library from Figma designs and established design system standards, cutting new feature UI dev time by approximately 40%",
+                "Modernized legacy UI applications to React/Next.js with Redux and Context API, improving maintainability and reducing open UI defects by 35% within two quarters",
+                "Built front-end for Tier 3 Marketing platform centralizing dealership information management, replacing vendor dependency and reducing annual operational costs",
+                "Drove accessibility remediation (WCAG 2.1 AA) across legacy and modern apps, resolving keyboard navigation, ARIA labeling, and color contrast issues to pass internal audits",
+                "Achieved 100% unit test coverage across micro-frontend applications, reducing post-release regressions",
+                "Optimized E2E test suites and CI runtime by 50% to accelerate deployment cycles"
+            ]
+        },
+        {
+            "id": "5",
+            "company": "ERM, Inc.",
+            "location": "Remote",
+            "date": "2023 - 2025",
+            "description": null,
+            "highlights": [
+                "Refactored legacy document processing API to handle Word 97-2003 formats and convert to HTML, automating regulation synchronization processes",
+                "Optimized workflow efficiency by digitalizing Excel-based processes into responsive web applications, reducing manual data entry and improving data accuracy by 80%",
+                "Developed web scraping and data integration solutions supporting multiple data sources including static pages, PDFs, REST APIs, GraphQL, and specialized platforms",
+                "Maintained and enhanced Themis compliance app serving regulatory compliance teams across multiple industries"
+            ]
+        },
+        {
+            "id": "4",
+            "company": "AMCS Group / Dossier Systems",
+            "location": "Remote",
+            "date": "2019 - 2023",
+            "description": null,
+            "highlights": [
+                "Led development of enterprise-level fleet maintenance management application serving thousands of users across browser, mobile, and SSR platforms",
+                "Spearheaded migration from Vue.js/JavaScript to Vue 3/TypeScript, improving code maintainability and establishing type safety standards across the development team",
+                "Architected reusable Vue component library with KendoUI and Element UI integration, optimized for performance and intuitive UX across browser, mobile (OnsenUI), and SSR applications",
+                "Consolidated three separate codebases (Browser, Mobile, SSR) into unified architecture, reducing maintenance overhead by approximately 60%",
+                "Established comprehensive testing strategy with BDD/TDD methodology, ensuring reliable code quality and preventing regression issues",
+                "Led UI development team in fast-paced Agile/Scrum environment with weekly production deployments, mentoring junior developers",
+                "Collaborated with backend developers to design JSON API architecture and prepared comprehensive technical specifications for cross-functional teams"
+            ]
+        },
+        {
+            "id": "3",
+            "company": "Liberty Fox Technologies",
+            "location": "Philadelphia, PA / Hybrid",
+            "date": "2017 - 2019, 2025 - Present",
+            "description": null,
+            "highlights": [
+                "Modernized FlixFling platform, upgrading codebase from Laravel 5 to 10, improving security, performance, maintainability",
+                "Built UI for exclusive content streaming platform with subscription-based monetization utilizing Stripe and PayPal APIs",
+                "Contributed to original FlixFling streaming platform development, serving one of the largest privately-owned movie streaming services in the U.S.",
+                "Utilized Docker for local development environment configuration, ensuring parity with production infrastructure",
+                "Developed white-label partner solutions and created customized platforms meeting specific client requirements",
+                "Implemented PayPal integration, SSO architecture, and Digital Rights Management technologies for cross-platform content protection"
+            ]
+        },
+        {
+            "id": "2",
+            "company": "Northgate Digital Corporation",
+            "location": "Newtown, PA",
+            "date": "2013 - 2017",
+            "description": null,
+            "highlights": [
+                "Owned end-to-end product development for client-facing mobile applications, translating business requirements into technical specifications and shipped products across iOS and Android platforms",
+                "Managed international contractor teams and maintained direct client relationships throughout product lifecycle",
+                "Built innovative mobile solutions including high-speed camera integration for Bridgestone Golf ball fitting app and live music streaming capabilities for Wolfgang's entertainment platform",
+                "Developed Thryver social platform combining geofencing, real-time chat, and psychometric assessment tools for university environments",
+                "Created secure payment processing mobile app for StraightPay featuring custom authentication patterns, GPS integration, and encrypted API communications"
+            ]
+        }
+    ],
+    "icons": {
+        "core_languages": [
+            {
+                "icon": "js-square",
+                "iconType": "fa-brands",
+                "label": "ECMAScript/JavaScript & TypeScript",
+                "animation": "beat"
+            },
+            {
+                "icon": "php",
+                "iconType": "fa-brands",
+                "label": "PHP"
+            },
+            {
+                "icon": "css3",
+                "iconType": "fa-brands",
+                "label": "CSS"
+            },
+            {
+                "icon": "sass",
+                "iconType": "fa-brands",
+                "label": "Sass"
+            }
+        ],
+        "frameworks_libraries": [
+            {
+                "icon": "vuejs",
+                "iconType": "fa-brands",
+                "label": "VueJS",
+                "animation": "flip"
+            },
+            {
+                "icon": "react",
+                "iconType": "fa-brands",
+                "label": "ReactJS, ReactNative",
+                "animation": "shake"
+            },
+            {
+                "icon": "angular",
+                "iconType": "fa-brands",
+                "label": "Angular"
+            },
+            {
+                "icon": "laravel",
+                "iconType": "fa-brands",
+                "label": "Laravel",
+                "animation": "spin-pulse"
+            },
+            {
+                "icon": "bootstrap",
+                "iconType": "fa-brands",
+                "label": "Bootstrap"
+            }
+        ],
+        "platforms_runtime": [
+            {
+                "icon": "node-js",
+                "iconType": "fa-brands",
+                "label": "NodeJS"
+            },
+            {
+                "icon": "android",
+                "iconType": "fa-brands",
+                "label": "Android"
+            },
+            {
+                "icon": "apple",
+                "iconType": "fa-brands",
+                "label": "iOS, iPadOS, Apple TV",
+                "animation": "shake"
+            },
+            {
+                "icon": "linux",
+                "iconType": "fa-brands",
+                "label": "Linux",
+                "animation": "bounce"
+            },
+            {
+                "icon": "ubuntu",
+                "iconType": "fa-brands",
+                "label": "Ubuntu",
+                "animation": "spin-pulse"
+            },
+            {
+                "icon": "centos",
+                "iconType": "fa-brands",
+                "label": "CentOS",
+                "animation": "spin-pulse"
+            },
+            {
+                "icon": "windows",
+                "iconType": "fa-brands",
+                "label": "Windows"
+            },
+            {
+                "icon": "raspberry-pi",
+                "iconType": "fa-brands",
+                "label": "Raspberry Pi"
+            }
+        ],
+        "devops_infrastructure": [
+            {
+                "icon": "git-alt",
+                "iconType": "fa-brands",
+                "label": "git"
+            },
+            {
+                "icon": "github",
+                "iconType": "fa-brands",
+                "label": "Github",
+                "animation": "flip"
+            },
+            {
+                "icon": "bitbucket",
+                "iconType": "fa-brands",
+                "label": "Bitbucket"
+            },
+            {
+                "icon": "sourcetree",
+                "iconType": "fa-brands",
+                "label": "Sourcetree",
+                "animation": "flip"
+            },
+            {
+                "icon": "npm",
+                "iconType": "fa-brands",
+                "label": "npm package manager"
+            },
+            {
+                "icon": "docker",
+                "iconType": "fa-brands",
+                "label": "Docker"
+            },
+            {
+                "icon": "jenkins",
+                "iconType": "fa-brands",
+                "label": "Jenkins",
+                "animation": "bounce"
+            },
+            {
+                "icon": "cloudflare",
+                "iconType": "fa-brands",
+                "label": "CloudFlare"
+            },
+            {
+                "icon": "linode",
+                "iconType": "fa-brands",
+                "label": "Linode"
+            }
+        ],
+        "tools_workflow": [
+            {
+                "icon": "figma",
+                "iconType": "fa-brands",
+                "label": "Figma"
+            },
+            {
+                "icon": "sketch",
+                "iconType": "fa-brands",
+                "label": "Sketch"
+            },
+            {
+                "icon": "jira",
+                "iconType": "fa-brands",
+                "label": "Jira",
+                "animation": "spin-pulse"
+            },
+            {
+                "icon": "confluence",
+                "iconType": "fa-brands",
+                "label": "Confluence"
+            },
+            {
+                "icon": "microsoft",
+                "iconType": "fa-brands",
+                "label": "Azure DevOps"
+            },
+            {
+                "icon": "slack",
+                "iconType": "fa-brands",
+                "label": "Slack",
+                "animation": "beat-fade"
+            },
+            {
+                "icon": "rocketchat",
+                "iconType": "fa-brands",
+                "label": "Rocket.Chat"
+            },
+            {
+                "icon": "arrows-rotate",
+                "iconType": "fa-solid",
+                "label": "Agile",
+                "animation": "spin"
+            },
+            {
+                "icon": "arrows-spin",
+                "iconType": "fa-solid",
+                "label": "Scrum",
+                "animation": "spin"
+            }
+        ],
+        "integrations": [
+            {
+                "icon": "paypal",
+                "iconType": "fa-brands",
+                "label": "PayPal"
+            },
+            {
+                "icon": "stripe",
+                "iconType": "fa-brands",
+                "label": "Stripe"
+            },
+            {
+                "icon": "facebook-square",
+                "iconType": "fa-brands",
+                "label": "Facebook"
+            },
+            {
+                "icon": "twitter",
+                "iconType": "fa-brands",
+                "label": "Twitter",
+                "animation": "bounce"
+            },
+            {
+                "icon": "wordpress-simple",
+                "iconType": "fa-brands",
+                "label": "Wordpress"
+            },
+            {
+                "icon": "chromecast",
+                "iconType": "fa-brands",
+                "label": "Chromecast",
+                "animation": "flip"
+            },
+            {
+                "icon": "bluetooth-b",
+                "iconType": "fa-brands",
+                "label": "Bluetooth",
+                "animation": "shake"
+            }
+        ]
+    },
+    "workflow": [
+        "Mobile-First, Responsive Design",
+        "App development using Ionic, VueJS, React, NativeScript",
+        "Lightweight API development using ExpressJS, Lumen, Laravel",
+        "Cross Browser Testing &amp; Debugging",
+        "Agile Development"
+    ],
+    "interests": [
+        "I love driving.",
+        "I play: clarinet, piano, guitar, bass guitar, and I sing.",
+        "My main video editing software is Da Vinci Resolve. Audio recording? Cakewalk by BandLab.",
+        "I'm also on the lookout for a ship that can travel through all of <em>Time And Relative Dimension In Space</em>."
+    ]
+}

@@ -5,6 +5,7 @@ import { markdownSx } from "../admin/utils/markdownSx";
 import mergeSx from "../utils/mergeSx";
 
 import BlockContent from "./chat-message-bubble/BlockContent";
+import CopyMessageButton from "./chat-message-bubble/CopyMessageButton";
 import LegacyContent from "./chat-message-bubble/LegacyContent";
 import ToolsPanel from "./ToolsPanel";
 
@@ -34,15 +35,25 @@ interface ChatMessageBubbleProps {
     blocks?: MessageBlock[] | null;
     /**
      * Tool activity for the turn, rendered at the top of the bubble so it shares
-     * the message's width and chrome. Host-only and live-only: the tool event
-     * wipes the block sequence, so nothing precedes these, and they are dropped
-     * when the turn ends because the server never persists tool calls.
+     * the message's width and chrome. Host-only, not part of the package's
+     * `MessageBlock` contract: while streaming, a tool event wipes the block
+     * sequence, so nothing precedes these. For a historical message, this is
+     * read back from `AiConversationMessage.tool_calls`/`tool_results` (which
+     * the package does persist) via the host's `ChatMessage.tool_panels`.
      */
     toolPanels?: ToolPanel[];
     /** Which block type is currently being streamed (only meaningful when isStreaming). */
     activeBlockType?: "text" | "reasoning" | null;
     /** Legacy single-blob reasoning (used when blocks is absent). */
     reasoningContent?: string | null;
+    /** Marks this message as a manual out-of-band edit rather than something typed into chat. */
+    isManualEdit?: boolean;
+    /**
+     * The turn behind this message never finished — the browser hung up, or the
+     * server's duration guard cut it off (code-talker 0.15.0+ persists such a
+     * turn instead of discarding it). Content may be empty or stop mid-sentence.
+     */
+    isIncomplete?: boolean;
 }
 
 export const userMarkdownOverrides = {
@@ -59,6 +70,16 @@ export const userMarkdownOverrides = {
     "& table td": { padding: "0.25rem" },
 };
 
+/** Renders reasoning content as a markdown blockquote with a bold+italic "Reasoning" intro, for the copy button. */
+function formatReasoningAsBlockquote(text: string): string {
+    const quoted = text
+        .split("\n")
+        .map((line) => (line === "" ? ">" : `> ${line}`))
+        .join("\n");
+
+    return `> **_Reasoning_**\n>\n${quoted}`;
+}
+
 export default function ChatMessageBubble({
     content = "",
     role,
@@ -71,6 +92,8 @@ export default function ChatMessageBubble({
     toolPanels = [],
     activeBlockType = null,
     reasoningContent = null,
+    isManualEdit = false,
+    isIncomplete = false,
     sx,
 }: ChatMessageBubbleProps) {
     const isUser = role === "user";
@@ -124,6 +147,30 @@ export default function ChatMessageBubble({
 
     const hasBlocks = !isUser && !!blocks && blocks.length > 0;
 
+    // An interrupted turn can be persisted with nothing in it at all — the
+    // model was still processing the prompt, or had only got as far as calling
+    // a tool. There is then no body to render, so the notice below carries the
+    // whole message rather than annotating one.
+    const hasVisibleBody = hasBlocks || content !== "" || toolPanels.length > 0;
+
+    /** Plain text for the copy button — reasoning first, then the response, in the order shown. */
+    const copyText = hasBlocks
+        ? blocks
+              .map((block) =>
+                  block.type === "reasoning"
+                      ? formatReasoningAsBlockquote(block.content)
+                      : block.content,
+              )
+              .join("\n\n")
+        : [
+              !isUser && reasoningContent
+                  ? formatReasoningAsBlockquote(reasoningContent)
+                  : null,
+              content,
+          ]
+              .filter((part): part is string => !!part)
+              .join("\n\n");
+
     const body = hasBlocks ? (
         <BlockContent
             blocks={blocks}
@@ -149,26 +196,75 @@ export default function ChatMessageBubble({
 
     return (
         <Box
-            sx={mergeSx(
-                hasBlocks
-                    ? baseBubbleSx
-                    : // LegacyContent positions its reasoning toggle absolutely.
-                      { ...baseBubbleSx, position: "relative" },
-                sx,
-            )}
+            // position: relative always, not just for LegacyContent's own
+            // absolutely-positioned reasoning toggle — CopyMessageButton below
+            // needs it too, for both content modes.
+            sx={mergeSx({ ...baseBubbleSx, position: "relative" }, sx)}
             onDoubleClick={handlePreDblClick}
         >
+            {isManualEdit && (
+                <Box
+                    sx={{
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        opacity: 0.8,
+                        mb: 0.5,
+                    }}
+                >
+                    ✎ Edited manually
+                </Box>
+            )}
+            {isIncomplete && (
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: 0.75,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        // Deliberately not warning.dark as the text colour: at
+                        // this size that fails AA against the bubble. The colour
+                        // lives in the rule, which only has to clear the 3:1
+                        // non-text threshold.
+                        color: "text.primary",
+                        borderLeft: 3,
+                        borderColor: "warning.dark",
+                        pl: 1,
+                        mb: hasVisibleBody ? 0.75 : 0,
+                    }}
+                >
+                    <span aria-hidden="true">⚠</span>
+                    <span>
+                        {hasVisibleBody
+                            ? "Interrupted — this reply was never finished."
+                            : "Interrupted before the model replied. Send the message again to retry."}
+                    </span>
+                </Box>
+            )}
             {toolPanels.map((panel, i) => (
                 <ToolsPanel
                     key={i}
                     pretext={panel.pretext}
                     tools={panel.tools}
+                    input={panel.input}
+                    output={panel.output}
+                    successful={panel.successful}
                     isActive={
                         isStreaming && !hasBlocks && i === toolPanels.length - 1
                     }
                 />
             ))}
             {body}
+            {!isStreaming && copyText !== "" && (
+                <CopyMessageButton
+                    text={copyText}
+                    color={
+                        isChatVariant && isUser
+                            ? "primary.contrastText"
+                            : "text.disabled"
+                    }
+                />
+            )}
         </Box>
     );
 }

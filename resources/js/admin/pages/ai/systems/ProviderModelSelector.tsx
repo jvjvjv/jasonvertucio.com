@@ -9,15 +9,32 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 interface ModelCapabilities {
-    reasoning?: boolean;
+    reasoning?: boolean | null;
     vision?: boolean;
-    tools?: boolean;
+    tools?: boolean | null;
     max_context_length?: number | null;
+    size_bytes?: number | null;
 }
 
 interface ModelOption {
     id: string;
     name: string;
+    size_bytes?: number | null;
+}
+
+// Only providers that expose local model files on disk (e.g. LM Studio's
+// native API) report a size; everything else leaves `size_bytes` null.
+function formatFileSize(sizeBytes: number): string {
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let value = sizeBytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+    }
+
+    return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
 interface ProviderOption {
@@ -45,6 +62,7 @@ interface ProviderModelSelectorProps {
     fetchingModels: boolean;
     fetchError: string;
     isEdit: boolean;
+    pendingFirstEdit: boolean;
     apiKeyRequired: boolean;
     apiKeyHelperText: string;
     modelPlaceholder: string;
@@ -73,6 +91,7 @@ export default function ProviderModelSelector({
     fetchingModels,
     fetchError,
     isEdit,
+    pendingFirstEdit,
     apiKeyRequired,
     apiKeyHelperText,
     modelPlaceholder,
@@ -90,6 +109,10 @@ export default function ProviderModelSelector({
     onContextLengthChange,
     onTemperatureChange,
 }: ProviderModelSelectorProps) {
+    // A freshly duplicated system hasn't been saved yet, so its first edit
+    // still allows changing Provider, Model, and API Key, like Create.
+    const fieldsLocked = isEdit && !pendingFirstEdit;
+
     return (
         <>
             <Box
@@ -121,11 +144,11 @@ export default function ProviderModelSelector({
                     onChange={(e) => {
                         onProviderChange(e.target.value);
                     }}
-                    disabled={isEdit}
+                    disabled={fieldsLocked}
                     error={!!errors.provider}
                     helperText={
                         errors.provider ??
-                        (isEdit
+                        (fieldsLocked
                             ? "Provider cannot be changed after creation."
                             : undefined)
                     }
@@ -155,11 +178,11 @@ export default function ProviderModelSelector({
                     onChange={(e) => {
                         onApiKeyChange(e.target.value);
                     }}
-                    disabled={isEdit}
+                    disabled={fieldsLocked}
                     onBlur={onApiKeyBlur}
                     error={!!errors.api_key}
                     helperText={
-                        isEdit
+                        fieldsLocked
                             ? "API key is stored securely and can only be changed by duplicating this system."
                             : apiKeyHelperText
                     }
@@ -176,12 +199,12 @@ export default function ProviderModelSelector({
                         onChange={(e) => {
                             onModelChange(e.target.value);
                         }}
-                        disabled={isEdit}
+                        disabled={fieldsLocked}
                         error={!!errors.model}
                         placeholder={modelPlaceholder}
                         helperText={
                             (errors.model ?? fetchError) ||
-                            (isEdit
+                            (fieldsLocked
                                 ? "Model cannot be changed after creation."
                                 : undefined)
                         }
@@ -196,6 +219,9 @@ export default function ProviderModelSelector({
                         {availableModels.map((model) => (
                             <MenuItem key={model.id} value={model.id}>
                                 {model.name} ({model.id})
+                                {model.size_bytes
+                                    ? ` — ${formatFileSize(model.size_bytes)}`
+                                    : ""}
                             </MenuItem>
                         ))}
                     </TextField>
@@ -237,6 +263,15 @@ export default function ProviderModelSelector({
                                 <Chip
                                     size="small"
                                     label={`Max context ${selectedModelCapabilities.max_context_length.toLocaleString()}`}
+                                    variant="outlined"
+                                />
+                            )}
+                            {!!selectedModelCapabilities.size_bytes && (
+                                <Chip
+                                    size="small"
+                                    label={formatFileSize(
+                                        selectedModelCapabilities.size_bytes,
+                                    )}
                                     variant="outlined"
                                 />
                             )}

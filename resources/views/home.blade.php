@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    @include("partials.favicon")
     <meta name="description" content="Jason Vertucio does mobile application development.">
     <meta name="author" content="Jason Vertucio">
 

@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiChatBot;
 use App\Models\AiConversation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
-use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
@@ -21,7 +21,7 @@ class AiConversationController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $query = AiConversation::query()
-            ->with(['aiSystem', 'aiChatBot', 'user', 'targetedResume'])
+            ->with(['aiSystem', 'aiPersona', 'user', 'targetedResume'])
             ->withCount(['messages' => fn ($messages) => $messages->where('role', '!=', 'system')])
             ->orderByLastMessageAtDesc();
 
@@ -38,7 +38,7 @@ class AiConversationController extends Controller
         }
 
         if ($request->filled('ai_chat_bot_id')) {
-            $query->where('ai_chat_bot_id', $request->integer('ai_chat_bot_id'));
+            $query->where('ai_persona_id', $request->integer('ai_chat_bot_id'));
         }
 
         if ($request->filled('search')) {
@@ -52,7 +52,7 @@ class AiConversationController extends Controller
                         $userQuery->where('name', 'like', '%'.$search.'%')
                             ->orWhere('email', 'like', '%'.$search.'%');
                     })
-                    ->orWhereHas('aiChatBot', function ($botQuery) use ($search) {
+                    ->orWhereHas('aiPersona', function ($botQuery) use ($search) {
                         $botQuery->where('name', 'like', '%'.$search.'%')
                             ->orWhere('slug', 'like', '%'.$search.'%');
                     })
@@ -76,8 +76,8 @@ class AiConversationController extends Controller
             'user_name' => $conversation->user?->name,
             'user_email' => $conversation->user?->email,
             'ai_system_name' => $conversation->aiSystem?->name,
-            'ai_chat_bot_name' => $conversation->aiChatBot?->name,
-            'ai_chat_bot_slug' => $conversation->aiChatBot?->slug,
+            'ai_chat_bot_name' => $conversation->aiPersona?->name,
+            'ai_chat_bot_slug' => $conversation->aiPersona?->slug,
             'chat_hash' => $conversation->chat_hash,
             'usage' => [
                 'input_tokens' => $conversation->usage_input_tokens,
@@ -107,7 +107,7 @@ class AiConversationController extends Controller
      */
     public function show(AiConversation $conversation): InertiaResponse
     {
-        $conversation->load(['messages', 'aiSystem', 'aiChatBot', 'user', 'targetedResume']);
+        $conversation->load(['messages', 'aiSystem', 'aiPersona', 'user', 'targetedResume']);
 
         $memories = AiFeatureMemory::query()
             ->where('source_conversation_id', $conversation->id)
@@ -127,10 +127,10 @@ class AiConversationController extends Controller
                 'user_name' => $conversation->user?->name,
                 'user_email' => $conversation->user?->email,
                 'ai_system_name' => $conversation->aiSystem?->name,
-                'ai_chat_bot' => $conversation->aiChatBot ? [
-                    'id' => $conversation->aiChatBot->id,
-                    'name' => $conversation->aiChatBot->name,
-                    'slug' => $conversation->aiChatBot->slug,
+                'ai_chat_bot' => $conversation->aiPersona ? [
+                    'id' => $conversation->aiPersona->id,
+                    'name' => $conversation->aiPersona->name,
+                    'slug' => $conversation->aiPersona->slug,
                 ] : null,
                 'usage' => [
                     'input_tokens' => $conversation->usage_input_tokens,
@@ -152,6 +152,8 @@ class AiConversationController extends Controller
                     'id' => $message->id,
                     'role' => $message->role,
                     'content' => $message->content,
+                    'reasoning_content' => $message->reasoning_content,
+                    'blocks' => $message->blocks,
                     'metadata' => $message->metadata,
                     'created_at' => $message->created_at?->format('M j, Y g:i A'),
                 ]),

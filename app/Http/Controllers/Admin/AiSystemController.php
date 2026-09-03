@@ -33,7 +33,7 @@ class AiSystemController extends Controller
      */
     public function index(): InertiaResponse
     {
-        $systems = AiSystem::withCount(['interactionLogs', 'chatBots'])
+        $systems = AiSystem::withCount(['interactionLogs', 'personas as chat_bots_count'])
             ->with('featureDefaults')
             ->orderBy('name')
             ->get();
@@ -70,7 +70,10 @@ class AiSystemController extends Controller
         unset($data['feature_defaults']);
 
         $this->resolveCustomSystemPrompt($data);
-        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
+        // 'pricing_profile' is deprecated (no longer editable via the admin
+        // UI, slated for removal) but stays in this list so an existing
+        // value round-trips untouched rather than silently being dropped.
+        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
         $this->aiSystemCapabilityService->hydrateForPersistence($data);
 
@@ -88,7 +91,7 @@ class AiSystemController extends Controller
     public function edit(AiSystem $aiSystem): InertiaResponse
     {
         $aiSystem->load('featureDefaults');
-        $aiSystem->loadCount('chatBots');
+        $aiSystem->loadCount(['personas as chat_bots_count']);
         $aiSystem->feature_defaults_list = $aiSystem->featureDefaults->pluck('feature')->toArray();
 
         $existingDefaults = AiSystemFeatureDefault::where('ai_system_id', '!=', $aiSystem->id)
@@ -99,6 +102,7 @@ class AiSystemController extends Controller
             'aiSystem' => $aiSystem,
             'existingDefaults' => $existingDefaults,
             'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
+            'pendingFirstEdit' => $aiSystem->duplicated_at !== null,
         ]);
     }
 
@@ -111,10 +115,21 @@ class AiSystemController extends Controller
         $featureDefaults = $data['feature_defaults'] ?? [];
         unset($data['feature_defaults']);
 
+        // A freshly duplicated system has never been through a real edit, so
+        // its first save is allowed to change provider/model/API key just
+        // like Create — after this save it locks like any other system.
+        $isPendingFirstEdit = $aiSystem->duplicated_at !== null;
+
         $this->resolveCustomSystemPrompt($data);
-        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile']);
-        $data['provider'] = $aiSystem->provider;
-        $data['model'] = $aiSystem->model;
+        // 'pricing_profile' is deprecated (no longer editable via the admin
+        // UI, slated for removal) but stays in this list so an existing
+        // value round-trips untouched rather than silently being dropped.
+        $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
+
+        if (! $isPendingFirstEdit) {
+            $data['provider'] = $aiSystem->provider;
+            $data['model'] = $aiSystem->model;
+        }
 
         if (! array_key_exists('base_url', $data) || blank($data['base_url'])) {
             $data['base_url'] = $aiSystem->base_url;
@@ -123,8 +138,14 @@ class AiSystemController extends Controller
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
         $this->aiSystemCapabilityService->hydrateForPersistence($data);
 
-        unset($data['provider'], $data['model']);
+        if (! $isPendingFirstEdit) {
+            unset($data['provider'], $data['model']);
+        }
 
+        // duplicated_at is deliberately not fillable (see AiSystem model), so
+        // it's cleared by direct property assignment rather than through the
+        // mass-assigned $data array.
+        $aiSystem->duplicated_at = null;
         $aiSystem->update($data);
 
         $this->syncFeatureDefaults($aiSystem, $featureDefaults);
@@ -141,10 +162,10 @@ class AiSystemController extends Controller
     public function destroy(AiSystem $aiSystem): RedirectResponse
     {
         $name = $aiSystem->name;
-        $botCount = $aiSystem->chatBots()->count();
+        $botCount = $aiSystem->personas()->count();
 
         if ($botCount > 0) {
-            $aiSystem->chatBots()->update(['is_active' => false]);
+            $aiSystem->personas()->update(['is_active' => false]);
         }
 
         $aiSystem->delete();
@@ -209,10 +230,18 @@ class AiSystemController extends Controller
                 'name' => $m['display_name'] ?? $m['id'],
                 'loaded' => (bool) ($m['loaded'] ?? false),
                 'max_context_length' => $m['max_context_length'] ?? null,
+                // Only present for providers that report a local model file's size on
+                // disk (currently LM Studio's native API); null everywhere else.
+                'size_bytes' => $m['size_bytes'] ?? null,
                 'capabilities' => [
-                    'reasoning' => (bool) data_get($m, 'capabilities.reasoning', false),
+                    // Only LM Studio's model list reports capabilities at all; leaving
+                    // `reasoning`/`tools` unset (rather than defaulting to false) for every
+                    // other provider lets the frontend tell "unsupported" apart from
+                    // "unknown" — all of Anthropic/OpenAI/Gemini/Grok support tool calling,
+                    // so a blanket `false` there would be wrong, not just uninformative.
+                    'reasoning' => data_get($m, 'capabilities.reasoning'),
                     'vision' => (bool) data_get($m, 'capabilities.vision', false),
-                    'tools' => (bool) data_get($m, 'capabilities.tools', false),
+                    'tools' => data_get($m, 'capabilities.tools'),
                 ],
             ])->sortBy('name')->values()->toArray();
 
@@ -250,6 +279,7 @@ class AiSystemController extends Controller
     {
         $clone = $aiSystem->replicate(['id']);
         $clone->name = $aiSystem->name.' (copy)';
+        $clone->duplicated_at = now();
         $clone->save();
 
         return redirect()->route('admin.ai.systems.edit', $clone)

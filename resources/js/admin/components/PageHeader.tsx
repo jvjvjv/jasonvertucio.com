@@ -4,16 +4,21 @@ import Box from "@mui/material/Box";
 import MuiLink from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 
+import type { ReactNode } from "react";
+
 interface PageHeaderProps {
     title: string;
     backHref?: string;
     backLabel?: string;
+    /** Page-level actions, rendered on the title row opposite the title. */
+    children?: ReactNode;
 }
 
 export default function PageHeader({
     title,
     backHref,
     backLabel = "Back",
+    children,
 }: PageHeaderProps) {
     return (
         <Box sx={{ mb: 4 }}>
@@ -34,9 +39,20 @@ export default function PageHeader({
                     {backLabel}
                 </MuiLink>
             )}
-            <Typography variant="h4" component="h1" fontWeight="bold">
-                {title}
-            </Typography>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 2,
+                    flexWrap: "wrap",
+                }}
+            >
+                <Typography variant="h4" component="h1" fontWeight="bold">
+                    {title}
+                </Typography>
+                {children}
+            </Box>
         </Box>
     );
 }

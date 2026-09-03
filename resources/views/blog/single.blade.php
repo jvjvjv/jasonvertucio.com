@@ -6,14 +6,14 @@
 
 <div class="max-w-7xl mx-auto px-4">
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2">
+    <div class="blog lg:col-span-2">
 
       <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-4xl font-bold mt-3 mb-5">
+        <h2 class="blog__title text-4xl font-bold mt-3 mb-5">
           {{ $post['title'] }}
         </h2>
 
-        <div class="prose max-w-none mb-6">
+        <div class="blog__body prose max-w-none mb-6">
           {!! $post['body'] !!}
         </div>
 
@@ -27,17 +27,7 @@
           @endifcanvasauthenticated
         </div>
 
-        <div class="comments mt-6">
-          <h3 class="text-2xl font-bold mb-4">Comments</h3>
-          <div
-            class="fb-comments"
-            data-href="{{ Request::url() }}"
-            data-lazy="true"
-            data-order-by="reverse_time"
-            data-colorscheme="light"
-            data-numposts="10"
-            data-width="100%"></div>
-        </div>
+        <x-comment-thread :post="$post" />
 
         @if (env('APP_DEBUG'))
           <pre class="bg-gray-100 p-4 rounded mt-4 overflow-x-auto">
@@ -53,8 +43,4 @@
   </div>
 </div>
 
-@endsection
-
-@section('meta')
-<meta property="fb:app_id" content="{{ env('FB_APP_ID') }}" />
 @endsection

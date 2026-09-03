@@ -66,7 +66,7 @@ export default function AvailableMcpTools({
                 }
 
                 const result = await api.get<AvailableMcpToolsResponse>(
-                    "/api/admin/ai/chat-bots/mcp-tools",
+                    "/api/admin/ai/personas/mcp-tools",
                     params,
                 );
 

@@ -44,7 +44,7 @@ const columns: ColumnDef<ChatBotRow>[] = [
         render: (row) => (
             <Link
                 component={InertiaLink}
-                href={`/admin/ai/chat-bots/${row.slug}`}
+                href={`/admin/ai/personas/${row.slug}`}
                 underline="hover"
                 color="primary"
                 sx={{ fontWeight: 600 }}
@@ -116,7 +116,7 @@ const columns: ColumnDef<ChatBotRow>[] = [
         label: "Access",
         render: (row) => (
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                {row.allowed_roles.length === 0 && (
+                {row.required_permission == null && (
                     <Chip
                         label="Public"
                         size="small"
@@ -124,10 +124,10 @@ const columns: ColumnDef<ChatBotRow>[] = [
                         variant="outlined"
                     />
                 )}
-                {row.allowed_roles.length > 0 && (
-                    <Tooltip title={"Roles: " + row.allowed_roles.join(", ")}>
+                {row.required_permission != null && (
+                    <Tooltip title={"Permission: " + row.required_permission}>
                         <Chip
-                            label="Role-based"
+                            label="Restricted"
                             size="small"
                             color="info"
                             variant="outlined"
@@ -165,19 +165,17 @@ export default function Index({ bots, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
     const aiSystemId = filters?.ai_system_id;
 
-    const handleDelete = (bot: AiChatBot) => {
-        confirm(`Delete AI chat bot "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
+    const handleDelete = (bot: ChatBotRow) => {
+        confirm(`Delete AI persona "${bot.name}"?`, () => {
+            router.delete(`/admin/ai/personas/${bot.slug}`);
         });
     };
 
-    console.log(bots);
-
     return (
         <AdminLayout>
-            <Head title="Chat Bots | AI Tools" />
+            <Head title="Personas | AI Tools" />
             <PageHeader
-                title="AI Chat Bots"
+                title="Personas"
                 backHref="/admin/ai"
                 backLabel="Back to AI Tools"
             />
@@ -208,10 +206,10 @@ export default function Index({ bots, filters }: IndexProps) {
                 </Box>
                 <Button
                     component={InertiaLink}
-                    href="/admin/ai/chat-bots/new"
+                    href="/admin/ai/personas/new"
                     variant="contained"
                 >
-                    Add Bot
+                    Add Persona
                 </Button>
             </Box>
 
@@ -229,7 +227,7 @@ export default function Index({ bots, filters }: IndexProps) {
                     </Typography>
                     <Button
                         component={InertiaLink}
-                        href="/admin/ai/chat-bots"
+                        href="/admin/ai/personas"
                         size="small"
                         variant="outlined"
                         color="inherit"
@@ -253,12 +251,12 @@ export default function Index({ bots, filters }: IndexProps) {
                 emptyState={
                     <Box sx={{ textAlign: "center", py: 4 }}>
                         <Typography color="text.secondary">
-                            No AI chat bots configured yet.
+                            No AI personas configured yet.
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 0.5 }}>
                             <Link
                                 component={InertiaLink}
-                                href="/admin/ai/chat-bots/new"
+                                href="/admin/ai/personas/new"
                                 underline="hover"
                             >
                                 Add your first one
@@ -292,7 +290,7 @@ export default function Index({ bots, filters }: IndexProps) {
                         </IconButton>
                         <IconButton
                             component={InertiaLink}
-                            href={`/admin/ai/chat-bots/${bot.slug}`}
+                            href={`/admin/ai/personas/${bot.slug}`}
                             size="small"
                             color="primary"
                             title={`Edit ${getSystemLabel(bot)}`}

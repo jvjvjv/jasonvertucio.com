@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CommentModerationController;
 use App\Http\Controllers\Admin\CoverLetterController;
 use App\Http\Controllers\Admin\MailPreviewController;
 use App\Http\Controllers\Admin\ResumeShareCodeController;
@@ -40,4 +41,20 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRe
 
         // Site settings (navigation links)
         Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
+    });
+
+// Comment moderation - gated on manage-blog rather than the resume/admin
+// permission above, since it is blog work.
+//
+// These deliberately live under /admin, not /canvas: Canvas registers
+// Route::get('/{view?}')->where('view', '(.*)') from its own service provider,
+// which is booted before routes/web.php is loaded, so every path under the
+// canvas prefix is swallowed by its SPA view controller.
+Route::middleware(['auth', 'can:manage-blog', HandleInertiaRequests::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/comments', [CommentModerationController::class, 'index'])->name('comments.index');
+        Route::post('/comments/{comment}/spam', [CommentModerationController::class, 'markSpam'])->name('comments.spam');
+        Route::post('/comments/{comment}/not-spam', [CommentModerationController::class, 'markNotSpam'])->name('comments.not-spam');
     });

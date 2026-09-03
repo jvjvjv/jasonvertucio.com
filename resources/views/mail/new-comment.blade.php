@@ -1,7 +1,7 @@
 <x-mail::message>
-# A New comment on {{ $comment->post->title }}
+# A New comment on {{ $comment->post?->title ?? 'your site' }}
 
-**From:** {{ $comment->name }} <[{{ $comment->email  }}]({{ $comment->email  }})><br>
+**From:** {{ $comment->name }}@if ($comment->email) <[{{ $comment->email }}](mailto:{{ $comment->email }})>@endif<br>
 **Date:** {{ \Carbon\Carbon::create($comment->created_at) }}
 
 ---

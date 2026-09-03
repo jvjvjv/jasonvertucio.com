@@ -164,7 +164,7 @@ export default function JobCard({ job, onChange, onRemove }: JobCardProps) {
                                     }
                                     type="number"
                                     size="small"
-                                    value={job[salaryKey].amount ?? ""}
+                                    value={job[salaryKey]?.amount ?? ""}
                                     onChange={(e) => {
                                         onChange({
                                             ...job,
@@ -173,6 +173,9 @@ export default function JobCard({ job, onChange, onRemove }: JobCardProps) {
                                                 amount: e.target.value
                                                     ? parseFloat(e.target.value)
                                                     : null,
+                                                period:
+                                                    job[salaryKey]?.period ??
+                                                    "",
                                             },
                                         });
                                     }}
@@ -187,12 +190,14 @@ export default function JobCard({ job, onChange, onRemove }: JobCardProps) {
                                 <TextField
                                     select
                                     size="small"
-                                    value={job[salaryKey].period}
+                                    value={job[salaryKey]?.period ?? ""}
                                     onChange={(e) => {
                                         onChange({
                                             ...job,
                                             [salaryKey]: {
-                                                ...job[salaryKey],
+                                                amount:
+                                                    job[salaryKey]?.amount ??
+                                                    null,
                                                 period: e.target.value,
                                             },
                                         });

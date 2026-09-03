@@ -62,7 +62,7 @@ export default function ChatHistoryListCard({
                     }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        Overall Chatbot Cost
+                        Overall Persona Cost
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                         {formatCost(totalCostUsd)}

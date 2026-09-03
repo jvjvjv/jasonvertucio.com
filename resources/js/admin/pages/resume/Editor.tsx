@@ -17,8 +17,9 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import PageHeader from "../../components/PageHeader";
 import AdminLayout from "../../layouts/AdminLayout";
@@ -41,6 +42,7 @@ export default function Editor({
     availableVersions,
     mailConfigured,
     notificationRecipientCount,
+    pendingCandidates,
 }: EditorProps) {
     const [activeTab, setActiveTab] = useState(0);
     const [version, setVersion] = useState(initialVersion);
@@ -133,6 +135,11 @@ export default function Editor({
         return changes;
     }, [data, initialData]);
 
+    const hasUnsavedChanges = useMemo(
+        () => version !== initialVersion || getChangedContent().length > 0,
+        [version, initialVersion, getChangedContent],
+    );
+
     const submitSave = async () => {
         setSaving(true);
         setErrors([]);
@@ -192,6 +199,43 @@ export default function Editor({
                 backHref="/admin/resume"
                 backLabel="Back to Resume Management"
             />
+
+            {pendingCandidates.length > 0 && (
+                <Card
+                    sx={{
+                        mb: 2,
+                        bgcolor: "warning.light",
+                        color: "warning.contrastText",
+                    }}
+                >
+                    <CardContent>
+                        <Typography variant="subtitle1">
+                            {pendingCandidates.length} AI-drafted revision
+                            {pendingCandidates.length > 1
+                                ? "s are"
+                                : " is"}{" "}
+                            pending review. Manual edits are disabled until
+                            resolved.
+                        </Typography>
+                        <List dense disablePadding>
+                            {pendingCandidates.map((c) => (
+                                <ListItem key={c.id} sx={{ py: 0.25, pl: 0 }}>
+                                    <Button
+                                        size="small"
+                                        onClick={() => {
+                                            router.get(
+                                                `/resume?revision=${c.id}`,
+                                            );
+                                        }}
+                                    >
+                                        Review revision #{c.revision_number}
+                                    </Button>
+                                </ListItem>
+                            ))}
+                        </List>
+                    </CardContent>
+                </Card>
+            )}
 
             {errors.length > 0 && (
                 <Card
@@ -274,16 +318,49 @@ export default function Editor({
                     gap: 1,
                 }}
             >
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={(e) => {
-                        setOptionsAnchor(e.currentTarget);
-                    }}
-                    sx={{ bgcolor: "background.paper" }}
-                >
-                    Options
-                </Button>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                    <Tooltip
+                        title={
+                            hasUnsavedChanges
+                                ? "Save your changes to preview the current version"
+                                : "Open the live resume in a new tab"
+                        }
+                    >
+                        <span>
+                            {hasUnsavedChanges ? (
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    disabled
+                                    sx={{ bgcolor: "background.paper" }}
+                                >
+                                    Preview Resume
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    href="/resume"
+                                    target="_blank"
+                                    rel="noopener"
+                                    sx={{ bgcolor: "background.paper" }}
+                                >
+                                    Preview Resume
+                                </Button>
+                            )}
+                        </span>
+                    </Tooltip>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={(e) => {
+                            setOptionsAnchor(e.currentTarget);
+                        }}
+                        sx={{ bgcolor: "background.paper" }}
+                    >
+                        Options
+                    </Button>
+                </Box>
                 <Menu
                     anchorEl={optionsAnchor}
                     open={Boolean(optionsAnchor)}
@@ -343,10 +420,14 @@ export default function Editor({
                 <Fab
                     color="primary"
                     variant="extended"
-                    disabled={saving}
+                    disabled={saving || pendingCandidates.length > 0}
                     onClick={handleSave}
                 >
-                    {saving ? "Saving..." : "Save Changes"}
+                    {pendingCandidates.length > 0
+                        ? "Resolve pending revision first"
+                        : saving
+                          ? "Saving..."
+                          : "Save Changes"}
                 </Fab>
             </Box>
 

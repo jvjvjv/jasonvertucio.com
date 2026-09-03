@@ -1,3 +1,4 @@
+import type { MessageBlock } from "./code-talker";
 import type { PageProps } from "@inertiajs/core";
 
 export interface AuthUser {
@@ -66,9 +67,9 @@ export interface AiSystem {
     api_key: string;
     model: string;
     model_capabilities?: {
-        reasoning?: boolean;
+        reasoning?: boolean | null;
         vision?: boolean;
-        tools?: boolean;
+        tools?: boolean | null;
         max_context_length?: number | null;
     } | null;
     base_url: string | null;
@@ -86,9 +87,14 @@ export interface AiSystem {
     system_prompt_mode?: string | null;
     supports_tools?: boolean;
     allowed_tools?: string[] | null;
+    web_tool_policy?: {
+        allowed_domains?: string[];
+        credentials?: { [host: string]: { [header: string]: string } };
+    } | null;
     supports_json_mode?: boolean;
     enable_thinking?: boolean | null;
     is_local_endpoint?: boolean;
+    /** @deprecated No longer editable through the admin UI; slated for removal. */
     pricing_profile?: { [key: string]: unknown } | null;
     is_active: boolean;
     interaction_logs_count: number;
@@ -106,7 +112,7 @@ export interface AiChatBot {
     context_length?: number | null;
     temperature?: number | null;
     prompt_template?: string;
-    allowed_roles?: string[];
+    required_permission?: string | null;
     is_active: boolean;
     require_visitor_identity: boolean;
     tools_enabled: boolean;
@@ -136,7 +142,8 @@ export interface Memory {
     feature: string;
     category: string;
     key: string;
-    content?: string;
+    /** Non-nullable column, never hidden on the model — always serialized. */
+    content: string;
     confidence: number;
     is_active: boolean;
 }
@@ -216,6 +223,8 @@ export interface Message {
     id?: number;
     role: string;
     content: string;
+    reasoning_content?: string | null;
+    blocks?: MessageBlock[] | null;
     metadata?: { [key: string]: unknown } | null;
     created_at?: string | null;
 }

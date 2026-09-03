@@ -1,13 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiSystemController;
-use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiSystemPromptController;
+use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\TargetedResumeController;
-use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +23,7 @@ use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiChatBotController;
 Route::middleware(['auth', 'can:manage-ai-tools'])
     ->prefix('api/admin/ai')
     ->group(function () {
-        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools']);
+        Route::get('/personas/mcp-tools', [AiChatBotController::class, 'mcpTools']);
         Route::put('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'apiUpdate']);
         Route::post('/systems/fetch-models', [AiSystemController::class, 'fetchModels']);
         Route::get('/systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
@@ -35,6 +35,9 @@ Route::middleware(['auth', 'can:edit-resume'])
     ->prefix('api/admin/resume')
     ->group(function () {
         Route::post('/editor', [ResumeEditorController::class, 'update'])->name('admin.resume.editor.save');
+
+        Route::put('/targeted-resume/{targetedResume}', [TargetedResumeController::class, 'updateMarkdown'])
+            ->name('admin.resume.targeted-resume.update-markdown');
 
         Route::prefix('targeted-builder')
             ->name('admin.resume.targeted.')

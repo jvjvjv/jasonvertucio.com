@@ -1,10 +1,8 @@
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
-import Chip from "@mui/material/Chip";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 
 function slugify(text: string): string {
@@ -26,7 +24,7 @@ export interface FormData {
     context_length: number | null;
     temperature: string;
     prompt_template: string;
-    allowed_roles: string[];
+    required_permission: string | null;
     is_active: boolean;
     require_visitor_identity: boolean;
     tools_enabled: boolean;
@@ -49,7 +47,7 @@ interface AiChatBotFormProps {
     ) => void;
     errors: Partial<{ [K in keyof FormData]: string }>;
     systems: SystemOption[];
-    roles: string[];
+    permissions: string[];
     originalName: string;
 }
 
@@ -58,7 +56,7 @@ export default function Form({
     setData,
     errors,
     systems,
-    roles,
+    permissions,
     originalName,
 }: AiChatBotFormProps) {
     const selectedSystem = systems.find(
@@ -244,55 +242,32 @@ export default function Form({
                 sx={{ mb: 2 }}
             />
 
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    Allowed Roles
-                </Typography>
-                <TextField
-                    select
-                    size="small"
-                    fullWidth
-                    value=""
-                    onChange={(event) => {
-                        const value = event.target.value;
-                        if (!value || data.allowed_roles.includes(value)) {
-                            return;
-                        }
-
-                        setData("allowed_roles", [
-                            ...data.allowed_roles,
-                            value,
-                        ]);
-                    }}
-                    helperText={
-                        errors.allowed_roles ??
-                        "Leave empty to allow public access (no authentication required)."
-                    }
-                >
-                    <MenuItem value="">Select a role</MenuItem>
-                    {roles.map((role) => (
-                        <MenuItem key={role} value={role}>
-                            {role}
-                        </MenuItem>
-                    ))}
-                </TextField>
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-                    {data.allowed_roles.map((role) => (
-                        <Chip
-                            key={role}
-                            label={role}
-                            onDelete={() => {
-                                setData(
-                                    "allowed_roles",
-                                    data.allowed_roles.filter(
-                                        (item) => item !== role,
-                                    ),
-                                );
-                            }}
-                        />
-                    ))}
-                </Box>
-            </Box>
+            <TextField
+                label="Required Permission"
+                select
+                size="small"
+                fullWidth
+                value={data.required_permission ?? ""}
+                onChange={(event) => {
+                    setData("required_permission", event.target.value || null);
+                }}
+                error={!!errors.required_permission}
+                helperText={
+                    errors.required_permission ??
+                    "Leave as Public to allow access with no authentication required."
+                }
+                sx={{ mb: 2 }}
+            >
+                <MenuItem value="">Public (no restriction)</MenuItem>
+                <MenuItem value="authenticated">
+                    Authenticated users only
+                </MenuItem>
+                {permissions.map((permission) => (
+                    <MenuItem key={permission} value={permission}>
+                        {permission}
+                    </MenuItem>
+                ))}
+            </TextField>
 
             <Box sx={{ display: "grid", gap: 1 }}>
                 <FormControlLabel

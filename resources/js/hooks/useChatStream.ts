@@ -1,3 +1,4 @@
+import { router } from "@inertiajs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatMessage, StreamEvent } from "@/components/ChatInterface";
@@ -104,6 +105,33 @@ export default function useChatStream({
         };
     }, []);
 
+    // A turn lives and dies with this connection. The server only notices the
+    // browser hung up the next time it writes to the socket — which, against a
+    // slow local model, can be minutes after the fact — and everything the turn
+    // produced up to that point is then discarded rather than persisted. So a
+    // reload mid-turn doesn't pause the reply, it loses it outright. Make that a
+    // deliberate choice rather than an accident.
+    //
+    // Only guards a real page unload; an Inertia visit doesn't fire this, and
+    // neither does the router.reload() in the error path below (by then the
+    // turn is already over).
+    useEffect(() => {
+        if (!isStreaming) return;
+
+        // preventDefault() is what asks for the prompt; browsers supply their
+        // own copy and ignore any message the page tries to set. (The legacy
+        // `returnValue = ""` companion is deprecated and no longer needed.)
+        const warnBeforeUnload = (event: BeforeUnloadEvent): void => {
+            event.preventDefault();
+        };
+
+        window.addEventListener("beforeunload", warnBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", warnBeforeUnload);
+        };
+    }, [isStreaming]);
+
     const sendMessage = useCallback(
         async (messageOverride?: string) => {
             const text = messageOverride ?? messageText.trim();
@@ -134,8 +162,12 @@ export default function useChatStream({
             setError("");
 
             let liveBlocks: MessageBlock[] = [];
+            // Mirrors streamingToolPanels state so persistLiveBlocks() (a plain
+            // closure, not a render) can read this turn's tool activity
+            // synchronously instead of a stale value captured at render time —
+            // same reason liveBlocks mirrors streamingBlocks above.
+            let liveToolPanels: ToolPanel[] = [];
             let sawPageReloadEvent = false;
-            let sawAnyStreamData = false;
             let streamErrorReason: ChatStreamErrorReason | undefined;
 
             const appendToBlocks = (
@@ -164,8 +196,15 @@ export default function useChatStream({
             // when it errors out mid-turn (e.g. a max-duration abort) —
             // reasoning/text that already rendered live shouldn't vanish
             // just because the turn ultimately failed.
-            const persistLiveBlocks = (): void => {
-                if (liveBlocks.length === 0) return;
+            //
+            // `incomplete` mirrors the flag the server puts on the same turn
+            // (code-talker 0.15.0+), so a reply that stops mid-sentence is
+            // marked as interrupted right away rather than only after a
+            // reload re-reads it from the transcript.
+            const persistLiveBlocks = (incomplete = false): void => {
+                if (liveBlocks.length === 0 && liveToolPanels.length === 0) {
+                    return;
+                }
 
                 const finalText = liveBlocks
                     .filter((b) => b.type === "text")
@@ -179,7 +218,12 @@ export default function useChatStream({
                             role: "assistant" as const,
                             content: finalText,
                             blocks: liveBlocks,
+                            tool_panels:
+                                liveToolPanels.length > 0
+                                    ? liveToolPanels
+                                    : undefined,
                             created_at: new Date().toISOString(),
+                            incomplete,
                         },
                     ];
                     onMessagesChangeRef.current?.(next);
@@ -208,8 +252,6 @@ export default function useChatStream({
                 )) {
                     if (!jsonStr || jsonStr === "[DONE]") continue;
 
-                    sawAnyStreamData = true;
-
                     let event: StreamEvent;
                     try {
                         event = JSON.parse(jsonStr) as StreamEvent;
@@ -235,13 +277,54 @@ export default function useChatStream({
                             appendToBlocks("text", event.delta.text);
                         }
                     } else if (event.type === "tool_use_progress") {
-                        setStreamingToolPanels((prev) => [
-                            ...prev,
-                            {
-                                pretext: event.text,
-                                tools: event.tools,
-                            },
-                        ]);
+                        if ("output" in event) {
+                            // A result frame (usingToolPayloads() only — see
+                            // ChatBotController::message()) merges onto the
+                            // most recent call frame for this tool that
+                            // doesn't have a result yet, rather than adding a
+                            // second panel for the same call.
+                            const fromEnd = [...liveToolPanels]
+                                .reverse()
+                                .findIndex(
+                                    (p) =>
+                                        p.output === undefined &&
+                                        p.tools.some((t) =>
+                                            event.tools.includes(t),
+                                        ),
+                                );
+
+                            if (fromEnd === -1) {
+                                liveToolPanels = [
+                                    ...liveToolPanels,
+                                    {
+                                        pretext: event.text,
+                                        tools: event.tools,
+                                        output: event.output,
+                                        successful: event.successful,
+                                    },
+                                ];
+                            } else {
+                                const index =
+                                    liveToolPanels.length - 1 - fromEnd;
+                                const next = [...liveToolPanels];
+                                next[index] = {
+                                    ...next[index],
+                                    output: event.output,
+                                    successful: event.successful,
+                                };
+                                liveToolPanels = next;
+                            }
+                        } else {
+                            liveToolPanels = [
+                                ...liveToolPanels,
+                                {
+                                    pretext: event.text,
+                                    tools: event.tools,
+                                    input: event.input,
+                                },
+                            ];
+                        }
+                        setStreamingToolPanels(liveToolPanels);
                         liveBlocks = [];
                         setStreamingBlocks([]);
                     } else if (event.type === "status") {
@@ -267,25 +350,29 @@ export default function useChatStream({
                 const clientInitiatedAbort =
                     err instanceof DOMException && err.name === "AbortError";
 
-                // Only a genuine client-side interruption (browser tab
-                // closed, fetch aborted, page reload) is benign. Backend
-                // `type: "error"` events always carry a `reason` code and
-                // are real failures — e.g. max_stream_duration — even
-                // though their message text may also contain the word
-                // "aborted".
-                const isBenignStreamReadInterruption =
-                    clientInitiatedAbort ||
-                    (streamErrorReason === undefined &&
-                        (sawPageReloadEvent || sawAnyStreamData) &&
-                        /failed to read from stream|abort|aborted/i.test(
-                            message,
-                        ));
+                // A tool-triggered page_reload can also end the read in a
+                // way that looks like an abort; that specific combination
+                // stays benign since the reload is an intentional signal,
+                // not a failure. Anything else that interrupts the stream —
+                // a dropped connection, a backend `type: "error"` event —
+                // is a genuine failure: the backend may have generated (and
+                // persisted) a reply the browser never received, so it's
+                // resynced from the server below rather than silently lost.
+                const isBenignPageReloadAbort =
+                    streamErrorReason === undefined &&
+                    sawPageReloadEvent &&
+                    /failed to read from stream|abort|aborted/i.test(message);
 
-                if (!isBenignStreamReadInterruption) {
+                if (!clientInitiatedAbort && !isBenignPageReloadAbort) {
                     setError(message);
+                    router.reload({ only: ["messages"] });
                 }
 
-                persistLiveBlocks();
+                // Reaching the catch at all means the turn didn't run to
+                // completion — a Stop, a dropped connection, or a backend
+                // error frame. The server flags its own copy the same way, so
+                // whatever is kept here is marked to match.
+                persistLiveBlocks(true);
             } finally {
                 abortControllerRef.current = null;
 

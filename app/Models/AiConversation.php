@@ -13,7 +13,7 @@ class AiConversation extends BaseAiConversation
         return $this->hasOne(TargetedResume::class);
     }
 
-    public function aiChatBot(): BelongsTo
+    public function aiPersona(): BelongsTo
     {
         return $this->belongsTo(AiChatBot::class);
     }

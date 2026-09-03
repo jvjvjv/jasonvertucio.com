@@ -19,7 +19,7 @@ export default function BotHeaderCard({
                     color="text.secondary"
                     sx={{ letterSpacing: "0.18em" }}
                 >
-                    AI Chat Bot
+                    Persona
                 </Typography>
                 <Typography
                     variant="h3"

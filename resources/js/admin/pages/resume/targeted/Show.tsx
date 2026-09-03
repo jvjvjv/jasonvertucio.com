@@ -9,6 +9,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
 import DoneIcon from "@mui/icons-material/Done";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Alert from "@mui/material/Alert";
@@ -20,6 +21,7 @@ import { useState } from "react";
 
 import BuilderChatPanel from "./BuilderChatPanel";
 import BuilderMetadataForm from "./BuilderMetadataForm";
+import TailoredResumeEditor from "./TailoredResumeEditor";
 import useFinalizeArtifacts from "./useFinalizeArtifacts";
 import useLatestGeneratedArtifacts from "./useLatestGeneratedArtifacts";
 import useStatusUpdates from "./useStatusUpdates";
@@ -206,6 +208,9 @@ export default function Show({
                     >
                         <Tab icon={<ChatIcon />} />
                         <Tab icon={<InfoIcon />} />
+                        {targetedResume !== null && (
+                            <Tab icon={<EditNoteIcon />} />
+                        )}
                     </Tabs>
                     <Box sx={{ flexGrow: 1 }} />
 
@@ -329,6 +334,12 @@ export default function Show({
                         deleteStatusUpdate={handleDeleteStatusUpdate}
                     />
                 </Box>
+
+                {targetedResume !== null && (
+                    <Box sx={{ display: activeTab === 2 ? undefined : "none" }}>
+                        <TailoredResumeEditor targetedResume={targetedResume} />
+                    </Box>
+                )}
                 <ConfirmDialog {...dialogProps} />
             </AdminLayout>
         </>

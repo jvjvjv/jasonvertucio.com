@@ -28,8 +28,13 @@ interface StatusResponse {
     status?: ModelStatusItem;
 }
 
+/**
+ * Statuses arrive per bot, asynchronously and independently, so a slug is
+ * absent until its own request lands (and stays absent if it fails) — the
+ * value type says so rather than claiming every slug resolves.
+ */
 interface StatusesBySlug {
-    [key: string]: ModelStatusItem;
+    [key: string]: ModelStatusItem | undefined;
 }
 
 export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
@@ -75,10 +80,10 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
             <Box sx={{ maxWidth: 1080, mx: "auto", px: 2, py: 4 }}>
                 <Stack spacing={1} sx={{ mb: 3 }}>
                     <Typography variant="h3" component="h1">
-                        Available Chatbots
+                        Available Personas
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                        Start a new chat with any chatbot available to you.
+                        Start a new chat with any persona available to you.
                     </Typography>
                 </Stack>
 
@@ -86,7 +91,7 @@ export default function ChatBotsIndex({ bots }: ChatBotsIndexProps) {
                     <Card variant="outlined">
                         <CardContent>
                             <Typography variant="body1" color="text.secondary">
-                                No chatbots are currently available.
+                                No personas are currently available.
                             </Typography>
                         </CardContent>
                     </Card>

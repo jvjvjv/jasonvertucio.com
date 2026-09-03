@@ -7,8 +7,8 @@ use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
+use App\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
-use Jvjvjv\CodeTalker\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiFeatureMemory;
@@ -32,7 +32,7 @@ class AiConversationControllerTest extends TestCase
         $user = $this->authenticatedUser();
         $bot = AiChatBot::factory()->create(['name' => 'Public Intake']);
         $conversation = AiConversation::factory()->create([
-            'ai_chat_bot_id' => $bot->id,
+            'ai_persona_id' => $bot->id,
             'feature' => $bot->featureKey(),
             'title' => 'Conversation about contact form',
             'visitor_name' => 'Taylor',
@@ -61,7 +61,7 @@ class AiConversationControllerTest extends TestCase
         $user = $this->authenticatedUser();
         $conversation = AiConversation::factory()->create([
             'title' => 'Memory review',
-            'feature' => 'chat-bot:memory-review',
+            'feature' => 'persona:memory-review',
         ]);
 
         AiConversationMessage::query()->create([
@@ -71,7 +71,7 @@ class AiConversationControllerTest extends TestCase
         ]);
 
         AiFeatureMemory::factory()->create([
-            'feature' => 'chat-bot:memory-review',
+            'feature' => 'persona:memory-review',
             'key' => 'prefers-concise-tone',
             'content' => 'Prefers concise replies.',
             'source_conversation_id' => $conversation->id,

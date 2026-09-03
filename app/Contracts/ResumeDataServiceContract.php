@@ -30,6 +30,13 @@ interface ResumeDataServiceContract
     public function getDisplayData(): array;
 
     /**
+     * Get education data formatted for display (year-only dates, no editor-only fields).
+     *
+     * @return array<int, array{institution: string, location?: string, degree?: string, level?: string, dates: array, description?: string}>
+     */
+    public function getEducationData(): array;
+
+    /**
      * Get all data for DOCX generation (includes education), flattened for docxtemplater.
      */
     public function getDocxData(): array;

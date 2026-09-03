@@ -2,9 +2,9 @@
 
 use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiConversationController;
-use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiMemoryController;
+use App\Http\Controllers\Admin\AiMemoryController;
 use App\Http\Controllers\Admin\AiSystemController;
-use Jvjvjv\CodeTalker\Http\Controllers\Admin\AiSystemPromptController;
+use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\AiToolsController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -52,14 +52,14 @@ Route::middleware(['web', 'auth', 'can:manage-ai-tools', HandleInertiaRequests::
         // AI Chat Bots CRUD
         // The literal mcp-tools route must precede the {aiChatBot} wildcard so
         // it is not matched as a bot slug.
-        Route::get('/chat-bots', [AiChatBotController::class, 'index'])->name('bots.index');
-        Route::get('/chat-bots/new', [AiChatBotController::class, 'create'])->name('bots.create');
-        Route::get('/chat-bots/mcp-tools', [AiChatBotController::class, 'mcpTools'])->name('bots.mcp-tools');
+        Route::get('/personas', [AiChatBotController::class, 'index'])->name('bots.index');
+        Route::get('/personas/new', [AiChatBotController::class, 'create'])->name('bots.create');
+        Route::get('/personas/mcp-tools', [AiChatBotController::class, 'mcpTools'])->name('bots.mcp-tools');
 
-        Route::post('/chat-bots', [AiChatBotController::class, 'store'])->name('bots.store');
-        Route::get('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'edit'])->name('bots.edit');
-        Route::put('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'update'])->name('bots.update');
-        Route::delete('/chat-bots/{aiChatBot}', [AiChatBotController::class, 'destroy'])->name('bots.destroy');
+        Route::post('/personas', [AiChatBotController::class, 'store'])->name('bots.store');
+        Route::get('/personas/{aiChatBot}', [AiChatBotController::class, 'edit'])->name('bots.edit');
+        Route::put('/personas/{aiChatBot}', [AiChatBotController::class, 'update'])->name('bots.update');
+        Route::delete('/personas/{aiChatBot}', [AiChatBotController::class, 'destroy'])->name('bots.destroy');
 
         // Job URL Parsers
         Route::get('/job-url-parsers', [JobUrlParserController::class, 'index'])->name('job-url-parsers.index');

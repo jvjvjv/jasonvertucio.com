@@ -59,12 +59,12 @@ const columns: ColumnDef<Conversation>[] = [
     },
     {
         key: "system_bot",
-        label: "System / Bot",
+        label: "System / Persona",
         render: (row) => (
             <Box>
                 <Box>{row.ai_system_name ?? "-"}</Box>
                 <Box sx={{ color: "text.secondary", fontSize: 12 }}>
-                    {row.ai_chat_bot_name ?? "No bot"}
+                    {row.ai_chat_bot_name ?? "No persona"}
                 </Box>
             </Box>
         ),
@@ -241,7 +241,7 @@ export default function Index({
                     ))}
                 </TextField>
                 <TextField
-                    label="Bot"
+                    label="Persona"
                     select
                     size="small"
                     value={filters.ai_chat_bot_id ?? ""}

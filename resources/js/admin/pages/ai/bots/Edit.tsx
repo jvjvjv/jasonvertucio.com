@@ -26,10 +26,10 @@ interface EditProps {
         temperature: number | null;
         supports_tools: boolean;
     }[];
-    roles: string[];
+    permissions: string[];
 }
 
-export default function Edit({ bot, systems, roles }: EditProps) {
+export default function Edit({ bot, systems, permissions }: EditProps) {
     const form = useForm<FormData>({
         name: bot.name,
         slug: bot.slug,
@@ -39,7 +39,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
         context_length: bot.context_length ?? null,
         temperature: bot.temperature?.toString() ?? "",
         prompt_template: bot.prompt_template ?? "",
-        allowed_roles: bot.allowed_roles ?? [],
+        required_permission: bot.required_permission ?? null,
         is_active: bot.is_active,
         require_visitor_identity: bot.require_visitor_identity,
         tools_enabled: bot.tools_enabled,
@@ -54,22 +54,22 @@ export default function Edit({ bot, systems, roles }: EditProps) {
 
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.put(`/admin/ai/chat-bots/${bot.slug}`);
+        form.put(`/admin/ai/personas/${bot.slug}`);
     };
 
     const handleDelete = () => {
-        confirm(`Delete AI chat bot "${bot.name}"?`, () => {
-            router.delete(`/admin/ai/chat-bots/${bot.slug}`);
+        confirm(`Delete AI persona "${bot.name}"?`, () => {
+            router.delete(`/admin/ai/personas/${bot.slug}`);
         });
     };
 
     return (
         <AdminLayout>
-            <Head title={`${bot.name} | Chat Bots`} />
+            <Head title={`${bot.name} | Personas`} />
             <PageHeader
                 title={`Edit: ${bot.name}`}
-                backHref="/admin/ai/chat-bots"
-                backLabel="Back to AI Chat Bots"
+                backHref="/admin/ai/personas"
+                backLabel="Back to Personas"
             />
 
             <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
@@ -91,7 +91,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                             setData={form.setData}
                             errors={form.errors}
                             systems={systems}
-                            roles={roles}
+                            permissions={permissions}
                             originalName={bot.name}
                         />
 
@@ -110,7 +110,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                             <Box sx={{ display: "flex", gap: 2 }}>
                                 <Button
                                     component={InertiaLink}
-                                    href="/admin/ai/chat-bots"
+                                    href="/admin/ai/personas"
                                     color="inherit"
                                 >
                                     Cancel
@@ -120,7 +120,7 @@ export default function Edit({ bot, systems, roles }: EditProps) {
                                     variant="contained"
                                     disabled={form.processing}
                                 >
-                                    Update Bot
+                                    Update Persona
                                 </Button>
                             </Box>
                         </Box>

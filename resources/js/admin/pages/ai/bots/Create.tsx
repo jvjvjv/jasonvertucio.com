@@ -22,10 +22,10 @@ interface CreateProps {
         temperature: number | null;
         supports_tools: boolean;
     }[];
-    roles: string[];
+    permissions: string[];
 }
 
-export default function Create({ systems, roles }: CreateProps) {
+export default function Create({ systems, permissions }: CreateProps) {
     const form = useForm<FormData>({
         name: "",
         slug: "",
@@ -35,7 +35,7 @@ export default function Create({ systems, roles }: CreateProps) {
         context_length: null,
         temperature: "",
         prompt_template: "You are {{bot_name}}. {{bot_description}}",
-        allowed_roles: [],
+        required_permission: null,
         is_active: true,
         require_visitor_identity: false,
         tools_enabled: false,
@@ -48,16 +48,16 @@ export default function Create({ systems, roles }: CreateProps) {
         selectedSystem?.supports_tools === true || form.data.tools_enabled;
     const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
-        form.post("/admin/ai/chat-bots");
+        form.post("/admin/ai/personas");
     };
 
     return (
         <AdminLayout>
-            <Head title="New | Chat Bots" />
+            <Head title="New | Personas" />
             <PageHeader
-                title="Add AI Chat Bot"
-                backHref="/admin/ai/chat-bots"
-                backLabel="Back to AI Chat Bots"
+                title="Add Persona"
+                backHref="/admin/ai/personas"
+                backLabel="Back to Personas"
             />
 
             <Card>
@@ -68,7 +68,7 @@ export default function Create({ systems, roles }: CreateProps) {
                             setData={form.setData}
                             errors={form.errors}
                             systems={systems}
-                            roles={roles}
+                            permissions={permissions}
                             originalName=""
                         />
 
@@ -82,7 +82,7 @@ export default function Create({ systems, roles }: CreateProps) {
                         >
                             <Button
                                 component={InertiaLink}
-                                href="/admin/ai/chat-bots"
+                                href="/admin/ai/personas"
                                 color="inherit"
                             >
                                 Cancel
@@ -92,7 +92,7 @@ export default function Create({ systems, roles }: CreateProps) {
                                 variant="contained"
                                 disabled={form.processing}
                             >
-                                Save Bot
+                                Save Persona
                             </Button>
                         </Box>
                     </Box>

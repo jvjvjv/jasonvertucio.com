@@ -44,10 +44,10 @@ export default function Create({
         system_prompt_mode: "",
         supports_tools: false,
         allowed_tools: [],
+        web_tool_policy: "",
         supports_json_mode: false,
         enable_thinking: false,
         is_local_endpoint: false,
-        pricing_profile: "",
         is_active: true,
         feature_defaults: [],
     });
@@ -121,7 +121,7 @@ export default function Create({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, chat bots on this system cannot use MCP tools."
+                    description="Select the MCP tools this system may expose. If none are selected, personas on this system cannot use MCP tools."
                 />
             </Box>
         </AdminLayout>

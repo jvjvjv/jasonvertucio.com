@@ -74,4 +74,17 @@ return [
 
     'ghosted_after_days' => (int) env('RESUME_GHOSTED_AFTER_DAYS', 30),
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI Persona Edit Batch Window
+    |--------------------------------------------------------------------------
+    |
+    | How many hours of inactivity before the next AI persona resume edit
+    | starts a new draft revision instead of continuing the latest pending
+    | one for the same base resume version.
+    |
+    */
+
+    'ai_edit_batch_window_hours' => (int) env('RESUME_AI_EDIT_BATCH_WINDOW_HOURS', 12),
+
 ];
