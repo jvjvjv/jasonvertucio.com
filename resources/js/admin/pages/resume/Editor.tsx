@@ -17,8 +17,9 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import PageHeader from "../../components/PageHeader";
 import AdminLayout from "../../layouts/AdminLayout";
@@ -133,6 +134,11 @@ export default function Editor({
 
         return changes;
     }, [data, initialData]);
+
+    const hasUnsavedChanges = useMemo(
+        () => version !== initialVersion || getChangedContent().length > 0,
+        [version, initialVersion, getChangedContent],
+    );
 
     const submitSave = async () => {
         setSaving(true);
@@ -312,16 +318,49 @@ export default function Editor({
                     gap: 1,
                 }}
             >
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={(e) => {
-                        setOptionsAnchor(e.currentTarget);
-                    }}
-                    sx={{ bgcolor: "background.paper" }}
-                >
-                    Options
-                </Button>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                    <Tooltip
+                        title={
+                            hasUnsavedChanges
+                                ? "Save your changes to preview the current version"
+                                : "Open the live resume in a new tab"
+                        }
+                    >
+                        <span>
+                            {hasUnsavedChanges ? (
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    disabled
+                                    sx={{ bgcolor: "background.paper" }}
+                                >
+                                    Preview Resume
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    href="/resume"
+                                    target="_blank"
+                                    rel="noopener"
+                                    sx={{ bgcolor: "background.paper" }}
+                                >
+                                    Preview Resume
+                                </Button>
+                            )}
+                        </span>
+                    </Tooltip>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={(e) => {
+                            setOptionsAnchor(e.currentTarget);
+                        }}
+                        sx={{ bgcolor: "background.paper" }}
+                    >
+                        Options
+                    </Button>
+                </Box>
                 <Menu
                     anchorEl={optionsAnchor}
                     open={Boolean(optionsAnchor)}
