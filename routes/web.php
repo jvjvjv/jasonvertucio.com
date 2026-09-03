@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\FacebookCallbackController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,9 +20,6 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about/{any?}', function () {
     return redirect('/');
 });
-
-// Facebook callback route -- I don't think I use this anymore
-Route::any('/mlopnadjs22tn', [FacebookCallbackController::class, 'index']);
 
 require base_path('routes/auth.php');
 require base_path('routes/passkeys.php');

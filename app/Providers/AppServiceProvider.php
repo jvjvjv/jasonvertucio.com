@@ -8,6 +8,9 @@ use App\Models\Comment;
 use App\Observers\CommentObserver;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use App\Services\TargetedResumeService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -34,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Comment::observe(CommentObserver::class);
+
+        RateLimiter::for('comments', function (Request $request) {
+            return Limit::perMinute(config('comments.rate_limit_per_minute'))
+                ->by($request->header('CF-Connecting-IP') ?? $request->ip());
+        });
 
         Route::model('aiChatBot', AiChatBot::class);
 

@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\User;
 use Canvas\Models\Post;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class CommentFactory extends Factory
 {
@@ -22,7 +23,7 @@ class CommentFactory extends Factory
             'parent_id' => null,
             'fb_user_id' => null,
             'fb_comment_id' => null,
-            'fb_parent_comment_id' => null,
+            'fb_comment_parent_id' => null,
         ];
     }
 
@@ -55,6 +56,7 @@ class CommentFactory extends Factory
         if (! $post) {
             // Create a minimal post if none exists
             return Post::create([
+                'id' => (string) Str::uuid(),
                 'title' => $this->faker->sentence(),
                 'slug' => $this->faker->slug(),
                 'summary' => $this->faker->paragraph(),

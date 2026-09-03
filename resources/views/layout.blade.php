@@ -82,13 +82,6 @@
 </head>
 
 <body id="page-top" class="flex min-h-screen flex-col bg-gray-50 font-body">
-    <div id="fb-root"></div>
-    <script async
-            defer
-            crossorigin="anonymous"
-            src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v9.0&appId=695473097788503&autoLogAppEvents=1"
-            nonce="{{ Str::random(8) }}"></script>
-
     <x-top-navbar class="sticky top-0 z-50" />
 
     <div id="main" class="fonts-loading grow">

@@ -10,51 +10,29 @@ class CommentObserver
 {
     /**
      * Handle the comment "created" event.
-     *
-     * @return void
      */
-    public function created(Comment $comment)
+    public function created(Comment $comment): void
     {
-        Mail::to('me@jasonvertucio.com')->send(new CommentReceivedMail($comment));
+        if ($this->isOwnComment($comment)) {
+            return;
+        }
+
+        Mail::to(config('comments.notification_email'))->send(new CommentReceivedMail($comment));
     }
 
     /**
-     * Handle the comment "updated" event.
-     *
-     * @return void
+     * Determine whether the site owner wrote this comment themselves.
      */
-    public function updated(Comment $comment)
+    protected function isOwnComment(Comment $comment): bool
     {
-        //
-    }
+        $owner = config('comments.owner_email');
 
-    /**
-     * Handle the comment "deleted" event.
-     *
-     * @return void
-     */
-    public function deleted(Comment $comment)
-    {
-        //
-    }
+        if (blank($owner)) {
+            return false;
+        }
 
-    /**
-     * Handle the comment "restored" event.
-     *
-     * @return void
-     */
-    public function restored(Comment $comment)
-    {
-        //
-    }
+        $author = $comment->user?->email ?? $comment->email;
 
-    /**
-     * Handle the comment "force deleted" event.
-     *
-     * @return void
-     */
-    public function forceDeleted(Comment $comment)
-    {
-        //
+        return filled($author) && strcasecmp($author, $owner) === 0;
     }
 }
