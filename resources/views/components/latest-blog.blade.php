@@ -7,17 +7,17 @@
             <div>
                 <img src="{{ $post->featured_image }}" class="w-full" alt="{{ $post->featured_image_caption }}" style="object-fit: cover; aspect-ratio: 2.35;">
                 @if ($post->featured_image_caption)
-                    <p class="text-center">{!! $post->featured_image_caption !!}</p>
+                    <p class="text-center text-xs text-gray-500">{!! $post->featured_image_caption !!}</p>
                 @endif
             </div>
         @endif
         @if ($post->summary)
-            <p>{{ $post->summary }}</p>
+            <p class="my-2">{{ $post->summary }}</p>
         @else
             <p>(I am supposed to enter a sort of flavor text on these things but I didn't for this one. Oh
                 well.)</p>
         @endif
-        <p>
+        <p class="mt-1 mb-2 text-xs italic">
             {{ $post->published_at->diffForHumans() }}
         </p>
         <a class="my-2 inline-block font-semibold text-center whitespace-nowrap align-middle select-none border bg-white border-primary px-4 py-3 text-lg leading-6 rounded transition-color text-primary hover:bg-primary hover:text-white focus:bg-primary focus:text-white transition-all duration-300"
