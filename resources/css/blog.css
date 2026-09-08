@@ -25,6 +25,9 @@
                 @apply text-sm text-center mb-4;
             }
         }
+        code {
+            white-space: pre-wrap;
+        }
         blockquote {
             /* border-left: 3px solid var(--color-secondary); */
             /* padding-left: 1rem; */

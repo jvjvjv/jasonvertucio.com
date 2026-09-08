@@ -23,7 +23,7 @@
           </span>
           @ifcanvasauthenticated
           <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}/stats" class="text-primary hover:text-secondary mr-3">Stats</a>
-          <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}/edit" class="text-primary hover:text-secondary">Edit</a>
+          <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}" class="text-primary hover:text-secondary">Edit</a>
           @endifcanvasauthenticated
         </div>
 
