@@ -43,3 +43,95 @@
         }
     }
 }
+
+/* Legal documents (privacy policy, terms of service) */
+.legal {
+    @apply text-dark;
+
+    p {
+        @apply my-4;
+    }
+
+    h1 {
+        @apply mb-2 text-4xl font-bold;
+    }
+
+    h2 {
+        @apply mt-10 mb-3 border-t border-dark/15 pt-6 text-2xl font-bold;
+    }
+
+    h2:first-of-type {
+        @apply border-t-0 pt-0;
+    }
+
+    h3 {
+        @apply mt-6 mb-2 text-xl font-bold;
+    }
+
+    ul,
+    ol {
+        @apply my-4 ps-6;
+    }
+
+    ul {
+        @apply list-disc;
+    }
+
+    ol {
+        @apply list-decimal;
+    }
+
+    li {
+        @apply my-1;
+    }
+
+    li > ul,
+    li > ol {
+        @apply my-1;
+    }
+
+    a {
+        @apply text-primary underline underline-offset-2;
+    }
+
+    code {
+        @apply rounded bg-gray-100 px-1 py-0.5 text-[0.9em];
+        white-space: pre-wrap;
+    }
+
+    hr {
+        @apply my-8 border-0 border-t border-dark/15;
+    }
+
+    blockquote {
+        @apply my-4 border-s-4 border-secondary bg-gray-50 px-4 py-3;
+        p {
+            @apply my-0;
+        }
+    }
+
+    .table-scroll {
+        @apply my-6 w-full overflow-x-auto;
+    }
+
+    table {
+        @apply w-full min-w-[36rem] border-collapse text-sm;
+    }
+
+    thead {
+        @apply bg-primary text-white;
+    }
+
+    th,
+    td {
+        @apply border border-dark/15 px-3 py-2 text-left align-top;
+    }
+
+    th {
+        @apply font-heading font-bold;
+    }
+
+    tbody tr:nth-child(even) {
+        @apply bg-gray-50;
+    }
+}

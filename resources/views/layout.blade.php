@@ -92,7 +92,13 @@
 
     <footer class="mt-auto bg-secondary py-3 text-white">
         <div class="mx-auto max-w-7xl px-4">
-            <div class="text-right">
+            <div class="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+                <nav class="flex gap-4 text-sm" aria-label="Legal">
+                    <a class="underline-offset-2 hover:underline focus-visible:underline"
+                       href="{{ route("legal.privacy") }}">Privacy Policy</a>
+                    <a class="underline-offset-2 hover:underline focus-visible:underline"
+                       href="{{ route("legal.terms") }}">Terms of Service</a>
+                </nav>
                 <span>Copyright &copy; {{ date("Y") }}, Jason Vertucio.</span>
             </div>
         </div>

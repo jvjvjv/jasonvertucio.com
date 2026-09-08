@@ -68,6 +68,14 @@
                 alt="Jason Vertucio">
         </section>
 
+        <nav class="w-full lg:w-4/5 px-6 md:px-8 lg:px-20 pb-8 text-right text-xs" aria-label="Legal">
+            <a class="text-link underline-offset-2 hover:underline focus-visible:underline"
+                href="{{ route('legal.privacy') }}">Privacy Policy</a>
+            <span class="text-link/60 mx-2" aria-hidden="true">&middot;</span>
+            <a class="text-link underline-offset-2 hover:underline focus-visible:underline"
+                href="{{ route('legal.terms') }}">Terms of Service</a>
+        </nav>
+
     </main>
 
     {{-- Vite assets --}}
