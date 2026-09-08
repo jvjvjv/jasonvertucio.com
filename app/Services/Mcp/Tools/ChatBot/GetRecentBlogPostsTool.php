@@ -57,7 +57,7 @@ class GetRecentBlogPostsTool extends Tool
                     });
                 }
             })
-            ->get(['id', 'title', 'summary', 'slug', 'published_at']);
+            ->get(['id', 'title', 'summary', 'slug', 'published_at', 'topic_id']);
 
         return Response::structured([
             'posts' => $posts->map(static fn (Post $post): array => [
@@ -66,7 +66,7 @@ class GetRecentBlogPostsTool extends Tool
                 'slug' => $post->slug,
                 'url' => '/blog/'.$post->slug,
                 'published_at' => $post->published_at?->toDateString(),
-                'topic' => $post->topic->first()?->name,
+                'topic' => $post->topic?->name,
             ])->values()->toArray(),
         ]);
     }

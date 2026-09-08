@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystoneRole as Role;
-use Canvas\Models\User as CanvasUser;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Hash;

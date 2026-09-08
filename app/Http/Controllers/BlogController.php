@@ -91,12 +91,16 @@ class BlogController extends Controller
         if (! $post) {
             return $this->topicsOrTags($slug);
         }
-        $auth = Auth::guard('canvas');
-        if ($auth->check() && $post->user && $post->user->id === $auth->user()->id) {
-            // Do nothing - author viewing their own post
-        } else {
-            // If it's not the author, or if there IS no user
-            event(new PostViewed($post));
+        $authorId = $post->getRawOriginal('user_id');
+        $viewerIsAuthor = Auth::check() && $authorId !== null && Auth::id() === $authorId;
+
+        if (! $viewerIsAuthor) {
+            event(new PostViewed(
+                post: $post,
+                ip: request()->ip(),
+                agent: request()->userAgent(),
+                referer: request()->header('referer'),
+            ));
         }
 
         return view('blog.single', [
