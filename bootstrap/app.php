@@ -44,6 +44,12 @@ return Application::configure(basePath: dirname(__DIR__))
             PreventFraming::class,
         ]);
 
+        // /posts accepts unauthenticated POSTs from external callers, so it
+        // cannot carry a CSRF token.
+        $middleware->preventRequestForgery(except: [
+            '/posts',
+        ]);
+
         // Framework defaults: an unauthenticated non-JSON request redirects
         // nowhere (no path configured), and an already-authenticated guest
         // route redirects to a Laravel-standard path. This app wants /login

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\PostsIngestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about/{any?}', function () {
     return redirect('/');
 });
+
+Route::post('/posts', [PostsIngestController::class, 'store'])->name('posts.store');
 
 Route::prefix('legal')->name('legal.')->group(function () {
     Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');

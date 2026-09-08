@@ -70,6 +70,14 @@ return [
             'level' => 'info',
         ],
 
+        'posts' => [
+            'driver' => 'daily',
+            'days' => 14,
+            'bubble' => false,
+            'path' => storage_path('logs/posts.log'),
+            'level' => 'debug',
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/site.log'),
