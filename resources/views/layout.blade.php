@@ -65,7 +65,7 @@
           href="https://fonts.gstatic.com"
           crossorigin>
     {{-- Fonts --}}
-    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;700&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;700&family=Montserrat:wght@400;500;700&family=Cormorant:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     {{-- Custom styles for this template --}}
     @vite(["resources/css/blog.css"])
     @stack("styles")

@@ -1,0 +1,14 @@
+@theme {
+    --color-primary: #1b587c;
+    --color-secondary: #b35e06;
+    --color-dark: #25292c;
+    --color-link: #4351a0;
+
+    --font-family-heading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-subheading: "Josefin Sans", "Impact", "Arial", sans-serif;
+    --font-family-body: "Montserrat", "Arial", sans-serif;
+
+    --font-heading: "Josefin Sans", Arial, sans-serif;
+    --font-body: "Montserrat", Arial, sans-serif;
+    --font-serif: "Cormorant", Georgia, serif;
+}

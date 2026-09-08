@@ -5,7 +5,7 @@
         <h3 class="font-heading text-xl mb-2 font-bold">{{ $post->title }}</h3>
         @if ($post->featured_image)
             <div>
-                <img src="{{ $post->featured_image }}" class="w-full" alt="{{ $post->featured_image_caption }}">
+                <img src="{{ $post->featured_image }}" class="w-full" alt="{{ $post->featured_image_caption }}" style="object-fit: cover; aspect-ratio: 2.35;">
                 @if ($post->featured_image_caption)
                     <p class="text-center">{!! $post->featured_image_caption !!}</p>
                 @endif

@@ -5,6 +5,7 @@
 @import "@fortawesome/fontawesome-free/css/brands.css";
 @import "./font-loading.css";
 @import "./scrollbars.css";
+@import "./theme.css";
 
 html {
     scroll-behavior: smooth;
@@ -20,16 +21,7 @@ textarea {
     }
 }
 
-@theme {
-    --color-primary: #1b587c;
-    --color-secondary: #b35e06;
-    --color-dark: #25292c;
-    --color-link: #4351a0;
 
-    --font-family-heading: "Josefin Sans", "Impact", "Arial", sans-serif;
-    --font-family-subheading: "Josefin Sans", "Impact", "Arial", sans-serif;
-    --font-family-body: "Montserrat", "Arial", sans-serif;
-}
 
 /* Apply fonts globally */
 body {

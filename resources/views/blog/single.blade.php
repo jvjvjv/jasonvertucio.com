@@ -13,7 +13,7 @@
           {{ $post['title'] }}
         </h2>
 
-        <div class="blog__body prose max-w-none mb-6">
+        <div class="blog__body max-w-none mb-6">
           {!! $post['body'] !!}
         </div>
 
