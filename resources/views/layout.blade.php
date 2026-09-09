@@ -59,6 +59,7 @@
     @endphp
 
     <title>{{ $fullTitle }}</title>
+    <link rel="alternate" type="application/rss+xml" title="Jason Vertucio's Blog" href="{{ route('feed') }}">
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect"

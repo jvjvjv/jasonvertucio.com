@@ -6,6 +6,8 @@ use App\Http\Controllers\CommentController;
 Route::group(['prefix' => 'blog'], function ($route) {
     $route->get('/', [BlogController::class, 'index'])->name('blog');
 
+    $route->get('/feed', [BlogController::class, 'feed'])->name('feed');
+
     $route->get('/topics', [BlogController::class, 'topics'])->name('topics');
     $route->get('/tags', [BlogController::class, 'tags'])->name('tags');
 

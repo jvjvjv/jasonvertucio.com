@@ -7,6 +7,7 @@ use Canvas\Models\Post;
 use Canvas\Models\Tag;
 use Canvas\Models\Topic;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class BlogController extends Controller
 {
@@ -83,6 +84,17 @@ class BlogController extends Controller
         } catch (\Exception $e) {
             return $this->tagList($slug);
         }
+    }
+
+    public function feed()
+    {
+        $posts = Cache::remember('blog.feed', now()->addDay(), function () {
+            return Post::published()->with('user')->orderBy('published_at', 'DESC')->limit(20)->get();
+        });
+
+        return response()
+            ->view('blog.feed', ['posts' => $posts])
+            ->header('Content-Type', 'application/rss+xml; charset=UTF-8');
     }
 
     public function post($slug)

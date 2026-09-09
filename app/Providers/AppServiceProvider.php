@@ -3,13 +3,19 @@
 namespace App\Providers;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Listeners\FlushBlogFeedCache;
 use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Observers\CommentObserver;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use App\Services\TargetedResumeService;
+use Canvas\Events\PostDeleted;
+use Canvas\Events\PostPublished;
+use Canvas\Events\PostUnpublished;
+use Canvas\Events\PostUpdated;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -44,6 +50,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Route::model('aiChatBot', AiChatBot::class);
+
+        Event::listen([
+            PostPublished::class,
+            PostUpdated::class,
+            PostUnpublished::class,
+            PostDeleted::class,
+        ], FlushBlogFeedCache::class);
 
         // Force HTTPS in local development when using local-ssl-proxy
         if (app()->environment('dev') && request()->getHost() === 'localhost') {
