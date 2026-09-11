@@ -7,6 +7,7 @@ import ForumIcon from "@mui/icons-material/Forum";
 import InboxIcon from "@mui/icons-material/Inbox";
 import InsightsIcon from "@mui/icons-material/Insights";
 import MemoryIcon from "@mui/icons-material/Memory";
+import NewsIcon from "@mui/icons-material/News";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import RuleIcon from "@mui/icons-material/Rule";
@@ -26,6 +27,7 @@ const registry: { [key: string]: ReactNode } = {
     Inbox: <InboxIcon fontSize="large" />,
     Insights: <InsightsIcon fontSize="large" />,
     Memory: <MemoryIcon fontSize="large" />,
+    News: <NewsIcon fontSize="large" />,
     Psychology: <PsychologyIcon fontSize="large" />,
     PushPin: <PushPinIcon fontSize="large" />,
     Rule: <RuleIcon fontSize="large" />,
