@@ -9,7 +9,7 @@
               {
                 "can": "manage-blogs",
                 "href": "/canvas",
-                "icon": "Book",
+                "icon": "Feed",
                 "label": "Blog Admin",
                 "description": "Manage blog, write posts."
               },

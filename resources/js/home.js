@@ -2,12 +2,23 @@
  * Home page specific functionality
  */
 
-// SHIFT + L keyboard shortcut to log in
+// SHIFT + L keyboard shortcut to log in, and others
 document.addEventListener('keydown', function(e) {
     const { key, shiftKey, ctrlKey } = e;
 
-    if (shiftKey && key.toUpperCase() === 'L' && !ctrlKey) {
-        window.location.href = '/login';
+    // SHIFT + letter
+    if (shiftKey && !ctrlKey) {
+        switch (key.toUpperCase()) {
+            case 'L':
+                window.location.href = '/login';
+                break;
+            case 'A':
+                window.location.href = '/admin';
+                break;
+            case 'B':
+                window.location.href = '/canvas';
+                break;
+        }
     }
 });
 

@@ -3,11 +3,11 @@ import CodeIcon from "@mui/icons-material/Code";
 import DescriptionIcon from "@mui/icons-material/Description";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
+import Feed from "@mui/icons-material/Feed";
 import ForumIcon from "@mui/icons-material/Forum";
 import InboxIcon from "@mui/icons-material/Inbox";
 import InsightsIcon from "@mui/icons-material/Insights";
 import MemoryIcon from "@mui/icons-material/Memory";
-import NewsIcon from "@mui/icons-material/News";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import RuleIcon from "@mui/icons-material/Rule";
@@ -23,11 +23,11 @@ const registry: { [key: string]: ReactNode } = {
     Description: <DescriptionIcon fontSize="large" />,
     DriveFileRenameOutline: <DriveFileRenameOutlineIcon fontSize="large" />,
     EditNote: <EditNoteIcon fontSize="large" />,
+    Feed: <Feed fontSize="large" />,
     Forum: <ForumIcon fontSize="large" />,
     Inbox: <InboxIcon fontSize="large" />,
     Insights: <InsightsIcon fontSize="large" />,
     Memory: <MemoryIcon fontSize="large" />,
-    News: <NewsIcon fontSize="large" />,
     Psychology: <PsychologyIcon fontSize="large" />,
     PushPin: <PushPinIcon fontSize="large" />,
     Rule: <RuleIcon fontSize="large" />,
