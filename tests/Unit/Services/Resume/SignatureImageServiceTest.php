@@ -16,7 +16,7 @@ class SignatureImageServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->sourcePath = dirname(__DIR__, 4).'/resources/resume/signature.png';
+        $this->sourcePath = dirname(__DIR__, 4).'/resources/resume/assets/signature.png';
 
         if (! file_exists($this->sourcePath)) {
             $this->markTestSkipped('Signature source not found: '.$this->sourcePath);

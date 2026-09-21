@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'driver' => env('RESUME_DRIVER', 'json'),
+    'driver' => env('RESUME_DRIVER', 'database'),
 
     /*
     |--------------------------------------------------------------------------
@@ -40,6 +40,34 @@ return [
     */
 
     'template' => resource_path('resume/2026 template.docx'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cover Letter Signature Image
+    |--------------------------------------------------------------------------
+    |
+    | The source image SignatureImageService recolors and embeds into cover
+    | letters. Like the template path, this is the single source of truth —
+    | no service may hardcode its own.
+    |
+    */
+
+    'signature' => resource_path('resume/assets/signature.png'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Embeddable Font Directory
+    |--------------------------------------------------------------------------
+    |
+    | Static TTF faces that `resume:embed-fonts` writes into the template's
+    | font parts. Keeping the faces in the repo makes embedding reproducible
+    | instead of dependent on whatever is installed on whoever last opened the
+    | template in Word — a variable-font install silently collapses every
+    | weight onto one face and renders the whole document Thin.
+    |
+    */
+
+    'fonts' => resource_path('resume/assets/fonts'),
 
     /*
     |--------------------------------------------------------------------------

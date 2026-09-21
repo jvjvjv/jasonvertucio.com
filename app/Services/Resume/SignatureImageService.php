@@ -41,7 +41,7 @@ class SignatureImageService
 
     public function __construct(?string $sourcePath = null)
     {
-        $this->sourcePath = $sourcePath ?? resource_path('resume/signature.png');
+        $this->sourcePath = $sourcePath ?? (string) config('resume.signature');
     }
 
     /**
