@@ -22,7 +22,6 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/js/app.js',
-                'resources/js/resume.js',
                 'resources/js/currently-watching.js',
                 'resources/js/font-loader.js',
                 'resources/js/home.js',
