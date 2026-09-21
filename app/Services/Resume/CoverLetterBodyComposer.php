@@ -40,7 +40,7 @@ class CoverLetterBodyComposer
      * ink lands 0.041in above the closing's centre; the value accounts for the
      * 0.149in of empty margin at the top of the source PNG.
      */
-    protected const SIGNATURE_RISE = -395080;
+    protected const SIGNATURE_RISE = -1143000;
 
     /**
      * Height of the blank line between the closing and the typed name, in
@@ -48,7 +48,7 @@ class CoverLetterBodyComposer
      * the closing — matching the reference. Pinned with lineRule="exact" so it
      * does not drift with the template's line spacing.
      */
-    protected const SIGNATURE_GAP = 186;
+    protected const SIGNATURE_GAP = 720;
 
     /**
      * Horizontal offset from the left margin, in EMU. A signature sits a
