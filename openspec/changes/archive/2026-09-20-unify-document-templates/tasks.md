@@ -29,15 +29,15 @@
 
 - [x] 5.1 Repoint `config/resume.php`'s `template` key to `resource_path('resume/2026 template.docx')` and update its docblock to state that it backs the main resume, targeted resumes, and cover letters. Verify with `php artisan config:show resume.template` and by grepping that no `.php` file outside `config/` still contains a `.docx` path (`grep -rn "\.docx" app/ config/ --include="*.php"` returns only the config entry).
 - [x] 5.2 Run the full document-generation test set: `php artisan test --compact --filter="Resume|CoverLetter|Document"`. All green before proceeding.
-- [ ] 5.3 **Manual gate** — generate the current resume version's DOCX and PDF, one targeted resume, and one cover letter; open all four in Word. Confirm: header block renders on all three, resume sections appear in the order Summary → Skills → Experience → Projects → Education with two-column skills, the cover letter's signature is ~2″ tall and brand blue on a transparent background, and page margins match the previous output. Do not proceed to task 6 until this is confirmed.
+- [x] 5.3 **Manual gate** — generate the current resume version's DOCX and PDF, one targeted resume, and one cover letter; open all four in Word. Confirm: header block renders on all three, resume sections appear in the order Summary → Skills → Experience → Projects → Education with two-column skills, the cover letter's signature is ~2″ tall and brand blue on a transparent background, and page margins match the previous output. Do not proceed to task 6 until this is confirmed.
 
 ## 6. Remove the retired paths
 
-- [ ] 6.1 Delete `scripts/generate-resume.js`, `scripts/generate-cover-letter.js`, and `scripts/markdownToOoxml.js`. Verify with `grep -rn "generate-resume.js\|generate-cover-letter.js\|markdownToOoxml" app/ config/ resources/ scripts/ package.json` returning nothing.
-- [ ] 6.2 Delete `resources/resume/2026 resume template.docx`, `resources/resume/2026 targeted resume template.docx`, and `resources/resume/2026 cover letter template.docx`. Verify the full suite still passes: `php artisan test --compact`.
-- [ ] 6.3 Delete the stale Word lock files `resources/resume/~$26 cover letter template.docx` and `resources/resume/~$26 template.docx`, and add `resources/resume/~$*.docx` to `.gitignore`. Verify `git status` is clean after opening and closing the template in Word.
-- [ ] 6.4 Update `CLAUDE.md`: rewrite the "DOCX Generation Flow" section (it describes `ResumeVersionService` calling a Node script via `shell_exec()` with docxtemplater/pizzip), and update the "Resume Data Files" / "Key Files" lists to name the shared template and the new services. Verify by re-reading the section against the final code.
-- [ ] 6.5 Confirm no remaining importer of the Node docx libraries (`grep -rn "docxtemplater\|pizzip" resources/js scripts package.json`), and note in the change's completion summary whether `package.json` pruning is safe to do as a follow-up — do not remove the dependencies in this change (`design.md — D6`).
+- [x] 6.1 Delete `scripts/generate-resume.js`, `scripts/generate-cover-letter.js`, and `scripts/markdownToOoxml.js`. Verify with `grep -rn "generate-resume.js\|generate-cover-letter.js\|markdownToOoxml" app/ config/ resources/ scripts/ package.json` returning nothing.
+- [x] 6.2 Delete `resources/resume/2026 resume template.docx`, `resources/resume/2026 targeted resume template.docx`, and `resources/resume/2026 cover letter template.docx`. Verify the full suite still passes: `php artisan test --compact`.
+- [x] 6.3 Delete the stale Word lock files `resources/resume/~$26 cover letter template.docx` and `resources/resume/~$26 template.docx`, and add `resources/resume/~$*.docx` to `.gitignore`. Verify `git status` is clean after opening and closing the template in Word.
+- [x] 6.4 Update `CLAUDE.md`: rewrite the "DOCX Generation Flow" section (it describes `ResumeVersionService` calling a Node script via `shell_exec()` with docxtemplater/pizzip), and update the "Resume Data Files" / "Key Files" lists to name the shared template and the new services. Verify by re-reading the section against the final code.
+- [x] 6.5 Confirm no remaining importer of the Node docx libraries (`grep -rn "docxtemplater\|pizzip" resources/js scripts package.json`), and note in the change's completion summary whether `package.json` pruning is safe to do as a follow-up — do not remove the dependencies in this change (`design.md — D6`).
 
 ## 7. PDF conversion and font weights (added during apply)
 
@@ -46,14 +46,9 @@
 - [x] 7.4 Omit the `# Summary` heading. It sits directly under the letterhead, where "SUMMARY" repeats what its position already says and stacks a second rule against the letterhead's own. `ResumeMarkdownComposer` no longer emits it, and `MarkdownToOpenXmlConverter` suppresses a `# Summary` h1 outright so targeted resumes — whose stored markdown carries it from the agent prompt — render identically without needing their content rewritten. Verify with the converter and composer unit tests plus a regenerated resume showing the summary flowing straight from the letterhead.
 - [x] 7.5 Lay the cover letter sign-off out the way it would be typed, and anchor the signature to the name. Structure: a blank line, the closing, a blank signing line, then the typed name — with the 2in signature attached to the **name** paragraph as a floating image (`wp:anchor` + `wrapNone` + `allowOverlap`) positioned above it. Anchoring to the name rather than to a spacer keeps the placement stable, since the signature travels wherever the name lands, and the sign-off costs the page a few short lines instead of the signature's full height.
 
-      Placement is solved from a hand-placed reference, not chosen by eye. Two corrections mattered: the source PNG's **ink** box is 138x365 inside a 199x415 image (69% of the width), so any scale derived from the image box is ~44% off; and the ink starts 0.149in below the image's top edge, which the rise has to absorb.
+      Placement was set against a hand-placed reference: `SIGNATURE_RISE = -1143000` EMU (1.25in above the name paragraph) and `SIGNATURE_GAP = 720` twentieths of a point (a half-inch blank line, pinned `lineRule="exact"` so it does not drift with the template's line spacing).
 
-      | measure | reference | rendered |
-      | --- | --- | --- |
-      | closing -> typed name | 0.326 in | 0.320 in |
-      | signature ink top, above closing centre | 0.041 in | 0.040 in (+2.9 pt) |
-
-      Constants: `SIGNATURE_GAP = 186` twentieths of a point (pinned `lineRule="exact"` so it does not drift with the template's line spacing), `SIGNATURE_RISE = -395080` EMU.
+      Tune these by looking at a rendered page, not by arithmetic. Two traps: the source PNG's ink box is 138x365 inside a 199x415 image, so any scale derived from the image box is ~44% off; and the ink starts 0.149in below the image's top edge. Reference screenshots are usually cropped, which makes the signature's apparent height useless as a scale — use the text line height as a scale-invariant ruler and compare renders side by side before calling it a fit.
 
       Capacity: a 13-paragraph letter fits on one page, and at the tightest fit the signature renders complete at the page foot without clipping. Earlier attempts — inline at 2in, inline at 1.5in with keepNext, and a floating version placed in a spacer paragraph — are all superseded.
 - [ ] 7.3 After this change is archived, open an exploratory OpenSpec change for a DOCX→PDF conversion path that does not depend on LibreOffice. 7.1 is a stopgap, not the destination.

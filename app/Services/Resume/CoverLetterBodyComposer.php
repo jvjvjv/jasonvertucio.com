@@ -36,17 +36,18 @@ class CoverLetterBodyComposer
      * The signature is anchored to the name and positioned above it, so it
      * falls into the blank space left between the closing and the name — where
      * a pen would put it — rather than being given a slot of its own in the
-     * text flow. Solved from a hand-placed reference so the signature's first
-     * ink lands 0.041in above the closing's centre; the value accounts for the
-     * 0.149in of empty margin at the top of the source PNG.
+     * text flow. -1143000 is 1.25 inches, set against a hand-placed reference.
+     *
+     * Adjust this by looking at a rendered page, not by arithmetic: the source
+     * PNG has ~0.149in of empty margin above its first ink, so the value that
+     * looks right is not the one the numbers suggest.
      */
     protected const SIGNATURE_RISE = -1143000;
 
     /**
      * Height of the blank line between the closing and the typed name, in
-     * twentieths of a point. 186 is 0.129in, which puts the name 0.326in below
-     * the closing — matching the reference. Pinned with lineRule="exact" so it
-     * does not drift with the template's line spacing.
+     * twentieths of a point. 720 is half an inch. Pinned with lineRule="exact"
+     * so it does not drift with the template's line spacing.
      */
     protected const SIGNATURE_GAP = 720;
 
