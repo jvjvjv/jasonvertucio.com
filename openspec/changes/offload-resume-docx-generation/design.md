@@ -1,6 +1,6 @@
 ## Context
 
-See `proposal.md` - Why. Today `ResumeEditCandidateService::approve()` (`app/Services/ResumeEditCandidateService.php:92-129`) publishes the new live version inside a `DB::transaction()`, then, after commit, synchronously calls `ResumeVersionServiceContract::generateDocx()` and `generatePdf()` (implemented by `JsonResumeVersionService`, which `shell_exec()`s `scripts/generate-resume.js`), and returns any generation failure to the caller. There are two callers: `Admin\ResumeEditorController::approveCandidate()` (`app/Http/Controllers/Admin/ResumeEditorController.php:211-243`) and `ApproveResumeCandidateTool::handle()` (`app/Services/Mcp/Tools/ChatBot/ResumeEdit/ApproveResumeCandidateTool.php:49-88`), both of which branch on `$result['error']` to show a "document generation failed" message.
+See `proposal.md` - Why. Today `ResumeEditCandidateService::approve()` (`app/Services/ResumeEditCandidateService.php:92-129`) publishes the new live version inside a `DB::transaction()`, then, after commit, synchronously calls `ResumeVersionServiceContract::generateDocx()` and `generatePdf()` (implemented by the `App\Services\Concerns\GeneratesResumeDocuments` trait on `DatabaseResumeVersionService` — `generateDocx()` renders the DOCX in PHP via `DocumentRenderer`, while `generatePdf()` `exec()`s `libreoffice --headless --convert-to pdf`), and returns any generation failure to the caller. There are two callers: `Admin\ResumeEditorController::approveCandidate()` (`app/Http/Controllers/Admin/ResumeEditorController.php:211-243`) and `ApproveResumeCandidateTool::handle()` (`app/Services/Mcp/Tools/ChatBot/ResumeEdit/ApproveResumeCandidateTool.php:49-88`), both of which branch on `$result['error']` to show a "document generation failed" message.
 
 The app already has one queued job precedent: `CommentReceivedMail` (`ShouldQueue`), dispatched via `Mail::to(...)->queue(...)` in `Admin\ResumeEditorController::saveResumeData()` and consumed by `Mail::to(...)->send(...)` synchronously in `CommentObserver`. Event/listener wiring in this app is manual, not auto-discovered: `AppServiceProvider::boot()` calls `Event::listen([...], FlushBlogFeedCache::class)` for the blog-cache-flush listener. This change follows that same manual-registration convention rather than introducing auto-discovery.
 
@@ -16,7 +16,7 @@ The app already has one queued job precedent: `CommentReceivedMail` (`ShouldQueu
 **Non-Goals:**
 - Building a UI to display `document_generation_status` in the admin editor (the column is added and populated in this change; surfacing it visually in the editor/preview page is left to a follow-up change).
 - Retrying failed generation automatically.
-- Changing `JsonResumeVersionService`/`DatabaseResumeVersionService`'s `generateDocx()`/`generatePdf()` implementations themselves — they are called from a new location, not modified.
+- Changing the `GeneratesResumeDocuments` trait's `generateDocx()`/`generatePdf()` implementations themselves — they are called from a new location, not modified.
 
 ## Decisions
 
@@ -51,7 +51,7 @@ return ['success' => true];
 
 Note: `approve()` does not currently hold a reference to the newly created `ResumeVersion` row (`setVersion()` creates it internally, encapsulated in `ResumeVersionServiceContract`). The event needs that row's id to update its status columns. Resolved by having `ResumeVersionServiceContract::setVersion()` continue to return `void` (unchanged interface) and instead resolving the new current version after commit via `ResumeVersion::current()->first()` — consistent with how `ApproveResumeCandidateTool` already resolves the live version the same way (`ResumeVersion::current()->first()`, line 55 of that file).
 
-**Alternative considered**: change `setVersion()`'s return type to `ResumeVersion`. Rejected to avoid touching the shared contract (`app/Contracts/ResumeVersionServiceContract.php`) and both its implementations (`JsonResumeVersionService`, `DatabaseResumeVersionService`) for a need local to one caller.
+**Alternative considered**: change `setVersion()`'s return type to `ResumeVersion`. Rejected to avoid touching the shared contract (`app/Contracts/ResumeVersionServiceContract.php`) and its implementation (`DatabaseResumeVersionService`; `JsonResumeVersionService` is now an empty subclass of it, and `config/resume.php` defaults the driver to `database`) for a need local to one caller.
 
 ### 2. New queued listener: `App\Listeners\GenerateResumeDocuments`
 
@@ -123,7 +123,8 @@ Rather than adding a new `resume.*` config key, the failure email is sent to `co
 
 - **[Risk] Losing the synchronous "approved, but document generation failed" message a reviewer currently sees immediately** → Mitigated by recording `document_generation_status`/`document_generation_error` on the version row (durable, queryable) and emailing the operator on failure. A reviewer who wants to confirm generation succeeded now checks back rather than seeing it inline — an explicit, accepted trade-off per proposal.md - Why.
 - **[Risk] Per CLAUDE.md, `queue:work` boots once and does not pick up new code after deploy** → The listener will not run (or will run the pre-deploy code) until the worker is restarted. Migration Plan below calls this out explicitly as a required deploy step, not optional.
-- **[Risk] `shell_exec()`-based generation failing silently if the queue worker itself is down or the job errors out unhandled** → Out of scope for this change (pre-existing risk equally present in the synchronous path today); `--tries=3` on the production worker (per CLAUDE.md) gives the job automatic retries before failing.
+- **[Risk] `exec()`-based LibreOffice PDF conversion failing silently if the queue worker itself is down or the job errors out unhandled** → Out of scope for this change (pre-existing risk equally present in the synchronous path today); `--tries=3` on the production worker (per CLAUDE.md) gives the job automatic retries before failing.
+- **[Interaction] `replace-libreoffice-with-weasyprint` rewrites the `generatePdf()` body this change relocates** → Their surfaces are disjoint: this change moves *when* generation runs and never edits `generatePdf()`; that change rewrites *how* the PDF is produced and never states when. No file is edited by both, and per that change's `design.md`, whichever lands second rebases — neither blocks the other. The one substantive interaction is to this change's motivation: the LibreOffice `exec()` is the bulk of the latency being moved off the request path, and that change reduces it.
 - **[Trade-off] The new columns are not yet surfaced in any admin UI** → Deliberately deferred (see Non-Goals); the data is queryable via tinker/DB in the interim, matching the "record it, notify on failure" resolution chosen for this change.
 
 ## Migration Plan
