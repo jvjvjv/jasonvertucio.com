@@ -7,7 +7,7 @@
     $entries = array_filter($entries, 'is_array');
 @endphp
 
-<section class="resume-projects resume-section mb-8">
+<section class="resume-projects resume-section">
     <h2 class="text-2xl font-bold font-heading text-secondary mb-4">Selected Projects</h2>
 
     @foreach($entries as $project)

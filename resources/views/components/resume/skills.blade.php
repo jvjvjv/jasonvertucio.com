@@ -7,7 +7,7 @@
     $otherGroups = array_filter(is_array($skills['other'] ?? null) ? $skills['other'] : [], 'is_array');
 @endphp
 
-<section class="resume-skills resume-section mb-8">
+<section class="resume-skills resume-section">
     <h2 class="text-2xl font-bold font-heading text-secondary mb-4">Technical Skills</h2>
 
     @if(count($topGroups) > 0)
