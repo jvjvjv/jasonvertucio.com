@@ -27,6 +27,45 @@ class MarkdownToOpenXmlConverter
      */
     protected const SUPPRESSED_HEADINGS = ['summary'];
 
+    /**
+     * Heading text, lowercased, mapped to the canonical section key.
+     *
+     * The canonical key — not the printed label — is what selects paragraph
+     * styling and the column flow, so the label can change without touching
+     * stored content or the targeted-resume agent prompt. Both spellings
+     * resolve to the same section, so a targeted resume hand-edited to read
+     * "# Professional Experience" keeps the styling "# Experience" gives it.
+     */
+    protected const SECTION_ALIASES = [
+        'skills' => 'Skills',
+        'technical skills' => 'Skills',
+        'experience' => 'Experience',
+        'professional experience' => 'Experience',
+        'projects' => 'Projects',
+        'selected projects' => 'Projects',
+        'education' => 'Education',
+    ];
+
+    /**
+     * The label printed for each canonical section key.
+     *
+     * The Heading1 style carries `<w:caps/>`, so these are stored in title
+     * case and Word renders them uppercase — which also keeps the stored text
+     * matching the headings on the site's own resume page.
+     */
+    protected const SECTION_LABELS = [
+        'Skills' => 'Technical Skills',
+        'Experience' => 'Professional Experience',
+        'Projects' => 'Selected Projects',
+        'Education' => 'Education',
+    ];
+
+    protected const SKILLS_SECTION = 'Skills';
+
+    protected const SINGLE_COLUMN = 1;
+
+    protected const SKILLS_COLUMNS = 2;
+
     protected const CONTEXTUAL_STYLES = [
         'Experience' => [
             'h2' => 'JobTitle',
@@ -40,7 +79,13 @@ class MarkdownToOpenXmlConverter
 
     protected ?string $currentSection = null;
 
-    protected bool $pendingSkillsColumnsStart = false;
+    /**
+     * The column count of the run of paragraphs currently being emitted.
+     *
+     * Starts at one because that is what the template's own body `sectPr`
+     * specifies, which is what governs everything after the last break.
+     */
+    protected int $currentColumns = self::SINGLE_COLUMN;
 
     /**
      * Convert a markdown string into an OpenXML fragment.
@@ -59,19 +104,24 @@ class MarkdownToOpenXmlConverter
             return '';
         }
 
+        $this->currentSection = null;
+        $this->currentColumns = self::SINGLE_COLUMN;
+
+        $columns = $this->resolveColumns($lines);
+
         $xml = '';
 
         // Process each line
-        foreach ($lines as $line) {
-            $xml .= $this->processLine($line);
+        foreach ($lines as $index => $line) {
+            $xml .= $this->processLine($line, $columns[$index]);
         }
 
-        if ($this->currentSection === 'Skills') {
-            $xml .= $this->buildColumnBreak(1);
+        if ($this->currentColumns !== self::SINGLE_COLUMN) {
+            $xml .= $this->buildColumnBreak($this->currentColumns);
         }
 
         $this->currentSection = null;
-        $this->pendingSkillsColumnsStart = false;
+        $this->currentColumns = self::SINGLE_COLUMN;
 
         return $xml;
     }
@@ -79,34 +129,96 @@ class MarkdownToOpenXmlConverter
     /**
      * Process each line and build the corresponding XML, handling section changes and special cases.
      */
-    protected function processLine(array $line): string
+    protected function processLine(array $line, int $columns): string
     {
-        // Initialize $xml
         $xml = '';
-        // Check for section changes
-        if ($line['type'] === 'h1') {
-            if ($this->currentSection === 'Skills') {
-                $xml = $this->buildColumnBreak(1);
-            }
 
+        if ($columns !== $this->currentColumns) {
+            // A sectPr describes the section that *ends* with its paragraph, so
+            // the break closing the preceding run carries that run's own column
+            // count, not the count of what follows it.
+            $xml .= $this->buildColumnBreak($this->currentColumns);
+            $this->currentColumns = $columns;
+        }
+
+        if ($line['type'] === 'h1') {
             $this->currentSection = $line['text'];
         }
 
-        if ($this->pendingSkillsColumnsStart && $this->currentSection === 'Skills' && $line['type'] !== 'h1') {
-            $xml .= $this->buildColumnBreak(2);
-            $this->pendingSkillsColumnsStart = false;
+        if ($line['type'] === 'rule') {
+            return $xml;
         }
 
-        $xml .= $this->buildLineXml($line);
+        return $xml.$this->buildLineXml($line);
+    }
 
-        if ($line['type'] === 'h1' && $line['text'] === 'Skills') {
-            // Keep the Skills heading outside columns, then start two-column flow
-            // on the first content line within the section.
-            $xml .= $this->buildColumnBreak(1);
-            $this->pendingSkillsColumnsStart = true;
+    /**
+     * Decide how many columns each parsed line's content belongs in.
+     *
+     * Only the skills section is ever multi-column. Within it a rule marker
+     * divides the emphasized leading categories from the rest: content before
+     * the marker stays full width and content after it flows in two columns. A
+     * skills section with no marker — which is every stored targeted resume —
+     * flows entirely in two columns.
+     *
+     * The marker line itself stays in the preceding run, so a marker with no
+     * content after it leaves no empty two-column region behind.
+     *
+     * @param  array<int, array{type: string, text: string}>  $lines
+     * @return array<int, int>
+     */
+    protected function resolveColumns(array $lines): array
+    {
+        $columns = [];
+        $section = null;
+        $sectionHasRule = false;
+        $pastRule = false;
+
+        foreach ($lines as $index => $line) {
+            if ($line['type'] === 'h1') {
+                $section = $line['text'];
+                $sectionHasRule = $section === self::SKILLS_SECTION
+                    && $this->sectionHasRule($lines, $index);
+                $pastRule = false;
+            }
+
+            $columns[$index] = match (true) {
+                $section !== self::SKILLS_SECTION => self::SINGLE_COLUMN,
+                $line['type'] === 'h1' => self::SINGLE_COLUMN,
+                $line['type'] === 'rule' => self::SINGLE_COLUMN,
+                $sectionHasRule && ! $pastRule => self::SINGLE_COLUMN,
+                default => self::SKILLS_COLUMNS,
+            };
+
+            if ($line['type'] === 'rule') {
+                $pastRule = true;
+            }
         }
 
-        return $xml;
+        return $columns;
+    }
+
+    /**
+     * Whether the section opened by the heading at the given index contains a
+     * rule marker before the next heading ends it.
+     *
+     * @param  array<int, array{type: string, text: string}>  $lines
+     */
+    protected function sectionHasRule(array $lines, int $headingIndex): bool
+    {
+        $count = count($lines);
+
+        for ($index = $headingIndex + 1; $index < $count; $index++) {
+            if ($lines[$index]['type'] === 'h1') {
+                return false;
+            }
+
+            if ($lines[$index]['type'] === 'rule') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -116,13 +228,16 @@ class MarkdownToOpenXmlConverter
     {
         $styleId = $this->resolveStyleId($line['type'], $line['text']);
         $extraPpr = $line['type'] === 'bullet' ? $this->buildBulletNumPr() : null;
+        $text = $line['type'] === 'h1'
+            ? (self::SECTION_LABELS[$line['text']] ?? $line['text'])
+            : $line['text'];
 
         if ($line['type'] === 'bullet' && str_starts_with($line['text'], 'Key Technologies:')) {
             $styleId = 'KeyTechnologies';
             $extraPpr = null;
         }
 
-        return $this->buildParagraphXml($styleId, $line['text'], $extraPpr);
+        return $this->buildParagraphXml($styleId, $text, $extraPpr);
     }
 
     /**
@@ -165,7 +280,12 @@ class MarkdownToOpenXmlConverter
                     continue;
                 }
 
-                $parsed[] = ['type' => 'h1', 'text' => $heading];
+                $parsed[] = [
+                    'type' => 'h1',
+                    'text' => self::SECTION_ALIASES[strtolower($heading)] ?? $heading,
+                ];
+            } elseif (preg_match('/^(?:-{3,}|\*{3,}|_{3,})$/', $trimmed)) {
+                $parsed[] = ['type' => 'rule', 'text' => ''];
             } elseif (preg_match('/^[-*]\s+(.+)$/', $trimmed, $matches)) {
                 $parsed[] = ['type' => 'bullet', 'text' => trim($matches[1])];
             } else {

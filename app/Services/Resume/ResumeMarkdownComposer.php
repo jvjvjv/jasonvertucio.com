@@ -53,8 +53,19 @@ class ResumeMarkdownComposer
     }
 
     /**
-     * Top skills lead, then the remaining categories, all in one section so
-     * the converter's two-column flow covers the whole list.
+     * Marks where the emphasized leading skills end and the rest begin.
+     *
+     * MarkdownToOpenXmlConverter reads this as the boundary between the
+     * full-width run and the two-column flow, matching how the site's resume
+     * page stacks the top groups and grids the remainder. It is emitted only
+     * when there are top categories; without it the converter flows the whole
+     * section in two columns, which is what targeted resumes want.
+     */
+    protected const COLUMN_MARKER = '---';
+
+    /**
+     * Top skills lead, then the remaining categories, in one section divided
+     * by the column marker.
      *
      * @param  array<string, mixed>  $data
      */
@@ -62,14 +73,35 @@ class ResumeMarkdownComposer
     {
         $groups = $data['skills'] ?? [];
 
-        $categories = array_merge(
-            is_array($groups['top'] ?? null) ? $groups['top'] : [],
-            is_array($groups['other'] ?? null) ? $groups['other'] : [],
-        );
+        $top = $this->skillLines(is_array($groups['top'] ?? null) ? $groups['top'] : []);
+        $other = $this->skillLines(is_array($groups['other'] ?? null) ? $groups['other'] : []);
 
+        if ($top === [] && $other === []) {
+            return '';
+        }
+
+        $lines = $top === []
+            ? $other
+            : array_merge($top, [self::COLUMN_MARKER], $other);
+
+        return "# Skills\n".implode("\n", $lines);
+    }
+
+    /**
+     * Render one group of skill categories as heading/list line pairs.
+     *
+     * @param  array<int, mixed>  $categories
+     * @return array<int, string>
+     */
+    protected function skillLines(array $categories): array
+    {
         $lines = [];
 
         foreach ($categories as $category) {
+            if (! is_array($category)) {
+                continue;
+            }
+
             $title = trim((string) ($category['title'] ?? ''));
             $list = trim((string) ($category['listJoined'] ?? ''));
 
@@ -90,11 +122,7 @@ class ResumeMarkdownComposer
             }
         }
 
-        if ($lines === []) {
-            return '';
-        }
-
-        return "# Skills\n".implode("\n", $lines);
+        return $lines;
     }
 
     /**

@@ -10,7 +10,7 @@
 @endphp
 
 <section class="resume-experience resume-section mb-8">
-    <h2 class="text-2xl font-bold font-heading text-secondary mb-4">Experience</h2>
+    <h2 class="text-2xl font-bold font-heading text-secondary mb-4">Professional Experience</h2>
 
     @foreach($jobs as $job)
     <div class="job-entry mb-6">

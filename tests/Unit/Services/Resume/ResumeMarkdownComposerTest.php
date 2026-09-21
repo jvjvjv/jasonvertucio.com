@@ -26,6 +26,7 @@ class ResumeMarkdownComposerTest extends TestCase
         # Skills
         ## Languages
         PHP, JavaScript
+        ---
         ## Tools
         Docker, Git
 
@@ -110,7 +111,43 @@ class ResumeMarkdownComposerTest extends TestCase
             ],
         ]);
 
-        $this->assertSame("# Skills\n## Primary\nPHP\n## Secondary\nBash", $markdown);
+        $this->assertSame("# Skills\n## Primary\nPHP\n---\n## Secondary\nBash", $markdown);
+    }
+
+    public function test_skills_with_no_top_group_carry_no_column_marker(): void
+    {
+        $markdown = $this->composer->compose([
+            'skills' => [
+                'top' => [],
+                'other' => [['title' => 'Secondary', 'listJoined' => 'Bash']],
+            ],
+        ]);
+
+        $this->assertSame("# Skills\n## Secondary\nBash", $markdown);
+    }
+
+    public function test_skills_with_only_a_top_group_still_carry_the_marker(): void
+    {
+        $markdown = $this->composer->compose([
+            'skills' => [
+                'top' => [['title' => 'Primary', 'listJoined' => 'PHP']],
+                'other' => [],
+            ],
+        ]);
+
+        $this->assertSame("# Skills\n## Primary\nPHP\n---", $markdown);
+    }
+
+    public function test_a_top_group_of_only_empty_categories_carries_no_marker(): void
+    {
+        $markdown = $this->composer->compose([
+            'skills' => [
+                'top' => [['title' => '', 'listJoined' => '']],
+                'other' => [['title' => 'Secondary', 'listJoined' => 'Bash']],
+            ],
+        ]);
+
+        $this->assertSame("# Skills\n## Secondary\nBash", $markdown);
     }
 
     public function test_skill_list_falls_back_to_joining_the_raw_list(): void

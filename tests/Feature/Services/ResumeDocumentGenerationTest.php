@@ -103,7 +103,7 @@ class ResumeDocumentGenerationTest extends TestCase
         $xml = $this->readDocumentXml($this->service->generateDocx()['path']);
 
         $previous = -1;
-        foreach (['Skills', 'Experience', 'Projects', 'Education'] as $section) {
+        foreach (['Technical Skills', 'Professional Experience', 'Selected Projects', 'Education'] as $section) {
             $position = strpos($xml, '<w:t xml:space="preserve">'.$section.'</w:t>');
             $this->assertNotFalse($position, "Resume should contain the {$section} heading");
             $this->assertGreaterThan($previous, $position, "The {$section} section is out of order");

@@ -1,47 +1,4 @@
-# document-template-rendering Specification
-
-## Purpose
-Establishes a single authoritative Word template behind every document the site generates — the main resume, targeted resumes, and cover letters — so the documents' shared visual identity is edited in one file, and defines how each document type composes its own body onto that common template.
-
-## Requirements
-
-### Requirement: A single configured template backs every generated document
-
-The system SHALL render the main resume, targeted resumes, and cover letters from one configured DOCX template file. No document-generation path SHALL reference a template path of its own.
-
-#### Scenario: All three document types resolve the same template
-
-- **WHEN** the main resume, a targeted resume, and a cover letter are each generated
-- **THEN** all three read the template from the same configured path
-- **AND** changing that configuration value changes the template used by all three
-
-#### Scenario: Template identity is visible in the output
-
-- **WHEN** the shared template's header block is edited (name line, contact line, fonts, colors)
-- **AND** each of the three document types is regenerated
-- **THEN** every regenerated document reflects the edit, with no per-type divergence in that block
-
-### Requirement: The shared template exposes a fixed header placeholder set
-
-The shared template SHALL contain exactly the placeholders `{name}`, `{title}`, `{email}`, `{phone}`, and `{url}`, and SHALL NOT contain body-structure placeholders. Every document type SHALL substitute all five before emitting output, so no placeholder text reaches a finished document.
-
-#### Scenario: Placeholders are substituted in every document type
-
-- **WHEN** any document type is generated
-- **THEN** the output contains no literal `{name}`, `{title}`, `{email}`, `{phone}`, or `{url}` text
-- **AND** each placeholder is replaced with the corresponding value for that document
-
-#### Scenario: A placeholder split across formatting runs is still substituted
-
-- **WHEN** the template stores a placeholder as several adjacent text fragments (for example `{`, `url`, `}`) because of how Word saved it
-- **THEN** the generator recognizes it as one placeholder and substitutes it
-- **AND** the output contains no leftover brace characters from that placeholder
-
-#### Scenario: A value is unavailable for a placeholder
-
-- **WHEN** a document is generated and the source data has no value for one of the five placeholders
-- **THEN** the placeholder is replaced with an empty string
-- **AND** generation still succeeds
+## MODIFIED Requirements
 
 ### Requirement: Each document type composes its body onto the shared template
 
@@ -81,6 +38,8 @@ Because the shared template carries no body, each document type SHALL generate i
 
 - **WHEN** the site's resume page is viewed and the generated resume document is opened
 - **THEN** the four section headings read the same on both surfaces
+
+## ADDED Requirements
 
 ### Requirement: A section's display label does not change how its content is styled
 
@@ -140,33 +99,3 @@ A multi-column region in a generated document SHALL contain the content it is me
 - **WHEN** a resume document is generated with a skills section followed by an experience section
 - **THEN** the experience section and every section after it occupy the full page width
 - **AND** no content after the skills section is left in a two-column region
-
-### Requirement: Generation fails loudly when the template cannot be used
-
-The system SHALL treat a missing, unreadable, or structurally invalid shared template as a generation failure, returning an error that names the problem rather than writing a partial or corrupt document.
-
-#### Scenario: Template file is missing
-
-- **WHEN** a document is generated and the configured template path does not exist
-- **THEN** generation returns a failure result identifying the missing template path
-- **AND** no output file is left behind
-
-#### Scenario: Template cannot be parsed
-
-- **WHEN** a document is generated and the template cannot be opened as a valid Word document
-- **THEN** generation returns a failure result describing the parse failure
-- **AND** no output file is left behind
-
-### Requirement: PDF generation continues from the generated DOCX
-
-Each document type SHALL continue to produce its PDF by converting its generated DOCX, and SHALL report a conversion failure rather than leaving a stale PDF in place as if it were current.
-
-#### Scenario: PDF follows a successful DOCX generation
-
-- **WHEN** a document's DOCX has been generated and a PDF is requested
-- **THEN** the PDF is produced from that DOCX and reflects the same content
-
-#### Scenario: PDF requested with no DOCX present
-
-- **WHEN** a PDF is requested for a document that has no generated DOCX
-- **THEN** the request fails with an error stating the DOCX must be generated first
