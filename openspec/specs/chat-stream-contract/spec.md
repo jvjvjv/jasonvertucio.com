@@ -85,3 +85,8 @@ The chat stream SHALL continue to be read through `api.stream`, which retries on
 
 - **WHEN** the server emits `page_reload` or `tool_use_progress`
 - **THEN** the frame is delivered to `useChatStream` and passed to `onEvent`, rather than being filtered out by the transport
+
+#### Scenario: The transport's own framing is spec'd separately
+
+- **WHEN** `api.stream` parses SSE bytes into frames and payload strings
+- **THEN** its boundary detection, `data:` prefix handling, multi-line joining, and end-of-stream flush behavior are governed by the `sse-transport-framing` capability, not restated here
