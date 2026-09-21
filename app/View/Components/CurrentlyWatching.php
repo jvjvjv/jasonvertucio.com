@@ -12,9 +12,7 @@ class CurrentlyWatching extends Component
 
     public function __construct()
     {
-        $this->media = LocalMedia::whereNotNull('last_playback_at')
-            ->orderBy('last_playback_at', 'desc')
-            ->first();
+        $this->media = LocalMedia::currentlyWatching();
     }
 
     public function title()

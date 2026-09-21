@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Events\MediaPlaybackMilestoneReached;
 use App\Listeners\FlushBlogFeedCache;
+use App\Listeners\InvalidateCurrentlyWatchingCache;
+use App\Listeners\LogSocialPostStub;
+use App\Listeners\RecordRecentlyFinishedMedia;
 use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Observers\CommentObserver;
@@ -57,6 +61,10 @@ class AppServiceProvider extends ServiceProvider
             PostUnpublished::class,
             PostDeleted::class,
         ], FlushBlogFeedCache::class);
+
+        Event::listen(MediaPlaybackMilestoneReached::class, RecordRecentlyFinishedMedia::class);
+        Event::listen(MediaPlaybackMilestoneReached::class, InvalidateCurrentlyWatchingCache::class);
+        Event::listen(MediaPlaybackMilestoneReached::class, LogSocialPostStub::class);
 
         // Force HTTPS in local development when using local-ssl-proxy
         if (app()->environment('dev') && request()->getHost() === 'localhost') {
