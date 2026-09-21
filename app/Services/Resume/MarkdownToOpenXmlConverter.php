@@ -16,6 +16,17 @@ class MarkdownToOpenXmlConverter
         'paragraph' => 'Normal',
     ];
 
+    /**
+     * Section headings that are dropped rather than rendered.
+     *
+     * The summary opens the document directly under the letterhead, where a
+     * "SUMMARY" heading repeats what its position already says and stacks a
+     * second rule against the letterhead's. Suppressing it here rather than
+     * only in ResumeMarkdownComposer also covers targeted resumes, whose
+     * stored markdown already carries "# Summary" from the agent prompt.
+     */
+    protected const SUPPRESSED_HEADINGS = ['summary'];
+
     protected const CONTEXTUAL_STYLES = [
         'Experience' => [
             'h2' => 'JobTitle',
@@ -148,7 +159,13 @@ class MarkdownToOpenXmlConverter
             } elseif (preg_match('/^##\s+(.+)$/', $trimmed, $matches)) {
                 $parsed[] = ['type' => 'h2', 'text' => trim($matches[1])];
             } elseif (preg_match('/^#\s+(.+)$/', $trimmed, $matches)) {
-                $parsed[] = ['type' => 'h1', 'text' => trim($matches[1])];
+                $heading = trim($matches[1]);
+
+                if (in_array(strtolower($heading), self::SUPPRESSED_HEADINGS, true)) {
+                    continue;
+                }
+
+                $parsed[] = ['type' => 'h1', 'text' => $heading];
             } elseif (preg_match('/^[-*]\s+(.+)$/', $trimmed, $matches)) {
                 $parsed[] = ['type' => 'bullet', 'text' => trim($matches[1])];
             } else {

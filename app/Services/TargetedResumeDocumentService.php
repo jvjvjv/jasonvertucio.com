@@ -3,81 +3,56 @@
 namespace App\Services;
 
 use App\Models\TargetedResume;
+use App\Services\Resume\DocumentRenderer;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
-use DOMDocument;
-use DOMXPath;
 use Illuminate\Support\Facades\Log;
-use ZipArchive;
 
 class TargetedResumeDocumentService
 {
-    protected const NAMESPACE_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-
-    protected string $templatePath;
-
     protected string $outputDir;
 
-    public function __construct(protected MarkdownToOpenXmlConverter $converter)
-    {
-        $this->templatePath = base_path('resources/resume/2026 targeted resume template.docx');
+    public function __construct(
+        protected MarkdownToOpenXmlConverter $converter,
+        protected DocumentRenderer $renderer,
+    ) {
         $this->outputDir = storage_path('app/targeted-resumes');
     }
 
     /**
      * Generate a DOCX file for the given targeted resume.
      *
-     * @return array{success: bool, path?: string, error?: string}
+     * @return array{success: bool, path?: string, size?: int, error?: string}
      */
     public function generateDocx(TargetedResume $targetedResume): array
     {
         $filename = $targetedResume->generateFilename();
         $outputPath = $this->outputDir.'/'.$filename.'.docx';
 
-        if (! file_exists($this->outputDir)) {
-            mkdir($this->outputDir, 0755, true);
-        }
-
         try {
             $data = $this->buildTemplateData($targetedResume);
+            $resumeMarkdown = $data['resume'];
+            unset($data['resume']);
 
-            copy($this->templatePath, $outputPath);
+            $result = $this->renderer->render(
+                config('resume.template'),
+                $outputPath,
+                $data,
+                $this->converter->convert($resumeMarkdown),
+            );
 
-            $zip = new ZipArchive;
-            if ($zip->open($outputPath) !== true) {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to open DOCX template as ZIP archive.',
-                ];
+            if (! $result['success']) {
+                Log::error('Targeted resume DOCX generation failed', [
+                    'error' => $result['error'],
+                    'targeted_resume_id' => $targetedResume->id,
+                ]);
+
+                return $result;
             }
-
-            $xml = $zip->getFromName('word/document.xml');
-            if ($xml === false) {
-                $zip->close();
-
-                return [
-                    'success' => false,
-                    'error' => 'Failed to read word/document.xml from template.',
-                ];
-            }
-
-            $xml = $this->replaceSimplePlaceholders($xml, $data);
-            $xml = $this->appendResumeContent($xml, $data['resume']);
-
-            Log::debug('Final generated XML', ['xml' => $xml]);
-
-            $zip->addFromString('word/document.xml', $xml);
-            $zip->close();
 
             $targetedResume->docx_path = $outputPath;
             $targetedResume->save();
 
-            $size = filesize($outputPath);
-
-            return [
-                'success' => true,
-                'path' => $outputPath,
-                'size' => $size,
-            ];
+            return $result;
         } catch (\Exception $e) {
             Log::error('Targeted resume DOCX generation failed', [
                 'message' => $e->getMessage(),
@@ -94,131 +69,6 @@ class TargetedResumeDocumentService
                 'error' => $e->getMessage(),
             ];
         }
-    }
-
-    /**
-     * Replace simple placeholders in the raw XML.
-     *
-     * @param  array{name: string, title: string, email: string, phone: string, url: string, resume: string}  $data
-     */
-    protected function replaceSimplePlaceholders(string $xml, array $data): string
-    {
-        $placeholders = [
-            '{name}' => $data['name'],
-            '{title}' => $data['title'],
-            '{email}' => $data['email'],
-            '{phone}' => $data['phone'],
-            '{url}' => $data['url'],
-        ];
-
-        foreach ($placeholders as $placeholder => $value) {
-            $xml = str_replace($placeholder, htmlspecialchars($value, ENT_XML1, 'UTF-8'), $xml);
-
-            // Word sometimes splits placeholders into separate text runs (e.g. "{", "url", "}").
-            $xml = $this->replaceSplitPlaceholderRuns($xml, trim($placeholder, '{}'), $value);
-        }
-
-        return $xml;
-    }
-
-    protected function replaceSplitPlaceholderRuns(string $xml, string $placeholder, string $value): string
-    {
-        $dom = new DOMDocument;
-        if (! $dom->loadXML($xml)) {
-            return $xml;
-        }
-
-        $xpath = new DOMXPath($dom);
-        $xpath->registerNamespace('w', self::NAMESPACE_W);
-        $textNodes = $xpath->query('//w:t');
-
-        if ($textNodes === false || $textNodes->length === 0) {
-            return $xml;
-        }
-
-        $nodes = [];
-        foreach ($textNodes as $textNode) {
-            $nodes[] = $textNode;
-        }
-
-        $nodeCount = count($nodes);
-        for ($i = 0; $i < $nodeCount; $i++) {
-            if ($nodes[$i]->textContent !== '{') {
-                continue;
-            }
-
-            $token = '';
-            $endIndex = null;
-
-            for ($j = $i + 1; $j < min($i + 12, $nodeCount); $j++) {
-                $content = $nodes[$j]->textContent;
-                if ($content === '}') {
-                    $endIndex = $j;
-                    break;
-                }
-
-                $token .= $content;
-            }
-
-            if ($endIndex === null || $token !== $placeholder) {
-                continue;
-            }
-
-            $nodes[$i]->nodeValue = $value;
-            for ($k = $i + 1; $k <= $endIndex; $k++) {
-                $nodes[$k]->nodeValue = '';
-            }
-
-            $i = $endIndex;
-        }
-
-        return $dom->saveXML() ?: $xml;
-    }
-
-    /**
-     * Insert styled paragraphs.
-     * This function is mis-named.
-     */
-    protected function appendResumeContent(string $xml, string $resumeMarkdown): string
-    {
-        $dom = new DOMDocument;
-        $dom->preserveWhiteSpace = true;
-        $dom->formatOutput = false;
-        $dom->loadXML($xml);
-
-        $xpath = new DOMXPath($dom);
-        $xpath->registerNamespace('w', self::NAMESPACE_W);
-
-        $body = $xpath->query('//w:body')->item(0);
-
-        $openXmlFragment = $this->converter->convert($resumeMarkdown);
-
-        if ($openXmlFragment === '') {
-            return $dom->saveXML();
-        }
-
-        $sectPr = $xpath->query('//w:body/w:sectPr')->item(0);
-        $insertBefore = $sectPr ?? null;
-
-        $wrapperXml = '<?xml version="1.0" encoding="UTF-8"?>'
-            .'<w:body xmlns:w="'.self::NAMESPACE_W.'">'
-            .$openXmlFragment
-            .'</w:body>';
-
-        $fragmentDom = new DOMDocument;
-        $fragmentDom->loadXML($wrapperXml);
-
-        $paragraphs = $fragmentDom->getElementsByTagNameNS(self::NAMESPACE_W, 'p');
-        foreach ($paragraphs as $p) {
-            $imported = $dom->importNode($p, true);
-            if ($insertBefore) {
-                $body->insertBefore($imported, $insertBefore);
-            } else {
-                $body->appendChild($imported);
-            }
-        }
-
-        return $dom->saveXML();
     }
 
     /**

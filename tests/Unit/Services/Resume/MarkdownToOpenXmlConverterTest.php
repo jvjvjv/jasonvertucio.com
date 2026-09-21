@@ -21,6 +21,27 @@ class MarkdownToOpenXmlConverterTest extends TestCase
         $this->assertSame('', $this->converter->convert('   '));
     }
 
+    public function test_summary_heading_is_suppressed_but_its_text_is_kept(): void
+    {
+        $xml = $this->converter->convert("# Summary\nExperienced engineer.");
+
+        $this->assertStringNotContainsString('Summary', $xml, 'The SUMMARY heading is dropped by design');
+        $this->assertStringContainsString('Experienced engineer.', $xml);
+        $this->assertStringContainsString('<w:pStyle w:val="Normal"/>', $xml);
+    }
+
+    public function test_suppression_is_case_insensitive(): void
+    {
+        $this->assertStringNotContainsString('SUMMARY', $this->converter->convert('# SUMMARY'));
+    }
+
+    public function test_other_headings_are_not_suppressed(): void
+    {
+        $xml = $this->converter->convert("# Skills\n## Front-End\nPHP");
+
+        $this->assertStringContainsString('Skills', $xml);
+    }
+
     public function test_heading1_produces_heading1_style(): void
     {
         $xml = $this->converter->convert('# Experience');
@@ -117,7 +138,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
 
     public function test_code_fences_are_stripped(): void
     {
-        $markdown = "```tailored-resume\n# Summary\nTest content\n```";
+        $markdown = "```tailored-resume\n# Skills\nTest content\n```";
         $xml = $this->converter->convert($markdown);
 
         $this->assertStringNotContainsString('tailored-resume', $xml);
@@ -128,7 +149,7 @@ class MarkdownToOpenXmlConverterTest extends TestCase
 
     public function test_empty_lines_are_skipped(): void
     {
-        $xml = $this->converter->convert("# Summary\n\nA paragraph\n\n- A bullet");
+        $xml = $this->converter->convert("# Experience\n\nA paragraph\n\n- A bullet");
 
         $pCount = substr_count($xml, '<w:p ');
         $this->assertSame(3, $pCount, 'Should produce exactly 3 paragraphs (no empty ones)');
@@ -191,8 +212,9 @@ MD;
 
         $xml = $this->converter->convert($markdown);
 
-        // Section headers → Heading1
-        $this->assertSame(5, substr_count($xml, 'w:val="Heading1"'));
+        // Section headers → Heading1. Summary is suppressed by design, so the
+        // five `#` headings in the fixture yield four rendered headings.
+        $this->assertSame(4, substr_count($xml, 'w:val="Heading1"'));
 
         // Job titles under Experience → JobTitle
         $this->assertSame(2, substr_count($xml, 'w:val="JobTitle"'));

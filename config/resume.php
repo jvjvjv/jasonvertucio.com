@@ -28,15 +28,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Resume Template Path
+    | Shared Document Template Path
     |--------------------------------------------------------------------------
     |
-    | The path to the DOCX template file used for generating downloadable
-    | resume documents. This template should contain docxtemplater placeholders.
+    | The one DOCX template behind every document the site generates — the
+    | main resume, targeted resumes, and cover letters. It carries only the
+    | header placeholders ({name}, {title}, {email}, {phone}, {url}) and no
+    | body; each document type composes its own body onto it at generation
+    | time. Editing this file in Word restyles all three documents at once.
     |
     */
 
-    'template' => resource_path('resume/2026 resume template.docx'),
+    'template' => resource_path('resume/2026 template.docx'),
 
     /*
     |--------------------------------------------------------------------------

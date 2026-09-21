@@ -5,6 +5,9 @@ namespace Tests\Feature;
 use App\Models\ResumeVersion;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\ResumeMarkdownComposer;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use RuntimeException;
 use Tests\TestCase;
@@ -18,7 +21,7 @@ class DatabaseResumeVersionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DatabaseResumeVersionService(new DatabaseResumeDataService);
+        $this->service = new DatabaseResumeVersionService(new DatabaseResumeDataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter);
     }
 
     public function test_get_current_version_returns_default_when_none_set(): void

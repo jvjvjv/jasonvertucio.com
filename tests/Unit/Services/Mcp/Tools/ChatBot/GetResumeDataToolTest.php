@@ -8,6 +8,9 @@ use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\ResumeMarkdownComposer;
 use App\Services\Mcp\Tools\ChatBot\GetResumeDataTool;
 use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
@@ -42,7 +45,7 @@ class GetResumeDataToolTest extends TestCase
 
         return new ResumeEditCandidateService(
             $dataService,
-            new DatabaseResumeVersionService($dataService),
+            new DatabaseResumeVersionService($dataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter),
             new ResumeSectionValidator,
         );
     }

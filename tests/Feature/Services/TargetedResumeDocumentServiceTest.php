@@ -5,6 +5,7 @@ namespace Tests\Feature\Services;
 use App\Models\ResumePersonalInfo;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
+use App\Services\Resume\DocumentRenderer;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
 use App\Services\TargetedResumeDocumentService;
 use DOMDocument;
@@ -14,14 +15,16 @@ use Tests\TestCase;
 use ZipArchive;
 
 /**
- * Tests the DOCX generation logic by directly exercising the protected methods
- * via reflection, with minimal database setup when template data needs model-backed relations.
+ * Tests targeted resume DOCX generation against the shared document template,
+ * with minimal database setup when template data needs model-backed relations.
  */
 class TargetedResumeDocumentServiceTest extends TestCase
 {
     use DatabaseTransactions;
 
     protected TargetedResumeDocumentService $service;
+
+    protected DocumentRenderer $renderer;
 
     protected string $templatePath;
 
@@ -31,22 +34,25 @@ class TargetedResumeDocumentServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->templatePath = dirname(__DIR__, 3).'/resources/resume/2026 targeted resume template.docx';
+        $this->templatePath = dirname(__DIR__, 3).'/resources/resume/2026 template.docx';
 
         if (! file_exists($this->templatePath)) {
-            $this->markTestSkipped('Template file not found: '.$this->templatePath);
+            $this->markTestSkipped('Shared template not found: '.$this->templatePath);
         }
+
+        config(['resume.template' => $this->templatePath]);
 
         $this->tempDir = sys_get_temp_dir().'/targeted-resume-test-'.uniqid();
         mkdir($this->tempDir, 0755, true);
 
-        $this->service = new TargetedResumeDocumentService(new MarkdownToOpenXmlConverter);
+        $this->renderer = new DocumentRenderer;
+        $this->service = new TargetedResumeDocumentService(new MarkdownToOpenXmlConverter, $this->renderer);
     }
 
     protected function tearDown(): void
     {
         if (is_dir($this->tempDir)) {
-            array_map('unlink', glob($this->tempDir.'/*'));
+            array_map('unlink', glob($this->tempDir.'/*') ?: []);
             rmdir($this->tempDir);
         }
 
@@ -60,7 +66,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Senior Software Engineer',
             'email' => 'jason@example.com',
             'phone' => '555-123-4567',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => '# Summary',
         ]);
 
@@ -78,20 +84,19 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertStringNotContainsString('{url}', $xml);
     }
 
-    public function test_resume_placeholder_is_replaced_with_styled_paragraphs(): void
+    public function test_resume_content_is_rendered_as_styled_paragraphs(): void
     {
         $outputPath = $this->generateDocx([
             'name' => 'Test',
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => "# Experience\n## Lead Developer\n### Acme Corp - NYC - 2020-2024\n- Built microservices",
         ]);
 
         $xml = $this->readDocumentXml($outputPath);
 
-        $this->assertStringNotContainsString('{resume}', $xml);
         $this->assertStringContainsString('w:val="Heading1"', $xml);
         $this->assertStringContainsString('w:val="JobTitle"', $xml);
         $this->assertStringContainsString('w:val="CompanyInfo"', $xml);
@@ -109,7 +114,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => '# Summary',
         ]);
 
@@ -132,7 +137,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => "# Experience\n## Engineer\n### Corp - NYC - 2020",
         ]);
 
@@ -151,7 +156,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Dev <Lead>',
             'email' => 'test@test.com',
             'phone' => '555-0000',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => '# Summary',
         ]);
 
@@ -169,7 +174,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Test',
             'email' => 'test@test.com',
             'phone' => '555-0000',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => "# Experience\n## Engineer\n### Corp - 2020\n- Key Technologies: PHP, Laravel, React",
         ]);
 
@@ -186,7 +191,7 @@ class TargetedResumeDocumentServiceTest extends TestCase
             'title' => 'Senior Engineer',
             'email' => 'jason@example.com',
             'phone' => '555-1234',
-            'url' => 'https://jasonvertucio.com',
+            'url' => 'jasonvertucio.com',
             'resume' => "# Summary\nExperienced engineer.\n\n# Skills\n## Frontend\n- React\n- Vue\n\n# Experience\n## Lead Dev\n### Corp - NYC - 2020-2024\n- Built things\n- Key Technologies: PHP, JS",
         ]);
 
@@ -201,6 +206,23 @@ class TargetedResumeDocumentServiceTest extends TestCase
 
         $sectPr = $xpath->query('//w:body/w:sectPr');
         $this->assertSame(1, $sectPr->length, 'Document should still have exactly one sectPr');
+    }
+
+    public function test_generate_docx_renders_from_the_shared_template(): void
+    {
+        $targetedResume = $this->makeTargetedResume();
+
+        $result = $this->service->generateDocx($targetedResume);
+
+        $this->assertTrue($result['success'], $result['error'] ?? '');
+        $this->assertFileExists($result['path']);
+        $this->assertGreaterThan(0, filesize($result['path']));
+        $this->assertSame($result['path'], $targetedResume->fresh()->docx_path);
+
+        $xml = $this->readDocumentXml($result['path']);
+        $this->assertStringContainsString('Tailored summary', $xml);
+
+        unlink($result['path']);
     }
 
     public function test_build_template_data_prefers_tailored_resume_title_over_base_resume_title(): void
@@ -245,8 +267,25 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertSame('jasonvertucio.com', $data['url']);
     }
 
+    protected function makeTargetedResume(): TargetedResume
+    {
+        $resumeVersion = ResumeVersion::factory()->create();
+        ResumePersonalInfo::factory()->create([
+            'version_id' => $resumeVersion->id,
+            'name' => 'Jason Vertucio',
+            'url' => 'https://jasonvertucio.com',
+        ]);
+
+        return TargetedResume::factory()->create([
+            'resume_version_id' => $resumeVersion->id,
+            'tailored_data' => [
+                'content' => "# Summary\nTailored summary",
+            ],
+        ]);
+    }
+
     /**
-     * Generate a DOCX by directly manipulating the template (bypassing model/database).
+     * Render a DOCX through the shared renderer, the same path the service uses.
      *
      * @param  array{name: string, title: string, email: string, phone: string, url: string, resume: string}  $data
      */
@@ -254,22 +293,17 @@ class TargetedResumeDocumentServiceTest extends TestCase
     {
         $outputPath = $this->tempDir.'/test-output.docx';
 
-        copy($this->templatePath, $outputPath);
+        $markdown = $data['resume'];
+        unset($data['resume']);
 
-        $zip = new ZipArchive;
-        $this->assertTrue($zip->open($outputPath) === true);
+        $result = $this->renderer->render(
+            $this->templatePath,
+            $outputPath,
+            $data,
+            (new MarkdownToOpenXmlConverter)->convert($markdown),
+        );
 
-        $xml = $zip->getFromName('word/document.xml');
-        $this->assertNotFalse($xml);
-
-        $replaceSimple = new \ReflectionMethod($this->service, 'replaceSimplePlaceholders');
-        $replaceResume = new \ReflectionMethod($this->service, 'appendResumeContent');
-
-        $xml = $replaceSimple->invoke($this->service, $xml, $data);
-        $xml = $replaceResume->invoke($this->service, $xml, $data['resume']);
-
-        $zip->addFromString('word/document.xml', $xml);
-        $zip->close();
+        $this->assertTrue($result['success'], $result['error'] ?? '');
 
         return $outputPath;
     }

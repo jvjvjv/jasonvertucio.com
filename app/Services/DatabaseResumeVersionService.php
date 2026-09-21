@@ -6,17 +6,21 @@ use App\Contracts\ResumeDataServiceContract;
 use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeVersion;
 use App\Services\Concerns\GeneratesResumeDocuments;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\ResumeMarkdownComposer;
 use RuntimeException;
 
 class DatabaseResumeVersionService implements ResumeVersionServiceContract
 {
     use GeneratesResumeDocuments;
 
-    protected ResumeDataServiceContract $dataService;
-
-    public function __construct(ResumeDataServiceContract $dataService)
-    {
-        $this->dataService = $dataService;
+    public function __construct(
+        protected ResumeDataServiceContract $dataService,
+        protected DocumentRenderer $renderer,
+        protected ResumeMarkdownComposer $markdownComposer,
+        protected MarkdownToOpenXmlConverter $markdownConverter,
+    ) {
         $this->initDocumentPaths();
     }
 
@@ -26,6 +30,21 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
     protected function getDataService(): ResumeDataServiceContract
     {
         return $this->dataService;
+    }
+
+    protected function getDocumentRenderer(): DocumentRenderer
+    {
+        return $this->renderer;
+    }
+
+    protected function getMarkdownComposer(): ResumeMarkdownComposer
+    {
+        return $this->markdownComposer;
+    }
+
+    protected function getMarkdownConverter(): MarkdownToOpenXmlConverter
+    {
+        return $this->markdownConverter;
     }
 
     /**

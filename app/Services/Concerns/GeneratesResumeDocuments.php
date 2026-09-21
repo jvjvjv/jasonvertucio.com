@@ -3,6 +3,9 @@
 namespace App\Services\Concerns;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\ResumeMarkdownComposer;
 use Illuminate\Support\Facades\Log;
 
 trait GeneratesResumeDocuments
@@ -11,8 +14,6 @@ trait GeneratesResumeDocuments
 
     protected string $templatePath;
 
-    protected string $scriptPath;
-
     /**
      * Initialize document generation paths from config.
      */
@@ -20,13 +21,27 @@ trait GeneratesResumeDocuments
     {
         $this->savedDocumentsPath = config('resume.saved_documents');
         $this->templatePath = config('resume.template');
-        $this->scriptPath = base_path('scripts/generate-resume.js');
     }
 
     /**
      * Get the data service instance.
      */
     abstract protected function getDataService(): ResumeDataServiceContract;
+
+    /**
+     * Get the shared document renderer.
+     */
+    abstract protected function getDocumentRenderer(): DocumentRenderer;
+
+    /**
+     * Get the composer that turns resume data into renderable Markdown.
+     */
+    abstract protected function getMarkdownComposer(): ResumeMarkdownComposer;
+
+    /**
+     * Get the Markdown to OpenXML converter.
+     */
+    abstract protected function getMarkdownConverter(): MarkdownToOpenXmlConverter;
 
     /**
      * Get the path to the latest DOCX file by current version.
@@ -78,64 +93,49 @@ trait GeneratesResumeDocuments
         $version = $this->getCurrentVersion();
         $outputPath = $this->savedDocumentsPath.'/'.$this->getDocxFilename($version);
 
-        // Ensure output directory exists
-        if (! file_exists($this->savedDocumentsPath)) {
-            mkdir($this->savedDocumentsPath, 0755, true);
+        $data = $this->getDataService()->getDocxData();
+
+        $result = $this->getDocumentRenderer()->render(
+            $this->templatePath,
+            $outputPath,
+            $this->buildPlaceholders($data),
+            $this->getMarkdownConverter()->convert($this->getMarkdownComposer()->compose($data)),
+        );
+
+        if (! $result['success']) {
+            Log::error('Resume DOCX generation failed', $result);
         }
 
-        // Create temp file for resume data
-        $tempDataPath = storage_path('app/temp/resume-data-'.uniqid().'.json');
-        $tempDir = dirname($tempDataPath);
-        if (! file_exists($tempDir)) {
-            mkdir($tempDir, 0755, true);
+        return $result;
+    }
+
+    /**
+     * Map the resume data onto the shared template's header placeholders.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, string>
+     */
+    protected function buildPlaceholders(array $data): array
+    {
+        return [
+            'name' => (string) ($data['name'] ?? ''),
+            'title' => (string) ($data['title'] ?? ''),
+            'email' => (string) ($data['email'] ?? ''),
+            'phone' => (string) ($data['phone'] ?? ''),
+            'url' => $this->formatDisplayUrl($data['url'] ?? null),
+        ];
+    }
+
+    /**
+     * Strip the scheme and www prefix so the URL reads as plain text.
+     */
+    protected function formatDisplayUrl(?string $url): string
+    {
+        if ($url === null || trim($url) === '') {
+            return '';
         }
 
-        try {
-            // Get flattened data for docxtemplater
-            $data = $this->getDataService()->getDocxData();
-            file_put_contents($tempDataPath, json_encode($data, JSON_PRETTY_PRINT));
-
-            // Build command
-            $command = sprintf(
-                'node %s %s %s %s 2>&1',
-                escapeshellarg($this->scriptPath),
-                escapeshellarg($this->templatePath),
-                escapeshellarg($tempDataPath),
-                escapeshellarg($outputPath)
-            );
-
-            // Execute Node.js script
-            $output = shell_exec($command);
-
-            // Parse result
-            $result = json_decode($output, true);
-
-            if (! $result) {
-                Log::error('Resume DOCX generation failed: Invalid JSON output', [
-                    'output' => $output,
-                    'command' => $command,
-                ]);
-
-                return [
-                    'success' => false,
-                    'error' => 'Invalid output from generator script: '.$output,
-                ];
-            }
-
-            if (! $result['success']) {
-                Log::error('Resume DOCX generation failed', $result);
-
-                return $result;
-            }
-
-            return $result;
-
-        } finally {
-            // Clean up temp file
-            if (file_exists($tempDataPath)) {
-                unlink($tempDataPath);
-            }
-        }
+        return preg_replace('/^(?:https?:\/\/)?(?:www\.)?/i', '', trim($url)) ?? trim($url);
     }
 
     /**

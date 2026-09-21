@@ -77,6 +77,17 @@ RUN pecl install redis && docker-php-ext-enable redis
 # ── development ─────────────────────────────────────────────────────────────
 FROM base AS development
 
+# LibreOffice — every generatePdf() shells out to `libreoffice --headless
+# --convert-to pdf`. Production is not Docker (see CLAUDE.md: the real host
+# runs apache + supervisord) and uses its own system LibreOffice, so this is
+# needed only so PDF generation works in the local container. Without it every
+# PDF conversion fails with `sh: libreoffice: not found` while DOCX generation
+# still succeeds, which surfaces as "approved, but document generation failed".
+#
+# No font packages are required: the DOCX templates embed their own fonts
+# (word/fonts/*.odttf) and LibreOffice re-embeds them into the PDF.
+RUN apk add --no-cache libreoffice-writer
+
 # Xdebug
 RUN pecl install xdebug && docker-php-ext-enable xdebug
 

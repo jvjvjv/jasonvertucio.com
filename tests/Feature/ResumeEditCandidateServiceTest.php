@@ -7,6 +7,9 @@ use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\ResumeMarkdownComposer;
 use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -25,7 +28,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         parent::setUp();
 
         $dataService = new DatabaseResumeDataService;
-        $versionService = new DatabaseResumeVersionService($dataService);
+        $versionService = new DatabaseResumeVersionService($dataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter);
 
         $this->service = new ResumeEditCandidateService($dataService, $versionService, new ResumeSectionValidator);
     }
