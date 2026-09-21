@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CoverLetter;
+use App\Services\Concerns\ChecksDocumentRetention;
 use App\Services\Resume\CoverLetterBodyComposer;
 use App\Services\Resume\CoverLetterHtmlComposer;
 use App\Services\Resume\DocumentRenderer;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 
 class CoverLetterDocumentService
 {
+    use ChecksDocumentRetention;
+
     protected string $outputDir;
 
     public function __construct(
@@ -158,6 +161,34 @@ class CoverLetterDocumentService
                 @unlink($signatureTempPath);
             }
         }
+    }
+
+    /**
+     * Generate the DOCX only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensureDocx(CoverLetter $coverLetter): array
+    {
+        if ($this->isCurrentlyValid($coverLetter->docx_path)) {
+            return ['success' => true, 'path' => $coverLetter->docx_path, 'served_cached_document' => true];
+        }
+
+        return $this->generateDocx($coverLetter) + ['served_cached_document' => false];
+    }
+
+    /**
+     * Generate the PDF only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensurePdf(CoverLetter $coverLetter): array
+    {
+        if ($this->isCurrentlyValid($coverLetter->pdf_path)) {
+            return ['success' => true, 'path' => $coverLetter->pdf_path, 'served_cached_document' => true];
+        }
+
+        return $this->generatePdf($coverLetter) + ['served_cached_document' => false];
     }
 
     /**

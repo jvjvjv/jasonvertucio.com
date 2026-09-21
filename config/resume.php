@@ -170,4 +170,25 @@ return [
 
     'ai_edit_batch_window_hours' => (int) env('RESUME_AI_EDIT_BATCH_WINDOW_HOURS', 12),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Generated Document Retention
+    |--------------------------------------------------------------------------
+    |
+    | Documents (DOCX/PDF for the main resume, targeted resumes, and cover
+    | letters) are generated on the first download request, not on save.
+    | This controls how long a generated file is kept before it is
+    | considered stale and must be regenerated on the next download.
+    |
+    | retention_mode: "cache" keeps a file for `retention_hours` after it is
+    | generated, serving it again on repeat downloads within that window.
+    | "delete_after_serve" deletes the file as soon as it has been streamed
+    | to the requester, so every download renders fresh.
+    |
+    */
+
+    'document_retention_mode' => env('RESUME_DOCUMENT_RETENTION_MODE', 'cache'),
+
+    'document_retention_hours' => (int) env('RESUME_DOCUMENT_RETENTION_HOURS', 12),
+
 ];

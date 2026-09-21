@@ -48,12 +48,8 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         ]);
 
         $documentService = $this->createMock(TargetedResumeDocumentService::class);
-        $documentService->expects($this->exactly(2))
-            ->method('generateDocx')
-            ->willReturn(['success' => true]);
-        $documentService->expects($this->exactly(2))
-            ->method('generatePdf')
-            ->willReturn(['success' => true]);
+        $documentService->expects($this->never())->method('generateDocx');
+        $documentService->expects($this->never())->method('generatePdf');
 
         $service = new TargetedResumeService(
             $this->createMock(AgentFactory::class),
@@ -110,12 +106,8 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         ]);
 
         $documentService = $this->createMock(TargetedResumeDocumentService::class);
-        $documentService->expects($this->once())
-            ->method('generateDocx')
-            ->willReturn(['success' => true]);
-        $documentService->expects($this->once())
-            ->method('generatePdf')
-            ->willReturn(['success' => true]);
+        $documentService->expects($this->never())->method('generateDocx');
+        $documentService->expects($this->never())->method('generatePdf');
 
         $service = new TargetedResumeService(
             $this->createMock(AgentFactory::class),

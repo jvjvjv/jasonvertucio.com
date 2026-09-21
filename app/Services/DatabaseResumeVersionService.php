@@ -77,6 +77,14 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
     }
 
     /**
+     * Get the current live resume version model, if one exists.
+     */
+    protected function getCurrentVersionModel(): ?ResumeVersion
+    {
+        return ResumeVersion::current()->first();
+    }
+
+    /**
      * Set the version in the database.
      */
     public function setVersion(string $version): void

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGeneratedDocuments;
 use Database\Factories\ResumeVersionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ class ResumeVersion extends Model
 {
     /** @use HasFactory<ResumeVersionFactory> */
     use HasFactory;
+    use HasGeneratedDocuments;
 
     protected $fillable = [
         'version',

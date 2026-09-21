@@ -13,6 +13,7 @@ use App\Models\JobUrl;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\TargetedResumeStatusUpdate;
+use App\Services\DocumentDownloadLogger;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,7 @@ class TargetedResumeController extends Controller
 {
     public function __construct(
         private TargetedResumeService $targetedResumeService,
+        private DocumentDownloadLogger $downloadLogger,
     ) {}
 
     /**
@@ -410,25 +412,15 @@ class TargetedResumeController extends Controller
     }
 
     /**
-     * Regenerate DOCX and PDF for a targeted resume.
+     * Invalidate any previously rendered documents for a targeted resume so
+     * the next download renders fresh.
      */
-    public function regenerate(TargetedResume $targetedResume, TargetedResumeDocumentService $documentService): RedirectResponse
+    public function regenerate(TargetedResume $targetedResume): RedirectResponse
     {
-        $docxResult = $documentService->generateDocx($targetedResume);
+        $targetedResume->invalidateDocuments();
 
-        if (! $docxResult['success']) {
-            return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)
-                ->with('error', 'DOCX generation failed: '.($docxResult['error'] ?? 'Unknown error'));
-        }
-
-        $pdfResult = $documentService->generatePdf($targetedResume);
-
-        $message = 'DOCX regenerated successfully.';
-        if ($pdfResult['success']) {
-            $message = 'DOCX and PDF regenerated successfully.';
-        }
-
-        return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)->with('success', $message);
+        return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)
+            ->with('success', 'Cached documents cleared. They will be regenerated on the next download.');
     }
 
     /**
@@ -461,23 +453,38 @@ class TargetedResumeController extends Controller
     }
 
     /**
-     * Download a targeted resume document.
+     * Download a targeted resume document, generating it first if missing or stale.
      */
-    public function download(TargetedResume $targetedResume, string $format): BinaryFileResponse
+    public function download(Request $request, TargetedResume $targetedResume, string $format, TargetedResumeDocumentService $documentService): BinaryFileResponse
     {
-        $path = match ($format) {
-            'docx' => $targetedResume->docx_path,
-            'pdf' => $targetedResume->pdf_path,
+        $result = match ($format) {
+            'docx' => $documentService->ensureDocx($targetedResume),
+            'pdf' => $documentService->ensurePdf($targetedResume),
             default => abort(404),
         };
 
-        if (! $path || ! file_exists($path)) {
-            abort(404, 'Document not found. It may not have been generated yet.');
+        if (! $result['success']) {
+            abort(404, $result['error'] ?? 'Document could not be generated.');
+        }
+
+        $this->downloadLogger->log($targetedResume, $format, $result['served_cached_document'], $request->ip() ?? '');
+
+        $deleteAfterServe = config('resume.document_retention_mode') === 'delete_after_serve';
+
+        if ($deleteAfterServe) {
+            $column = $format === 'docx' ? 'docx_path' : 'pdf_path';
+            $targetedResume->forceFill([$column => null])->save();
         }
 
         $filename = $targetedResume->generateFilename().'.'.$format;
 
-        return response()->download($path, $filename);
+        $response = response()->download($result['path'], $filename);
+
+        if ($deleteAfterServe) {
+            $response->deleteFileAfterSend(true);
+        }
+
+        return $response;
     }
 
     /**

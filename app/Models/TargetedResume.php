@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TargetedResumeStatus;
+use App\Models\Concerns\HasGeneratedDocuments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class TargetedResume extends Model
 {
     use HasFactory;
+    use HasGeneratedDocuments;
 
     protected $fillable = [
         'resume_version_id',
@@ -97,21 +99,5 @@ class TargetedResume extends Model
         $sanitized = trim($sanitized, " .-\t\n\r\0\x0B");
 
         return $sanitized !== '' ? $sanitized : 'Unknown';
-    }
-
-    /**
-     * Check if a DOCX file exists for this targeted resume.
-     */
-    public function docxExists(): bool
-    {
-        return $this->docx_path !== null && file_exists($this->docx_path);
-    }
-
-    /**
-     * Check if a PDF file exists for this targeted resume.
-     */
-    public function pdfExists(): bool
-    {
-        return $this->pdf_path !== null && file_exists($this->pdf_path);
     }
 }

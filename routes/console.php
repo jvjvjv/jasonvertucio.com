@@ -27,3 +27,7 @@ Schedule::job(new BackfillConversationUsageJob(false, 500))
     ->dailyAt('02:30')
     ->name('ai:daily-conversation-usage-backfill')
     ->withoutOverlapping();
+
+Schedule::command('resume:sweep-expired-documents')
+    ->hourly()
+    ->withoutOverlapping();

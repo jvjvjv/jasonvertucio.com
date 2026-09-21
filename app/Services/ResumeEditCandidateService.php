@@ -82,7 +82,8 @@ class ResumeEditCandidateService
 
     /**
      * Approve a pending candidate: materialize its snapshot as the new live
-     * resume version at the given version, regenerate documents, mark it
+     * resume version at the given version, invalidate any previously
+     * rendered documents so the next download renders fresh, mark it
      * approved, and permanently reject every other pending candidate branched
      * from the same base version (they were seeded from data this approval
      * has now superseded).
@@ -114,16 +115,7 @@ class ResumeEditCandidateService
                 ->delete();
         });
 
-        $docxResult = $this->versionService->generateDocx();
-        $pdfResult = $docxResult['success'] ? $this->versionService->generatePdf() : ['success' => false];
-
-        if (! $docxResult['success']) {
-            return ['success' => true, 'error' => 'DOCX generation failed: '.($docxResult['error'] ?? 'Unknown error')];
-        }
-
-        if (! $pdfResult['success']) {
-            return ['success' => true, 'error' => 'PDF generation failed: '.($pdfResult['error'] ?? 'Unknown error')];
-        }
+        ResumeVersion::current()->first()?->invalidateDocuments();
 
         return ['success' => true];
     }

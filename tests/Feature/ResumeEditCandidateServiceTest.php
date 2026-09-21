@@ -160,6 +160,36 @@ class ResumeEditCandidateServiceTest extends TestCase
         $this->assertSame('New Name', $newLive->personalInfo->name);
     }
 
+    public function test_approve_invalidates_documents_on_the_new_live_version_instead_of_regenerating(): void
+    {
+        $base = $this->liveVersion();
+        $approver = User::factory()->create();
+        $version = $this->service->suggestedNextVersion($base);
+
+        $docxPath = tempnam(sys_get_temp_dir(), 'docx-').'.docx';
+        $pdfPath = tempnam(sys_get_temp_dir(), 'pdf-').'.pdf';
+        file_put_contents($docxPath, 'stale');
+        file_put_contents($pdfPath, 'stale');
+        ResumeVersion::factory()->create([
+            'version' => $version,
+            'docx_path' => $docxPath,
+            'pdf_path' => $pdfPath,
+        ]);
+
+        $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
+        $this->service->applySectionEdit($candidate, 'personal', ['name' => 'New Name', 'title' => 'Engineer', 'email' => 'jason@example.com']);
+
+        $result = $this->service->approve($candidate, $approver->id, $version);
+
+        $this->assertSame(['success' => true], $result);
+        $this->assertFileDoesNotExist($docxPath);
+        $this->assertFileDoesNotExist($pdfPath);
+
+        $newLive = ResumeVersion::current()->first();
+        $this->assertNull($newLive->docx_path);
+        $this->assertNull($newLive->pdf_path);
+    }
+
     public function test_only_a_pending_candidate_can_be_approved(): void
     {
         $base = $this->liveVersion();

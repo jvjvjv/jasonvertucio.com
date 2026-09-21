@@ -450,27 +450,7 @@ class TargetedResumeService
         ]);
 
         try {
-            Log::debug('targeted-resume.saveTailoredResume: generating DOCX', [
-                'conversation_id' => $conversation->id,
-                'targeted_resume_id' => $targetedResume->id,
-            ]);
-
-            $docxResult = $this->documentService->generateDocx($targetedResume);
-
-            if (! $docxResult['success']) {
-                throw new \RuntimeException($docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.');
-            }
-
-            Log::debug('targeted-resume.saveTailoredResume: generating PDF', [
-                'conversation_id' => $conversation->id,
-                'targeted_resume_id' => $targetedResume->id,
-            ]);
-
-            $pdfResult = $this->documentService->generatePdf($targetedResume);
-
-            if (! $pdfResult['success']) {
-                throw new \RuntimeException($pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.');
-            }
+            $targetedResume->invalidateDocuments();
 
             $conversation->update(['status' => AiConversationStatus::Completed]);
 
@@ -523,23 +503,7 @@ class TargetedResumeService
 
         $this->recordManualEditMessage($targetedResume, $parsedResume['markdown']);
 
-        $docxResult = $this->documentService->generateDocx($targetedResume);
-        if (! $docxResult['success']) {
-            return [
-                'success' => false,
-                'targetedResume' => $targetedResume->fresh(),
-                'error' => $docxResult['error'] ?? 'Failed to generate the targeted resume DOCX.',
-            ];
-        }
-
-        $pdfResult = $this->documentService->generatePdf($targetedResume);
-        if (! $pdfResult['success']) {
-            return [
-                'success' => false,
-                'targetedResume' => $targetedResume->fresh(),
-                'error' => $pdfResult['error'] ?? 'Failed to generate the targeted resume PDF.',
-            ];
-        }
+        $targetedResume->invalidateDocuments();
 
         return [
             'success' => true,

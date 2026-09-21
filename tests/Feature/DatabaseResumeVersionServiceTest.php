@@ -95,4 +95,21 @@ class DatabaseResumeVersionServiceTest extends TestCase
         $hasTestVersion = collect($versions)->contains(fn ($v) => $v['version'] === '9999.9.9');
         $this->assertFalse($hasTestVersion);
     }
+
+    public function test_pdf_exists_for_current_version_reflects_the_conventional_pdf_path(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+
+        $this->assertFalse($this->service->pdfExistsForCurrentVersion());
+
+        $path = config('resume.saved_documents')."/{$version->version} Jason Vertucio.pdf";
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0755, true);
+        }
+        file_put_contents($path, 'content');
+
+        $this->assertTrue($this->service->pdfExistsForCurrentVersion());
+
+        unlink($path);
+    }
 }

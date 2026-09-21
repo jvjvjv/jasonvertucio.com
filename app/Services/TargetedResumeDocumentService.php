@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\TargetedResume;
+use App\Services\Concerns\ChecksDocumentRetention;
 use App\Services\Resume\DocumentRenderer;
 use App\Services\Resume\HtmlDocumentComposer;
 use App\Services\Resume\MarkdownToHtmlConverter;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class TargetedResumeDocumentService
 {
+    use ChecksDocumentRetention;
+
     protected string $outputDir;
 
     public function __construct(
@@ -122,6 +125,34 @@ class TargetedResumeDocumentService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Generate the DOCX only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensureDocx(TargetedResume $targetedResume): array
+    {
+        if ($this->isCurrentlyValid($targetedResume->docx_path)) {
+            return ['success' => true, 'path' => $targetedResume->docx_path, 'served_cached_document' => true];
+        }
+
+        return $this->generateDocx($targetedResume) + ['served_cached_document' => false];
+    }
+
+    /**
+     * Generate the PDF only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensurePdf(TargetedResume $targetedResume): array
+    {
+        if ($this->isCurrentlyValid($targetedResume->pdf_path)) {
+            return ['success' => true, 'path' => $targetedResume->pdf_path, 'served_cached_document' => true];
+        }
+
+        return $this->generatePdf($targetedResume) + ['served_cached_document' => false];
     }
 
     /**

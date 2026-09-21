@@ -8,6 +8,7 @@ use App\Models\ResumeDownload;
 use App\Models\ResumeEditCandidate;
 use App\Models\ResumeShareCode;
 use App\Models\ResumeVersion;
+use App\Services\DocumentDownloadLogger;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class ResumeController extends Controller
         protected ResumeDataServiceContract $resumeData,
         protected ResumeVersionServiceContract $versionService,
         protected ResumeEditCandidateService $candidateService,
+        protected DocumentDownloadLogger $downloadLogger,
     ) {}
 
     /**
@@ -137,21 +139,23 @@ class ResumeController extends Controller
     }
 
     /**
-     * Handle file not found scenario
+     * Handle an on-demand generation failure
      *
      * @throws HttpException
      */
-    private function handleFileNotFound(Request $request): never
+    private function handleGenerationFailure(Request $request, ?string $error): never
     {
+        $message = $error ?? 'Resume not available for download.';
+
         if ($request->wantsJson()) {
             response()->json([
                 'code' => 404,
                 'status' => 'failed',
-                'message' => 'Resume not available for download.',
+                'message' => $message,
             ], 404)->send();
             exit;
         }
-        abort(404, 'Resume not available for download.');
+        abort(404, $message);
     }
 
     /**
@@ -172,13 +176,19 @@ class ResumeController extends Controller
     /**
      * Return binary file download response
      */
-    private function downloadFile(string $path, string $mimeType): BinaryFileResponse
+    private function downloadFile(string $path, string $mimeType, bool $deleteAfterServe = false): BinaryFileResponse
     {
         $filename = basename($path);
 
-        return response()->download($path, $filename, [
+        $response = response()->download($path, $filename, [
             'Content-Type' => $mimeType,
         ]);
+
+        if ($deleteAfterServe) {
+            $response->deleteFileAfterSend(true);
+        }
+
+        return $response;
     }
 
     /**
@@ -203,16 +213,25 @@ class ResumeController extends Controller
     {
         $this->validateDownloadPermission($request);
 
-        $docxPath = $this->versionService->getLatestDocxPath();
-        if (! $docxPath) {
-            $this->handleFileNotFound($request);
+        $result = $this->versionService->ensureDocx();
+        if (! $result['success']) {
+            $this->handleGenerationFailure($request, $result['error'] ?? null);
         }
 
         $this->trackDownload($request);
+        $this->logDownload('docx', $result['served_cached_document'], $request->ip());
+
+        $deleteAfterServe = config('resume.document_retention_mode') === 'delete_after_serve';
+
+        if ($deleteAfterServe) {
+            $currentVersion = ResumeVersion::current()->first();
+            $currentVersion?->forceFill(['docx_path' => null])->save();
+        }
 
         return $this->downloadFile(
-            $docxPath,
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            $result['path'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            $deleteAfterServe,
         );
     }
 
@@ -224,13 +243,35 @@ class ResumeController extends Controller
     {
         $this->validateDownloadPermission($request);
 
-        $pdfPath = $this->versionService->getLatestPdfPath();
-        if (! $pdfPath) {
-            $this->handleFileNotFound($request);
+        $result = $this->versionService->ensurePdf();
+        if (! $result['success']) {
+            $this->handleGenerationFailure($request, $result['error'] ?? null);
         }
 
         $this->trackDownload($request);
+        $this->logDownload('pdf', $result['served_cached_document'], $request->ip());
 
-        return $this->downloadFile($pdfPath, 'application/pdf');
+        $deleteAfterServe = config('resume.document_retention_mode') === 'delete_after_serve';
+
+        if ($deleteAfterServe) {
+            $currentVersion = ResumeVersion::current()->first();
+            $currentVersion?->forceFill(['pdf_path' => null])->save();
+        }
+
+        return $this->downloadFile($result['path'], 'application/pdf', $deleteAfterServe);
+    }
+
+    /**
+     * Log a document download, resolving the current resume version.
+     */
+    private function logDownload(string $type, bool $servedCachedDocument, ?string $ipAddress): void
+    {
+        $currentVersion = ResumeVersion::current()->first();
+
+        if ($currentVersion === null) {
+            return;
+        }
+
+        $this->downloadLogger->log($currentVersion, $type, $servedCachedDocument, $ipAddress ?? '');
     }
 }

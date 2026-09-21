@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGeneratedDocuments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CoverLetter extends Model
 {
     use HasFactory;
+    use HasGeneratedDocuments;
 
     /**
      * The attributes that are mass assignable.
@@ -70,21 +72,5 @@ class CoverLetter extends Model
         $sanitized = trim($sanitized, " .-\t\n\r\0\x0B");
 
         return $sanitized !== '' ? $sanitized : 'Unknown';
-    }
-
-    /**
-     * Check if a DOCX file exists for this cover letter.
-     */
-    public function docxExists(): bool
-    {
-        return $this->docx_path !== null && file_exists($this->docx_path);
-    }
-
-    /**
-     * Check if a PDF file exists for this cover letter.
-     */
-    public function pdfExists(): bool
-    {
-        return $this->pdf_path !== null && file_exists($this->pdf_path);
     }
 }

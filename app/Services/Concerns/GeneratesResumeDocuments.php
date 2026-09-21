@@ -3,6 +3,7 @@
 namespace App\Services\Concerns;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Models\ResumeVersion;
 use App\Services\Resume\DocumentRenderer;
 use App\Services\Resume\HtmlDocumentComposer;
 use App\Services\Resume\MarkdownToHtmlConverter;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 
 trait GeneratesResumeDocuments
 {
+    use ChecksDocumentRetention;
+
     protected string $savedDocumentsPath;
 
     protected string $templatePath;
@@ -62,6 +65,11 @@ trait GeneratesResumeDocuments
     abstract protected function getPdfRenderer(): PdfRenderer;
 
     /**
+     * Get the current live resume version model, if one exists.
+     */
+    abstract protected function getCurrentVersionModel(): ?ResumeVersion;
+
+    /**
      * Get the path to the latest DOCX file by current version.
      */
     public function getLatestDocxPath(): ?string
@@ -102,6 +110,14 @@ trait GeneratesResumeDocuments
     }
 
     /**
+     * Check if a PDF exists for the current version.
+     */
+    public function pdfExistsForCurrentVersion(): bool
+    {
+        return $this->getLatestPdfPath() !== null;
+    }
+
+    /**
      * Generate a DOCX file for the current version.
      *
      * @return array{success: bool, path?: string, error?: string}
@@ -122,9 +138,43 @@ trait GeneratesResumeDocuments
 
         if (! $result['success']) {
             Log::error('Resume DOCX generation failed', $result);
+        } else {
+            $this->getCurrentVersionModel()?->forceFill(['docx_path' => $outputPath])->save();
         }
 
         return $result;
+    }
+
+    /**
+     * Generate the DOCX only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensureDocx(): array
+    {
+        $existingPath = $this->getCurrentVersionModel()?->docx_path;
+
+        if ($this->isCurrentlyValid($existingPath)) {
+            return ['success' => true, 'path' => $existingPath, 'served_cached_document' => true];
+        }
+
+        return $this->generateDocx() + ['served_cached_document' => false];
+    }
+
+    /**
+     * Generate the PDF only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensurePdf(): array
+    {
+        $existingPath = $this->getCurrentVersionModel()?->pdf_path;
+
+        if ($this->isCurrentlyValid($existingPath)) {
+            return ['success' => true, 'path' => $existingPath, 'served_cached_document' => true];
+        }
+
+        return $this->generatePdf() + ['served_cached_document' => false];
     }
 
     /**
@@ -177,6 +227,8 @@ trait GeneratesResumeDocuments
 
             if (! $result['success']) {
                 Log::error('Resume PDF generation failed', $result);
+            } else {
+                $this->getCurrentVersionModel()?->forceFill(['pdf_path' => $pdfPath])->save();
             }
 
             return $result;

@@ -223,6 +223,38 @@ class ResumeUpdateEmailTest extends TestCase
         }
     }
 
+    public function test_resume_update_invalidates_previously_rendered_documents(): void
+    {
+        $docxPath = tempnam(sys_get_temp_dir(), 'docx-').'.docx';
+        $pdfPath = tempnam(sys_get_temp_dir(), 'pdf-').'.pdf';
+        file_put_contents($docxPath, 'stale');
+        file_put_contents($pdfPath, 'stale');
+
+        \App\Models\ResumeVersion::where('version', '2026.1.0')->delete();
+        \App\Models\ResumeVersion::factory()->create([
+            'version' => '2026.1.0',
+            'is_current' => true,
+            'docx_path' => $docxPath,
+            'pdf_path' => $pdfPath,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.resume.editor.save'), [
+                'version' => '2026.1.0',
+                'data' => $this->getValidResumeData(),
+                'notify_recipients' => false,
+            ]);
+
+        $response->assertOk();
+
+        $this->assertFileDoesNotExist($docxPath);
+        $this->assertFileDoesNotExist($pdfPath);
+
+        $current = \App\Models\ResumeVersion::current()->first();
+        $this->assertNull($current->docx_path);
+        $this->assertNull($current->pdf_path);
+    }
+
     protected function getValidResumeData(): array
     {
         return [

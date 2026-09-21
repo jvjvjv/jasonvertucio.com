@@ -117,33 +117,13 @@ class ResumeEditorController extends Controller
             // Save all data
             $this->dataService->saveAllEditableData($validated['data']);
 
-            // Always regenerate documents on save
-            $documentsRegenerated = false;
-            $regenerationWarning = null;
-
-            $docxResult = $this->versionService->generateDocx();
-
-            if ($docxResult['success']) {
-                $pdfResult = $this->versionService->generatePdf();
-                $documentsRegenerated = true;
-
-                if (! $pdfResult['success']) {
-                    $regenerationWarning = 'PDF generation failed: '.($pdfResult['error'] ?? 'Unknown error');
-                }
-            } else {
-                $regenerationWarning = 'DOCX generation failed: '.($docxResult['error'] ?? 'Unknown error');
-            }
+            // Invalidate any previously rendered documents so the next
+            // download renders fresh from the saved data.
+            ResumeVersion::current()->first()?->invalidateDocuments();
 
             // Send update notifications if requested and mail is configured
             $notifyRecipients = $validated['notify_recipients'] ?? false;
             $successMessage = 'Resume data saved successfully.';
-
-            if ($documentsRegenerated) {
-                $successMessage .= ' Documents automatically regenerated.';
-                if ($regenerationWarning) {
-                    $successMessage .= ' Warning: '.$regenerationWarning;
-                }
-            }
 
             if ($this->isMailConfigured() && $notifyRecipients) {
                 $recipientCodes = ResumeShareCode::shouldNotifyOnUpdate()->get();
@@ -169,7 +149,6 @@ class ResumeEditorController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => $successMessage,
-                    'documents_regenerated' => $documentsRegenerated,
                 ]);
             }
 

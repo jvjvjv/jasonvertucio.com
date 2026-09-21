@@ -28,9 +28,16 @@ class TargetedResumeMarkdownUpdateTest extends TestCase
 
     public function test_admin_can_manually_update_targeted_resume_markdown(): void
     {
+        $docxPath = tempnam(sys_get_temp_dir(), 'docx-').'.docx';
+        $pdfPath = tempnam(sys_get_temp_dir(), 'pdf-').'.pdf';
+        file_put_contents($docxPath, 'stale');
+        file_put_contents($pdfPath, 'stale');
+
         $conversation = AiConversation::factory()->completed()->create();
         $targetedResume = TargetedResume::factory()->finalized()->create([
             'ai_conversation_id' => $conversation->id,
+            'docx_path' => $docxPath,
+            'pdf_path' => $pdfPath,
             'tailored_data' => [
                 'title' => 'Original Title',
                 'content' => '# Summary\nOriginal content',
@@ -40,8 +47,8 @@ class TargetedResumeMarkdownUpdateTest extends TestCase
         ]);
 
         $documentService = $this->createMock(TargetedResumeDocumentService::class);
-        $documentService->expects($this->once())->method('generateDocx')->willReturn(['success' => true]);
-        $documentService->expects($this->once())->method('generatePdf')->willReturn(['success' => true]);
+        $documentService->expects($this->never())->method('generateDocx');
+        $documentService->expects($this->never())->method('generatePdf');
         $this->app->instance(TargetedResumeDocumentService::class, $documentService);
 
         $newMarkdown = "Title: Updated Title\n\n# Summary\nHand-edited content.";
@@ -78,33 +85,11 @@ class TargetedResumeMarkdownUpdateTest extends TestCase
         $this->assertSame('manual_edit', data_get($manualEditMessage->metadata, 'origin'));
         $this->assertSame($targetedResume->id, data_get($manualEditMessage->metadata, 'targeted_resume_id'));
         $this->assertStringContainsString('Hand-edited content.', $manualEditMessage->content);
-    }
 
-    public function test_markdown_is_persisted_even_when_docx_regeneration_fails(): void
-    {
-        $conversation = AiConversation::factory()->completed()->create();
-        $targetedResume = TargetedResume::factory()->finalized()->create([
-            'ai_conversation_id' => $conversation->id,
-        ]);
-
-        $documentService = $this->createMock(TargetedResumeDocumentService::class);
-        $documentService->expects($this->once())
-            ->method('generateDocx')
-            ->willReturn(['success' => false, 'error' => 'Template missing.']);
-        $documentService->expects($this->never())->method('generatePdf');
-        $this->app->instance(TargetedResumeDocumentService::class, $documentService);
-
-        $response = $this->actingAs($this->admin)
-            ->putJson("/api/admin/resume/targeted-resume/{$targetedResume->id}", [
-                'markdown' => 'Updated after failure.',
-            ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonPath('success', false);
-
-        $targetedResume->refresh();
-
-        $this->assertStringContainsString('Updated after failure.', (string) data_get($targetedResume->tailored_data, 'markdown'));
+        $this->assertFileDoesNotExist($docxPath);
+        $this->assertFileDoesNotExist($pdfPath);
+        $this->assertNull($targetedResume->docx_path);
+        $this->assertNull($targetedResume->pdf_path);
     }
 
     public function test_markdown_is_required(): void
