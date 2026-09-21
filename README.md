@@ -301,6 +301,48 @@ chmod -R 775 storage
 chown -R www-data:www-data storage
 ```
 
+#### PDF Rendering (WeasyPrint) Installation (Linux/CentOS/RHEL)
+
+Resume and cover letter PDFs are rendered with WeasyPrint, invoked as a
+subprocess by `PdfRenderer`. Install it with `dnf` on the production host:
+
+```bash
+sudo dnf install -y weasyprint          # or python3-weasyprint, depending on repo
+```
+
+If neither package is in the host's enabled repositories, install into a
+dedicated virtualenv instead and point `RESUME_WEASYPRINT_BINARY` (see
+`config/resume.php`) at its binary:
+
+```bash
+sudo dnf install -y python3 python3-pip pango
+sudo python3 -m venv /opt/weasyprint
+sudo /opt/weasyprint/bin/pip install weasyprint
+```
+
+`pango` is the only non-Python native dependency. The binary is executed by
+`apache`, so under SELinux a venv install (outside the package manager's
+control) needs an explicit executable context — a distro package is already
+labeled and needs neither command:
+
+```bash
+sudo semanage fcontext -a -t bin_t "/opt/weasyprint/bin(/.*)?"
+sudo restorecon -Rv /opt/weasyprint
+```
+
+WeasyPrint's text layer (Pango/FontConfig) needs *some* system font merely to
+initialize — none of the documents' own text uses one, since every face comes
+from the app's own `@font-face` rules, but FontConfig will segfault on startup
+with zero faces to fall back to. Install any small font package alongside it
+(e.g. `sudo dnf install -y dejavu-sans-fonts`).
+
+After installing, verify as the web-server user:
+
+```bash
+sudo -u apache /path/to/weasyprint --version
+php artisan resume:check-pdf-renderer   # resolves the binary, reports its version, renders a fixture PDF
+```
+
 #### Docker Issues
 
 If experiencing container connection issues:

@@ -52,7 +52,7 @@ class FontEmbedder
 
         $faces = [];
 
-        foreach (glob(rtrim($directory, '/').'/*.{ttf,TTF,otf,OTF}', GLOB_BRACE) ?: [] as $path) {
+        foreach ($this->findFontFiles($directory) as $path) {
             $bytes = (string) file_get_contents($path);
             $names = $this->readNameTable($bytes);
 
@@ -72,6 +72,29 @@ class FontEmbedder
         }
 
         return $faces;
+    }
+
+    /**
+     * Font files in a directory, matched case-insensitively by extension.
+     *
+     * `GLOB_BRACE` is a libc extension glibc provides and musl (this
+     * project's Alpine images) does not, so the constant is undefined there
+     * rather than merely unsupported — a brace pattern would fatal, not just
+     * fail to match. Matching each extension with its own glob() call is
+     * portable to both.
+     *
+     * @return array<int, string>
+     */
+    protected function findFontFiles(string $directory): array
+    {
+        $directory = rtrim($directory, '/');
+        $paths = [];
+
+        foreach (['ttf', 'TTF', 'otf', 'OTF'] as $extension) {
+            $paths = array_merge($paths, glob($directory.'/*.'.$extension) ?: []);
+        }
+
+        return array_values(array_unique($paths));
     }
 
     /**
@@ -339,6 +362,22 @@ class FontEmbedder
      * @return array{0: string, 1: string|null}
      */
     protected function splitFamilySuffix(string $family): array
+    {
+        return self::splitPerWeightFamily($family);
+    }
+
+    /**
+     * Fold a per-weight pseudo-family ("Josefin Sans Bold") back onto its
+     * real family name ("Josefin Sans"), the same way `embed()` does for the
+     * DOCX — the shared template's `rFonts` carries these directly for some
+     * styles (Title, TitleChar), and anything reading `rFonts` literally,
+     * such as `StylesheetTranslator`, must fold them the same way or its CSS
+     * `font-family` will name a family no `@font-face` rule ever declares.
+     *
+     * @return array{0: string, 1: string|null} The real family, and the
+     *  subfamily the suffix implied (null when the name carried no suffix).
+     */
+    public static function splitPerWeightFamily(string $family): array
     {
         foreach (self::FAMILY_SUFFIXES as $suffix) {
             if (str_ends_with($family, ' '.$suffix)) {

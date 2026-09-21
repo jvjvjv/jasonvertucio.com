@@ -11,7 +11,10 @@ use App\Models\ResumeVersion;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use App\Services\Resume\ResumeMarkdownComposer;
 use DOMDocument;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -56,6 +59,9 @@ class ResumeDocumentGenerationTest extends TestCase
             new DocumentRenderer,
             new ResumeMarkdownComposer,
             new MarkdownToOpenXmlConverter,
+            new MarkdownToHtmlConverter,
+            new HtmlDocumentComposer,
+            new PdfRenderer,
         );
     }
 
@@ -79,6 +85,21 @@ class ResumeDocumentGenerationTest extends TestCase
         $this->assertFileExists($result['path']);
         $this->assertGreaterThan(0, filesize($result['path']));
         $this->assertSame($this->outputDir.'/2026.1.0 Jason Vertucio.docx', $result['path']);
+    }
+
+    public function test_generates_a_pdf_with_no_docx_present(): void
+    {
+        $this->requireWeasyprint();
+        $this->seedResumeVersion('2026.1.0');
+
+        $this->assertFileDoesNotExist($this->outputDir.'/2026.1.0 Jason Vertucio.docx');
+
+        $result = $this->service->generatePdf();
+
+        $this->assertTrue($result['success'], $result['error'] ?? '');
+        $this->assertFileExists($result['path']);
+        $this->assertGreaterThan(0, filesize($result['path']));
+        $this->assertSame($this->outputDir.'/2026.1.0 Jason Vertucio.pdf', $result['path']);
     }
 
     public function test_header_placeholders_are_substituted(): void
@@ -192,12 +213,24 @@ class ResumeDocumentGenerationTest extends TestCase
             new DocumentRenderer,
             new ResumeMarkdownComposer,
             new MarkdownToOpenXmlConverter,
+            new MarkdownToHtmlConverter,
+            new HtmlDocumentComposer,
+            new PdfRenderer,
         );
 
         $result = $service->generateDocx();
 
         $this->assertFalse($result['success']);
         $this->assertStringContainsString($missingTemplate, $result['error']);
+    }
+
+    protected function requireWeasyprint(): void
+    {
+        exec('command -v '.escapeshellarg((string) config('resume.weasyprint')).' 2>/dev/null', $output, $exitCode);
+
+        if ($exitCode !== 0) {
+            $this->markTestSkipped('weasyprint binary not available in this environment.');
+        }
     }
 
     protected function seedResumeVersion(string $version, bool $awkwardContent = false): ResumeVersion

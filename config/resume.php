@@ -71,6 +71,58 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | WeasyPrint Binary
+    |--------------------------------------------------------------------------
+    |
+    | The `weasyprint` executable PdfRenderer invokes to render a document's
+    | composed HTML to PDF. Like the template path, this is the single source
+    | of truth — no service may hardcode its own. Defaults to whatever
+    | "weasyprint" resolves to on PATH; point it at a venv's binary
+    | (e.g. /opt/weasyprint/bin/weasyprint) when the host has no distro
+    | package.
+    |
+    */
+
+    'weasyprint' => env('RESUME_WEASYPRINT_BINARY', 'weasyprint'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | WeasyPrint Render Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Seconds PdfRenderer allows a single render to run before it is
+    | abandoned and reported as a failure.
+    |
+    */
+
+    'weasyprint_timeout' => (int) env('RESUME_WEASYPRINT_TIMEOUT', 30),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cover Letter Signature Placement
+    |--------------------------------------------------------------------------
+    |
+    | Where the signature is drawn across the sign-off, shared by the DOCX
+    | and PDF composers so the two formats cannot drift onto different
+    | placements. Tuned by hand against a rendered page — see
+    | CoverLetterBodyComposer for how to adjust them.
+    |
+    | signature_rise: EMU. How far the signature is lifted above the typed
+    | name paragraph. Negative lifts it upward.
+    | signature_gap: twentieths of a point. Height of the blank line between
+    | the closing and the typed name.
+    | signature_indent: EMU. Horizontal offset from the left margin.
+    |
+    */
+
+    'signature_rise' => (int) env('RESUME_SIGNATURE_RISE', -1143000),
+
+    'signature_gap' => (int) env('RESUME_SIGNATURE_GAP', 720),
+
+    'signature_indent' => (int) env('RESUME_SIGNATURE_INDENT', 91440),
+
+    /*
+    |--------------------------------------------------------------------------
     | Saved Documents Path
     |--------------------------------------------------------------------------
     |

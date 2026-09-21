@@ -7,7 +7,10 @@ use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeVersion;
 use App\Services\Concerns\GeneratesResumeDocuments;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use App\Services\Resume\ResumeMarkdownComposer;
 use RuntimeException;
 
@@ -20,6 +23,9 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
         protected DocumentRenderer $renderer,
         protected ResumeMarkdownComposer $markdownComposer,
         protected MarkdownToOpenXmlConverter $markdownConverter,
+        protected MarkdownToHtmlConverter $htmlConverter,
+        protected HtmlDocumentComposer $htmlComposer,
+        protected PdfRenderer $pdfRenderer,
     ) {
         $this->initDocumentPaths();
     }
@@ -45,6 +51,21 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
     protected function getMarkdownConverter(): MarkdownToOpenXmlConverter
     {
         return $this->markdownConverter;
+    }
+
+    protected function getHtmlConverter(): MarkdownToHtmlConverter
+    {
+        return $this->htmlConverter;
+    }
+
+    protected function getHtmlComposer(): HtmlDocumentComposer
+    {
+        return $this->htmlComposer;
+    }
+
+    protected function getPdfRenderer(): PdfRenderer
+    {
+        return $this->pdfRenderer;
     }
 
     /**

@@ -6,7 +6,10 @@ use App\Models\ResumePersonalInfo;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use App\Services\TargetedResumeDocumentService;
 use DOMDocument;
 use DOMXPath;
@@ -46,7 +49,13 @@ class TargetedResumeDocumentServiceTest extends TestCase
         mkdir($this->tempDir, 0755, true);
 
         $this->renderer = new DocumentRenderer;
-        $this->service = new TargetedResumeDocumentService(new MarkdownToOpenXmlConverter, $this->renderer);
+        $this->service = new TargetedResumeDocumentService(
+            new MarkdownToOpenXmlConverter,
+            $this->renderer,
+            new MarkdownToHtmlConverter,
+            new HtmlDocumentComposer,
+            new PdfRenderer,
+        );
     }
 
     protected function tearDown(): void
@@ -223,6 +232,32 @@ class TargetedResumeDocumentServiceTest extends TestCase
         $this->assertStringContainsString('Tailored summary', $xml);
 
         unlink($result['path']);
+    }
+
+    public function test_generates_a_pdf_with_no_docx_present(): void
+    {
+        $this->requireWeasyprint();
+
+        $targetedResume = $this->makeTargetedResume();
+        $this->assertNull($targetedResume->pdf_path);
+        $this->assertFalse($targetedResume->docxExists());
+
+        $result = $this->service->generatePdf($targetedResume);
+
+        $this->assertTrue($result['success'], $result['error'] ?? '');
+        $this->assertFileExists($result['path']);
+        $this->assertSame($result['path'], $targetedResume->fresh()->pdf_path);
+
+        unlink($result['path']);
+    }
+
+    protected function requireWeasyprint(): void
+    {
+        exec('command -v '.escapeshellarg((string) config('resume.weasyprint')).' 2>/dev/null', $output, $exitCode);
+
+        if ($exitCode !== 0) {
+            $this->markTestSkipped('weasyprint binary not available in this environment.');
+        }
     }
 
     public function test_build_template_data_prefers_tailored_resume_title_over_base_resume_title(): void

@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\TargetedResume;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use Illuminate\Support\Facades\Log;
 
 class TargetedResumeDocumentService
@@ -14,6 +17,9 @@ class TargetedResumeDocumentService
     public function __construct(
         protected MarkdownToOpenXmlConverter $converter,
         protected DocumentRenderer $renderer,
+        protected MarkdownToHtmlConverter $htmlConverter,
+        protected HtmlDocumentComposer $htmlComposer,
+        protected PdfRenderer $pdfRenderer,
     ) {
         $this->outputDir = storage_path('app/targeted-resumes');
     }
@@ -72,60 +78,38 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * Generate a PDF from the DOCX file for the given targeted resume.
+     * Generate a PDF for the given targeted resume, rendered from its stored
+     * `tailored_data` rather than by converting the DOCX.
      *
      * @return array{success: bool, path?: string, error?: string}
      */
     public function generatePdf(TargetedResume $targetedResume): array
     {
-        if (! $targetedResume->docxExists()) {
-            return [
-                'success' => false,
-                'error' => 'DOCX file not found. Generate DOCX first.',
-            ];
-        }
-
         $filename = $targetedResume->generateFilename();
         $pdfPath = $this->outputDir.'/'.$filename.'.pdf';
 
         try {
-            $command = sprintf(
-                'libreoffice --headless -env:UserInstallation=file:///tmp/libreoffice-user --convert-to pdf --outdir %s %s 2>&1',
-                escapeshellarg($this->outputDir),
-                escapeshellarg($targetedResume->docx_path)
-            );
+            $data = $this->buildTemplateData($targetedResume);
+            $resumeMarkdown = $data['resume'];
+            unset($data['resume']);
 
-            exec($command, $output, $exitCode);
+            $bodyHtml = $this->htmlConverter->convert($resumeMarkdown);
+            $html = $this->htmlComposer->compose($bodyHtml, $data);
 
-            if ($exitCode !== 0) {
-                Log::error('Targeted resume PDF conversion failed', [
-                    'command' => $command,
-                    'output' => implode("\n", $output),
-                    'exitCode' => $exitCode,
+            $result = $this->pdfRenderer->render($html, $pdfPath);
+
+            if (! $result['success']) {
+                Log::error('Targeted resume PDF generation failed', $result + [
                     'targeted_resume_id' => $targetedResume->id,
                 ]);
 
-                return [
-                    'success' => false,
-                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
-                ];
-            }
-
-            if (! file_exists($pdfPath)) {
-                return [
-                    'success' => false,
-                    'error' => 'PDF file was not created.',
-                ];
+                return $result;
             }
 
             $targetedResume->pdf_path = $pdfPath;
             $targetedResume->save();
 
-            return [
-                'success' => true,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ];
+            return $result;
         } catch (\Exception $e) {
             Log::error('Targeted resume PDF generation exception', [
                 'message' => $e->getMessage(),

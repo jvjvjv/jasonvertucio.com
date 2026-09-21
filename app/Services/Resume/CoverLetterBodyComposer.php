@@ -30,33 +30,6 @@ class CoverLetterBodyComposer
      */
     protected const BODY_PARAGRAPH_SPACING = 160;
 
-    /**
-     * How far the signature is lifted above the typed-name paragraph, in EMU.
-     *
-     * The signature is anchored to the name and positioned above it, so it
-     * falls into the blank space left between the closing and the name — where
-     * a pen would put it — rather than being given a slot of its own in the
-     * text flow. -1143000 is 1.25 inches, set against a hand-placed reference.
-     *
-     * Adjust this by looking at a rendered page, not by arithmetic: the source
-     * PNG has ~0.149in of empty margin above its first ink, so the value that
-     * looks right is not the one the numbers suggest.
-     */
-    protected const SIGNATURE_RISE = -1143000;
-
-    /**
-     * Height of the blank line between the closing and the typed name, in
-     * twentieths of a point. 720 is half an inch. Pinned with lineRule="exact"
-     * so it does not drift with the template's line spacing.
-     */
-    protected const SIGNATURE_GAP = 720;
-
-    /**
-     * Horizontal offset from the left margin, in EMU. A signature sits a
-     * little in from the text rather than flush against it.
-     */
-    protected const SIGNATURE_INDENT = 91440;
-
     public function __construct(
         protected MarkdownToOpenXmlConverter $converter,
         protected InlineImageBuilder $imageBuilder,
@@ -181,7 +154,7 @@ class CoverLetterBodyComposer
     {
         return '<w:p xmlns:w="'.self::NAMESPACE_W.'">'
             .'<w:pPr><w:pStyle w:val="Normal"/><w:keepNext/>'
-            .'<w:spacing w:line="'.self::SIGNATURE_GAP.'" w:lineRule="exact" w:after="0"/>'
+            .'<w:spacing w:line="'.(int) config('resume.signature_gap').'" w:lineRule="exact" w:after="0"/>'
             .'</w:pPr></w:p>';
     }
 
@@ -205,8 +178,8 @@ class CoverLetterBodyComposer
                 $signatureImage['relationshipId'],
                 $signatureImage['cx'],
                 $signatureImage['cy'],
-                self::SIGNATURE_RISE,
-                self::SIGNATURE_INDENT,
+                (int) config('resume.signature_rise'),
+                (int) config('resume.signature_indent'),
                 'Signature',
             );
         }

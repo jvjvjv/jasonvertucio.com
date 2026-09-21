@@ -6,7 +6,10 @@ use App\Models\ResumeVersion;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use App\Services\Resume\ResumeMarkdownComposer;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use RuntimeException;
@@ -21,7 +24,7 @@ class DatabaseResumeVersionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DatabaseResumeVersionService(new DatabaseResumeDataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter);
+        $this->service = new DatabaseResumeVersionService(new DatabaseResumeDataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter, new MarkdownToHtmlConverter, new HtmlDocumentComposer, new PdfRenderer);
     }
 
     public function test_get_current_version_returns_default_when_none_set(): void

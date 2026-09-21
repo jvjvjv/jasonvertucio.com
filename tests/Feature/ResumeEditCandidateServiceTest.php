@@ -8,7 +8,10 @@ use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use App\Services\Resume\ResumeMarkdownComposer;
 use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
@@ -28,7 +31,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         parent::setUp();
 
         $dataService = new DatabaseResumeDataService;
-        $versionService = new DatabaseResumeVersionService($dataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter);
+        $versionService = new DatabaseResumeVersionService($dataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter, new MarkdownToHtmlConverter, new HtmlDocumentComposer, new PdfRenderer);
 
         $this->service = new ResumeEditCandidateService($dataService, $versionService, new ResumeSectionValidator);
     }

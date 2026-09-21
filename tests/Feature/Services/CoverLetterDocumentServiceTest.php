@@ -167,6 +167,51 @@ class CoverLetterDocumentServiceTest extends TestCase
         $this->assertStringContainsString('Target="media/signature.png"', $rels);
     }
 
+    public function test_generates_a_pdf_with_no_docx_present(): void
+    {
+        $this->requireWeasyprint();
+
+        $coverLetter = $this->makeCoverLetter();
+        $this->assertNull($coverLetter->docx_path);
+
+        $result = app(CoverLetterDocumentService::class)->generatePdf($coverLetter);
+
+        $this->assertTrue($result['success'], $result['error'] ?? '');
+        $this->assertFileExists($result['path']);
+        $this->assertSame($result['path'], $coverLetter->fresh()->pdf_path);
+
+        $this->generatedFiles[] = $result['path'];
+    }
+
+    public function test_pdf_generation_succeeds_without_the_signature_when_its_source_is_unavailable(): void
+    {
+        $this->requireWeasyprint();
+
+        Log::spy();
+
+        $this->app->instance(
+            SignatureImageService::class,
+            new SignatureImageService(sys_get_temp_dir().'/not-a-real-signature-'.uniqid().'.png')
+        );
+
+        $coverLetter = $this->makeCoverLetter();
+
+        $result = app(CoverLetterDocumentService::class)->generatePdf($coverLetter);
+        $this->generatedFiles[] = $result['path'] ?? '';
+
+        $this->assertTrue($result['success'], $result['error'] ?? '');
+        $this->assertFileExists($result['path']);
+    }
+
+    protected function requireWeasyprint(): void
+    {
+        exec('command -v '.escapeshellarg((string) config('resume.weasyprint')).' 2>/dev/null', $output, $exitCode);
+
+        if ($exitCode !== 0) {
+            $this->markTestSkipped('weasyprint binary not available in this environment.');
+        }
+    }
+
     public function test_generation_succeeds_without_the_signature_when_its_source_is_unavailable(): void
     {
         Log::spy();

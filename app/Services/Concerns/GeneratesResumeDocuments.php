@@ -4,7 +4,10 @@ namespace App\Services\Concerns;
 
 use App\Contracts\ResumeDataServiceContract;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
 use App\Services\Resume\ResumeMarkdownComposer;
 use Illuminate\Support\Facades\Log;
 
@@ -42,6 +45,21 @@ trait GeneratesResumeDocuments
      * Get the Markdown to OpenXML converter.
      */
     abstract protected function getMarkdownConverter(): MarkdownToOpenXmlConverter;
+
+    /**
+     * Get the Markdown to HTML converter, for the PDF body.
+     */
+    abstract protected function getHtmlConverter(): MarkdownToHtmlConverter;
+
+    /**
+     * Get the composer that assembles the full HTML document the PDF is rendered from.
+     */
+    abstract protected function getHtmlComposer(): HtmlDocumentComposer;
+
+    /**
+     * Get the PDF renderer.
+     */
+    abstract protected function getPdfRenderer(): PdfRenderer;
 
     /**
      * Get the path to the latest DOCX file by current version.
@@ -139,62 +157,29 @@ trait GeneratesResumeDocuments
     }
 
     /**
-     * Generate a PDF from the DOCX file for the current version.
+     * Generate a PDF for the current version, rendered from the same data
+     * the DOCX is composed from rather than by converting the DOCX.
      *
      * @return array{success: bool, path?: string, error?: string}
      */
     public function generatePdf(): array
     {
-        $docxPath = $this->getLatestDocxPath();
-
-        if (! $docxPath) {
-            return [
-                'success' => false,
-                'error' => 'DOCX file not found. Generate DOCX first.',
-            ];
-        }
-
         $version = $this->getCurrentVersion();
-        $pdfFilename = "{$version} Jason Vertucio.pdf";
-        $outputDir = $this->savedDocumentsPath;
-        $pdfPath = $outputDir.'/'.$pdfFilename;
+        $pdfPath = $this->savedDocumentsPath.'/'."{$version} Jason Vertucio.pdf";
 
         try {
-            // Build LibreOffice command
-            $command = sprintf(
-                'libreoffice --headless -env:UserInstallation=file:///tmp/libreoffice-user --convert-to pdf --outdir %s %s 2>&1',
-                escapeshellarg($outputDir),
-                escapeshellarg($docxPath)
-            );
+            $data = $this->getDataService()->getDocxData();
 
-            exec($command, $output, $exitCode);
+            $bodyHtml = $this->getHtmlConverter()->convert($this->getMarkdownComposer()->compose($data));
+            $html = $this->getHtmlComposer()->compose($bodyHtml, $this->buildPlaceholders($data));
 
-            if ($exitCode !== 0) {
-                Log::error('PDF conversion failed', [
-                    'command' => $command,
-                    'output' => implode("\n", $output),
-                    'exitCode' => $exitCode,
-                ]);
+            $result = $this->getPdfRenderer()->render($html, $pdfPath);
 
-                return [
-                    'success' => false,
-                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
-                ];
+            if (! $result['success']) {
+                Log::error('Resume PDF generation failed', $result);
             }
 
-            if (! file_exists($pdfPath)) {
-                return [
-                    'success' => false,
-                    'error' => 'PDF file was not created.',
-                ];
-            }
-
-            return [
-                'success' => true,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ];
-
+            return $result;
         } catch (\Exception $e) {
             Log::error('PDF generation exception', [
                 'message' => $e->getMessage(),

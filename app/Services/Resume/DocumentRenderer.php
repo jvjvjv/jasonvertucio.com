@@ -23,11 +23,7 @@ class DocumentRenderer
 
     protected const RELATIONSHIP_IMAGE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
 
-    /**
-     * Word can split a placeholder across this many adjacent text runs before
-     * we stop trying to piece it back together.
-     */
-    protected const MAX_SPLIT_RUN_LOOKAHEAD = 12;
+    public function __construct(protected PlaceholderSubstitutor $placeholders = new PlaceholderSubstitutor) {}
 
     /**
      * Render a document from the template.
@@ -85,7 +81,7 @@ class DocumentRenderer
 
         $bodyXml = $body instanceof Closure ? $body($mediaRelationshipIds) : $body;
 
-        $xml = $this->replacePlaceholders($xml, $placeholders);
+        $xml = $this->placeholders->substitute($xml, $placeholders);
         $xml = $this->insertBody($xml, $bodyXml);
 
         $zip->addFromString('word/document.xml', $xml);
@@ -96,121 +92,6 @@ class DocumentRenderer
             'path' => $outputPath,
             'size' => filesize($outputPath),
         ];
-    }
-
-    /**
-     * Substitute {token} placeholders, including ones Word split across runs.
-     *
-     * @param  array<string, string>  $placeholders
-     */
-    protected function replacePlaceholders(string $xml, array $placeholders): string
-    {
-        foreach ($placeholders as $token => $value) {
-            $xml = str_replace(
-                '{'.$token.'}',
-                htmlspecialchars((string) $value, ENT_XML1, 'UTF-8'),
-                $xml
-            );
-        }
-
-        return $this->replaceSplitPlaceholderRuns($xml, $placeholders);
-    }
-
-    /**
-     * Word sometimes stores a placeholder as separate text runs (e.g. "{",
-     * "url", "}"). Piece those back together and substitute them.
-     *
-     * @param  array<string, string>  $placeholders
-     */
-    protected function replaceSplitPlaceholderRuns(string $xml, array $placeholders): string
-    {
-        if ($placeholders === []) {
-            return $xml;
-        }
-
-        $dom = $this->parseXml($xml);
-        if ($dom === null) {
-            return $xml;
-        }
-
-        $xpath = new DOMXPath($dom);
-        $xpath->registerNamespace('w', self::NAMESPACE_W);
-        $textNodes = $xpath->query('//w:t');
-
-        if ($textNodes === false || $textNodes->length === 0) {
-            return $xml;
-        }
-
-        $nodes = [];
-        foreach ($textNodes as $textNode) {
-            $nodes[] = $textNode;
-        }
-
-        $nodeCount = count($nodes);
-
-        for ($i = 0; $i < $nodeCount; $i++) {
-            $openingText = $nodes[$i]->textContent;
-
-            // The opening brace is often the tail of a run that also carries
-            // surrounding text, e.g. " • {" before a split "{url}".
-            if (! str_ends_with($openingText, '{')) {
-                continue;
-            }
-
-            $token = '';
-            $endIndex = null;
-            $trailingText = '';
-            $lookaheadLimit = min($i + self::MAX_SPLIT_RUN_LOOKAHEAD, $nodeCount);
-
-            for ($j = $i + 1; $j < $lookaheadLimit; $j++) {
-                $content = $nodes[$j]->textContent;
-                $closingBrace = strpos($content, '}');
-
-                if ($closingBrace !== false) {
-                    $token .= substr($content, 0, $closingBrace);
-                    $trailingText = substr($content, $closingBrace + 1);
-                    $endIndex = $j;
-                    break;
-                }
-
-                $token .= $content;
-            }
-
-            if ($endIndex === null || ! array_key_exists($token, $placeholders)) {
-                continue;
-            }
-
-            $leadingText = substr($openingText, 0, -1);
-
-            $this->setTextNodeValue($dom, $nodes[$i], $leadingText.(string) $placeholders[$token]);
-
-            for ($k = $i + 1; $k < $endIndex; $k++) {
-                $this->setTextNodeValue($dom, $nodes[$k], '');
-            }
-
-            $this->setTextNodeValue($dom, $nodes[$endIndex], $trailingText);
-
-            $i = $endIndex;
-        }
-
-        return $dom->saveXML() ?: $xml;
-    }
-
-    /**
-     * Replace a w:t node's text, keeping Word from collapsing significant
-     * leading or trailing whitespace.
-     */
-    protected function setTextNodeValue(DOMDocument $dom, \DOMNode $node, string $value): void
-    {
-        $node->nodeValue = '';
-
-        if ($value !== '') {
-            $node->appendChild($dom->createTextNode($value));
-        }
-
-        if ($node instanceof \DOMElement && $value !== trim($value)) {
-            $node->setAttribute('xml:space', 'preserve');
-        }
     }
 
     /**

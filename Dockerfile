@@ -77,16 +77,26 @@ RUN pecl install redis && docker-php-ext-enable redis
 # ── development ─────────────────────────────────────────────────────────────
 FROM base AS development
 
-# LibreOffice — every generatePdf() shells out to `libreoffice --headless
-# --convert-to pdf`. Production is not Docker (see CLAUDE.md: the real host
-# runs apache + supervisord) and uses its own system LibreOffice, so this is
-# needed only so PDF generation works in the local container. Without it every
-# PDF conversion fails with `sh: libreoffice: not found` while DOCX generation
-# still succeeds, which surfaces as "approved, but document generation failed".
+# WeasyPrint — every generatePdf() renders a document's composed HTML with
+# the `weasyprint` CLI (see PdfRenderer). Production is not Docker (see
+# CLAUDE.md: the real host runs apache + supervisord) and installs its own
+# system WeasyPrint, so this is needed only so PDF generation works in the
+# local container. Without it every PDF render fails with the renderer
+# reported as unavailable while DOCX generation still succeeds, which
+# surfaces as "approved, but document generation failed".
 #
-# No font packages are required: the DOCX templates embed their own fonts
-# (word/fonts/*.odttf) and LibreOffice re-embeds them into the PDF.
-RUN apk add --no-cache libreoffice-writer
+# The documents' own faces come from `@font-face` rules pointing at the
+# static TTFs in resources/resume/assets/fonts (see HtmlDocumentComposer), not
+# from anything installed here. But WeasyPrint's text layer (Pango/FontConfig)
+# segfaults on startup if FontConfig has *no* face at all to fall back to,
+# even one that ends up unused — font-dejavu exists purely to give it one.
+RUN apk add --no-cache weasyprint font-dejavu
+
+# poppler-utils / qpdf — pdffonts/pdftotext/pdfinfo and qpdf's stream
+# decompression back the PDF fidelity test suite (embedded-font, page-count
+# and content-stream assertions). Test tooling only; production never runs
+# PHPUnit.
+RUN apk add --no-cache poppler-utils qpdf
 
 # Xdebug
 RUN pecl install xdebug && docker-php-ext-enable xdebug

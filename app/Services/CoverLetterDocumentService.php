@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\CoverLetter;
 use App\Services\Resume\CoverLetterBodyComposer;
+use App\Services\Resume\CoverLetterHtmlComposer;
 use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\PdfRenderer;
 use App\Services\Resume\SignatureImageService;
 use Illuminate\Support\Facades\Log;
 
@@ -16,6 +19,9 @@ class CoverLetterDocumentService
         protected CoverLetterBodyComposer $composer,
         protected DocumentRenderer $renderer,
         protected SignatureImageService $signature,
+        protected CoverLetterHtmlComposer $htmlComposer,
+        protected HtmlDocumentComposer $htmlDocumentComposer,
+        protected PdfRenderer $pdfRenderer,
     ) {
         $this->outputDir = storage_path('app/cover-letters');
     }
@@ -93,70 +99,64 @@ class CoverLetterDocumentService
     }
 
     /**
-     * Generate a PDF from the DOCX file for the given cover letter.
+     * Generate a PDF for the given cover letter, rendered from its stored
+     * fields rather than by converting the DOCX.
      *
      * @return array{success: bool, path?: string, error?: string}
      */
     public function generatePdf(CoverLetter $coverLetter): array
     {
-        if (! $coverLetter->docxExists()) {
-            return [
-                'success' => false,
-                'error' => 'DOCX file not found. Generate DOCX first.',
-            ];
-        }
-
         $filename = $coverLetter->generateFilename();
         $pdfPath = $this->outputDir.'/'.$filename.'.pdf';
+        $signatureTempPath = null;
 
         try {
-            $command = sprintf(
-                'libreoffice --headless -env:UserInstallation=file:///tmp/libreoffice-user --convert-to pdf --outdir %s %s 2>&1',
-                escapeshellarg($this->outputDir),
-                escapeshellarg($coverLetter->docx_path)
-            );
+            $signature = $this->signature->build();
+            $signatureImage = null;
 
-            exec($command, $output, $exitCode);
+            if ($signature !== null) {
+                $signatureTempPath = tempnam(sys_get_temp_dir(), 'resume-signature-').'.png';
+                file_put_contents($signatureTempPath, $signature['bytes']);
 
-            if ($exitCode !== 0) {
-                Log::error('Cover letter PDF conversion failed', [
-                    'command' => $command,
-                    'output' => implode("\n", $output),
-                    'exitCode' => $exitCode,
-                ]);
-
-                return [
-                    'success' => false,
-                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
+                $signatureImage = [
+                    'path' => $signatureTempPath,
+                    'cx' => $signature['cx'],
+                    'cy' => $signature['cy'],
                 ];
             }
 
-            if (! file_exists($pdfPath)) {
-                return [
-                    'success' => false,
-                    'error' => 'PDF file was not created.',
-                ];
+            $bodyHtml = $this->htmlComposer->compose($coverLetter, $signatureImage);
+            $html = $this->htmlDocumentComposer->compose($bodyHtml, $this->buildDocxData($coverLetter));
+
+            $result = $this->pdfRenderer->render($html, $pdfPath);
+
+            if (! $result['success']) {
+                Log::error('Cover letter PDF generation failed', $result + [
+                    'cover_letter_id' => $coverLetter->id,
+                ]);
+
+                return $result;
             }
 
             $coverLetter->pdf_path = $pdfPath;
             $coverLetter->save();
 
-            return [
-                'success' => true,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ];
-
+            return $result;
         } catch (\Exception $e) {
             Log::error('Cover letter PDF generation exception', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'cover_letter_id' => $coverLetter->id,
             ]);
 
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
             ];
+        } finally {
+            if ($signatureTempPath !== null) {
+                @unlink($signatureTempPath);
+            }
         }
     }
 
