@@ -15,6 +15,7 @@
     <meta name="twitter:image" value="https://bspdx.com/images/bspdx.png">
 
     <title>{{ env('APP_ENV', '') == 'dev' ? 'DEV:' : ''}}{{ $config['html_title'] }}</title>
+    @include("partials.structured-data")
     <link rel="alternate" type="application/rss+xml" title="Jason Vertucio's Blog" href="{{ route('feed') }}">
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

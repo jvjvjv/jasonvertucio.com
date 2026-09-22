@@ -33,6 +33,7 @@ yarn-error.log
 !/public/web-app-manifest-192x192.png
 !/public/web-app-manifest-512x512.png
 !/public/site.webmanifest
+!/public/llms.txt
 prod.*
 *.sh
 !/scripts/*.sh

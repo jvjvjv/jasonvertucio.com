@@ -8,13 +8,17 @@ use App\Events\UserSecurityMethodRemoved;
 use App\Listeners\AlertUserOfSecurityDowngrade;
 use App\Listeners\Auth\DetectTwoFactorSecurityDowngrade;
 use App\Listeners\FlushBlogFeedCache;
+use App\Listeners\FlushPublicMcpBlogCache;
 use App\Listeners\InvalidateCurrentlyWatchingCache;
 use App\Listeners\LogSecurityAuditEntry;
 use App\Listeners\LogSocialPostStub;
+use App\Listeners\RecordMcpClientIdentity;
 use App\Listeners\RecordRecentlyFinishedMedia;
 use App\Models\AiChatBot;
 use App\Models\Comment;
+use App\Models\ResumeVersion;
 use App\Observers\CommentObserver;
+use App\Services\Mcp\PublicMcpCache;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use App\Services\TargetedResumeService;
 use Canvas\Events\PostDeleted;
@@ -33,6 +37,7 @@ use Illuminate\Support\ServiceProvider;
 use Jvjvjv\CodeTalker\CodeTalkerServiceProvider;
 use Jvjvjv\CodeTalker\Services\Conversation\CodeTalkerConversationStore;
 use Laravel\Ai\Contracts\ConversationStore;
+use Laravel\Mcp\Events\SessionInitialized;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -58,6 +63,34 @@ class AppServiceProvider extends ServiceProvider
                 ->by($request->header('CF-Connecting-IP') ?? $request->ip());
         });
 
+        // Public MCP endpoint. Sized to stop floods and systematic harvesting,
+        // not to protect the database — repeated calls are served from cache,
+        // so an ordinary session (initialize, tools/list, three tool calls)
+        // must never be throttled.
+        //
+        // Each window needs its own `by()` value: ThrottleRequests derives the
+        // cache key as md5($limiterName.$limit->key) with no per-limit index,
+        // so two limits sharing a key would share one counter.
+        RateLimiter::for('mcp', function (Request $request) {
+            $user = $request->user();
+
+            if ($user !== null) {
+                $token = $user->currentAccessToken()?->getKey() ?? $user->getAuthIdentifier();
+
+                return [
+                    Limit::perMinute(config('mcp-server.limits.token.per_minute'))->by("mcp-token-minute:{$token}"),
+                    Limit::perDay(config('mcp-server.limits.token.per_day'))->by("mcp-token-day:{$token}"),
+                ];
+            }
+
+            $address = $request->header('CF-Connecting-IP') ?? $request->ip();
+
+            return [
+                Limit::perMinute(config('mcp-server.limits.anonymous.per_minute'))->by("mcp-anon-minute:{$address}"),
+                Limit::perHour(config('mcp-server.limits.anonymous.per_hour'))->by("mcp-anon-hour:{$address}"),
+            ];
+        });
+
         Route::model('aiChatBot', AiChatBot::class);
 
         Event::listen([
@@ -66,6 +99,24 @@ class AppServiceProvider extends ServiceProvider
             PostUnpublished::class,
             PostDeleted::class,
         ], FlushBlogFeedCache::class);
+
+        Event::listen([
+            PostPublished::class,
+            PostUpdated::class,
+            PostUnpublished::class,
+            PostDeleted::class,
+        ], FlushPublicMcpBlogCache::class);
+
+        // The public MCP endpoint caches the resume; a newly published version
+        // must be visible on the next call rather than after a TTL.
+        $flushResumeCache = static function (): void {
+            PublicMcpCache::flush(PublicMcpCache::GROUP_RESUME);
+        };
+
+        ResumeVersion::saved($flushResumeCache);
+        ResumeVersion::deleted($flushResumeCache);
+
+        Event::listen(SessionInitialized::class, RecordMcpClientIdentity::class);
 
         Event::listen(MediaPlaybackMilestoneReached::class, RecordRecentlyFinishedMedia::class);
         Event::listen(MediaPlaybackMilestoneReached::class, InvalidateCurrentlyWatchingCache::class);

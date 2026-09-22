@@ -17,6 +17,7 @@ use App\Services\Resume\ResumeMarkdownComposer;
 use App\Services\Mcp\Tools\ChatBot\GetResumeDataTool;
 use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Jvjvjv\CodeTalker\Services\Mcp\ToolResultConverter;
 use Jvjvjv\CodeTalker\Support\ToolContext;
@@ -51,6 +52,22 @@ class GetResumeDataToolTest extends TestCase
             new DatabaseResumeVersionService($dataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter, new MarkdownToHtmlConverter, new HtmlDocumentComposer, new PdfRenderer),
             new ResumeSectionValidator,
         );
+    }
+
+    /**
+     * Someone entitled to see unpublished draft revisions.
+     *
+     * Draft visibility is gated on `edit-resume`: these fields describe work in
+     * progress, and a caller who may not change a draft may not read one.
+     */
+    private function reviewerContext(): ToolContext
+    {
+        Permission::firstOrCreate(['name' => 'edit-resume']);
+
+        $user = User::factory()->create();
+        $user->givePermissionTo('edit-resume');
+
+        return ToolContext::forUser($user->id);
     }
 
     /**
@@ -96,7 +113,7 @@ class GetResumeDataToolTest extends TestCase
     {
         $version = ResumeVersion::factory()->create(['is_current' => true]);
 
-        $result = $this->handle(ToolContext::forUser(null));
+        $result = $this->handle($this->reviewerContext());
 
         $this->assertSame($version->version, $result['resume_version']);
         $this->assertNull($result['pending_revision_number']);
@@ -108,7 +125,7 @@ class GetResumeDataToolTest extends TestCase
         ResumeEditCandidate::factory()->create(['base_resume_version_id' => $version->id, 'revision_number' => 1]);
         ResumeEditCandidate::factory()->create(['base_resume_version_id' => $version->id, 'revision_number' => 2]);
 
-        $result = $this->handle(ToolContext::forUser(null));
+        $result = $this->handle($this->reviewerContext());
 
         $this->assertSame(2, $result['pending_revision_number']);
     }
@@ -123,7 +140,7 @@ class GetResumeDataToolTest extends TestCase
             'snapshot' => ['personal' => ['name' => 'Draft Name', 'title' => 'x', 'email' => 'a@b.com']],
         ]);
 
-        $result = $this->handle(ToolContext::forUser(null), ['revision_number' => 1]);
+        $result = $this->handle($this->reviewerContext(), ['revision_number' => 1]);
 
         $this->assertTrue($result['requested_revision_found']);
         $this->assertSame(1, $result['viewing_revision_number']);
@@ -135,10 +152,38 @@ class GetResumeDataToolTest extends TestCase
     {
         ResumeVersion::factory()->create(['is_current' => true]);
 
-        $result = $this->handle(ToolContext::forUser(null), ['revision_number' => 999]);
+        $result = $this->handle($this->reviewerContext(), ['revision_number' => 999]);
 
         $this->assertFalse($result['requested_revision_found']);
         $this->assertArrayNotHasKey('viewing_revision_number', $result);
+        $this->assertArrayHasKey('experience', $result);
+    }
+
+    public function test_it_tells_an_anonymous_caller_nothing_about_pending_revisions(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+        ResumeEditCandidate::factory()->create(['base_resume_version_id' => $version->id, 'revision_number' => 1]);
+
+        $result = $this->handle(ToolContext::forUser(null));
+
+        $this->assertArrayNotHasKey('pending_revision_number', $result);
+    }
+
+    public function test_an_anonymous_revision_request_returns_live_data_without_confirming_the_revision(): void
+    {
+        $version = ResumeVersion::factory()->create(['is_current' => true]);
+        ResumeEditCandidate::factory()->create([
+            'base_resume_version_id' => $version->id,
+            'revision_number' => 1,
+            'status' => 'pending',
+            'snapshot' => ['personal' => ['name' => 'Draft Name', 'title' => 'x', 'email' => 'a@b.com']],
+        ]);
+
+        $result = $this->handle(ToolContext::forUser(null), ['revision_number' => 1]);
+
+        $this->assertArrayNotHasKey('requested_revision_found', $result);
+        $this->assertArrayNotHasKey('viewing_revision_number', $result);
+        $this->assertArrayNotHasKey('viewing_revision_status', $result);
         $this->assertArrayHasKey('experience', $result);
     }
 }

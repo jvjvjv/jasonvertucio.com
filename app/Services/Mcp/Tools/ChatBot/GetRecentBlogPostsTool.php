@@ -34,6 +34,20 @@ class GetRecentBlogPostsTool extends Tool
 
     public function handle(Request $request): Response|ResponseFactory
     {
+        return Response::structured($this->postsPayload($request));
+    }
+
+    /**
+     * Build the post listing.
+     *
+     * Separated from {@see handle()} so the public MCP endpoint can cache the
+     * array without reimplementing the query. See
+     * {@see \App\Mcp\Tools\PublicRecentBlogPostsTool}.
+     *
+     * @return array<string, mixed>
+     */
+    protected function postsPayload(Request $request): array
+    {
         $limit = min((int) ($request->get('limit') ?? 10), 20);
         $search = trim((string) ($request->get('search') ?? ''));
 
@@ -59,7 +73,7 @@ class GetRecentBlogPostsTool extends Tool
             })
             ->get(['id', 'title', 'summary', 'slug', 'published_at', 'topic_id']);
 
-        return Response::structured([
+        return [
             'posts' => $posts->map(static fn (Post $post): array => [
                 'title' => $post->title,
                 'summary' => $post->summary,
@@ -68,6 +82,6 @@ class GetRecentBlogPostsTool extends Tool
                 'published_at' => $post->published_at?->toDateString(),
                 'topic' => $post->topic?->name,
             ])->values()->toArray(),
-        ]);
+        ];
     }
 }
