@@ -115,28 +115,24 @@ export default function BuilderChatPanel({
                                     extraActions={
                                         targetedResume ? (
                                             <>
-                                                {targetedResume.docx_path && (
-                                                    <IconButton
-                                                        size="small"
-                                                        component="a"
-                                                        href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
-                                                        title="Download resume DOCX"
-                                                        color="success"
-                                                    >
-                                                        <StickyNote2Icon fontSize="small" />
-                                                    </IconButton>
-                                                )}
-                                                {targetedResume.pdf_path && (
-                                                    <IconButton
-                                                        size="small"
-                                                        component="a"
-                                                        href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
-                                                        title="Download resume PDF"
-                                                        color="success"
-                                                    >
-                                                        <PictureAsPdfIcon fontSize="small" />
-                                                    </IconButton>
-                                                )}
+                                                <IconButton
+                                                    size="small"
+                                                    component="a"
+                                                    href={`/admin/resume/targeted-resume/${targetedResume.id}/download/docx`}
+                                                    title="Download resume DOCX"
+                                                    color="success"
+                                                >
+                                                    <StickyNote2Icon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    component="a"
+                                                    href={`/admin/resume/targeted-resume/${targetedResume.id}/download/pdf`}
+                                                    title="Download resume PDF"
+                                                    color="success"
+                                                >
+                                                    <PictureAsPdfIcon fontSize="small" />
+                                                </IconButton>
                                             </>
                                         ) : undefined
                                     }
@@ -165,28 +161,24 @@ export default function BuilderChatPanel({
                                     extraActions={
                                         coverLetter ? (
                                             <>
-                                                {coverLetter.docx_path && (
-                                                    <IconButton
-                                                        size="small"
-                                                        component="a"
-                                                        href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
-                                                        title="Download cover letter DOCX"
-                                                        color="secondary"
-                                                    >
-                                                        <StickyNote2Icon fontSize="small" />
-                                                    </IconButton>
-                                                )}
-                                                {coverLetter.pdf_path && (
-                                                    <IconButton
-                                                        size="small"
-                                                        component="a"
-                                                        href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
-                                                        title="Download cover letter PDF"
-                                                        color="secondary"
-                                                    >
-                                                        <PictureAsPdfIcon fontSize="small" />
-                                                    </IconButton>
-                                                )}
+                                                <IconButton
+                                                    size="small"
+                                                    component="a"
+                                                    href={`/admin/cover-letters/${coverLetter.id}/download/docx`}
+                                                    title="Download cover letter DOCX"
+                                                    color="secondary"
+                                                >
+                                                    <StickyNote2Icon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    component="a"
+                                                    href={`/admin/cover-letters/${coverLetter.id}/download/pdf`}
+                                                    title="Download cover letter PDF"
+                                                    color="secondary"
+                                                >
+                                                    <PictureAsPdfIcon fontSize="small" />
+                                                </IconButton>
                                                 <IconButton
                                                     size="small"
                                                     component={InertiaLink}

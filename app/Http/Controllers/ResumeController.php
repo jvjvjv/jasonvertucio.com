@@ -97,8 +97,8 @@ class ResumeController extends Controller
             'data' => $data,
             'version' => $liveVersion?->version,
             'canSave' => $canSave,
-            'docxExists' => (bool) $this->versionService->getLatestDocxPath(),
-            'pdfExists' => (bool) $this->versionService->getLatestPdfPath(),
+            'docxExists' => $liveVersion !== null,
+            'pdfExists' => $liveVersion !== null,
             'candidate' => $candidate ? [
                 'id' => $candidate->id,
                 'revision_number' => $candidate->revision_number,
@@ -199,9 +199,11 @@ class ResumeController extends Controller
     {
         $this->validateDownloadPermission($request);
 
+        $hasLiveVersion = ResumeVersion::current()->exists();
+
         return view('resume.download.index', [
-            'docx_exists' => (bool) $this->versionService->getLatestDocxPath(),
-            'pdf_exists' => (bool) $this->versionService->getLatestPdfPath(),
+            'docx_exists' => $hasLiveVersion,
+            'pdf_exists' => $hasLiveVersion,
         ]);
     }
 

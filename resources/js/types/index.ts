@@ -180,8 +180,6 @@ export interface TargetedResume {
     status: string;
     resume_version?: string | null;
     latest_status_update?: { status: string; occurred_at: string } | null;
-    docx_path?: boolean;
-    pdf_path?: boolean;
     tailored_content?: string | null;
     tailored_title?: string | null;
     status_updates?: StatusUpdate[];
@@ -233,6 +231,4 @@ export interface CoverLetter {
     id: number;
     company_name?: string | null;
     position?: string | null;
-    docx_path?: boolean;
-    pdf_path?: boolean;
 }
