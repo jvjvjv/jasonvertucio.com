@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAiSystemRequest;
 use App\Http\Requests\UpdateAiSystemRequest;
+use App\Services\ChatBot\McpServerCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class AiSystemController extends Controller
         private AiSystemCapabilityService $aiSystemCapabilityService,
         private AiModelReadinessService $aiModelReadinessService,
         private ProviderModelsClient $providerModelsClient,
+        private McpServerCatalog $mcpServers,
     ) {}
 
     /**
@@ -57,6 +59,7 @@ class AiSystemController extends Controller
         return Inertia::render('ai/systems/Create', [
             'existingDefaults' => $existingDefaults,
             'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
+            'mcpServers' => $this->mcpServers->forToolPicker(),
         ]);
     }
 
@@ -103,6 +106,7 @@ class AiSystemController extends Controller
             'existingDefaults' => $existingDefaults,
             'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
             'pendingFirstEdit' => $aiSystem->duplicated_at !== null,
+            'mcpServers' => $this->mcpServers->forToolPicker(),
         ]);
     }
 

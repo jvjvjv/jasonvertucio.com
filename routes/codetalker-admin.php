@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiConversationController;
+use App\Http\Controllers\Admin\AiMcpServerController;
 use App\Http\Controllers\Admin\AiMemoryController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiSystemPromptController;
@@ -33,6 +34,16 @@ Route::middleware(['web', 'auth', 'can:manage-ai-tools', HandleInertiaRequests::
         Route::get('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'edit'])->name('system-prompts.edit');
         Route::put('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'update'])->name('system-prompts.update');
         Route::delete('/system-prompts/{aiSystemPrompt}', [AiSystemPromptController::class, 'destroy'])->name('system-prompts.destroy');
+
+        // External MCP servers — the literal /new route must precede the
+        // {aiMcpServer} wildcard.
+        Route::get('/mcp-servers', [AiMcpServerController::class, 'index'])->name('mcp-servers.index');
+        Route::get('/mcp-servers/new', [AiMcpServerController::class, 'create'])->name('mcp-servers.create');
+        Route::post('/mcp-servers', [AiMcpServerController::class, 'store'])->name('mcp-servers.store');
+        Route::get('/mcp-servers/{aiMcpServer}', [AiMcpServerController::class, 'edit'])->name('mcp-servers.edit');
+        Route::put('/mcp-servers/{aiMcpServer}', [AiMcpServerController::class, 'update'])->name('mcp-servers.update');
+        Route::post('/mcp-servers/{aiMcpServer}/sync', [AiMcpServerController::class, 'sync'])->name('mcp-servers.sync');
+        Route::delete('/mcp-servers/{aiMcpServer}', [AiMcpServerController::class, 'destroy'])->name('mcp-servers.destroy');
 
         // AI Memories CRUD
         Route::get('/memories', [AiMemoryController::class, 'index'])->name('memories.index');

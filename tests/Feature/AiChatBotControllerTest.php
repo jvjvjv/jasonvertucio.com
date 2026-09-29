@@ -7,6 +7,8 @@ use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
+use Jvjvjv\CodeTalker\Models\AiMcpServer;
+use Jvjvjv\CodeTalker\Models\AiMcpServerTool;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
 
@@ -215,5 +217,60 @@ class AiChatBotControllerTest extends TestCase
         $response->assertJsonMissing([
             'name' => 'get-resume-data',
         ]);
+    }
+
+    public function test_mcp_tools_tags_each_tool_with_its_source(): void
+    {
+        $user = $this->authenticatedUser();
+        $server = AiMcpServer::create([
+            'slug' => 'docs',
+            'name' => 'Docs Server',
+            'transport' => AiMcpServer::TRANSPORT_HTTP,
+            'url' => 'https://docs.example.test/mcp',
+            'enabled' => true,
+        ]);
+        AiMcpServerTool::create([
+            'ai_mcp_server_id' => $server->id,
+            'remote_name' => 'search',
+            'exposed_name' => 'docs__search',
+            'description' => 'Search the docs.',
+            'input_schema' => ['type' => 'object', 'properties' => ['q' => ['type' => 'string']]],
+            'representable' => true,
+            'definition_hash' => sha1('search'),
+            'synced_at' => now(),
+        ]);
+        $disabledServer = AiMcpServer::create([
+            'slug' => 'off',
+            'name' => 'Disabled Server',
+            'transport' => AiMcpServer::TRANSPORT_HTTP,
+            'url' => 'https://off.example.test/mcp',
+            'enabled' => false,
+        ]);
+        AiMcpServerTool::create([
+            'ai_mcp_server_id' => $disabledServer->id,
+            'remote_name' => 'lookup',
+            'exposed_name' => 'off__lookup',
+            'input_schema' => ['type' => 'object', 'properties' => []],
+            'representable' => true,
+            'definition_hash' => sha1('lookup'),
+            'synced_at' => now(),
+        ]);
+        $system = AiSystem::factory()->create([
+            'allowed_tools' => ['get-recent-blog-posts', 'docs__search'],
+        ]);
+
+        $all = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', ['include_all' => 1]));
+
+        $all->assertOk();
+        $all->assertJsonFragment(['name' => 'docs__search', 'description' => 'Search the docs.', 'source' => 'remote', 'server_slug' => 'docs']);
+        $all->assertJsonFragment(['name' => 'fetch-web-page', 'source' => 'internal', 'server_slug' => null]);
+        $all->assertJsonMissing(['name' => 'off__lookup']);
+
+        $granted = $this->actingAs($user)->getJson(route('admin.ai.bots.mcp-tools', ['ai_system_id' => $system->id]));
+
+        $granted->assertOk();
+        $granted->assertJsonCount(2, 'tools');
+        $granted->assertJsonFragment(['name' => 'get-recent-blog-posts', 'source' => 'internal']);
+        $granted->assertJsonFragment(['name' => 'docs__search', 'source' => 'remote', 'server_slug' => 'docs']);
     }
 }

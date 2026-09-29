@@ -125,6 +125,53 @@ export interface AiChatBot {
 export interface McpToolSummary {
     name: string;
     description: string;
+    source?: "internal" | "remote";
+    server_slug?: string | null;
+}
+
+// External MCP servers (code-talker AiMcpServerManager::list() shape — never
+// carries the server's auth, only its type)
+
+export type McpServerAuthType =
+    "none" | "bearer" | "headers" | "client_credentials";
+
+export interface McpServerTool {
+    exposed_name: string | null;
+    remote_name: string;
+    title: string | null;
+    description: string | null;
+    available: boolean;
+    unavailable_reason: string | null;
+    synced_at: string | null;
+}
+
+export interface McpServer {
+    id: number;
+    slug: string;
+    name: string;
+    transport: string;
+    url: string;
+    auth_type: McpServerAuthType;
+    timeout_seconds: number | null;
+    enabled: boolean;
+    last_synced_at: string | null;
+    last_sync_error: string | null;
+    tools: McpServerTool[];
+    tool_count: number;
+}
+
+/** The per-server catalog the AI system tool picker groups remote tools by. */
+export interface McpServerCatalogEntry {
+    id: number;
+    slug: string;
+    name: string;
+    enabled: boolean;
+    tools: {
+        exposed_name: string | null;
+        description: string | null;
+        available: boolean;
+        unavailable_reason: string | null;
+    }[];
 }
 
 export interface LogEntry {

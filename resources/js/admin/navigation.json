@@ -137,6 +137,13 @@
                 },
                 {
                     "can": "manage-ai-tools",
+                    "href": "/admin/ai/mcp-servers",
+                    "icon": "Hub",
+                    "label": "MCP Servers",
+                    "description": "Connect external MCP servers and review their tools"
+                },
+                {
+                    "can": "manage-ai-tools",
                     "href": "/admin/ai/personas",
                     "icon": "SmartToy",
                     "label": "AI Personas",

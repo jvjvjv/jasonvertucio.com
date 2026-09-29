@@ -5,6 +5,7 @@ import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutli
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import Feed from "@mui/icons-material/Feed";
 import ForumIcon from "@mui/icons-material/Forum";
+import HubIcon from "@mui/icons-material/Hub";
 import InboxIcon from "@mui/icons-material/Inbox";
 import InsightsIcon from "@mui/icons-material/Insights";
 import MemoryIcon from "@mui/icons-material/Memory";
@@ -25,6 +26,7 @@ const registry: { [key: string]: ReactNode } = {
     EditNote: <EditNoteIcon fontSize="large" />,
     Feed: <Feed fontSize="large" />,
     Forum: <ForumIcon fontSize="large" />,
+    Hub: <HubIcon fontSize="large" />,
     Inbox: <InboxIcon fontSize="large" />,
     Insights: <InsightsIcon fontSize="large" />,
     Memory: <MemoryIcon fontSize="large" />,

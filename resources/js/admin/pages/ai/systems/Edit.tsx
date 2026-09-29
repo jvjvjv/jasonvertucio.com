@@ -7,7 +7,7 @@ import CardContent from "@mui/material/CardContent";
 import AiSystemForm from "./Form";
 
 import type { FormData } from "./Form";
-import type { AiSystem, AiSystemPrompt } from "@/types";
+import type { AiSystem, AiSystemPrompt, McpServerCatalogEntry } from "@/types";
 import type { SyntheticEvent } from "react";
 
 import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
@@ -21,6 +21,7 @@ interface EditProps {
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
     pendingFirstEdit: boolean;
+    mcpServers: McpServerCatalogEntry[];
 }
 
 export default function Edit({
@@ -28,6 +29,7 @@ export default function Edit({
     existingDefaults,
     systemPrompts,
     pendingFirstEdit,
+    mcpServers,
 }: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
@@ -176,7 +178,8 @@ export default function Edit({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, personas on this system cannot use MCP tools."
+                    mcpServers={mcpServers}
+                    description="Select the tools this system may expose — built-in tools and tools from connected MCP servers alike. If none are selected, personas on this system cannot use tools."
                 />
             </Box>
             <ConfirmDialog {...dialogProps} />
