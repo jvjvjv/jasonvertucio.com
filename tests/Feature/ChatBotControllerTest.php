@@ -12,8 +12,13 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
+use Jvjvjv\CodeTalker\Services\AiMemoryService;
 use Jvjvjv\CodeTalker\Services\AiPersonaConversationService;
 use Jvjvjv\CodeTalker\Services\AiModelReadinessService;
+use Jvjvjv\CodeTalker\Services\ConversationUsageService;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AgentFactory;
+use Jvjvjv\CodeTalker\Services\LaravelAi\AiSystemProviderConfigurator;
+use Jvjvjv\CodeTalker\Services\RawExchange\RawExchangeContext;
 use Mockery;
 use Tests\TestCase;
 
@@ -311,6 +316,100 @@ class ChatBotControllerTest extends TestCase
         $response->assertJsonValidationErrors(['name', 'email']);
     }
 
+    public function test_signed_in_user_on_identity_bot_is_not_shown_identity_form(): void
+    {
+        $bot = $this->identityBot();
+
+        $response = $this->actingAs(User::factory()->create())->get(route('chat-bots.chat.show', $bot));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBot', false)
+            ->where('showIdentityForm', false)
+        );
+    }
+
+    public function test_signed_in_user_first_message_to_identity_bot_succeeds_without_name_or_email(): void
+    {
+        $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada-'.Str::random(8).'@example.com']);
+        $bot = $this->identityBot();
+        $this->bindConversationServiceWithRealStart();
+
+        $response = $this->actingAs($user)->post(route('chat-bots.chat.message', $bot), [
+            'message' => 'Hello there',
+        ]);
+
+        $response->assertOk();
+
+        $conversation = AiConversation::query()->where('ai_persona_id', $bot->id)->sole();
+        $this->assertSame($user->id, $conversation->user_id);
+        $this->assertSame('Ada Lovelace', $conversation->visitor_name);
+        $this->assertSame($user->email, $conversation->visitor_email);
+
+        $systemPrompt = $conversation->messages()->where('role', 'system')->value('content');
+        $this->assertStringContainsString('Ada Lovelace', $systemPrompt);
+        $this->assertStringContainsString($user->email, $systemPrompt);
+    }
+
+    public function test_signed_in_user_submitted_identity_is_ignored(): void
+    {
+        $user = User::factory()->create();
+        $bot = $this->identityBot();
+        $this->bindConversationServiceWithRealStart();
+
+        $response = $this->actingAs($user)->post(route('chat-bots.chat.message', $bot), [
+            'message' => 'Hello there',
+            'name' => 'Someone Else',
+            'email' => 'not-an-email',
+        ]);
+
+        $response->assertOk();
+        $response->assertSessionHasNoErrors();
+
+        $conversation = AiConversation::query()->where('ai_persona_id', $bot->id)->sole();
+        $this->assertSame($user->name, $conversation->visitor_name);
+        $this->assertSame($user->email, $conversation->visitor_email);
+    }
+
+    public function test_signed_in_user_with_blank_name_falls_back_to_email(): void
+    {
+        $user = User::factory()->create(['name' => '']);
+        $bot = $this->identityBot();
+        $this->bindConversationServiceWithRealStart();
+
+        $response = $this->actingAs($user)->post(route('chat-bots.chat.message', $bot), [
+            'message' => 'Hello there',
+        ]);
+
+        $response->assertOk();
+
+        $conversation = AiConversation::query()->where('ai_persona_id', $bot->id)->sole();
+        $this->assertSame($user->email, $conversation->visitor_name);
+        $this->assertSame($user->email, $conversation->visitor_email);
+    }
+
+    public function test_signed_in_user_on_non_identity_bot_gets_no_visitor_identity(): void
+    {
+        $user = User::factory()->create();
+        $bot = AiChatBot::factory()->create([
+            'required_permission' => null,
+            'require_visitor_identity' => false,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+        $this->bindConversationServiceWithRealStart();
+
+        $response = $this->actingAs($user)->post(route('chat-bots.chat.message', $bot), [
+            'message' => 'Hello there',
+        ]);
+
+        $response->assertOk();
+
+        $conversation = AiConversation::query()->where('ai_persona_id', $bot->id)->sole();
+        $this->assertSame($user->id, $conversation->user_id);
+        $this->assertNull($conversation->visitor_name);
+        $this->assertNull($conversation->visitor_email);
+    }
+
     public function test_message_endpoint_creates_session_conversation_and_streams(): void
     {
         $bot = AiChatBot::factory()->create([
@@ -423,6 +522,41 @@ class ChatBotControllerTest extends TestCase
         $response->assertRedirect(route('chat-bots.root.show', $bot));
         $this->assertNull(session('ai_chat_bot_conversations_'.$bot->id.'.current'));
         $this->assertCount(1, session('ai_chat_bot_conversations_'.$bot->id.'.history', []));
+    }
+
+    private function identityBot(): AiChatBot
+    {
+        return AiChatBot::factory()->create([
+            'required_permission' => null,
+            'require_visitor_identity' => true,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+            'prompt_template' => 'You are talking with {{visitor_name}} <{{visitor_email}}>.',
+        ]);
+    }
+
+    /**
+     * Binds a partial mock that runs the package's real startConversation() —
+     * including its identity guard, which a full mock would hide — and stubs
+     * only the streaming step. A plain partialMock() skips the constructor,
+     * leaving the service's private collaborators uninitialized.
+     */
+    private function bindConversationServiceWithRealStart(): void
+    {
+        $service = Mockery::mock(AiPersonaConversationService::class, [
+            app(AgentFactory::class),
+            app(AiMemoryService::class),
+            app(ConversationUsageService::class),
+            app(RawExchangeContext::class),
+            app(AiSystemProviderConfigurator::class),
+        ])->makePartial();
+        $service->shouldReceive('continueConversation')
+            ->zeroOrMoreTimes()
+            ->andReturn($this->fakeStream());
+        $service->shouldReceive('usingToolPayloads')
+            ->zeroOrMoreTimes()
+            ->andReturnSelf();
+
+        $this->app->instance(AiPersonaConversationService::class, $service);
     }
 
     private function fakeStream(): Generator
