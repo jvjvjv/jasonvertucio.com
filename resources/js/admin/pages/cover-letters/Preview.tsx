@@ -15,6 +15,8 @@ import { useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout";
 import { letterMarkdownSx } from "../../utils/markdownSx";
 
+import { sanitizeHtml } from "@/utils/safeHtml";
+
 interface PersonalInfo {
     name: string;
     title: string;
@@ -131,7 +133,11 @@ export default function Preview({
 
                 <p>{coverLetter.greeting}</p>
 
-                <div dangerouslySetInnerHTML={{ __html: messageBodyHtml }} />
+                <div
+                    dangerouslySetInnerHTML={{
+                        __html: sanitizeHtml(messageBodyHtml),
+                    }}
+                />
 
                 {coverLetter.closing && <p>{coverLetter.closing}</p>}
 

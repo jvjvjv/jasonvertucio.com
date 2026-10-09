@@ -1,5 +1,6 @@
-import { marked } from "marked";
 import { useMemo } from "react";
+
+import { renderMarkdown } from "@/utils/safeHtml";
 
 const WORD_BREAK_STYLE = { wordBreak: "break-word" } as const;
 
@@ -8,7 +9,7 @@ interface MarkdownContentProps {
 }
 
 /**
- * Renders a markdown string as `marked`-parsed HTML. Deliberately unstyled —
+ * Renders a markdown string as sanitized, `marked`-parsed HTML. Deliberately unstyled —
  * callers wrap this in their own `Box` so the markdown/pre-wrap sx applies to
  * the same container as any sibling elements (e.g. a streaming progress bar).
  *
@@ -18,7 +19,7 @@ interface MarkdownContentProps {
  */
 export default function MarkdownContent({ content }: MarkdownContentProps) {
     const html = useMemo(
-        () => ({ __html: marked.parse(content, { breaks: true }) as string }),
+        () => ({ __html: renderMarkdown(content) }),
         [content],
     );
 

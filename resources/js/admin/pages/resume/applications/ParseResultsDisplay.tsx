@@ -4,7 +4,8 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { marked } from "marked";
+
+import { renderMarkdown } from "@/utils/safeHtml";
 
 interface ParseResultsDisplayProps {
     parseError: string;
@@ -51,9 +52,7 @@ export default function ParseResultsDisplay({
                     <Typography
                         variant="body2"
                         dangerouslySetInnerHTML={{
-                            __html: marked.parse(parseReasoning, {
-                                breaks: true,
-                            }) as string,
+                            __html: renderMarkdown(parseReasoning),
                         }}
                     ></Typography>
                     <Typography
