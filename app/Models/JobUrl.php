@@ -24,8 +24,8 @@ class JobUrl extends Model
         return $this->belongsTo(JobUrlParser::class, 'job_url_parser_id');
     }
 
-    public function targetedResumes(): HasMany
+    public function applications(): HasMany
     {
-        return $this->hasMany(TargetedResume::class);
+        return $this->hasMany(Application::class);
     }
 }

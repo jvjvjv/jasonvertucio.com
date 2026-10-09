@@ -2,31 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\TargetedResumeApplicationStatus;
-use App\Enums\TargetedResumeStatus;
+use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StartTargetedResumeRequest;
-use App\Http\Requests\UpdateTargetedResumeConversationRequest;
-use App\Models\AiConversation;
-use App\Models\CoverLetter;
-use App\Models\JobUrl;
-use App\Models\ResumeVersion;
+use App\Http\Requests\UpdateTargetedResumeMarkdownRequest;
 use App\Models\TargetedResume;
-use App\Models\TargetedResumeStatusUpdate;
+use App\Services\ApplicationService;
 use App\Services\DocumentDownloadLogger;
 use App\Services\TargetedResumeDocumentService;
 use App\Services\TargetedResumeService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * The targeted resume documents themselves: listing, editing, downloading
+ * and discarding them. The jobs they were written for are applications.
+ */
 class TargetedResumeController extends Controller
 {
     public function __construct(
@@ -35,407 +30,85 @@ class TargetedResumeController extends Controller
     ) {}
 
     /**
-     * List all targeted resumes with optional filters.
+     * List the targeted resumes of non-deleted applications, most recently
+     * edited first, with an optional search.
      */
     public function index(Request $request): InertiaResponse
     {
-        $defaultStatuses = [];
-        $statuses = $request->input('status', $request->has('search') ? [] : $defaultStatuses);
-        $statuses = is_array($statuses) ? $statuses : [$statuses];
-        $search = $request->input('search', '');
+        $search = trim((string) $request->string('search'));
 
-        $query = AiConversation::with(['aiSystem', 'targetedResume.resumeVersion', 'targetedResume.latestStatusUpdate'])
-            ->withCount(['messages' => fn ($q) => $q->where('role', '!=', 'system')])
-            ->where('feature', 'targeted-resume');
-
-        if (! empty($statuses)) {
-            $conversationStatuses = array_intersect($statuses, array_column(AiConversationStatus::cases(), 'value'));
-            $resumeStatuses = array_intersect($statuses, array_column(TargetedResumeStatus::cases(), 'value'));
-
-            $query->where(function ($q) use ($conversationStatuses, $resumeStatuses) {
-                if (! empty($conversationStatuses)) {
-                    $q->where(function ($conversationQuery) use ($conversationStatuses) {
-                        $conversationQuery->whereIn('status', $conversationStatuses)
-                            ->where(function ($resumeScope) {
-                                $resumeScope->whereDoesntHave('targetedResume')
-                                    ->orWhereHas('targetedResume', fn ($resumeQuery) => $resumeQuery->where('status', TargetedResumeStatus::Draft->value));
-                            });
+        $targetedResumes = TargetedResume::query()
+            ->whereHas('application')
+            ->with(['resumeVersion:id,version', 'application' => $this->withAppliedFlag(...)])
+            ->when($search !== '', fn (Builder $query) => $query->where(function (Builder $matching) use ($search): void {
+                $matching->where('title', 'LIKE', '%'.$search.'%')
+                    ->orWhereHas('application', function (Builder $application) use ($search): void {
+                        $application->where('company_name', 'LIKE', '%'.$search.'%')
+                            ->orWhere('position', 'LIKE', '%'.$search.'%');
                     });
-                }
-                if (! empty($resumeStatuses)) {
-                    $q->orWhereHas('targetedResume', fn ($sub) => $sub->whereIn('status', $resumeStatuses));
-                }
-            });
-        }
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('targetedResume', function ($sub) use ($search) {
-                    $sub->where('company_name', 'LIKE', '%'.$search.'%')
-                        ->orWhere('position', 'LIKE', '%'.$search.'%');
-                });
-
-                $q->orWhere('context->company_name', 'LIKE', '%'.$search.'%')
-                    ->orWhere('context->job_title', 'LIKE', '%'.$search.'%');
-
-                $q->orWhereHas('messages', function ($sub) use ($search) {
-                    $sub->where('role', '!=', 'system')
-                        ->where('content', 'LIKE', '%'.$search.'%');
-                });
-            });
-        }
-
-        $conversations = $query->orderByLastMessageAtDesc()->get()->map(fn ($conv) => [
-            'id' => $conv->id,
-            'status' => $conv->status->value,
-            'last_message_at' => $conv->last_message_at?->diffForHumans()
-                ?? $conv->updated_at?->diffForHumans(),
-            'updated_at' => $conv->updated_at?->diffForHumans(),
-            'messages_count' => $conv->messages_count,
-            'context' => $conv->context,
-            'usage' => [
-                'input_tokens' => $conv->usage_input_tokens,
-                'output_tokens' => $conv->usage_output_tokens,
-                'total_tokens' => $conv->usage_total_tokens,
-                'cost_usd' => $conv->usage_cost_usd !== null ? (float) $conv->usage_cost_usd : null,
-                'synced_at' => $conv->usage_synced_at?->toIso8601String(),
-            ],
-            'targeted_resume' => $conv->targetedResume ? [
-                'id' => $conv->targetedResume->id,
-                'company_name' => $conv->targetedResume->company_name,
-                'position' => $conv->targetedResume->position,
-                'fit_score' => $conv->targetedResume->fit_score,
-                'status' => $conv->targetedResume->status->value ?? $conv->targetedResume->status,
-                'resume_version' => $conv->targetedResume->resumeVersion?->version,
-                'latest_status_update' => $conv->targetedResume->latestStatusUpdate ? [
-                    'status' => $conv->targetedResume->latestStatusUpdate->status->value,
-                    'occurred_at' => $conv->targetedResume->latestStatusUpdate->occurred_at?->toDateString(),
-                ] : null,
-            ] : null,
-        ]);
-
-        $allStatuses = collect(AiConversationStatus::cases())
-            ->merge(TargetedResumeStatus::cases())
-            ->map(fn ($s) => ['value' => $s->value, 'label' => ucfirst($s->value)]);
+            }))
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (TargetedResume $targetedResume): array => [
+                'id' => $targetedResume->id,
+                'title' => $targetedResume->title,
+                'application_id' => $targetedResume->application->id,
+                'company_name' => $targetedResume->application->company_name,
+                'position' => $targetedResume->application->position,
+                'resume_version' => $targetedResume->resumeVersion?->version,
+                'updated_at' => $targetedResume->updated_at?->toIso8601String(),
+                'updated_at_human' => $targetedResume->updated_at?->diffForHumans(),
+                'can_discard' => ! $targetedResume->application->has_applied,
+            ]);
 
         return Inertia::render('resume/targeted/Index', [
-            'conversations' => $conversations,
-            'allStatuses' => $allStatuses,
+            'targetedResumes' => $targetedResumes,
             'filters' => [
-                'statuses' => $statuses,
                 'search' => $search,
             ],
         ]);
     }
 
     /**
-     * Show the form to start a new targeted resume session.
+     * Show the editor for a targeted resume's content.
      */
-    public function create(): InertiaResponse
+    public function edit(TargetedResume $targetedResume): InertiaResponse
     {
-        // Only show systems that have a system prompt assigned OR are feature defaults
-        $systems = AiSystem::active()
-            ->where(function ($q) {
-                $q->whereNotNull('system_prompt_id')
-                    ->orWhereHas('featureDefaults');
-            })
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'name' => $s->name,
-                'model' => $s->model,
-            ]);
+        $targetedResume->load(['resumeVersion:id,version', 'application' => $this->withAppliedFlag(...)]);
 
-        $defaultSystemId = AiSystem::defaultForFeature('targeted-resume')?->id;
-        $coverLetterDefaultId = AiSystem::defaultForFeature('cover-letter')?->id;
+        $application = $targetedResume->application;
 
-        return Inertia::render('resume/targeted/Create', [
-            'systems' => $systems,
-            'defaultSystemId' => $defaultSystemId,
-            'coverLetterDefaultId' => $coverLetterDefaultId,
-        ]);
-    }
+        abort_if($application === null, 404);
 
-    /**
-     * Start a new targeted resume conversation.
-     */
-    public function start(StartTargetedResumeRequest $request): JsonResponse
-    {
-        $resumeDefault = AiSystem::defaultForFeature('targeted-resume');
-        $coverLetterDefault = AiSystem::defaultForFeature('cover-letter');
-
-        if ($resumeDefault && $coverLetterDefault && $resumeDefault->id !== $coverLetterDefault->id) {
-            return response()->json([
-                'error' => 'Separate models for Targeted Resume and Cover Letter are unsupported at this time.',
-            ], 422);
-        }
-
-        $system = AiSystem::findOrFail($request->validated('ai_system_id'));
-        $resumeVersion = ResumeVersion::current()->firstOrFail();
-
-        $conversation = $this->targetedResumeService->startConversation(
-            system: $system,
-            companyName: $request->validated('company_name'),
-            jobTitle: $request->validated('job_title'),
-            jobLocation: $request->validated('job_location'),
-            jobDescription: $request->validated('job_description'),
-            resumeVersion: $resumeVersion,
-            jobUrlId: $request->validated('job_url_id'),
-        );
-
-        return response()->json([
-            'conversation_id' => $conversation->id,
-            'redirect' => route('admin.resume.targeted.show', $conversation),
-        ]);
-    }
-
-    /**
-     * Show a conversation with the chat interface.
-     */
-    public function show(AiConversation $conversation): InertiaResponse
-    {
-        $conversation->load('messages', 'aiSystem', 'targetedResume.statusUpdates');
-
-        // Get displayable messages (exclude system messages)
-        $messages = $conversation->messages
-            ->where('role', '!=', 'system')
-            ->values()
-            ->map(fn ($msg) => [
-                'role' => $msg->role,
-                'content' => $msg->content,
-                'metadata' => $msg->metadata,
-                'created_at' => $msg->created_at?->toIso8601String(),
-            ])
-            ->toArray();
-
-        $targetedResume = $conversation->targetedResume;
-        $coverLetterRecord = $targetedResume?->coverLetters()->latest()->first();
-        $coverLetter = $coverLetterRecord instanceof CoverLetter ? $coverLetterRecord : null;
-        $jobUrl = null;
-
-        if (is_string(data_get($conversation->context, 'job_url_id'))) {
-            $jobUrl = JobUrl::query()
-                ->whereKey(data_get($conversation->context, 'job_url_id'))
-                ->value('url');
-        }
-
-        $shouldAutoStart = ($conversation->messages->where('role', 'assistant')->count() === 0)
-            && ((bool) data_get($conversation->context, 'auto_start_pending', false));
-
-        return Inertia::render('resume/targeted/Show', [
-            'conversation' => [
-                'id' => $conversation->id,
-                'status' => $conversation->status->value,
-                'title' => $conversation->title,
-                'context' => $conversation->context,
-                'ai_system_id' => $conversation->aiSystem?->id,
-                'ai_system_name' => $conversation->aiSystem?->name,
-                'usage' => [
-                    'input_tokens' => $conversation->usage_input_tokens,
-                    'output_tokens' => $conversation->usage_output_tokens,
-                    'total_tokens' => $conversation->usage_total_tokens,
-                    'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
-                    'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
-                ],
-                'job_url' => $jobUrl,
-            ],
-            'messages' => $messages,
-            'targetedResume' => $targetedResume ? [
+        return Inertia::render('resume/targeted/Edit', [
+            'targetedResume' => [
                 'id' => $targetedResume->id,
-                'company_name' => $targetedResume->company_name,
-                'position' => $targetedResume->position,
-                'fit_score' => $targetedResume->fit_score,
-                'status' => $targetedResume->status->value ?? $targetedResume->status,
-                'docx_path' => $targetedResume->docx_path ? true : false,
-                'pdf_path' => $targetedResume->pdf_path ? true : false,
+                'title' => $targetedResume->title,
                 'tailored_content' => data_get($targetedResume->tailored_data, 'markdown')
                     ?? data_get($targetedResume->tailored_data, 'content'),
-                'tailored_title' => $targetedResume->title,
-                'status_updates' => $targetedResume->statusUpdates->map(fn ($u) => [
-                    'id' => $u->id,
-                    'status' => $u->status->value,
-                    'notes' => $u->notes,
-                    'occurred_at' => $u->occurred_at?->toIso8601String(),
-                ])->values()->toArray(),
-                'allowed_next_statuses' => $this->getAllowedNextStatuses($targetedResume->status),
-            ] : null,
-            'coverLetter' => $coverLetter ? [
-                'id' => $coverLetter->id,
-                'company_name' => $coverLetter->company_name ?? null,
-                'position' => $coverLetter->position ?? null,
-                'docx_path' => $coverLetter->docxExists(),
-                'pdf_path' => $coverLetter->pdfExists(),
-            ] : null,
-            'shouldAutoStart' => $shouldAutoStart,
+                'resume_version' => $targetedResume->resumeVersion?->version,
+                'docx_path' => (bool) $targetedResume->docx_path,
+                'pdf_path' => (bool) $targetedResume->pdf_path,
+                'can_discard' => ! $application->has_applied,
+            ],
+            'application' => [
+                'id' => $application->id,
+                'company_name' => $application->company_name,
+                'position' => $application->position,
+            ],
         ]);
     }
 
     /**
-     * Stream a chat response via SSE.
+     * Persist a manually edited targeted resume markdown and invalidate its
+     * rendered documents.
      */
-    public function chat(Request $request, AiConversation $conversation): StreamedResponse
+    public function updateMarkdown(UpdateTargetedResumeMarkdownRequest $request, TargetedResume $targetedResume): JsonResponse
     {
-        $request->validate([
-            'message' => ['nullable', 'string'],
-        ]);
-
-        Log::info('targeted-resume.chat: stream requested', [
-            'conversation_id' => $conversation->id,
-            'user_id' => auth()->id(),
-            'message_present' => $request->filled('message'),
-            'message_length' => strlen((string) $request->input('message', '')),
-        ]);
-
-        // Re-activate conversations that were marked as passed
-        if ($conversation->status === AiConversationStatus::Pass) {
-            $conversation->update(['status' => AiConversationStatus::Active]);
-        }
-
-        return response()->stream(function () use ($request, $conversation) {
-            $streamStart = microtime(true);
-            set_time_limit(0);
-
-            echo 'data: '.json_encode([
-                'type' => 'status',
-                'message' => 'Preparing analysis...',
-            ])."\n\n";
-            if (ob_get_level() > 0) {
-                ob_flush();
-            }
-            flush();
-
-            $generator = $this->targetedResumeService->continueConversation(
-                $conversation,
-                $request->input('message'),
-            );
-
-            try {
-                foreach ($generator as $chunk) {
-                    echo $chunk;
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
-                    flush();
-                }
-
-                Log::info('targeted-resume.chat: stream completed', [
-                    'conversation_id' => $conversation->id,
-                    'duration_ms' => (int) ((microtime(true) - $streamStart) * 1000),
-                ]);
-            } catch (\Throwable $e) {
-                Log::error('targeted-resume.chat: stream failed', [
-                    'conversation_id' => $conversation->id,
-                    'duration_ms' => (int) ((microtime(true) - $streamStart) * 1000),
-                    'error' => $e->getMessage(),
-                ]);
-                echo 'data: '.json_encode(['type' => 'error', 'message' => 'Stream failed unexpectedly.'])."\n\n";
-                echo "data: [DONE]\n\n";
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
-                flush();
-            }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no',
-        ]);
-    }
-
-    /**
-     * Finalize and save a targeted resume from the conversation.
-     */
-    public function finalize(Request $request, AiConversation $conversation): JsonResponse
-    {
-        $request->validate([
-            'tailored_content' => ['required', 'string'],
-            'fit_score' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
-
-        try {
-            $targetedResume = $this->targetedResumeService->saveTailoredResume(
-                $conversation,
-                $request->input('tailored_content'),
-                $request->input('fit_score'),
-            );
-        } catch (\Throwable $exception) {
-            return response()->json([
-                'success' => false,
-                'message' => $exception->getMessage(),
-            ], 422);
-        }
-
-        return response()->json([
-            'success' => true,
-            'targeted_resume_id' => $targetedResume->id,
-            'message' => 'Targeted resume saved successfully.',
-        ]);
-    }
-
-    /**
-     * Finalize a cover letter from the conversation.
-     */
-    public function finalizeCoverLetter(Request $request, AiConversation $conversation): JsonResponse
-    {
-        $request->validate([
-            'cover_letter_content' => ['required', 'string'],
-        ]);
-
-        try {
-            $coverLetter = $this->targetedResumeService->saveCoverLetter(
-                $conversation,
-                $request->input('cover_letter_content'),
-            );
-        } catch (\Throwable $exception) {
-            return response()->json([
-                'success' => false,
-                'message' => $exception->getMessage(),
-            ], 422);
-        }
-
-        return response()->json([
-            'success' => true,
-            'cover_letter_id' => $coverLetter->id,
-            'message' => 'Cover letter saved successfully.',
-        ]);
-    }
-
-    public function updateMetadata(UpdateTargetedResumeConversationRequest $request, AiConversation $conversation): RedirectResponse
-    {
-        $this->targetedResumeService->updateConversationMetadata($conversation, $request->validated());
-
-        return redirect()
-            ->route('admin.resume.targeted.show', $conversation)
-            ->with('success', 'Targeted resume chat details updated.');
-    }
-
-    /**
-     * Invalidate any previously rendered documents for a targeted resume so
-     * the next download renders fresh.
-     */
-    public function regenerate(TargetedResume $targetedResume): RedirectResponse
-    {
-        $targetedResume->invalidateDocuments();
-
-        return redirect()->route('admin.resume.targeted.show', $targetedResume->conversation)
-            ->with('success', 'Cached documents cleared. They will be regenerated on the next download.');
-    }
-
-    /**
-     * Persist a manually edited targeted resume markdown and regenerate its
-     * DOCX/PDF artifacts.
-     */
-    public function updateMarkdown(Request $request, TargetedResume $targetedResume): JsonResponse
-    {
-        $request->validate([
-            'markdown' => ['required', 'string'],
-        ]);
-
         $result = $this->targetedResumeService->updateTailoredMarkdown(
             $targetedResume,
-            $request->input('markdown'),
+            $request->validated('markdown'),
         );
 
         if (! $result['success']) {
@@ -488,183 +161,43 @@ class TargetedResumeController extends Controller
     }
 
     /**
-     * Mark a conversation as passed (declined the opportunity).
+     * Invalidate any previously rendered documents for a targeted resume so
+     * the next download renders fresh.
      */
-    public function pass(AiConversation $conversation): RedirectResponse
+    public function regenerate(TargetedResume $targetedResume): RedirectResponse
     {
-        $conversation->update(['status' => AiConversationStatus::Pass]);
+        $targetedResume->invalidateDocuments();
 
-        return redirect()->route('admin.resume.targeted.index')
-            ->with('success', 'Conversation marked as passed.');
+        $application = $targetedResume->application;
+
+        return ($application !== null
+            ? redirect()->route('admin.resume.applications.show', $application)
+            : redirect()->route('admin.resume.targeted.index'))
+            ->with('success', 'Cached documents cleared. They will be regenerated on the next download.');
     }
 
     /**
-     * Add a status update to a targeted resume's application history.
+     * Permanently discard a targeted resume. Refused once its application
+     * has been applied to.
      */
-    public function addStatusUpdate(Request $request, AiConversation $conversation): JsonResponse
+    public function destroy(TargetedResume $targetedResume, ApplicationService $applicationService): RedirectResponse
     {
-        $request->validate([
-            'status' => ['required', 'string', 'in:'.implode(',', array_column(TargetedResumeApplicationStatus::cases(), 'value'))],
-            'notes' => ['nullable', 'string', 'max:1000'],
-            'occurred_at' => ['nullable', 'date'],
-        ]);
+        $application = $applicationService->discardTargetedResume($targetedResume);
 
-        $targetedResume = $conversation->targetedResume;
-
-        if (! $targetedResume) {
-            $resumeVersionId = $conversation->context['resume_version_id'] ?? ResumeVersion::query()->orderByDesc('id')->value('id');
-
-            if (! $resumeVersionId) {
-                return response()->json(['message' => 'A resume version is required before logging an application status.'], 422);
-            }
-
-            $targetedResume = TargetedResume::create([
-                'resume_version_id' => $resumeVersionId,
-                'ai_conversation_id' => $conversation->id,
-                'job_url_id' => $conversation->context['job_url_id'] ?? null,
-                'company_name' => $conversation->context['company_name'] ?? 'Unknown Company',
-                'position' => $conversation->context['job_title'] ?? 'Unknown Position',
-                'job_description' => $conversation->context['job_description'] ?? '',
-                'tailored_data' => null,
-                'fit_score' => $conversation->context['fit_score'] ?? null,
-                'status' => TargetedResumeStatus::Draft,
-                'base_resume' => true,
-            ]);
-        }
-
-        $newStatus = TargetedResumeApplicationStatus::from($request->input('status'));
-        $currentStatus = TargetedResumeApplicationStatus::tryFrom($targetedResume->status->value);
-
-        if ($currentStatus?->isTerminal()) {
-            return response()->json(['message' => 'Cannot add a status update to a terminal application.'], 422);
-        }
-
-        $occurredAt = $request->input('occurred_at') ? now()->parse($request->input('occurred_at')) : now();
-
-        TargetedResumeStatusUpdate::create([
-            'targeted_resume_id' => $targetedResume->id,
-            'status' => $newStatus->value,
-            'notes' => $request->input('notes'),
-            'occurred_at' => $occurredAt,
-        ]);
-
-        $targetedResume->update(['status' => TargetedResumeStatus::from($newStatus->value)]);
-
-        $targetedResume->load('statusUpdates');
-
-        return $this->statusUpdateResponse($targetedResume, $newStatus);
+        return ($application !== null
+            ? redirect()->route('admin.resume.applications.show', $application)
+            : redirect()->route('admin.resume.targeted.index'))
+            ->with('success', 'Targeted resume discarded.');
     }
 
     /**
-     * Update notes/date for an existing application status history row.
+     * Eager-load constraint that answers "has this application been applied
+     * to?" as a `has_applied` attribute, so a list never asks per row.
      */
-    public function updateStatusUpdate(Request $request, AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse
+    private function withAppliedFlag(mixed $application): void
     {
-        $request->validate([
-            'notes' => ['nullable', 'string', 'max:1000'],
-            'occurred_at' => ['required', 'date'],
+        $application->withExists([
+            'statusUpdates as has_applied' => fn ($statusUpdates) => $statusUpdates->where('status', ApplicationStatus::Applied->value),
         ]);
-
-        $targetedResume = $conversation->targetedResume;
-
-        if (! $targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
-            return response()->json(['message' => 'Status update not found for this conversation.'], 404);
-        }
-
-        $statusUpdate->update([
-            'notes' => $request->input('notes'),
-            'occurred_at' => now()->parse($request->input('occurred_at')),
-        ]);
-
-        $targetedResume->refresh()->load('statusUpdates');
-
-        return $this->statusUpdateResponse($targetedResume, TargetedResumeApplicationStatus::from($targetedResume->status->value));
-    }
-
-    /**
-     * Delete an application status history row.
-     */
-    public function deleteStatusUpdate(AiConversation $conversation, TargetedResumeStatusUpdate $statusUpdate): JsonResponse
-    {
-        $targetedResume = $conversation->targetedResume;
-
-        if (! $targetedResume || $statusUpdate->targeted_resume_id !== $targetedResume->id) {
-            return response()->json(['message' => 'Status update not found for this conversation.'], 404);
-        }
-
-        $statusUpdate->delete();
-
-        $targetedResume->refresh()->load('statusUpdates');
-
-        $latestStatus = $targetedResume->statusUpdates->last()?->status;
-
-        if ($latestStatus instanceof TargetedResumeApplicationStatus) {
-            $targetedResume->update(['status' => TargetedResumeStatus::from($latestStatus->value)]);
-            $targetedResume->refresh()->load('statusUpdates');
-
-            return $this->statusUpdateResponse($targetedResume, $latestStatus);
-        }
-
-        $fallbackStatus = $targetedResume->tailored_data !== null
-            ? TargetedResumeStatus::Finalized
-            : TargetedResumeStatus::Draft;
-
-        $targetedResume->update(['status' => $fallbackStatus]);
-        $targetedResume->refresh()->load('statusUpdates');
-
-        return response()->json([
-            'success' => true,
-            'status' => $fallbackStatus->value,
-            'status_updates' => $this->serializeStatusUpdates($targetedResume),
-            'allowed_next_statuses' => $this->getAllowedNextStatuses($fallbackStatus),
-        ]);
-    }
-
-    private function statusUpdateResponse(TargetedResume $targetedResume, TargetedResumeApplicationStatus $status): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'status' => $status->value,
-            'status_updates' => $this->serializeStatusUpdates($targetedResume),
-            'allowed_next_statuses' => $this->getAllowedNextStatuses(TargetedResumeStatus::from($status->value)),
-        ]);
-    }
-
-    /**
-     * @return array<int, array{id: int, status: string, notes: string|null, occurred_at: string|null}>
-     */
-    private function serializeStatusUpdates(TargetedResume $targetedResume): array
-    {
-        return $targetedResume->statusUpdates->map(fn ($u) => [
-            'id' => $u->id,
-            'status' => $u->status->value,
-            'notes' => $u->notes,
-            'occurred_at' => $u->occurred_at?->toIso8601String(),
-        ])->values()->toArray();
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function getAllowedNextStatuses(TargetedResumeStatus $status): array
-    {
-        $appStatus = TargetedResumeApplicationStatus::tryFrom($status->value);
-
-        if ($appStatus === null || $appStatus->isTerminal()) {
-            return [];
-        }
-
-        return array_map(fn ($s) => $s->value, $appStatus->allowedNext());
-    }
-
-    /**
-     * Soft-delete a conversation.
-     */
-    public function destroy(AiConversation $conversation): RedirectResponse
-    {
-        $conversation->delete();
-
-        return redirect()->route('admin.resume.targeted.index')
-            ->with('success', 'Conversation deleted.');
     }
 }

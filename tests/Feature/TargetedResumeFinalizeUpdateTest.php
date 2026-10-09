@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Contracts\ResumeDataServiceContract;
-use App\Enums\TargetedResumeStatus;
+use App\Enums\ApplicationStatus;
+use App\Models\Application;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\CoverLetterDocumentService;
@@ -38,13 +39,14 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         $resumeVersion = ResumeVersion::factory()->create();
         $conversation = AiConversation::factory()->create([
             'status' => AiConversationStatus::Active,
-            'context' => [
-                'resume_version_id' => $resumeVersion->id,
-                'company_name' => 'Example Co',
-                'job_title' => 'Senior Laravel Engineer',
-                'job_description' => 'Build and maintain Laravel applications.',
-                'fit_summary' => 'Strong backend alignment.',
-            ],
+        ]);
+        $application = Application::factory()->create([
+            'resume_version_id' => $resumeVersion->id,
+            'ai_conversation_id' => $conversation->id,
+            'company_name' => 'Example Co',
+            'position' => 'Senior Laravel Engineer',
+            'job_description' => 'Build and maintain Laravel applications.',
+            'fit_summary' => 'Strong backend alignment.',
         ]);
 
         $documentService = $this->createMock(TargetedResumeDocumentService::class);
@@ -60,14 +62,17 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             new ConversationUsageService,
         );
 
-        $firstResume = $service->saveTailoredResume($conversation, "Title: Full Stack Engineer\n\n# Summary\nOriginal content", 72);
-        $updatedResume = $service->saveTailoredResume($conversation, "Title: Senior Frontend Engineer\n\n# Summary\nUpdated content", 91);
+        $firstResume = $service->saveTailoredResume($application, "Title: Full Stack Engineer\n\n# Summary\nOriginal content", 72);
+        $updatedResume = $service->saveTailoredResume($application, "Title: Senior Frontend Engineer\n\n# Summary\nUpdated content", 91);
+
+        $application->refresh();
 
         $this->assertSame($firstResume->id, $updatedResume->id);
-        $this->assertSame(1, TargetedResume::query()->where('ai_conversation_id', $conversation->id)->count());
-        $this->assertSame(TargetedResumeStatus::Finalized, $updatedResume->status);
+        $this->assertSame($updatedResume->id, $application->targeted_resume_id);
+        $this->assertSame(1, TargetedResume::query()->whereKey([$firstResume->id, $updatedResume->id])->count());
+        $this->assertSame(ApplicationStatus::Draft, $application->status);
         $this->assertSame('Senior Frontend Engineer', $updatedResume->title);
-        $this->assertSame(91, $updatedResume->fit_score);
+        $this->assertSame(91, $application->fit_score);
         $this->assertSame('Senior Frontend Engineer', data_get($updatedResume->tailored_data, 'title'));
         $this->assertSame("# Summary\nUpdated content", data_get($updatedResume->tailored_data, 'content'));
         $this->assertSame("# Summary\nUpdated content", data_get($updatedResume->tailored_data, 'markdown'));
@@ -77,13 +82,19 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         $this->assertSame(AiConversationStatus::Completed, $conversation->status);
         $this->assertDatabaseHas('targeted_resumes', [
             'id' => $updatedResume->id,
+            'resume_version_id' => $resumeVersion->id,
+            'title' => 'Senior Frontend Engineer',
+        ]);
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'targeted_resume_id' => $updatedResume->id,
             'ai_conversation_id' => $conversation->id,
             'resume_version_id' => $resumeVersion->id,
             'company_name' => 'Example Co',
             'position' => 'Senior Laravel Engineer',
-            'title' => 'Senior Frontend Engineer',
             'fit_score' => 91,
-            'status' => TargetedResumeStatus::Finalized->value,
+            'fit_summary' => 'Strong backend alignment.',
+            'status' => ApplicationStatus::Draft->value,
         ]);
 
         $reloadedResume = TargetedResume::query()->findOrFail($updatedResume->id);
@@ -94,15 +105,10 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
 
     public function test_save_tailored_resume_falls_back_to_summary_for_title_when_explicit_title_is_missing(): void
     {
-        $resumeVersion = ResumeVersion::factory()->create();
-        $conversation = AiConversation::factory()->create([
-            'status' => AiConversationStatus::Active,
-            'context' => [
-                'resume_version_id' => $resumeVersion->id,
-                'company_name' => 'Example Co',
-                'job_title' => 'Senior Laravel Engineer',
-                'job_description' => 'Build and maintain Laravel applications.',
-            ],
+        $application = Application::factory()->withConversation()->create([
+            'company_name' => 'Example Co',
+            'position' => 'Senior Laravel Engineer',
+            'job_description' => 'Build and maintain Laravel applications.',
         ]);
 
         $documentService = $this->createMock(TargetedResumeDocumentService::class);
@@ -119,7 +125,7 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
         );
 
         $resume = $service->saveTailoredResume(
-            $conversation,
+            $application,
             "# Summary\nSenior Frontend Engineer with 12 years of experience leading product UI teams.\n\n# Skills\n## Frontend\nReact, TypeScript",
             88,
         );
@@ -150,13 +156,17 @@ class TargetedResumeFinalizeUpdateTest extends TestCase
             new ConversationUsageService,
         );
 
-        $conversation = $service->startConversation(
-            $system,
-            'Build and maintain Laravel applications.',
-            $resumeVersion,
-            'Senior Laravel Engineer',
-            'Example Co',
-        );
+        $application = Application::factory()->create([
+            'resume_version_id' => $resumeVersion->id,
+            'company_name' => 'Example Co',
+            'position' => 'Senior Laravel Engineer',
+            'job_description' => 'Build and maintain Laravel applications.',
+        ]);
+
+        $conversation = $service->startConversation($system, $application);
+
+        $this->assertSame($conversation->id, $application->fresh()->ai_conversation_id);
+        $this->assertSame(['step' => 'analysis', 'auto_start_pending' => true], $conversation->context);
 
         iterator_to_array($service->continueConversation($conversation));
 

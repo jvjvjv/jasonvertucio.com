@@ -28,12 +28,12 @@ class GetJobDescriptionTool extends AuthorizedResumeTool
             return $response;
         }
 
-        $context = $this->context->conversation?->context ?? [];
+        $application = $this->application();
 
         return Response::structured([
-            'job_description' => $context['job_description'] ?? '',
-            'job_title' => $context['job_title'] ?? null,
-            'company_name' => $context['company_name'] ?? null,
+            'job_description' => $application?->job_description ?? '',
+            'job_title' => $application?->knownPosition(),
+            'company_name' => $application?->knownCompanyName(),
         ]);
     }
 }

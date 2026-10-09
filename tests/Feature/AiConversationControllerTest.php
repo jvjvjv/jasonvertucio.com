@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiChatBot;
+use App\Models\Application;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
-use App\Models\AiChatBot;
 use Jvjvjv\CodeTalker\Jobs\BackfillConversationUsageJob;
 use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
@@ -117,5 +118,31 @@ class AiConversationControllerTest extends TestCase
         Queue::assertPushed(BackfillConversationUsageJob::class, function (BackfillConversationUsageJob $job): bool {
             return $job->all === true && $job->chunk === 500;
         });
+    }
+
+    public function test_show_links_a_job_analysis_session_to_its_application(): void
+    {
+        $user = $this->authenticatedUser();
+        $application = Application::factory()->withConversation()->create();
+        $standalone = AiConversation::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('admin.ai.conversations.show', $application->ai_conversation_id))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('ai/conversations/Show', false)
+                ->where('conversation.application_id', $application->id)
+            );
+
+        $this->actingAs($user)
+            ->get(route('admin.ai.conversations.show', $standalone))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('conversation.application_id', null)
+            );
+
+        $this->actingAs($user)
+            ->get(route('admin.ai.conversations.index'))
+            ->assertOk();
     }
 }

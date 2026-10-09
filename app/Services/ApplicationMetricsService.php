@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\TargetedResume;
-use App\Models\TargetedResumeStatusUpdate;
-use App\Support\TargetedResumeStatusResolver;
+use App\Enums\ApplicationStatus;
+use App\Models\Application;
+use App\Models\ApplicationStatusUpdate;
+use App\Support\ApplicationStatusResolver;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
-class TargetedResumeMetricsService
+class ApplicationMetricsService
 {
     /**
      * Progressive pipeline stages in funnel order. Each maps to a rank used to
@@ -26,7 +28,12 @@ class TargetedResumeMetricsService
     ];
 
     /**
-     * Build the full metrics payload for the dashboard.
+     * Build the full metrics payload for the dashboard, optionally limited
+     * to the applications applied to within a period. Both ends are whole
+     * days and inclusive; either may be left open. The period is applied
+     * before any section is computed, so every section agrees on which
+     * applications it covers. "Ghosted" is still judged against the real
+     * present, not the end of the period.
      *
      * @return array{
      *     ghostedAfterDays: int,
@@ -38,11 +45,11 @@ class TargetedResumeMetricsService
      *     timeline: array<int, array<string, mixed>>
      * }
      */
-    public function build(): array
+    public function build(?CarbonInterface $from = null, ?CarbonInterface $to = null): array
     {
         $ghostedAfterDays = (int) config('resume.ghosted_after_days');
 
-        $applications = $this->appliedResumes();
+        $applications = $this->appliedWithin($this->appliedApplications(), $from, $to);
 
         return [
             'ghostedAfterDays' => $ghostedAfterDays,
@@ -56,26 +63,51 @@ class TargetedResumeMetricsService
     }
 
     /**
-     * Targeted resumes that have actually been applied to, with their full
-     * status history eager-loaded.
+     * Non-deleted applications that have actually been applied to — with a
+     * targeted resume or with the main one — with their full status history
+     * eager-loaded.
      *
-     * @return Collection<int, TargetedResume>
+     * @return Collection<int, Application>
      */
-    private function appliedResumes(): Collection
+    private function appliedApplications(): Collection
     {
-        return TargetedResume::query()
+        return Application::query()
             ->with('statusUpdates')
-            ->whereHas('statusUpdates', fn ($q) => $q->where('status', 'applied'))
+            ->whereHas('statusUpdates', fn ($q) => $q->where('status', ApplicationStatus::Applied->value))
             ->get();
+    }
+
+    /**
+     * @param  Collection<int, Application>  $applications
+     * @return Collection<int, Application>
+     */
+    private function appliedWithin(Collection $applications, ?CarbonInterface $from, ?CarbonInterface $to): Collection
+    {
+        if ($from === null && $to === null) {
+            return $applications;
+        }
+
+        $start = $from?->copy()->startOfDay();
+        $end = $to?->copy()->endOfDay();
+
+        return $applications
+            ->filter(function (Application $application) use ($start, $end): bool {
+                $appliedAt = $this->appliedAt($application);
+
+                return $appliedAt !== null
+                    && ($start === null || $appliedAt->greaterThanOrEqualTo($start))
+                    && ($end === null || $appliedAt->lessThanOrEqualTo($end));
+            })
+            ->values();
     }
 
     /**
      * The earliest "applied" status update for an application.
      */
-    private function appliedAt(TargetedResume $resume): ?Carbon
+    private function appliedAt(Application $application): ?Carbon
     {
-        $update = $resume->statusUpdates
-            ->firstWhere(fn (TargetedResumeStatusUpdate $u) => $u->status->value === 'applied');
+        $update = $application->statusUpdates
+            ->firstWhere(fn (ApplicationStatusUpdate $u) => $u->status->value === 'applied');
 
         return $update?->occurred_at;
     }
@@ -85,10 +117,10 @@ class TargetedResumeMetricsService
      *
      * @return array<int, string>
      */
-    private function statusValues(TargetedResume $resume): array
+    private function statusValues(Application $application): array
     {
-        return $resume->statusUpdates
-            ->map(fn (TargetedResumeStatusUpdate $u) => $u->status->value)
+        return $application->statusUpdates
+            ->map(fn (ApplicationStatusUpdate $u) => $u->status->value)
             ->unique()
             ->values()
             ->all();
@@ -98,11 +130,11 @@ class TargetedResumeMetricsService
      * Highest pipeline rank an application reached (accepted/hired collapse to
      * "accepted"). Rejection does not advance the rank.
      */
-    private function maxRank(TargetedResume $resume): int
+    private function maxRank(Application $application): int
     {
         $rank = 0;
 
-        foreach ($this->statusValues($resume) as $status) {
+        foreach ($this->statusValues($application) as $status) {
             $normalized = $status === 'hired' ? 'accepted' : $status;
             $rank = max($rank, self::STAGE_RANKS[$normalized] ?? 0);
         }
@@ -114,9 +146,9 @@ class TargetedResumeMetricsService
      * The bucketed outcome for the donut: accepted, rejected, ghosted, or
      * in_progress.
      */
-    private function outcome(TargetedResume $resume, int $ghostedAfterDays): string
+    private function outcome(Application $application, int $ghostedAfterDays): string
     {
-        $statuses = $this->statusValues($resume);
+        $statuses = $this->statusValues($application);
 
         if (in_array('accepted', $statuses, true) || in_array('hired', $statuses, true)) {
             return 'accepted';
@@ -126,19 +158,19 @@ class TargetedResumeMetricsService
             return 'rejected';
         }
 
-        $latest = $resume->statusUpdates->last();
+        $latest = $application->statusUpdates->last();
 
-        $display = TargetedResumeStatusResolver::resolve(
+        $display = ApplicationStatusResolver::resolve(
             $latest?->status->value,
             $latest?->occurred_at,
             $ghostedAfterDays,
         );
 
-        return $display === TargetedResumeStatusResolver::GHOSTED ? 'ghosted' : 'in_progress';
+        return $display === ApplicationStatusResolver::GHOSTED ? 'ghosted' : 'in_progress';
     }
 
     /**
-     * @param  Collection<int, TargetedResume>  $applications
+     * @param  Collection<int, Application>  $applications
      * @return array<string, mixed>
      */
     private function kpis(Collection $applications, int $ghostedAfterDays): array
@@ -155,11 +187,11 @@ class TargetedResumeMetricsService
             ];
         }
 
-        $responded = $applications->filter(fn (TargetedResume $r) => $this->maxRank($r) >= 2
+        $responded = $applications->filter(fn (Application $r) => $this->maxRank($r) >= 2
             || in_array('rejected', $this->statusValues($r), true))->count();
-        $interviewed = $applications->filter(fn (TargetedResume $r) => $this->maxRank($r) >= 2)->count();
-        $offered = $applications->filter(fn (TargetedResume $r) => $this->maxRank($r) >= 4)->count();
-        $ghosted = $applications->filter(fn (TargetedResume $r) => $this->outcome($r, $ghostedAfterDays) === 'ghosted')->count();
+        $interviewed = $applications->filter(fn (Application $r) => $this->maxRank($r) >= 2)->count();
+        $offered = $applications->filter(fn (Application $r) => $this->maxRank($r) >= 4)->count();
+        $ghosted = $applications->filter(fn (Application $r) => $this->outcome($r, $ghostedAfterDays) === 'ghosted')->count();
 
         return [
             'totalApplied' => $total,
@@ -171,7 +203,7 @@ class TargetedResumeMetricsService
     }
 
     /**
-     * @param  Collection<int, TargetedResume>  $applications
+     * @param  Collection<int, Application>  $applications
      * @return array<int, array{stage: string, label: string, count: int}>
      */
     private function funnel(Collection $applications): array
@@ -188,13 +220,13 @@ class TargetedResumeMetricsService
             'stage' => $stage,
             'label' => $label,
             'count' => $applications
-                ->filter(fn (TargetedResume $r) => $this->maxRank($r) >= self::STAGE_RANKS[$stage])
+                ->filter(fn (Application $r) => $this->maxRank($r) >= self::STAGE_RANKS[$stage])
                 ->count(),
         ])->values()->all();
     }
 
     /**
-     * @param  Collection<int, TargetedResume>  $applications
+     * @param  Collection<int, Application>  $applications
      * @return array<int, array{outcome: string, label: string, count: int}>
      */
     private function outcomes(Collection $applications, int $ghostedAfterDays): array
@@ -207,7 +239,7 @@ class TargetedResumeMetricsService
         ];
 
         $counts = $applications
-            ->groupBy(fn (TargetedResume $r) => $this->outcome($r, $ghostedAfterDays))
+            ->groupBy(fn (Application $r) => $this->outcome($r, $ghostedAfterDays))
             ->map->count();
 
         return collect($labels)
@@ -222,13 +254,13 @@ class TargetedResumeMetricsService
     }
 
     /**
-     * @param  Collection<int, TargetedResume>  $applications
+     * @param  Collection<int, Application>  $applications
      * @return array<int, array{period: string, count: int}>
      */
     private function overTime(Collection $applications): array
     {
         return $applications
-            ->map(fn (TargetedResume $r) => $this->appliedAt($r))
+            ->map(fn (Application $r) => $this->appliedAt($r))
             ->filter()
             ->groupBy(fn (Carbon $date) => $date->format('Y-m'))
             ->map->count()
@@ -242,7 +274,7 @@ class TargetedResumeMetricsService
     }
 
     /**
-     * @param  Collection<int, TargetedResume>  $applications
+     * @param  Collection<int, Application>  $applications
      * @return array<string, float|null>
      */
     private function cycleTimes(Collection $applications): array
@@ -251,29 +283,29 @@ class TargetedResumeMetricsService
         $toRejection = [];
         $toOffer = [];
 
-        foreach ($applications as $resume) {
-            $appliedAt = $this->appliedAt($resume);
+        foreach ($applications as $application) {
+            $appliedAt = $this->appliedAt($application);
 
             if ($appliedAt === null) {
                 continue;
             }
 
-            $firstResponse = $resume->statusUpdates
-                ->first(fn (TargetedResumeStatusUpdate $u) => $u->status->value !== 'applied');
+            $firstResponse = $application->statusUpdates
+                ->first(fn (ApplicationStatusUpdate $u) => $u->status->value !== 'applied');
 
             if ($firstResponse !== null) {
                 $toResponse[] = $appliedAt->diffInDays($firstResponse->occurred_at);
             }
 
-            $rejection = $resume->statusUpdates
-                ->first(fn (TargetedResumeStatusUpdate $u) => $u->status->value === 'rejected');
+            $rejection = $application->statusUpdates
+                ->first(fn (ApplicationStatusUpdate $u) => $u->status->value === 'rejected');
 
             if ($rejection !== null) {
                 $toRejection[] = $appliedAt->diffInDays($rejection->occurred_at);
             }
 
-            $offer = $resume->statusUpdates
-                ->first(fn (TargetedResumeStatusUpdate $u) => $u->status->value === 'offered');
+            $offer = $application->statusUpdates
+                ->first(fn (ApplicationStatusUpdate $u) => $u->status->value === 'offered');
 
             if ($offer !== null) {
                 $toOffer[] = $appliedAt->diffInDays($offer->occurred_at);
@@ -288,7 +320,7 @@ class TargetedResumeMetricsService
     }
 
     /**
-     * @param  Collection<int, TargetedResume>  $applications
+     * @param  Collection<int, Application>  $applications
      * @return array<int, array<string, mixed>>
      */
     private function timeline(Collection $applications, int $ghostedAfterDays): array
@@ -296,15 +328,15 @@ class TargetedResumeMetricsService
         $now = Carbon::now();
 
         return $applications
-            ->map(function (TargetedResume $resume) use ($ghostedAfterDays, $now) {
-                $appliedAt = $this->appliedAt($resume);
+            ->map(function (Application $application) use ($ghostedAfterDays, $now) {
+                $appliedAt = $this->appliedAt($application);
 
                 if ($appliedAt === null) {
                     return null;
                 }
 
-                $updates = $resume->statusUpdates->values();
-                $outcome = $this->outcome($resume, $ghostedAfterDays);
+                $updates = $application->statusUpdates->values();
+                $outcome = $this->outcome($application, $ghostedAfterDays);
                 $segments = [];
 
                 foreach ($updates as $index => $update) {
@@ -319,7 +351,7 @@ class TargetedResumeMetricsService
                     } else {
                         $to = $now;
                         if ($outcome === 'ghosted') {
-                            $status = TargetedResumeStatusResolver::GHOSTED;
+                            $status = ApplicationStatusResolver::GHOSTED;
                         }
                     }
 
@@ -331,9 +363,9 @@ class TargetedResumeMetricsService
                 }
 
                 return [
-                    'id' => $resume->id,
-                    'company' => $resume->company_name,
-                    'position' => $resume->position,
+                    'id' => $application->id,
+                    'company' => $application->company_name,
+                    'position' => $application->position,
                     'appliedAt' => $appliedAt->toIso8601String(),
                     'outcome' => $outcome,
                     'segments' => $segments,

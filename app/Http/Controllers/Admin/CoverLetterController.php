@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoverLetterRequest;
+use App\Models\Application;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Services\CoverLetterDocumentService;
@@ -45,16 +46,25 @@ class CoverLetterController extends Controller
 
     /**
      * GET /admin/cover-letters/new
+     *
+     * `?application={id}` opens the form for that application's job: the
+     * letter is prefilled from it and linked to it when saved. An unknown or
+     * deleted application is ignored.
      */
-    public function create(): InertiaResponse
+    public function create(Request $request): InertiaResponse
     {
         $resumeVersions = ResumeVersion::query()
             ->orderByDesc('is_current')
             ->orderByDesc('id')
             ->get();
 
+        $application = $request->filled('application')
+            ? Application::query()->find($request->integer('application'), ['id', 'company_name', 'position'])
+            : null;
+
         return Inertia::render('cover-letters/Create', [
             'resumeVersions' => $resumeVersions,
+            'application' => $application?->only(['id', 'company_name', 'position']),
         ]);
     }
 

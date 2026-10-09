@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
-use App\Enums\TargetedResumeApplicationStatus;
+use App\Enums\ApplicationStatus;
+use Database\Factories\ApplicationStatusUpdateFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TargetedResumeStatusUpdate extends Model
+/**
+ * @property ApplicationStatus $status
+ */
+class ApplicationStatusUpdate extends Model
 {
+    /** @use HasFactory<ApplicationStatusUpdateFactory> */
     use HasFactory;
 
     protected $fillable = [
-        'targeted_resume_id',
+        'application_id',
         'status',
         'notes',
         'occurred_at',
@@ -21,13 +26,13 @@ class TargetedResumeStatusUpdate extends Model
     protected function casts(): array
     {
         return [
-            'status' => TargetedResumeApplicationStatus::class,
+            'status' => ApplicationStatus::class,
             'occurred_at' => 'datetime',
         ];
     }
 
-    public function targetedResume(): BelongsTo
+    public function application(): BelongsTo
     {
-        return $this->belongsTo(TargetedResume::class);
+        return $this->belongsTo(Application::class);
     }
 }

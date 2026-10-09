@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\Mcp\Tools\TargetedResume;
 
-use App\Enums\TargetedResumeStatus;
+use App\Models\Application;
 use App\Models\CoverLetter;
 use App\Models\TargetedResume;
 use App\Models\User;
@@ -39,22 +39,26 @@ class GetTargetedResumeContextToolTest extends TestCase
     {
         $user = $this->authorizedUser();
         $conversation = AiConversation::factory()->create(['user_id' => $user->id]);
-        $resume = TargetedResume::factory()->finalized()->create([
+        $resume = TargetedResume::factory()->create([
+            'title' => 'Acme Senior Laravel Engineer Resume',
+            'tailored_data' => ['markdown' => '# Tailored Resume'],
+        ]);
+        $application = Application::factory()->create([
             'ai_conversation_id' => $conversation->id,
+            'targeted_resume_id' => $resume->id,
+            'resume_version_id' => $resume->resume_version_id,
             'company_name' => 'Acme Labs',
             'position' => 'Senior Laravel Engineer',
-            'title' => 'Acme Senior Laravel Engineer Resume',
             'job_description' => 'Build APIs and platform services.',
-            'tailored_data' => ['markdown' => '# Tailored Resume'],
             'fit_score' => 92,
             'fit_summary' => 'Strong alignment with backend leadership requirements.',
         ]);
 
         CoverLetter::query()->create([
             'resume_version_id' => $resume->resume_version_id,
-            'targeted_resume_id' => $resume->id,
-            'company_name' => $resume->company_name,
-            'position' => $resume->position,
+            'application_id' => $application->id,
+            'company_name' => $application->company_name,
+            'position' => $application->position,
             'date' => now()->toDateString(),
             'greeting' => 'Hello Hiring Team,',
             'message_body' => 'I would like to contribute to your platform work.',
@@ -79,32 +83,32 @@ class GetTargetedResumeContextToolTest extends TestCase
         $user = $this->authorizedUser();
         $conversation = AiConversation::factory()->create(['user_id' => $user->id]);
 
-        $firstResume = TargetedResume::factory()->finalized()->create([
+        $firstResume = TargetedResume::factory()->create(['title' => 'Acme Backend Resume']);
+        Application::factory()->create([
             'ai_conversation_id' => $conversation->id,
+            'targeted_resume_id' => $firstResume->id,
             'company_name' => 'Acme Labs',
             'position' => 'Senior Laravel Engineer',
-            'title' => 'Acme Backend Resume',
-            'status' => TargetedResumeStatus::Finalized,
         ]);
 
         $secondConversation = AiConversation::factory()->create([
             'user_id' => $conversation->user_id,
         ]);
 
-        $secondResume = TargetedResume::factory()->applied()->create([
+        $secondResume = TargetedResume::factory()->create(['title' => 'Acme Platform Resume']);
+        Application::factory()->applied()->create([
             'ai_conversation_id' => $secondConversation->id,
+            'targeted_resume_id' => $secondResume->id,
             'company_name' => 'Acme Labs',
             'position' => 'Staff PHP Engineer',
-            'title' => 'Acme Platform Resume',
-            'status' => TargetedResumeStatus::Applied,
         ]);
 
         $otherUserConversation = AiConversation::factory()->create();
-        TargetedResume::factory()->finalized()->create([
+        Application::factory()->create([
             'ai_conversation_id' => $otherUserConversation->id,
+            'targeted_resume_id' => TargetedResume::factory()->create(['title' => 'Other User Resume'])->id,
             'company_name' => 'Acme Labs',
             'position' => 'Should Not Leak',
-            'title' => 'Other User Resume',
         ]);
 
         $tool = new GetTargetedResumeContextTool(ToolContext::forConversation($conversation));
@@ -117,6 +121,7 @@ class GetTargetedResumeContextToolTest extends TestCase
             [$secondResume->id, $firstResume->id],
             array_column($result['matches'], 'targeted_resume_id'),
         );
+        $this->assertSame(['applied', 'finalized'], array_column($result['matches'], 'status'));
     }
 
     public function test_it_finds_a_resume_by_job_title(): void
@@ -124,11 +129,12 @@ class GetTargetedResumeContextToolTest extends TestCase
         $user = $this->authorizedUser();
         $conversation = AiConversation::factory()->create(['user_id' => $user->id]);
 
-        $resume = TargetedResume::factory()->finalized()->create([
+        $resume = TargetedResume::factory()->create(['title' => 'Northwind Platform Architect Resume']);
+        Application::factory()->create([
             'ai_conversation_id' => $conversation->id,
+            'targeted_resume_id' => $resume->id,
             'company_name' => 'Northwind',
             'position' => 'Platform Architect',
-            'title' => 'Northwind Platform Architect Resume',
             'job_description' => 'Lead platform modernization.',
         ]);
 

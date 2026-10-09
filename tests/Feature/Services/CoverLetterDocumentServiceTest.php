@@ -255,7 +255,7 @@ class CoverLetterDocumentServiceTest extends TestCase
 
         return CoverLetter::create(array_merge([
             'resume_version_id' => $resumeVersion->id,
-            'targeted_resume_id' => null,
+            'application_id' => null,
             'company_name' => 'Acme Corp',
             'position' => 'Engineer',
             'date' => now()->toDateString(),

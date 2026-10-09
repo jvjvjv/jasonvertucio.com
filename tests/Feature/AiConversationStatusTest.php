@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\TargetedResumeStatus;
-use App\Models\TargetedResume;
+use App\Enums\ApplicationStatus;
+use App\Models\Application;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -35,20 +35,20 @@ class AiConversationStatusTest extends TestCase
         }
     }
 
-    public function test_targeted_resume_status_casts_to_enum(): void
+    public function test_application_status_casts_to_enum(): void
     {
-        $resume = TargetedResume::factory()->create();
+        $application = Application::factory()->create();
 
-        $this->assertInstanceOf(TargetedResumeStatus::class, $resume->status);
-        $this->assertEquals(TargetedResumeStatus::Draft, $resume->status);
+        $this->assertInstanceOf(ApplicationStatus::class, $application->status);
+        $this->assertEquals(ApplicationStatus::Draft, $application->status);
     }
 
-    public function test_targeted_resume_status_persists_all_cases(): void
+    public function test_application_status_persists_all_cases(): void
     {
-        foreach (TargetedResumeStatus::cases() as $status) {
-            $resume = TargetedResume::factory()->create(['status' => $status]);
+        foreach (ApplicationStatus::cases() as $status) {
+            $application = Application::factory()->create(['status' => $status]);
 
-            $this->assertEquals($status, $resume->fresh()->status);
+            $this->assertEquals($status, $application->fresh()->status);
         }
     }
 
@@ -75,7 +75,7 @@ class AiConversationStatusTest extends TestCase
         $this->assertEquals(AiInteractionStatus::Success, $log->fresh()->status);
     }
 
-    public function test_pass_action_updates_conversation_status(): void
+    public function test_pass_action_updates_application_and_conversation_status(): void
     {
         Permission::firstOrCreate(['name' => 'edit-resume']);
         $user = User::factory()->create();
@@ -86,10 +86,17 @@ class AiConversationStatusTest extends TestCase
             'user_id' => $user->id,
             'status' => AiConversationStatus::Active,
         ]);
+        $application = Application::factory()->create(['ai_conversation_id' => $conversation->id]);
 
-        $response = $this->post(route('admin.resume.targeted.pass', $conversation));
+        $response = $this->postJson(route('admin.resume.applications.pass', $application));
 
-        $response->assertRedirect(route('admin.resume.targeted.index'));
+        $response->assertOk();
+        $response->assertExactJson([
+            'success' => true,
+            'status' => 'passed',
+            'redirect' => route('admin.resume.applications.index'),
+        ]);
+        $this->assertEquals(ApplicationStatus::Passed, $application->fresh()->status);
         $this->assertEquals(AiConversationStatus::Pass, $conversation->fresh()->status);
     }
 
@@ -103,10 +110,13 @@ class AiConversationStatusTest extends TestCase
         $this->assertEquals(AiConversationStatus::Completed, $completed->status);
         $this->assertEquals(AiConversationStatus::Pass, $pass->status);
 
-        $draft = TargetedResume::factory()->draft()->create();
-        $finalized = TargetedResume::factory()->finalized()->create();
+        $draft = Application::factory()->create();
+        $passed = Application::factory()->passed()->create();
+        $applied = Application::factory()->applied()->create();
 
-        $this->assertEquals(TargetedResumeStatus::Draft, $draft->status);
-        $this->assertEquals(TargetedResumeStatus::Finalized, $finalized->status);
+        $this->assertEquals(ApplicationStatus::Draft, $draft->status);
+        $this->assertEquals(ApplicationStatus::Passed, $passed->status);
+        $this->assertEquals(ApplicationStatus::Applied, $applied->status);
+        $this->assertSame(1, $applied->statusUpdates()->where('status', ApplicationStatus::Applied->value)->count());
     }
 }
