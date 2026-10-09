@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCommentRequest;
+use App\Http\Requests\UpdateCommentRequest;
 use App\Models\Comment;
 use Illuminate\Http\RedirectResponse;
 
@@ -35,6 +36,42 @@ class CommentController extends Controller
         ]);
 
         return $this->accepted($request, $comment);
+    }
+
+    /**
+     * Change a comment's message, and nothing else about it.
+     *
+     * `edited_at` moves only when the message really changes, so resubmitting
+     * the same text does not mark the comment as edited.
+     */
+    public function update(UpdateCommentRequest $request, string $slug, Comment $comment): RedirectResponse
+    {
+        $comment->message = $request->string('message')->toString();
+
+        if ($comment->isDirty('message')) {
+            $comment->edited_at = now();
+            $comment->save();
+        }
+
+        return redirect()
+            ->to(route('post', $slug).'#comment-'.$comment->id)
+            ->with('comment_updated', true);
+    }
+
+    /**
+     * Soft delete a comment, leaving its replies where they are.
+     */
+    public function destroy(string $slug, Comment $comment): RedirectResponse
+    {
+        abort_unless($comment->isOnPost($slug), 404);
+
+        $this->authorize('delete', $comment);
+
+        $comment->delete();
+
+        return redirect()
+            ->to(route('post', $slug).'#comments')
+            ->with('comment_deleted', true);
     }
 
     /**

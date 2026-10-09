@@ -18,5 +18,12 @@ Route::group(['prefix' => 'blog'], function ($route) {
         ->middleware('throttle:comments')
         ->name('comments.store');
 
+    $route->put('/{slug}/comments/{comment}', [CommentController::class, 'update'])
+        ->middleware('auth')
+        ->name('comments.update');
+    $route->delete('/{slug}/comments/{comment}', [CommentController::class, 'destroy'])
+        ->middleware('auth')
+        ->name('comments.destroy');
+
     $route->get('/{slug}', [BlogController::class, 'post'])->name('post');
 });

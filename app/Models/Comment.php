@@ -129,6 +129,14 @@ class Comment extends Model
     }
 
     /**
+     * Determine whether this comment belongs to the post with the given slug.
+     */
+    public function isOnPost(string $slug): bool
+    {
+        return $this->post?->slug === $slug;
+    }
+
+    /**
      * Determine whether this comment may still be replied to.
      */
     public function acceptsReplies(): bool
