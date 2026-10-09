@@ -6,8 +6,8 @@ import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import IconButton from "@mui/material/IconButton";
 
-import BuilderStatusCard from "./BuilderStatusCard";
-import TargetedBuilderStatusBar from "./TargetedBuilderStatusBar";
+import BuilderStatusCard from "./ArtifactStatusCard";
+import TargetedBuilderStatusBar from "./StatusBar";
 import useStatusUpdates from "./useStatusUpdates";
 
 import type { ChatMessage } from "@/components/ChatInterface";

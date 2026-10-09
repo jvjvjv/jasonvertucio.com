@@ -6,7 +6,7 @@ import type { SxProps } from "@mui/material";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
-import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/applicationStatus";
 import { formatCalendarDate } from "@/utils/date";
 import mergeSx from "@/utils/mergeSx";
 

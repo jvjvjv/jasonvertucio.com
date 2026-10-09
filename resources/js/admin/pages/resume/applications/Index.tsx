@@ -31,7 +31,7 @@ import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/applicationStatus";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 import { formatCalendarDate } from "@/utils/date";

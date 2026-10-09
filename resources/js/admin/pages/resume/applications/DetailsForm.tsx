@@ -16,7 +16,7 @@ import type { InertiaFormProps } from "@inertiajs/react";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
-import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
+import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/applicationStatus";
 
 export interface MetadataFormData {
     title: string;

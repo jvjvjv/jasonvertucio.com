@@ -4,9 +4,9 @@ import {
     getLatestCoverLetterContent,
     getLatestTailoredResumeData,
     hasNewerResume as computeHasNewerResume,
-} from "./tailoredResumeParser";
+} from "../targeted/tailoredResumeParser";
 
-import type { LatestTailoredResumeData } from "./tailoredResumeParser";
+import type { LatestTailoredResumeData } from "../targeted/tailoredResumeParser";
 import type { ChatMessage } from "@/components/ChatInterface";
 import type { TargetedResume } from "@/types";
 

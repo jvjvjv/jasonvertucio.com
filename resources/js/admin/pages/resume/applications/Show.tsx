@@ -19,14 +19,15 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { useState } from "react";
 
-import BuilderChatPanel from "./BuilderChatPanel";
-import BuilderMetadataForm from "./BuilderMetadataForm";
-import TailoredResumeEditor from "./TailoredResumeEditor";
+import TailoredResumeEditor from "../targeted/TailoredResumeEditor";
+
+import BuilderChatPanel from "./ChatPanel";
+import BuilderMetadataForm from "./DetailsForm";
 import useFinalizeArtifacts from "./useFinalizeArtifacts";
 import useLatestGeneratedArtifacts from "./useLatestGeneratedArtifacts";
 import useStatusUpdates from "./useStatusUpdates";
 
-import type { MetadataFormData } from "./BuilderMetadataForm";
+import type { MetadataFormData } from "./DetailsForm";
 import type { ChatMessage } from "@/components/ChatInterface";
 import type {
     Conversation,
