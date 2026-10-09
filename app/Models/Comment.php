@@ -47,6 +47,7 @@ class Comment extends Model
     {
         return [
             'approved_at' => 'datetime',
+            'edited_at' => 'datetime',
             'is_spam' => 'boolean',
             'depth' => 'integer',
         ];
@@ -97,7 +98,34 @@ class Comment extends Model
      */
     public function isVisible(): bool
     {
-        return $this->approved_at !== null && ! $this->is_spam;
+        return $this->approved_at !== null && ! $this->is_spam && ! $this->trashed();
+    }
+
+    /**
+     * Determine whether this comment's message has been changed since posting.
+     */
+    public function isEdited(): bool
+    {
+        return $this->edited_at !== null;
+    }
+
+    /**
+     * Determine whether a viewer may edit or delete this comment.
+     *
+     * An admin may manage any comment. Anyone else must be the registered
+     * author of a comment that is still publicly visible: an anonymous comment
+     * has no `user_id`, so it belongs to nobody, whatever email it records.
+     */
+    public function isManageableBy(?User $user, bool $isAdmin): bool
+    {
+        if ($isAdmin) {
+            return true;
+        }
+
+        return $user !== null
+            && $this->user_id !== null
+            && $this->user_id === $user->id
+            && $this->isVisible();
     }
 
     /**
