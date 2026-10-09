@@ -3,6 +3,7 @@
 namespace App\View\Components;
 
 use App\Models\Comment;
+use App\Models\User;
 use Canvas\Models\Post;
 use Closure;
 use Illuminate\Contracts\View\View;
@@ -11,22 +12,38 @@ use Illuminate\View\Component;
 
 class CommentThread extends Component
 {
+    /**
+     * The logged-in viewer, if any.
+     */
+    public ?User $viewer;
+
+    /**
+     * Whether the viewer may manage every comment.
+     *
+     * Resolved once here and handed to each node: a Gate check per comment
+     * would run Keystone's permission lookup for every node in the thread.
+     */
+    public bool $viewerIsAdmin;
+
     public function __construct(public Post $post)
     {
+        $this->viewer = auth()->user();
+        $this->viewerIsAdmin = (bool) $this->viewer?->can('manage-blog');
     }
 
     /**
      * Build the post's comment tree from a single query.
      *
-     * Every non-deleted comment is loaded, not only the visible ones: a hidden
-     * comment with visible descendants still has to occupy its position in the
-     * tree as a tombstone, or its replies would be orphaned.
+     * Every comment is loaded, soft-deleted ones included, not only the visible
+     * ones: a hidden comment with visible descendants still has to occupy its
+     * position in the tree as a tombstone, or its replies would be orphaned.
      *
      * @return Collection<int, array{comment: Comment, children: Collection}>
      */
     public function tree(): Collection
     {
         $comments = Comment::query()
+            ->withTrashed()
             ->where('post_id', $this->post->id)
             ->orderBy('created_at')
             ->get();

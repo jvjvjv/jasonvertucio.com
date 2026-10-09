@@ -1,7 +1,9 @@
 @props(['slug', 'parentId' => null, 'compact' => false])
 
 @php
-    $isTarget = (string) old('parent_id') === (string) $parentId;
+    // A rejected edit also flashes a `message`; it belongs to that comment's
+    // edit form, not to whichever reply form happens to match `parent_id`.
+    $isTarget = old('editing') === null && (string) old('parent_id') === (string) $parentId;
 @endphp
 
 <form method="POST"

@@ -17,6 +17,18 @@
         </p>
     @endif
 
+    @if (session('comment_updated'))
+        <p class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-3 text-green-800">
+            Your comment was updated.
+        </p>
+    @endif
+
+    @if (session('comment_deleted'))
+        <p class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-3 text-green-800">
+            The comment was deleted.
+        </p>
+    @endif
+
     @error('post')
         <p class="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800">{{ $message }}</p>
     @enderror
@@ -28,7 +40,9 @@
             @foreach ($tree as $node)
                 <x-comment-node :comment="$node['comment']"
                                 :children="$node['children']"
-                                :slug="$post->slug" />
+                                :slug="$post->slug"
+                                :viewer="$viewer"
+                                :viewer-is-admin="$viewerIsAdmin" />
             @endforeach
         </ol>
     @endif
