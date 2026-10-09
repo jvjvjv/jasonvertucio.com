@@ -69,4 +69,17 @@ class CommentModerationController extends Controller
 
         return back()->with('success', 'Comment restored.');
     }
+
+    /**
+     * Soft delete a comment, whatever its approval or spam state.
+     *
+     * A spam comment is hidden on its post and so offers no controls there;
+     * the queue is the only place it can be deleted from.
+     */
+    public function destroy(Comment $comment): RedirectResponse
+    {
+        $comment->delete();
+
+        return back()->with('success', 'Comment deleted.');
+    }
 }

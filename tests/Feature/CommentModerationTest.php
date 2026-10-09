@@ -160,4 +160,105 @@ class CommentModerationTest extends TestCase
 
         $this->assertFalse($comment->fresh()->is_spam);
     }
+
+    public function test_a_moderator_deletes_a_spam_comment_and_it_leaves_the_queue(): void
+    {
+        $post = $this->makePost();
+        $comment = Comment::factory()->create([
+            'post_id' => $post->id,
+            'approved_at' => null,
+            'is_spam' => true,
+        ]);
+        $moderator = $this->moderator();
+
+        $this->actingAs($moderator)
+            ->from(route('admin.comments.index'))
+            ->delete(route('admin.comments.destroy', $comment))
+            ->assertRedirect(route('admin.comments.index'))
+            ->assertSessionHas('success');
+
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
+
+        $this->actingAs($moderator)
+            ->get(route('admin.comments.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('comments.data', fn ($rows) => ! collect($rows)->pluck('id')->contains($comment->id))
+            );
+    }
+
+    public function test_deleting_an_approved_comment_leaves_its_replies_listed_and_displayed(): void
+    {
+        $post = $this->makePost();
+        $comment = Comment::factory()->create([
+            'post_id' => $post->id,
+            'message' => 'Parent body',
+            'approved_at' => now(),
+            'is_spam' => false,
+            'depth' => 0,
+        ]);
+        $reply = Comment::factory()->create([
+            'post_id' => $post->id,
+            'parent_id' => $comment->id,
+            'message' => 'Reply body',
+            'approved_at' => now(),
+            'is_spam' => false,
+            'depth' => 1,
+        ]);
+        $moderator = $this->moderator();
+
+        $this->actingAs($moderator)
+            ->delete(route('admin.comments.destroy', $comment))
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('comments', ['id' => $comment->id]);
+        $this->assertNotSoftDeleted('comments', ['id' => $reply->id, 'parent_id' => $comment->id, 'depth' => 1]);
+
+        $this->actingAs($moderator)
+            ->get(route('admin.comments.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('comments.data', fn ($rows) => collect($rows)->pluck('id')->contains($reply->id)
+                    && ! collect($rows)->pluck('id')->contains($comment->id))
+            );
+
+        $this->get(route('post', $post->slug))
+            ->assertOk()
+            ->assertSee('Reply body')
+            ->assertSee('[comment removed]')
+            ->assertDontSee('Parent body');
+    }
+
+    public function test_an_unpermitted_user_cannot_delete_through_the_queue(): void
+    {
+        $author = User::factory()->create();
+        $comment = Comment::factory()->create(['user_id' => $author->id, 'approved_at' => now(), 'is_spam' => false]);
+
+        $this->actingAs($author)
+            ->delete(route('admin.comments.destroy', $comment))
+            ->assertForbidden();
+
+        $this->delete(route('admin.comments.destroy', $comment));
+
+        $this->assertNotSoftDeleted('comments', ['id' => $comment->id]);
+    }
+
+    public function test_deleting_from_the_queue_leaves_approval_and_spam_state_alone(): void
+    {
+        $approved = Comment::factory()->create(['approved_at' => now()->subDay(), 'is_spam' => false]);
+        $spam = Comment::factory()->create(['approved_at' => null, 'is_spam' => true]);
+        $approvedAt = $approved->fresh()->approved_at;
+        $moderator = $this->moderator();
+
+        $this->actingAs($moderator)->delete(route('admin.comments.destroy', $approved))->assertRedirect();
+        $this->actingAs($moderator)->delete(route('admin.comments.destroy', $spam))->assertRedirect();
+
+        $approved = Comment::withTrashed()->find($approved->id);
+        $spam = Comment::withTrashed()->find($spam->id);
+
+        $this->assertTrue($approvedAt->equalTo($approved->approved_at));
+        $this->assertFalse($approved->is_spam);
+        $this->assertNull($approved->edited_at);
+        $this->assertNull($spam->approved_at);
+        $this->assertTrue($spam->is_spam);
+    }
 }

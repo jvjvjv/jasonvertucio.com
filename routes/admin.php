@@ -57,4 +57,5 @@ Route::middleware(['auth', 'can:manage-blog', HandleInertiaRequests::class])
         Route::get('/comments', [CommentModerationController::class, 'index'])->name('comments.index');
         Route::post('/comments/{comment}/spam', [CommentModerationController::class, 'markSpam'])->name('comments.spam');
         Route::post('/comments/{comment}/not-spam', [CommentModerationController::class, 'markNotSpam'])->name('comments.not-spam');
+        Route::delete('/comments/{comment}', [CommentModerationController::class, 'destroy'])->name('comments.destroy');
     });
