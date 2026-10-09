@@ -46,8 +46,8 @@ class AiToolsControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
             ->component('ai/Index', false)
-            ->has('navBlocks', 8)
-            ->where('navBlocks.0.href', '/admin/resume/applications')
+            ->has('navBlocks', 7)
+            ->where('navBlocks.0.href', '/admin/ai/systems')
         );
     }
 }
