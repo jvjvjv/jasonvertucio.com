@@ -1,4 +1,8 @@
 import { Head } from "@inertiajs/react";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -17,6 +21,7 @@ import {
     YAxis,
 } from "recharts";
 
+import MetricsFilterBar, { type MetricsFilter } from "./MetricsFilterBar";
 import ResumeTimeline, { type TimelineRow } from "./ResumeTimeline";
 
 import PageHeader from "@/admin/components/PageHeader";
@@ -58,7 +63,14 @@ interface MetricsProps {
         toOffer: number | null;
     };
     timeline: TimelineRow[];
+    /** The period every section above is restricted to. */
+    filter: MetricsFilter;
 }
+
+/** Keeps the heavy timeline out of the DOM until the accordion is opened. */
+const TIMELINE_ACCORDION_SLOT_PROPS = {
+    transition: { unmountOnExit: true },
+} as const;
 
 function StatCard({ label, value }: { label: string; value: string }) {
     return (
@@ -107,6 +119,7 @@ export default function Index({
     overTime,
     cycleTimes,
     timeline,
+    filter,
 }: MetricsProps) {
     const theme = useTheme();
 
@@ -127,6 +140,8 @@ export default function Index({
                 backHref="/admin/resume"
                 backLabel="Back to Resume Management"
             />
+
+            <MetricsFilterBar filter={filter} />
 
             {/* KPI cards */}
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
@@ -237,15 +252,26 @@ export default function Index({
                 />
             </Box>
 
-            {/* Timeline */}
-            <Card variant="outlined">
-                <CardContent>
-                    <Typography variant="h6" gutterBottom>
+            {/* Timeline — collapsed until asked for */}
+            <Accordion
+                variant="outlined"
+                disableGutters
+                slotProps={TIMELINE_ACCORDION_SLOT_PROPS}
+                sx={{ "&::before": { display: "none" } }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="application-timeline-content"
+                    id="application-timeline-header"
+                >
+                    <Typography variant="h6" component="h2">
                         Application timeline
                     </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
                     <ResumeTimeline rows={timeline} />
-                </CardContent>
-            </Card>
+                </AccordionDetails>
+            </Accordion>
         </AdminLayout>
     );
 }

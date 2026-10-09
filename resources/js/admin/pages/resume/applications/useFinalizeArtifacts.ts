@@ -1,13 +1,11 @@
 import { router } from "@inertiajs/react";
 import { useCallback, useState } from "react";
 
-import type { TargetedResume } from "@/types";
-
 import { api, apiErrorMessage } from "@/api";
 
 /**
  * Minimal structural view of the parsed tailored resume block this hook needs.
- * Compatible with `LatestTailoredResumeData` from ./tailoredResumeParser.
+ * Compatible with `LatestTailoredResumeData` from ../targeted/tailoredResumeParser.
  */
 interface FinalizableResumeData {
     rawContent: string;
@@ -15,8 +13,9 @@ interface FinalizableResumeData {
 }
 
 interface UseFinalizeArtifactsParams {
-    conversationId: number;
-    targetedResume: TargetedResume | null;
+    applicationId: number;
+    /** The application's targeted resume, when one has been finalized. */
+    targetedResumeId: number | null;
     latestResumeData: FinalizableResumeData | null;
     latestCoverLetterContent: string | null;
 }
@@ -33,8 +32,8 @@ interface UseFinalizeArtifactsResult {
 }
 
 export default function useFinalizeArtifacts({
-    conversationId,
-    targetedResume,
+    applicationId,
+    targetedResumeId,
     latestResumeData,
     latestCoverLetterContent,
 }: UseFinalizeArtifactsParams): UseFinalizeArtifactsResult {
@@ -50,26 +49,29 @@ export default function useFinalizeArtifacts({
     const canFinalizeCoverLetter = latestCoverLetterContent !== null;
 
     const finalizeResume = useCallback(async (): Promise<void> => {
-        if (!canFinalizeResume && targetedResume) {
-            router.post(
-                `/admin/resume/targeted-resume/${targetedResume.id}/regenerate`,
-            );
-            return;
-        }
         if (!latestResumeData) {
+            if (targetedResumeId !== null) {
+                router.post(
+                    `/admin/resume/targeted-resume/${targetedResumeId}/regenerate`,
+                );
+            }
             return;
         }
         setIsFinalizing(true);
         setFinalizeError(null);
         try {
             await api.post(
-                `/api/admin/resume/targeted-builder/${conversationId}/finalize`,
+                `/api/admin/resume/applications/${applicationId}/finalize`,
                 {
                     tailored_content: latestResumeData.rawContent,
                     fit_score: latestResumeData.fitScore,
                 },
             );
-            window.location.reload();
+            // Finalizing writes the document, may update the fit score on the
+            // application, and completes the session.
+            router.reload({
+                only: ["application", "targetedResume", "conversation"],
+            });
         } catch (error) {
             setFinalizeError(
                 apiErrorMessage(
@@ -81,20 +83,20 @@ export default function useFinalizeArtifacts({
         } finally {
             setIsFinalizing(false);
         }
-    }, [canFinalizeResume, conversationId, latestResumeData, targetedResume]);
+    }, [applicationId, latestResumeData, targetedResumeId]);
 
     const finalizeCoverLetter = useCallback(async (): Promise<void> => {
-        if (!canFinalizeCoverLetter || !latestCoverLetterContent) {
+        if (!latestCoverLetterContent) {
             return;
         }
         setIsFinalizingCoverLetter(true);
         setFinalizeCoverLetterError(null);
         try {
             await api.post(
-                `/api/admin/resume/targeted-builder/${conversationId}/finalize-cover-letter`,
+                `/api/admin/resume/applications/${applicationId}/finalize-cover-letter`,
                 { cover_letter_content: latestCoverLetterContent },
             );
-            window.location.reload();
+            router.reload({ only: ["coverLetter", "conversation"] });
         } catch (error) {
             setFinalizeCoverLetterError(
                 apiErrorMessage(
@@ -106,7 +108,7 @@ export default function useFinalizeArtifacts({
         } finally {
             setIsFinalizingCoverLetter(false);
         }
-    }, [canFinalizeCoverLetter, conversationId, latestCoverLetterContent]);
+    }, [applicationId, latestCoverLetterContent]);
 
     return {
         isFinalizing,

@@ -18,7 +18,7 @@
                 "href": "/admin/ai",
                 "icon": "SmartToy",
                 "label": "AI Tools",
-                "description": "Manage AI systems, targeted resume builder, and AI cover letter generation"
+                "description": "Manage AI systems, job application analysis, and AI cover letter generation"
               },
               {
                 "can": "edit-resume",
@@ -79,10 +79,17 @@
                 },
                 {
                     "can": "edit-resume",
-                    "href": "/admin/resume/targeted-builder",
+                    "href": "/admin/resume/applications",
+                    "icon": "WorkOutline",
+                    "label": "Applications",
+                    "description": "Track every job you consider or apply to, with or without a tailored resume"
+                },
+                {
+                    "can": "edit-resume",
+                    "href": "/admin/resume/targeted-resumes",
                     "icon": "TrackChanges",
-                    "label": "Targeted Resume Builder",
-                    "description": "Use AI to tailor your resume for specific job postings"
+                    "label": "Targeted Resumes",
+                    "description": "Find, download and edit the resumes tailored for specific job postings"
                 },
                 {
                     "can": "edit-resume",
@@ -116,10 +123,10 @@
             "navigationItems": [
                 {
                     "can": "manage-ai-tools",
-                    "href": "/admin/resume/targeted-builder",
-                    "icon": "TrackChanges",
-                    "label": "Targeted Resume Builder",
-                    "description": "Use AI to tailor your resume for specific job postings"
+                    "href": "/admin/resume/applications",
+                    "icon": "WorkOutline",
+                    "label": "Applications",
+                    "description": "Analyse job postings with AI and tailor your resume for them"
                 },
                 {
                     "can": "manage-ai-tools",

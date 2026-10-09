@@ -1,24 +1,47 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
 
-import type { StatusUpdate, TargetedResume } from "@/types";
+import type { Application, StatusUpdate } from "@/types";
 
 import { api, apiErrorMessage } from "@/api";
 
 interface StatusUpdateResponse {
     success?: boolean;
     message?: string;
+    status?: string;
     status_updates?: StatusUpdate[];
     allowed_next_statuses?: string[];
 }
+
+/** What a status endpoint reports back: the application's status and history. */
+interface StatusSnapshot {
+    status: string;
+    statusUpdates: StatusUpdate[];
+    allowedNextStatuses: string[];
+}
+
+interface MarkAppliedParams {
+    /** Omit when the application's targeted resume is what was sent. */
+    resumeVersionId?: number | null;
+    occurredAt?: string | null;
+}
+
+type StatusSource = Pick<
+    Application,
+    "status" | "status_updates" | "allowed_next_statuses" | "has_applied"
+>;
 
 function toDateInputValue(isoDate: string): string {
     return isoDate.slice(0, 10);
 }
 
 export interface UseStatusUpdatesResult {
+    /** The application's stored status (not the ghosted display status). */
+    status: string;
     statusUpdates: StatusUpdate[];
     allowedNextStatuses: string[];
+    /** An `applied` entry exists, so the resume is the record of what was sent. */
+    hasApplied: boolean;
     selectedNextStatus: string;
     setSelectedNextStatus: (value: string) => void;
     statusNotes: string;
@@ -36,7 +59,12 @@ export interface UseStatusUpdatesResult {
     isDeletingStatusId: number | null;
     showStatusUpdateForm: boolean;
     setShowStatusUpdateForm: (value: boolean) => void;
-    markApplied: () => Promise<void>;
+    /**
+     * Resolves null when the application was recorded as applied, otherwise
+     * the reason it was not. Reported to the caller rather than through
+     * `statusError`, which belongs to the history actions.
+     */
+    markApplied: (params?: MarkAppliedParams) => Promise<string | null>;
     addStatusUpdate: () => Promise<void>;
     startEditingStatus: (statusUpdate: StatusUpdate) => void;
     cancelEditingStatus: () => void;
@@ -44,16 +72,23 @@ export interface UseStatusUpdatesResult {
     deleteStatusUpdate: (statusUpdateId: number) => Promise<void>;
 }
 
+/**
+ * Status history actions for one application.
+ *
+ * The status, history and allowed transitions are read from the `application`
+ * prop rather than copied into state. A status endpoint's response is held as
+ * a short-lived override so the page updates before the partial reload that
+ * follows it lands. The override is dropped when that reload — this hook's
+ * own — finishes, not whenever the prop changes: another reload already in
+ * flight (a chat turn, a details save) can deliver an `application` rendered
+ * before the status write, and must not snap the page back to it.
+ */
 export default function useStatusUpdates(
-    conversationId: number,
-    targetedResume: TargetedResume | null,
+    applicationId: number,
+    application: StatusSource,
 ): UseStatusUpdatesResult {
-    const [statusUpdates, setStatusUpdates] = useState<StatusUpdate[]>(
-        targetedResume?.status_updates ?? [],
-    );
-    const [allowedNextStatuses, setAllowedNextStatuses] = useState<string[]>(
-        targetedResume?.allowed_next_statuses ?? [],
-    );
+    const [override, setOverride] = useState<StatusSnapshot | null>(null);
+
     const [selectedNextStatus, setSelectedNextStatus] = useState("");
     const [statusNotes, setStatusNotes] = useState("");
     const [statusOccurredAt, setStatusOccurredAt] = useState("");
@@ -68,39 +103,72 @@ export default function useStatusUpdates(
     );
     const [showStatusUpdateForm, setShowStatusUpdateForm] = useState(false);
 
-    const markApplied = async (): Promise<void> => {
+    const baseUrl = `/api/admin/resume/applications/${applicationId}`;
+
+    const status = override?.status ?? application.status;
+    const statusUpdates = override?.statusUpdates ?? application.status_updates;
+    const allowedNextStatuses =
+        override?.allowedNextStatuses ?? application.allowed_next_statuses;
+    const hasApplied = override
+        ? override.statusUpdates.some((entry) => entry.status === "applied")
+        : application.has_applied;
+
+    /** Show the endpoint's answer now, then let the server refresh the prop. */
+    const applyResponse = (data: StatusUpdateResponse): void => {
+        const snapshot: StatusSnapshot = {
+            status: data.status ?? status,
+            statusUpdates: data.status_updates ?? [],
+            allowedNextStatuses: data.allowed_next_statuses ?? [],
+        };
+        setOverride(snapshot);
+        router.reload({
+            only: ["application"],
+            // Only this write's own override: a later write may have
+            // replaced it while this reload was still on its way.
+            onFinish: () => {
+                setOverride((current) =>
+                    current === snapshot ? null : current,
+                );
+            },
+        });
+    };
+
+    const markApplied = async ({
+        resumeVersionId = null,
+        occurredAt = null,
+    }: MarkAppliedParams = {}): Promise<string | null> => {
         setIsSubmittingStatus(true);
-        setStatusError(null);
         try {
             const data = await api.post<StatusUpdateResponse>(
-                `/api/admin/resume/targeted-builder/${conversationId}/status-update`,
-                { status: "applied" },
+                `${baseUrl}/apply`,
+                // Both are optional server-side; an absent key (not a null)
+                // is what asks for the default.
+                {
+                    resume_version_id: resumeVersionId ?? undefined,
+                    occurred_at: occurredAt ?? undefined,
+                },
             );
             if (!data.success) {
-                setStatusError(data.message ?? "Failed to mark as applied.");
-                return;
+                return data.message ?? "Failed to mark as applied.";
             }
-            setStatusUpdates(data.status_updates ?? []);
-            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
-            router.reload({ only: ["targetedResume"] });
+            applyResponse(data);
+            return null;
         } catch (error) {
-            setStatusError(
-                apiErrorMessage(error, "Failed to mark as applied."),
-            );
+            return apiErrorMessage(error, "Failed to mark as applied.");
         } finally {
             setIsSubmittingStatus(false);
         }
     };
 
     const addStatusUpdate = async (): Promise<void> => {
-        if (!selectedNextStatus || !targetedResume) {
+        if (!selectedNextStatus) {
             return;
         }
         setIsSubmittingStatus(true);
         setStatusError(null);
         try {
             const data = await api.post<StatusUpdateResponse>(
-                `/api/admin/resume/targeted-builder/${conversationId}/status-update`,
+                `${baseUrl}/status-updates`,
                 {
                     status: selectedNextStatus,
                     notes: statusNotes || null,
@@ -111,8 +179,7 @@ export default function useStatusUpdates(
                 setStatusError(data.message ?? "Failed to update status.");
                 return;
             }
-            setStatusUpdates(data.status_updates ?? []);
-            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            applyResponse(data);
             setSelectedNextStatus("");
             setStatusNotes("");
             setStatusOccurredAt("");
@@ -147,7 +214,7 @@ export default function useStatusUpdates(
 
         try {
             const data = await api.put<StatusUpdateResponse>(
-                `/api/admin/resume/targeted-builder/${conversationId}/status-update/${statusUpdateId}`,
+                `${baseUrl}/status-updates/${statusUpdateId}`,
                 {
                     notes: editingStatusNotes || null,
                     occurred_at: editingStatusOccurredAt,
@@ -161,8 +228,7 @@ export default function useStatusUpdates(
                 return;
             }
 
-            setStatusUpdates(data.status_updates ?? []);
-            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            applyResponse(data);
             cancelEditingStatus();
         } catch (error) {
             setStatusError(
@@ -181,7 +247,7 @@ export default function useStatusUpdates(
 
         try {
             const data = await api.del<StatusUpdateResponse>(
-                `/api/admin/resume/targeted-builder/${conversationId}/status-update/${statusUpdateId}`,
+                `${baseUrl}/status-updates/${statusUpdateId}`,
             );
 
             if (!data.success) {
@@ -191,13 +257,10 @@ export default function useStatusUpdates(
                 return;
             }
 
-            setStatusUpdates(data.status_updates ?? []);
-            setAllowedNextStatuses(data.allowed_next_statuses ?? []);
+            applyResponse(data);
             if (editingStatusId === statusUpdateId) {
                 cancelEditingStatus();
             }
-
-            router.reload({ only: ["targetedResume"] });
         } catch (error) {
             setStatusError(
                 apiErrorMessage(error, "Failed to delete status update entry."),
@@ -208,8 +271,10 @@ export default function useStatusUpdates(
     };
 
     return {
+        status,
         statusUpdates,
         allowedNextStatuses,
+        hasApplied,
         selectedNextStatus,
         setSelectedNextStatus,
         statusNotes,

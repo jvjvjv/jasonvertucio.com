@@ -75,7 +75,7 @@ export function getLatestCoverLetterContent(
 
 export function hasNewerResume(
     latest: LatestTailoredResumeData | null,
-    targetedResume: TargetedResume | null,
+    targetedResume: Pick<TargetedResume, "title" | "tailored_content"> | null,
 ): boolean {
     if (!targetedResume || !latest) {
         return false;
@@ -83,7 +83,7 @@ export function hasNewerResume(
     const normalize = (s: string | null | undefined): string =>
         (s ?? "").trim().replace(/\r\n/g, "\n");
     return (
-        normalize(latest.title) !== normalize(targetedResume.tailored_title) ||
+        normalize(latest.title) !== normalize(targetedResume.title) ||
         normalize(latest.content) !== normalize(targetedResume.tailored_content)
     );
 }

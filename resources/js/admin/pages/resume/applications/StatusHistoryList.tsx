@@ -152,6 +152,7 @@ export default function StatusHistoryList({
                                     <IconButton
                                         size="small"
                                         title="Save status update"
+                                        aria-label="Save status update"
                                         color="primary"
                                         onClick={() => {
                                             onSaveStatusEdit(statusUpdate.id);
@@ -167,6 +168,7 @@ export default function StatusHistoryList({
                                     <IconButton
                                         size="small"
                                         title="Cancel editing"
+                                        aria-label="Cancel editing"
                                         onClick={onCancelEditingStatus}
                                         disabled={
                                             isSavingStatusEdit ||
@@ -181,6 +183,7 @@ export default function StatusHistoryList({
                                 <IconButton
                                     size="small"
                                     title="Edit date and notes"
+                                    aria-label="Edit date and notes"
                                     onClick={() => {
                                         onStartEditingStatus(statusUpdate);
                                     }}
@@ -194,6 +197,7 @@ export default function StatusHistoryList({
                             <IconButton
                                 size="small"
                                 title="Delete status update"
+                                aria-label="Delete status update"
                                 color="error"
                                 onClick={() => {
                                     onDeleteStatusUpdate(statusUpdate.id);

@@ -14,8 +14,6 @@ export interface LatestGeneratedArtifacts {
     latestResumeData: LatestTailoredResumeData | null;
     latestCoverLetterContent: string | null;
     hasNewerResume: boolean;
-    canFinalizeResume: boolean;
-    canFinalizeCoverLetter: boolean;
 }
 
 export default function useLatestGeneratedArtifacts(
@@ -41,7 +39,5 @@ export default function useLatestGeneratedArtifacts(
         latestResumeData,
         latestCoverLetterContent,
         hasNewerResume,
-        canFinalizeResume: latestResumeData !== null,
-        canFinalizeCoverLetter: latestCoverLetterContent !== null,
     };
 }

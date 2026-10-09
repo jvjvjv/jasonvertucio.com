@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 
 import type { ReactNode } from "react";
 
-interface BuilderStatusCardProps {
+interface ArtifactStatusCardProps {
     label: string;
     isFinalized: boolean;
     color: "primary" | "secondary" | "error" | "warning" | "info" | "success";
@@ -22,7 +22,8 @@ interface BuilderStatusCardProps {
     extraActions?: ReactNode;
 }
 
-export default function BuilderStatusCard({
+/** Finalize state and actions for one generated artifact (resume or cover letter). */
+export default function ArtifactStatusCard({
     label,
     isFinalized,
     color,
@@ -33,7 +34,7 @@ export default function BuilderStatusCard({
     onFinalize,
     caption,
     extraActions,
-}: BuilderStatusCardProps) {
+}: ArtifactStatusCardProps) {
     return (
         <Card
             variant="outlined"
@@ -75,6 +76,7 @@ export default function BuilderStatusCard({
                             disabled={isFinalizing || !canFinalize}
                             onClick={onFinalize}
                             title={finalizeTitle}
+                            aria-label={finalizeTitle}
                         >
                             {isFinalizing ? (
                                 <CircularProgress size={16} />

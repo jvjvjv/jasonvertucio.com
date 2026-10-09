@@ -1,40 +1,45 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
-import type { Conversation, StatusUpdate, TargetedResume } from "@/types";
+import useGhostedAfterDays from "./useGhostedAfterDays";
+
+import type { ConversationUsage, StatusUpdate } from "@/types";
 import type { SxProps } from "@mui/material";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
-import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/applicationStatus";
+import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { formatCalendarDate } from "@/utils/date";
 import mergeSx from "@/utils/mergeSx";
 
-interface TargetedBuilderStatusBarProps {
-    conversation: Conversation;
-    targetedResume: TargetedResume | null;
-    statusUpdates?: StatusUpdate[];
+interface StatusBarProps {
+    /** The application's stored status; the ghosted display status is derived here. */
+    status: string;
+    statusUpdates: StatusUpdate[];
+    fitScore: number | null;
+    /** AI usage of the application's session; omit when it has none. */
+    usage?: ConversationUsage | null;
     sx?: SxProps;
 }
 
-export default function TargetedBuilderStatusBar({
-    conversation,
-    targetedResume,
+export default function StatusBar({
+    status,
     statusUpdates,
+    fitScore,
+    usage,
     sx,
-}: TargetedBuilderStatusBarProps) {
-    const fitScore: number | null = (targetedResume?.fit_score ??
-        conversation.context?.fit_score) as number | null;
-
-    const updates = statusUpdates ?? targetedResume?.status_updates ?? [];
+}: StatusBarProps) {
     const latestUpdate =
-        updates.length > 0 ? updates[updates.length - 1] : null;
+        statusUpdates.length > 0
+            ? statusUpdates[statusUpdates.length - 1]
+            : null;
 
-    const displayStatus = resolveTargetedResumeDisplayStatus({
-        conversationStatus: conversation.status,
-        resumeStatus: targetedResume?.status,
-        latestStatusOccurredAt: latestUpdate?.occurred_at,
-    });
+    const ghostedAfterDays = useGhostedAfterDays();
+    const displayStatus = resolveApplicationDisplayStatus(
+        status,
+        latestUpdate?.occurred_at,
+        ghostedAfterDays,
+    );
 
     return (
         <Box
@@ -50,19 +55,19 @@ export default function TargetedBuilderStatusBar({
             )}
         >
             <StatusChip status={displayStatus} />
-            <UsageChip usage={conversation.usage} />
-            {fitScore && (
+            {usage ? <UsageChip usage={usage} /> : null}
+            {fitScore !== null ? (
                 <Typography variant="caption" color="text.secondary">
                     Fit: {fitScore}%
                 </Typography>
-            )}
-            {latestUpdate && (
+            ) : null}
+            {latestUpdate ? (
                 <Typography variant="caption" color="text.secondary">
                     {latestUpdate.status.charAt(0).toUpperCase() +
                         latestUpdate.status.slice(1)}
                     : {formatCalendarDate(latestUpdate.occurred_at)}
                 </Typography>
-            )}
+            ) : null}
         </Box>
     );
 }

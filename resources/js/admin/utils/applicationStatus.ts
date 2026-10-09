@@ -1,5 +1,8 @@
 const DEFAULT_GHOSTED_AFTER_DAYS = 30;
 
+/** Statuses an application holds before it enters the pipeline. */
+const PRE_PIPELINE_STATUSES = new Set(["draft", "passed"]);
+
 function isOlderThanDays(dateValue: string, days: number): boolean {
     const parsed = new Date(dateValue);
 
@@ -13,30 +16,30 @@ function isOlderThanDays(dateValue: string, days: number): boolean {
     return parsed < threshold;
 }
 
-interface ResolveDisplayStatusParams {
-    conversationStatus: string;
-    resumeStatus?: string | null;
-    latestStatusOccurredAt?: string | null;
-    ghostedAfterDays?: number;
-}
-
-export function resolveTargetedResumeDisplayStatus({
-    conversationStatus,
-    resumeStatus,
-    latestStatusOccurredAt,
-    ghostedAfterDays = DEFAULT_GHOSTED_AFTER_DAYS,
-}: ResolveDisplayStatusParams): string {
+/**
+ * The status to display for an application. Mirrors PHP
+ * `App\Support\ApplicationStatusResolver`: an `applied` application whose
+ * latest status entry is older than the ghosted threshold displays as
+ * "ghosted"; otherwise the stored status is returned as-is. The stored status
+ * is never changed.
+ */
+export function resolveApplicationDisplayStatus(
+    status: string,
+    latestStatusOccurredAt?: string | null,
+    ghostedAfterDays: number = DEFAULT_GHOSTED_AFTER_DAYS,
+): string {
     if (
-        resumeStatus === "applied" &&
+        status === "applied" &&
         latestStatusOccurredAt &&
         isOlderThanDays(latestStatusOccurredAt, ghostedAfterDays)
     ) {
         return "ghosted";
     }
 
-    if (resumeStatus && resumeStatus !== "draft") {
-        return resumeStatus;
-    }
+    return status;
+}
 
-    return conversationStatus;
+/** Whether the application has entered the pipeline (`applied` onward). */
+export function isPipelineStatus(status: string): boolean {
+    return !PRE_PIPELINE_STATUSES.has(status);
 }

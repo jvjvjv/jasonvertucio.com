@@ -2,132 +2,347 @@ import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
-import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import Alert from "@mui/material/Alert";
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
-import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
-import MenuItem from "@mui/material/MenuItem";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { memo, useCallback, useRef, useState } from "react";
 
-import type { Conversation } from "@/types";
+import FiltersDialog, { countActiveFilters } from "./FiltersDialog";
+
+import type {
+    DialogFilters,
+    StatusOption,
+    UsesTargetedResume,
+} from "./FiltersDialog";
+import type { DebouncedSearchFieldHandle } from "@/admin/components/DebouncedSearchField";
+import type { ApplicationListItem } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
+import DebouncedSearchField from "@/admin/components/DebouncedSearchField";
 import EmptyTableRow from "@/admin/components/EmptyTableRow";
 import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/applicationStatus";
+import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
+import { api, apiErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 import { formatCalendarDate } from "@/utils/date";
 
-interface StatusOption {
-    value: string;
-    label: string;
-}
+const LIST_URL = "/admin/resume/applications";
+const NEW_SESSION_URL = "/admin/resume/applications/new";
+const COLUMN_COUNT = 8;
+const EM_DASH = "—";
 
-const NOT_APPLIED_STATUSES = ["draft", "active", "pass", "finalized"];
-const APPLIED_STATUSES = [
-    "applied",
-    "interviewing",
-    "interviewed",
-    "offered",
-    "accepted",
-    "hired",
-    "rejected",
-];
+interface IndexFilters {
+    statuses: string[];
+    uses_targeted_resume: UsesTargetedResume;
+    search: string;
+}
 
 interface IndexProps {
-    conversations: Conversation[];
+    applications: ApplicationListItem[];
     allStatuses: StatusOption[];
-    filters: {
-        statuses: string[];
-        search: string;
-    };
+    filters: IndexFilters;
+    /** Days without an update after which an applied application shows as ghosted. */
+    ghostedAfterDays: number;
 }
 
+/**
+ * The query string for a set of filters. A filter at its default is left out
+ * altogether, so a cleared list has no filter parameters in its URL.
+ */
+function buildQuery(filters: IndexFilters): {
+    [key: string]: string | string[];
+} {
+    const query: { [key: string]: string | string[] } = {};
+
+    if (filters.statuses.length > 0) {
+        query.status = filters.statuses;
+    }
+    if (filters.uses_targeted_resume !== "any") {
+        query.uses_targeted_resume = filters.uses_targeted_resume;
+    }
+    if (filters.search !== "") {
+        query.search = filters.search;
+    }
+
+    return query;
+}
+
+function visitWithFilters(filters: IndexFilters, onSuccess?: () => void): void {
+    router.get(LIST_URL, buildQuery(filters), {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ["applications", "filters"],
+        onSuccess,
+    });
+}
+
+interface ApplicationRowProps {
+    application: ApplicationListItem;
+    ghostedAfterDays: number;
+    onPass: (id: number) => void;
+    onDelete: (application: ApplicationListItem) => void;
+}
+
+/**
+ * One row of the list. Memoized, with stable callbacks from the page, so
+ * opening a dialog or reporting an error does not re-render every row.
+ */
+const ApplicationRow = memo(function ApplicationRow({
+    application,
+    ghostedAfterDays,
+    onPass,
+    onDelete,
+}: ApplicationRowProps) {
+    const showUrl = `${LIST_URL}/${application.id}`;
+    const latestOccurredAt = application.latest_status_update?.occurred_at;
+    const displayStatus = resolveApplicationDisplayStatus(
+        application.status,
+        latestOccurredAt,
+        ghostedAfterDays,
+    );
+
+    return (
+        <TableRow hover>
+            <TableCell>
+                <Link
+                    component={InertiaLink}
+                    href={showUrl}
+                    underline="hover"
+                    color="inherit"
+                >
+                    <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        color="primary"
+                    >
+                        {application.company_name}
+                    </Typography>
+                </Link>
+                {application.position ? (
+                    <Typography variant="caption" color="text.secondary">
+                        {application.position}
+                    </Typography>
+                ) : null}
+            </TableCell>
+            <TableCell align="center">
+                {application.targeted_resume_id !== null ? (
+                    <IconButton
+                        component={InertiaLink}
+                        href={`/admin/resume/targeted-resumes/${application.targeted_resume_id}/edit`}
+                        size="small"
+                        color="primary"
+                        title="Edit targeted resume"
+                        aria-label="Edit targeted resume"
+                    >
+                        <EditNoteIcon fontSize="small" />
+                    </IconButton>
+                ) : (
+                    EM_DASH
+                )}
+            </TableCell>
+            <TableCell>{application.resume_version ?? EM_DASH}</TableCell>
+            <TableCell>
+                {application.fit_score !== null
+                    ? `${application.fit_score}%`
+                    : EM_DASH}
+            </TableCell>
+            <TableCell>
+                {application.usage ? (
+                    <UsageChip usage={application.usage} />
+                ) : null}
+            </TableCell>
+            <TableCell>
+                <StatusChip
+                    status={displayStatus}
+                    tip={
+                        latestOccurredAt
+                            ? formatCalendarDate(latestOccurredAt)
+                            : undefined
+                    }
+                />
+            </TableCell>
+            <TableCell>
+                <Typography variant="caption">
+                    {application.last_activity_at ?? "-"}
+                </Typography>
+            </TableCell>
+            <TableCell align="right">
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 1,
+                    }}
+                >
+                    <IconButton
+                        component={InertiaLink}
+                        href={showUrl}
+                        size="small"
+                        color="primary"
+                        title="Open"
+                        aria-label="Open"
+                    >
+                        <AutoFixHighOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    {application.status === "draft" ? (
+                        <IconButton
+                            size="small"
+                            color="warning"
+                            title="Pass"
+                            aria-label="Pass"
+                            onClick={() => {
+                                onPass(application.id);
+                            }}
+                        >
+                            <BackHandOutlinedIcon fontSize="small" />
+                        </IconButton>
+                    ) : null}
+                    <IconButton
+                        size="small"
+                        color="error"
+                        title="Delete"
+                        aria-label="Delete"
+                        onClick={() => {
+                            onDelete(application);
+                        }}
+                    >
+                        <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+            </TableCell>
+        </TableRow>
+    );
+});
+
 export default function Index({
-    conversations,
+    applications,
     allStatuses,
     filters,
+    ghostedAfterDays,
 }: IndexProps) {
-    const handleSearch = (search: string) => {
-        router.get(
-            "/admin/resume/targeted-builder",
-            { search, status: filters.statuses },
-            { preserveState: true },
-        );
-    };
-
-    const handleStatusChange = (event: SelectChangeEvent<string[]>) => {
-        const value = event.target.value;
-        const updated = typeof value === "string" ? value.split(",") : value;
-        router.get(
-            "/admin/resume/targeted-builder",
-            { status: updated, search: filters.search },
-            { preserveState: true },
-        );
-    };
-
-    const applyStatusPreset = (statuses: string[]) => {
-        router.get(
-            "/admin/resume/targeted-builder",
-            { status: statuses, search: filters.search },
-            { preserveState: true },
-        );
-    };
-
-    const clearStatuses = () => {
-        router.get(
-            "/admin/resume/targeted-builder",
-            { status: [], search: filters.search },
-            { preserveState: true },
-        );
-    };
-
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    /** Bumped to remount the search field when the filters are cleared. */
+    const [searchResetKey, setSearchResetKey] = useState(0);
+    const searchFieldRef = useRef<DebouncedSearchFieldHandle>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleDelete = (id: number) => {
-        confirm("Delete this conversation?", () => {
-            router.delete(`/admin/resume/targeted-builder/${id}`);
+    const dialogFilters: DialogFilters = {
+        statuses: filters.statuses,
+        usesTargetedResume: filters.uses_targeted_resume,
+    };
+    const activeFilterCount = countActiveFilters(dialogFilters);
+    const isFiltered = activeFilterCount > 0 || filters.search !== "";
+
+    const handleSearch = (search: string) => {
+        visitWithFilters({ ...filters, search });
+    };
+
+    const handleApplyFilters = (next: DialogFilters) => {
+        setFiltersOpen(false);
+        // Take over any search still waiting out its pause: the text typed is
+        // sent with these filters, and the pending search cannot follow.
+        const search = searchFieldRef.current?.takeText() ?? filters.search;
+        visitWithFilters({
+            search,
+            statuses: next.statuses,
+            uses_targeted_resume: next.usesTargetedResume,
         });
     };
 
-    const handlePass = (id: number) => {
-        confirm(
-            "Mark this opportunity as passed?",
+    const handleClearFilters = () => {
+        setFiltersOpen(false);
+        searchFieldRef.current?.takeText();
+        visitWithFilters(
+            { statuses: [], uses_targeted_resume: "any", search: "" },
+            // The search field seeds itself from `filters.search` on mount,
+            // so it is remounted only once the cleared filters have arrived.
             () => {
-                router.post(`/admin/resume/targeted-builder/${id}/pass`);
+                setSearchResetKey((key) => key + 1);
             },
-            { confirmLabel: "Pass", confirmColor: "warning" },
         );
     };
 
+    const handleDelete = useCallback(
+        (application: ApplicationListItem) => {
+            confirm(
+                `Delete the ${application.company_name} application?`,
+                () => {
+                    router.delete(`${LIST_URL}/${application.id}`, {
+                        preserveScroll: true,
+                    });
+                },
+                { confirmLabel: "Delete" },
+            );
+        },
+        [confirm],
+    );
+
+    const handlePass = useCallback(
+        (id: number) => {
+            const passApplication = async () => {
+                setActionError(null);
+                try {
+                    await api.post(`/api/admin/resume/applications/${id}/pass`);
+                    router.reload({ only: ["applications"] });
+                } catch (error) {
+                    setActionError(
+                        apiErrorMessage(error, "Failed to mark as passed."),
+                    );
+                }
+            };
+
+            confirm(
+                "Mark this opportunity as passed?",
+                () => {
+                    void passApplication();
+                },
+                { confirmLabel: "Pass", confirmColor: "warning" },
+            );
+        },
+        [confirm],
+    );
+
     return (
         <AdminLayout>
-            <Head title="Targeted Resumes | Resume" />
+            <Head title="Applications | Resume" />
             <PageHeader
-                title="Targeted Resume Builder"
+                title="Applications"
                 backHref="/admin/resume"
                 backLabel="Back to Resume Management"
             />
 
-            {/* Filters */}
+            {actionError ? (
+                <Alert
+                    severity="error"
+                    sx={{ mb: 2 }}
+                    onClose={() => {
+                        setActionError(null);
+                    }}
+                >
+                    {actionError}
+                </Alert>
+            ) : null}
+
             <Box
                 sx={{
                     display: "flex",
@@ -137,79 +352,41 @@ export default function Index({
                     alignItems: "center",
                 }}
             >
-                <TextField
-                    label="Search"
-                    size="small"
-                    value={filters.search}
-                    onChange={(e) => {
-                        handleSearch(e.target.value);
-                    }}
+                <DebouncedSearchField
+                    key={searchResetKey}
+                    ref={searchFieldRef}
+                    initialValue={filters.search}
+                    onSearch={handleSearch}
                     placeholder="Company, job title, or message..."
                     sx={{ minWidth: 250 }}
                 />
-                <FormControl size="small" sx={{ minWidth: 240 }}>
-                    <InputLabel id="targeted-statuses-label">
-                        Statuses
-                    </InputLabel>
-                    <Select
-                        labelId="targeted-statuses-label"
-                        multiple
-                        value={filters.statuses}
-                        onChange={handleStatusChange}
-                        input={<OutlinedInput label="Statuses" />}
-                        renderValue={(selected) => {
-                            if (selected.length === 0) {
-                                return "All statuses";
-                            }
-
-                            return allStatuses
-                                .filter((status) =>
-                                    selected.includes(status.value),
-                                )
-                                .map((status) => status.label)
-                                .join(", ");
+                <Badge
+                    badgeContent={activeFilterCount}
+                    color="primary"
+                    invisible={activeFilterCount === 0}
+                >
+                    <Button
+                        variant="outlined"
+                        startIcon={<FilterListIcon />}
+                        aria-label={
+                            activeFilterCount === 0
+                                ? "Filter"
+                                : `Filter, ${activeFilterCount} active`
+                        }
+                        aria-haspopup="dialog"
+                        onClick={() => {
+                            setFiltersOpen(true);
                         }}
                     >
-                        {allStatuses.map((status) => (
-                            <MenuItem key={status.value} value={status.value}>
-                                {status.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                <IconButton
-                    size="small"
-                    onClick={clearStatuses}
-                    disabled={filters.statuses.length === 0}
-                    title="Clear statuses"
-                    aria-label="Clear statuses"
-                >
-                    <CloseIcon fontSize="small" />
-                </IconButton>
-                <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                        applyStatusPreset(NOT_APPLIED_STATUSES);
-                    }}
-                >
-                    Not applied
-                </Button>
-                <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                        applyStatusPreset(APPLIED_STATUSES);
-                    }}
-                >
-                    Applied
-                </Button>
+                        Filter
+                    </Button>
+                </Badge>
                 <Box sx={{ flexGrow: 1 }} />
                 <ResponsiveButton
                     icon={<AddIcon />}
                     color="primary"
                     label="New Session"
-                    href="/admin/resume/targeted-builder/new"
+                    href={NEW_SESSION_URL}
                     variant="contained"
                 />
             </Box>
@@ -220,160 +397,53 @@ export default function Index({
                         <TableHead>
                             <TableRow>
                                 <TableCell>Company / Job</TableCell>
+                                <TableCell align="center">Resume</TableCell>
                                 <TableCell>Base Version</TableCell>
                                 <TableCell>Fit Score</TableCell>
-                                <TableCell>Usage</TableCell>
+                                <TableCell>AI Usage</TableCell>
                                 <TableCell>Status</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {conversations.length === 0 ? (
+                            {applications.length === 0 ? (
                                 <EmptyTableRow
-                                    colSpan={8}
-                                    message="No conversations found."
-                                    actionLabel="Start one"
-                                    actionHref="/admin/resume/targeted-builder/new"
+                                    colSpan={COLUMN_COUNT}
+                                    message={
+                                        isFiltered
+                                            ? "No applications match these filters."
+                                            : "No applications yet."
+                                    }
+                                    actionLabel="Start a new session"
+                                    actionHref={NEW_SESSION_URL}
                                 />
                             ) : (
-                                conversations.map((conv) => {
-                                    const resume = conv.targeted_resume;
-                                    const companyName =
-                                        resume?.company_name ??
-                                        (conv.context?.company_name as
-                                            string | undefined) ??
-                                        "—";
-                                    const position =
-                                        resume?.position ??
-                                        (conv.context?.job_title as
-                                            string | undefined) ??
-                                        "";
-                                    const displayStatus =
-                                        resolveTargetedResumeDisplayStatus({
-                                            conversationStatus: conv.status,
-                                            resumeStatus: resume?.status,
-                                            latestStatusOccurredAt:
-                                                resume?.latest_status_update
-                                                    ?.occurred_at,
-                                        });
-
-                                    return (
-                                        <TableRow key={conv.id} hover>
-                                            <TableCell>
-                                                <Link
-                                                    component={InertiaLink}
-                                                    href={`/admin/resume/targeted-builder/${conv.id}`}
-                                                    underline="hover"
-                                                    color="inherit"
-                                                >
-                                                    <Typography
-                                                        variant="body2"
-                                                        fontWeight={600}
-                                                        color="primary"
-                                                    >
-                                                        {companyName}
-                                                    </Typography>
-                                                </Link>
-                                                {position && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                    >
-                                                        {position}
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {resume?.resume_version ?? "—"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {resume?.fit_score != null
-                                                    ? `${resume.fit_score}%`
-                                                    : "—"}
-                                            </TableCell>
-                                            <TableCell>
-                                                <UsageChip usage={conv.usage} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <StatusChip
-                                                    status={displayStatus}
-                                                    tip={
-                                                        resume
-                                                            ?.latest_status_update
-                                                            ?.occurred_at &&
-                                                        formatCalendarDate(
-                                                            resume
-                                                                .latest_status_update
-                                                                .occurred_at,
-                                                        )
-                                                    }
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography variant="caption">
-                                                    {conv.last_message_at ??
-                                                        "-"}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "flex-end",
-                                                        gap: 1,
-                                                    }}
-                                                >
-                                                    <IconButton
-                                                        component={InertiaLink}
-                                                        href={`/admin/resume/targeted-builder/${conv.id}`}
-                                                        size="small"
-                                                        color="primary"
-                                                        title="View"
-                                                        aria-label="View"
-                                                    >
-                                                        <AutoFixHighOutlinedIcon fontSize="small" />
-                                                    </IconButton>
-                                                    {conv.status ===
-                                                        "active" && (
-                                                        <IconButton
-                                                            size="small"
-                                                            color="warning"
-                                                            title="Pass"
-                                                            aria-label="Pass"
-                                                            onClick={() => {
-                                                                handlePass(
-                                                                    conv.id,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <BackHandOutlinedIcon fontSize="small" />
-                                                        </IconButton>
-                                                    )}
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        title="Delete"
-                                                        aria-label="Delete"
-                                                        onClick={() => {
-                                                            handleDelete(
-                                                                conv.id,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <DeleteOutlineIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
+                                applications.map((application) => (
+                                    <ApplicationRow
+                                        key={application.id}
+                                        application={application}
+                                        ghostedAfterDays={ghostedAfterDays}
+                                        onPass={handlePass}
+                                        onDelete={handleDelete}
+                                    />
+                                ))
                             )}
                         </TableBody>
                     </Table>
                 </TableContainer>
             </Card>
+
+            <FiltersDialog
+                open={filtersOpen}
+                allStatuses={allStatuses}
+                value={dialogFilters}
+                onApply={handleApplyFilters}
+                onClear={handleClearFilters}
+                onClose={() => {
+                    setFiltersOpen(false);
+                }}
+            />
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

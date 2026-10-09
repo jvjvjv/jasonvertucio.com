@@ -24,6 +24,7 @@ export function statusColor(status: string): ChipColor {
         case "interviewed":
             return "info";
         case "pass":
+        case "passed":
             return "secondary";
         case "rejected":
             return "error";

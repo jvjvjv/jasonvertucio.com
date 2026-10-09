@@ -1,71 +1,90 @@
-import {
-    Head,
-    Link as InertiaLink,
-    router,
-    useForm,
-    usePage,
-} from "@inertiajs/react";
+import { Head, Link as InertiaLink, router, usePage } from "@inertiajs/react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import ChatIcon from "@mui/icons-material/Chat";
 import DoneIcon from "@mui/icons-material/Done";
-import EditNoteIcon from "@mui/icons-material/EditNote";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import IconButton from "@mui/material/IconButton";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { useState } from "react";
+import Typography from "@mui/material/Typography";
+import { useCallback, useState } from "react";
 
-import TailoredResumeEditor from "../targeted/TailoredResumeEditor";
-
-import BuilderChatPanel from "./ChatPanel";
-import BuilderMetadataForm from "./DetailsForm";
+import AppliedConfirmDialog from "./AppliedConfirmDialog";
+import BeginAnalysisPanel from "./BeginAnalysisPanel";
+import ChatPanel from "./ChatPanel";
+import DetailsForm from "./DetailsForm";
+import StatusBar from "./StatusBar";
 import useFinalizeArtifacts from "./useFinalizeArtifacts";
 import useLatestGeneratedArtifacts from "./useLatestGeneratedArtifacts";
 import useStatusUpdates from "./useStatusUpdates";
 
-import type { MetadataFormData } from "./DetailsForm";
 import type { ChatMessage } from "@/components/ChatInterface";
 import type {
-    Conversation,
+    AiSystem,
+    Application,
+    ApplicationConversation,
     CoverLetter,
     Message,
+    ResumeVersionOption,
     SharedProps,
     TargetedResume,
 } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import { isPipelineStatus } from "@/admin/utils/applicationStatus";
+import { api, apiErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
+const TAB_CHAT = 0;
+const TAB_DETAILS = 1;
+
 interface ShowProps {
-    conversation: Conversation;
+    application: Application;
+    /** Null when the application has no AI session. */
+    conversation: ApplicationConversation | null;
     messages: Message[];
     targetedResume: TargetedResume | null;
     coverLetter: CoverLetter | null;
     shouldAutoStart: boolean;
+    resumeVersions: ResumeVersionOption[];
+    currentResumeVersionId: number | null;
+    systems: Pick<AiSystem, "id" | "name" | "model">[];
+    defaultSystemId: number | null;
 }
 
 export default function Show({
+    application,
     conversation,
-    messages: initialMessages,
+    messages,
     targetedResume,
     coverLetter,
     shouldAutoStart,
+    resumeVersions,
+    currentResumeVersionId,
+    systems,
+    defaultSystemId,
 }: ShowProps) {
     const page = usePage<SharedProps>();
-    const authUser = page.props.auth.user;
+    const isAuthenticated = !!page.props.auth.user;
 
-    const [activeTab, setActiveTab] = useState(0);
+    // Server messages carry a wider `role` than the chat's own message type.
+    const initialMessages = messages as ChatMessage[];
+
+    const [activeTab, setActiveTab] = useState(TAB_CHAT);
+    const [appliedDialogOpen, setAppliedDialogOpen] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [appliedError, setAppliedError] = useState<string | null>(null);
 
     /** Mirror of ChatInterface's message list, scanned for resume/cover letter blocks. */
-    const [liveMessages, setLiveMessages] = useState<ChatMessage[]>(
-        initialMessages as ChatMessage[],
-    );
+    const [liveMessages, setLiveMessages] =
+        useState<ChatMessage[]>(initialMessages);
 
     const { latestResumeData, latestCoverLetterContent, hasNewerResume } =
         useLatestGeneratedArtifacts(liveMessages, targetedResume);
@@ -80,48 +99,58 @@ export default function Show({
         finalizeResume,
         finalizeCoverLetter,
     } = useFinalizeArtifacts({
-        conversationId: conversation.id,
-        targetedResume,
+        applicationId: application.id,
+        targetedResumeId: targetedResume?.id ?? null,
         latestResumeData,
         latestCoverLetterContent,
     });
 
-    const status = useStatusUpdates(conversation.id, targetedResume);
+    // Stable wrappers: these are props of the memoized ChatPanel.
+    const handleFinalizeResume = useCallback(() => {
+        void finalizeResume();
+    }, [finalizeResume]);
+    const handleFinalizeCoverLetter = useCallback(() => {
+        void finalizeCoverLetter();
+    }, [finalizeCoverLetter]);
 
-    const metadataForm = useForm<MetadataFormData>({
-        title: conversation.title ?? "",
-        company_name:
-            targetedResume?.company_name ??
-            (conversation.context?.company_name as string | undefined) ??
-            "",
-        job_title:
-            targetedResume?.position ??
-            (conversation.context?.job_title as string | undefined) ??
-            "",
-    });
+    const status = useStatusUpdates(application.id, application);
 
     const { dialogProps, confirm } = useConfirmDialog();
+
+    const passApplication = async () => {
+        setActionError(null);
+        try {
+            const data = await api.post<{ redirect?: string }>(
+                `/api/admin/resume/applications/${application.id}/pass`,
+            );
+            if (data.redirect) {
+                router.visit(data.redirect);
+            } else {
+                router.reload({ only: ["application", "conversation"] });
+            }
+        } catch (error) {
+            setActionError(apiErrorMessage(error, "Failed to mark as passed."));
+        }
+    };
 
     const handlePass = () => {
         confirm(
             "Mark this opportunity as passed?",
             () => {
-                router.post(
-                    `/admin/resume/targeted-builder/${conversation.id}/pass`,
-                );
+                void passApplication();
             },
             { confirmLabel: "Pass", confirmColor: "warning" },
         );
     };
 
-    const handleApplied = () => {
-        confirm(
-            "Mark this job as applied?",
-            () => {
-                void status.markApplied();
-            },
-            { confirmLabel: "Applied", confirmColor: "success" },
-        );
+    const handleConfirmApplied = async (resumeVersionId: number | null) => {
+        setAppliedError(null);
+        const error = await status.markApplied({ resumeVersionId });
+        if (error === null) {
+            setAppliedDialogOpen(false);
+        } else {
+            setAppliedError(error);
+        }
     };
 
     const handleDeleteStatusUpdate = (statusUpdateId: number) => {
@@ -134,41 +163,40 @@ export default function Show({
         );
     };
 
-    const handleMetadataSave = () => {
-        metadataForm.put(
-            `/admin/resume/targeted-builder/${conversation.id}/metadata`,
+    const handleDiscardResume = () => {
+        if (targetedResume === null) {
+            return;
+        }
+        const targetedResumeId = targetedResume.id;
+        confirm(
+            "This permanently deletes the tailored resume and its generated documents. The application, its status history and its cover letter are kept. This cannot be undone.",
+            () => {
+                router.delete(
+                    `/admin/resume/targeted-resumes/${targetedResumeId}`,
+                    { preserveScroll: true },
+                );
+            },
+            { title: "Discard targeted resume?", confirmLabel: "Discard" },
         );
     };
 
-    const isApplied =
-        targetedResume !== null &&
-        targetedResume.status !== "draft" &&
-        targetedResume.status !== "finalized";
+    const isApplied = isPipelineStatus(status.status);
+    const canPass = status.status === "draft";
 
-    const companyName: string =
-        targetedResume?.company_name ??
-        (conversation.context?.company_name as string | undefined) ??
-        "Conversation";
-    const position: string =
-        targetedResume?.position ??
-        (conversation.context?.job_title as string | undefined) ??
-        "";
-    const pageTitle: string =
-        conversation.title ??
-        (position ? `${companyName} - ${position}` : companyName);
-    const jobUrl = conversation.job_url;
+    const pageTitle =
+        conversation?.title ??
+        `${application.company_name} — ${application.position}`;
+    const jobUrl = application.job_url;
 
-    const aiSystemId = conversation.ai_system_id as number | undefined;
-    const statusUrl = aiSystemId
-        ? `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-status`
-        : "";
-    const warmupUrl = aiSystemId
-        ? `/api/admin/resume/targeted-builder/ai-systems/${aiSystemId}/model-warmup`
-        : "";
+    const hasErrors =
+        finalizeError !== null ||
+        finalizeCoverLetterError !== null ||
+        status.statusError !== null ||
+        actionError !== null;
 
     return (
         <>
-            <Head title={`${pageTitle} | Targeted Resumes`} />
+            <Head title={`${pageTitle} | Applications`} />
             <AdminLayout showChrome={false} noMargin>
                 <Box
                     sx={{
@@ -186,8 +214,8 @@ export default function Show({
                 >
                     <IconButton
                         component={InertiaLink}
-                        href="/admin/resume/targeted-builder"
-                        aria-label="Back to Targeted Resumes"
+                        href="/admin/resume/applications"
+                        aria-label="Back to Applications"
                         size="small"
                         sx={{ ml: 0.5 }}
                     >
@@ -198,8 +226,9 @@ export default function Show({
                         onChange={(_, v) => {
                             setActiveTab(v as number);
                         }}
-                        aria-label="Targeted resume tabs"
+                        aria-label="Application tabs"
                         sx={{
+                            flexShrink: 0,
                             "& .MuiTab-root": {
                                 minWidth: 0,
                                 px: 2,
@@ -207,18 +236,40 @@ export default function Show({
                             },
                         }}
                     >
-                        <Tab icon={<ChatIcon />} />
-                        <Tab icon={<InfoIcon />} />
-                        {targetedResume !== null && (
-                            <Tab icon={<EditNoteIcon />} />
-                        )}
+                        <Tab
+                            icon={<ChatIcon />}
+                            aria-label="Chat"
+                            id="application-tab-chat"
+                            aria-controls="application-tabpanel-chat"
+                        />
+                        <Tab
+                            icon={<InfoIcon />}
+                            aria-label="Details"
+                            id="application-tab-details"
+                            aria-controls="application-tabpanel-details"
+                        />
                     </Tabs>
-                    <Box sx={{ flexGrow: 1 }} />
+                    <Typography
+                        component="h1"
+                        variant="subtitle1"
+                        noWrap
+                        title={pageTitle}
+                        sx={{
+                            display: { xs: "none", md: "block" },
+                            flexGrow: 1,
+                            minWidth: 0,
+                            fontWeight: 600,
+                        }}
+                    >
+                        {pageTitle}
+                    </Typography>
+                    <Box sx={{ flexGrow: { xs: 1, md: 0 } }} />
 
                     <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
+                            flexShrink: 0,
                             gap: 1,
                             pr: 1,
                         }}
@@ -235,7 +286,9 @@ export default function Show({
                             }
                             variant="outlined"
                             disabled={isApplied || status.isSubmittingStatus}
-                            onClick={handleApplied}
+                            onClick={() => {
+                                setAppliedDialogOpen(true);
+                            }}
                         />
                         <ResponsiveButton
                             size="small"
@@ -243,12 +296,14 @@ export default function Show({
                             icon={<BackHandOutlinedIcon />}
                             label="Pass"
                             title={
-                                conversation.status === "pass"
+                                status.status === "passed"
                                     ? "Already marked as passed"
-                                    : "Mark as passed"
+                                    : canPass
+                                      ? "Mark as passed"
+                                      : "Already in application flow"
                             }
                             variant="outlined"
-                            disabled={conversation.status === "pass"}
+                            disabled={!canPass}
                             onClick={handlePass}
                         />
                         {jobUrl ? (
@@ -271,9 +326,7 @@ export default function Show({
                     </Box>
                 </Box>
 
-                {(finalizeError !== null ||
-                    finalizeCoverLetterError !== null ||
-                    status.statusError !== null) && (
+                {hasErrors ? (
                     <Box
                         sx={{
                             mb: 2,
@@ -282,65 +335,102 @@ export default function Show({
                             gap: 1,
                         }}
                     >
-                        {finalizeError && (
+                        {finalizeError ? (
                             <Alert severity="error">{finalizeError}</Alert>
-                        )}
-                        {finalizeCoverLetterError && (
+                        ) : null}
+                        {finalizeCoverLetterError ? (
                             <Alert severity="error">
                                 {finalizeCoverLetterError}
                             </Alert>
-                        )}
-                        {status.statusError && (
+                        ) : null}
+                        {status.statusError ? (
                             <Alert severity="error">{status.statusError}</Alert>
-                        )}
+                        ) : null}
+                        {actionError ? (
+                            <Alert severity="error">{actionError}</Alert>
+                        ) : null}
                     </Box>
-                )}
+                ) : null}
 
-                <Box sx={{ display: activeTab === 0 ? undefined : "none" }}>
-                    <BuilderChatPanel
-                        authUser={authUser}
-                        conversation={conversation}
-                        targetedResume={targetedResume}
-                        coverLetter={coverLetter}
-                        initialMessages={initialMessages as ChatMessage[]}
-                        shouldAutoStart={shouldAutoStart}
-                        canFinalizeResume={canFinalizeResume}
-                        isFinalizing={isFinalizing}
-                        hasNewerResume={hasNewerResume}
-                        onFinalizeResume={() => {
-                            void finalizeResume();
-                        }}
-                        canFinalizeCoverLetter={canFinalizeCoverLetter}
-                        isFinalizingCoverLetter={isFinalizingCoverLetter}
-                        hasCoverLetterUpdate={!!coverLetter}
-                        onFinalizeCoverLetter={() => {
-                            void finalizeCoverLetter();
-                        }}
-                        statusUrl={statusUrl}
-                        warmupUrl={warmupUrl}
-                        onMessagesChange={setLiveMessages}
-                    />
+                <Box
+                    role="tabpanel"
+                    id="application-tabpanel-chat"
+                    aria-labelledby="application-tab-chat"
+                    sx={{
+                        display: activeTab === TAB_CHAT ? undefined : "none",
+                    }}
+                >
+                    {conversation ? (
+                        <ChatPanel
+                            isAuthenticated={isAuthenticated}
+                            application={application}
+                            status={status.status}
+                            statusUpdates={status.statusUpdates}
+                            conversation={conversation}
+                            targetedResume={targetedResume}
+                            coverLetter={coverLetter}
+                            initialMessages={initialMessages}
+                            shouldAutoStart={shouldAutoStart}
+                            canFinalizeResume={canFinalizeResume}
+                            isFinalizing={isFinalizing}
+                            hasNewerResume={hasNewerResume}
+                            onFinalizeResume={handleFinalizeResume}
+                            canFinalizeCoverLetter={canFinalizeCoverLetter}
+                            isFinalizingCoverLetter={isFinalizingCoverLetter}
+                            onFinalizeCoverLetter={handleFinalizeCoverLetter}
+                            onMessagesChange={setLiveMessages}
+                        />
+                    ) : (
+                        <Container sx={{ py: 2 }}>
+                            <StatusBar
+                                status={status.status}
+                                statusUpdates={status.statusUpdates}
+                                fitScore={application.fit_score}
+                            />
+                            <BeginAnalysisPanel
+                                applicationId={application.id}
+                                systems={systems}
+                                defaultSystemId={defaultSystemId}
+                            />
+                        </Container>
+                    )}
                 </Box>
 
-                <Box sx={{ display: activeTab === 1 ? undefined : "none" }}>
+                <Box
+                    role="tabpanel"
+                    id="application-tabpanel-details"
+                    aria-labelledby="application-tab-details"
+                    sx={{
+                        display: activeTab === TAB_DETAILS ? undefined : "none",
+                    }}
+                >
                     {/* `deleteStatusUpdate` must stay after the spread — it
                     overrides the hook's raw action with the confirmed one. */}
-                    <BuilderMetadataForm
+                    <DetailsForm
                         {...status}
+                        application={application}
                         conversation={conversation}
-                        metadataForm={metadataForm}
-                        onMetadataSave={handleMetadataSave}
                         targetedResume={targetedResume}
                         coverLetter={coverLetter}
                         deleteStatusUpdate={handleDeleteStatusUpdate}
+                        onDiscardResume={handleDiscardResume}
                     />
                 </Box>
 
-                {targetedResume !== null && (
-                    <Box sx={{ display: activeTab === 2 ? undefined : "none" }}>
-                        <TailoredResumeEditor targetedResume={targetedResume} />
-                    </Box>
-                )}
+                <AppliedConfirmDialog
+                    open={appliedDialogOpen}
+                    hasTargetedResume={targetedResume !== null}
+                    resumeVersions={resumeVersions}
+                    currentResumeVersionId={currentResumeVersionId}
+                    isSubmitting={status.isSubmittingStatus}
+                    error={appliedError}
+                    onConfirm={(resumeVersionId) => {
+                        void handleConfirmApplied(resumeVersionId);
+                    }}
+                    onCancel={() => {
+                        setAppliedDialogOpen(false);
+                    }}
+                />
                 <ConfirmDialog {...dialogProps} />
             </AdminLayout>
         </>

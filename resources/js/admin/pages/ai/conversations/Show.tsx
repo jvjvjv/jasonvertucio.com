@@ -14,7 +14,9 @@ import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import ChatMessageBubble from "@/components/ChatMessageBubble";
+import ChatMessageBubble, {
+    messageOrigin,
+} from "@/components/ChatMessageBubble";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface ShowProps {
@@ -32,11 +34,8 @@ interface ShowProps {
         ai_chat_bot: { id: number; name: string; slug: string } | null;
         chat_hash: string | null;
         usage: ConversationUsage | null;
-        targeted_resume: {
-            id: number;
-            company_name: string;
-            position: string;
-        } | null;
+        /** The application this session belongs to, when it is a job analysis. */
+        application_id: number | null;
     };
     messages: Message[];
     memories: Memory[];
@@ -132,6 +131,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                         }
                                         variant="history"
                                         sentAt={message.created_at ?? null}
+                                        origin={messageOrigin(message.metadata)}
                                         isAuthenticated={!!authUser}
                                     />
                                 </Box>
@@ -209,30 +209,26 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     </Box>
                                 ) : null}
                             </Box>
-                            {conversation.targeted_resume ? (
+                            {conversation.application_id !== null ? (
                                 <>
                                     <Divider sx={{ my: 2 }} />
                                     <Typography
                                         variant="subtitle2"
                                         sx={{ mb: 1 }}
                                     >
-                                        Targeted Resume
+                                        Application
                                     </Typography>
                                     <Typography variant="body2">
-                                        {
-                                            conversation.targeted_resume
-                                                .company_name
-                                        }{" "}
-                                        —{" "}
-                                        {conversation.targeted_resume.position}
+                                        This session analyses a tracked job
+                                        application.
                                     </Typography>
                                     <Button
                                         component={InertiaLink}
-                                        href={`/admin/resume/targeted-builder/${conversation.id}`}
+                                        href={`/admin/resume/applications/${conversation.application_id}`}
                                         size="small"
                                         sx={{ mt: 1 }}
                                     >
-                                        Open Targeted Builder
+                                        Open Application
                                     </Button>
                                 </>
                             ) : null}
