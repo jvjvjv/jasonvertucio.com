@@ -57,7 +57,7 @@ class StoreCoverLetterRequest extends FormRequest
             'resume_version_id' => ['required', 'integer', 'exists:resume_versions,id'],
             'application_id' => $this->mayLinkApplication()
                 ? ['nullable', 'integer', Rule::exists('applications', 'id')->withoutTrashed()]
-                : ['prohibited'],
+                : ['missing'],
             'company_name' => ['required', 'string', 'max:255'],
             'position' => ['required', 'string', 'max:255'],
             'date' => ['required', 'date'],
@@ -78,6 +78,7 @@ class StoreCoverLetterRequest extends FormRequest
     {
         return [
             'application_id.exists' => 'That application no longer exists.',
+            'application_id.missing' => 'Linking a cover letter to an application requires resume-editing permission.',
         ];
     }
 }

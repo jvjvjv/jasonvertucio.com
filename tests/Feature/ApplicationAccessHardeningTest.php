@@ -66,6 +66,28 @@ class ApplicationAccessHardeningTest extends TestCase
         $this->assertSame(0, $application->coverLetters()->count());
     }
 
+    public function test_an_applications_cover_letter_cannot_be_detached_without_resume_editing_permission(): void
+    {
+        $application = Application::factory()->create();
+        $payload = $this->coverLetterPayload();
+        $coverLetter = CoverLetter::create($payload + ['application_id' => $application->id]);
+
+        foreach ([null, '', $application->id] as $sent) {
+            $this->actingAs($this->coverLetterOnly)
+                ->put(route('admin.cover-letters.update', $coverLetter), $payload + ['application_id' => $sent])
+                ->assertSessionHasErrors(['application_id']);
+
+            $this->assertSame($application->id, $coverLetter->fresh()->application_id);
+        }
+
+        $this->actingAs($this->coverLetterOnly)
+            ->put(route('admin.cover-letters.update', $coverLetter), ['position' => 'Staff Engineer'] + $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Staff Engineer', $coverLetter->fresh()->position);
+        $this->assertSame($application->id, $coverLetter->fresh()->application_id);
+    }
+
     public function test_cover_letter_without_an_application_still_saves_for_that_user(): void
     {
         $this->actingAs($this->coverLetterOnly)
