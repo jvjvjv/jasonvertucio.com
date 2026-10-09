@@ -170,7 +170,7 @@ class TargetedResumeController extends Controller
 
         $application = $targetedResume->application;
 
-        return ($application !== null
+        return ($application !== null && ! $application->trashed()
             ? redirect()->route('admin.resume.applications.show', $application)
             : redirect()->route('admin.resume.targeted.index'))
             ->with('success', 'Cached documents cleared. They will be regenerated on the next download.');
@@ -184,7 +184,7 @@ class TargetedResumeController extends Controller
     {
         $application = $applicationService->discardTargetedResume($targetedResume);
 
-        return ($application !== null
+        return ($application !== null && ! $application->trashed()
             ? redirect()->route('admin.resume.applications.show', $application)
             : redirect()->route('admin.resume.targeted.index'))
             ->with('success', 'Targeted resume discarded.');

@@ -149,10 +149,7 @@ class ApplicationSessionController extends Controller
                 $request->validated('fit_score'),
             );
         } catch (\Throwable $exception) {
-            return response()->json([
-                'success' => false,
-                'message' => $exception->getMessage(),
-            ], 422);
+            return $this->finalizeFailureResponse($exception, $application);
         }
 
         return response()->json([
@@ -177,10 +174,7 @@ class ApplicationSessionController extends Controller
                 $request->validated('cover_letter_content'),
             );
         } catch (\Throwable $exception) {
-            return response()->json([
-                'success' => false,
-                'message' => $exception->getMessage(),
-            ], 422);
+            return $this->finalizeFailureResponse($exception, $application);
         }
 
         return response()->json([
@@ -188,6 +182,32 @@ class ApplicationSessionController extends Controller
             'cover_letter_id' => $coverLetter->id,
             'message' => 'Cover letter saved successfully.',
         ]);
+    }
+
+    /**
+     * A finalize that fails answers 422 with why. The service explains its
+     * own refusals (content it could not parse, a document it could not
+     * render) in words meant for the admin; a database failure is not that —
+     * its message carries SQL and filesystem paths, so it is logged and
+     * replaced.
+     */
+    private function finalizeFailureResponse(\Throwable $exception, Application $application): JsonResponse
+    {
+        $message = $exception->getMessage();
+
+        if ($exception instanceof \PDOException) {
+            Log::error('application.finalize: database failure', [
+                'application_id' => $application->id,
+                'error' => $message,
+            ]);
+
+            $message = 'The document could not be saved. The error has been logged.';
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ], 422);
     }
 
     private function noSessionResponse(): JsonResponse

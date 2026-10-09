@@ -28,7 +28,9 @@ class CoverLetterResumeVersionValidationTest extends TestCase
         ]);
 
         Permission::firstOrCreate(['name' => 'manage-unauthenticated-viewers']);
+        Permission::firstOrCreate(['name' => 'edit-resume']);
         $this->admin->givePermissionTo('manage-unauthenticated-viewers');
+        $this->admin->givePermissionTo('edit-resume');
     }
 
     public function test_store_requires_resume_version_id(): void

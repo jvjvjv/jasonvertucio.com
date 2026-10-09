@@ -311,7 +311,9 @@ class ApplicationService
      * history, session and cover letter; the session is told, without an
      * agent turn, that the document no longer exists.
      *
-     * A targeted resume attached to no application is simply deleted. The
+     * A targeted resume attached to no application is simply deleted. A
+     * deleted application still counts: its resume stays the record of what
+     * was sent, so the applied guard looks through the soft delete. The
      * rendered files are unlinked last: a file cannot be rolled back, so
      * everything that can still fail runs before it.
      *
@@ -322,7 +324,7 @@ class ApplicationService
      */
     public function discardTargetedResume(Application|TargetedResume $subject): ?Application
     {
-        $application = $subject instanceof Application ? $subject : $subject->application()->first();
+        $application = $subject instanceof Application ? $subject : $subject->application()->withTrashed()->first();
         $targetedResume = $subject instanceof TargetedResume ? $subject : $subject->targetedResume()->first();
 
         if ($targetedResume === null) {

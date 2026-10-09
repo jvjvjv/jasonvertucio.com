@@ -58,7 +58,7 @@ class CoverLetterController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $application = $request->filled('application')
+        $application = $request->filled('application') && $request->user()->can('edit-resume')
             ? Application::query()->find($request->integer('application'), ['id', 'company_name', 'position'])
             : null;
 

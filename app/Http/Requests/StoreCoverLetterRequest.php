@@ -23,7 +23,7 @@ class StoreCoverLetterRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($this->filled('resume_version_id') || ! $this->filled('application_id')) {
+        if ($this->filled('resume_version_id') || ! $this->filled('application_id') || ! $this->mayLinkApplication()) {
             return;
         }
 
@@ -37,6 +37,16 @@ class StoreCoverLetterRequest extends FormRequest
     }
 
     /**
+     * Cover letters are managed under a different permission than
+     * applications. Linking a letter to an application reads and changes
+     * application data, so it also needs the applications' own permission.
+     */
+    private function mayLinkApplication(): bool
+    {
+        return (bool) $this->user()?->can('edit-resume');
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, array<int, mixed>>
@@ -45,7 +55,9 @@ class StoreCoverLetterRequest extends FormRequest
     {
         return [
             'resume_version_id' => ['required', 'integer', 'exists:resume_versions,id'],
-            'application_id' => ['nullable', 'integer', Rule::exists('applications', 'id')->withoutTrashed()],
+            'application_id' => $this->mayLinkApplication()
+                ? ['nullable', 'integer', Rule::exists('applications', 'id')->withoutTrashed()]
+                : ['prohibited'],
             'company_name' => ['required', 'string', 'max:255'],
             'position' => ['required', 'string', 'max:255'],
             'date' => ['required', 'date'],
