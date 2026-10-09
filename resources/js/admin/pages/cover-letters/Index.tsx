@@ -62,7 +62,9 @@ export default function Index({ coverLetters }: IndexProps) {
 
     const handleDelete = (id: number) => {
         confirm("Delete this cover letter? This cannot be undone.", () => {
-            router.delete(`/admin/cover-letters/${id}`);
+            router.delete(`/admin/cover-letters/${id}`, {
+                preserveScroll: true,
+            });
         });
     };
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Application;
 use App\Models\TargetedResume;
 use App\Models\User;
 use App\Services\TargetedResumeDocumentService;
@@ -34,8 +35,7 @@ class TargetedResumeMarkdownUpdateTest extends TestCase
         file_put_contents($pdfPath, 'stale');
 
         $conversation = AiConversation::factory()->completed()->create();
-        $targetedResume = TargetedResume::factory()->finalized()->create([
-            'ai_conversation_id' => $conversation->id,
+        $targetedResume = TargetedResume::factory()->create([
             'docx_path' => $docxPath,
             'pdf_path' => $pdfPath,
             'tailored_data' => [
@@ -44,6 +44,10 @@ class TargetedResumeMarkdownUpdateTest extends TestCase
                 'format' => 'markdown',
                 'markdown' => '# Summary\nOriginal content',
             ],
+        ]);
+        Application::factory()->create([
+            'targeted_resume_id' => $targetedResume->id,
+            'ai_conversation_id' => $conversation->id,
         ]);
 
         $documentService = $this->createMock(TargetedResumeDocumentService::class);
@@ -94,10 +98,7 @@ class TargetedResumeMarkdownUpdateTest extends TestCase
 
     public function test_markdown_is_required(): void
     {
-        $conversation = AiConversation::factory()->completed()->create();
-        $targetedResume = TargetedResume::factory()->finalized()->create([
-            'ai_conversation_id' => $conversation->id,
-        ]);
+        $targetedResume = Application::factory()->withTargetedResume()->create()->targetedResume;
 
         $response = $this->actingAs($this->admin)
             ->putJson("/api/admin/resume/targeted-resume/{$targetedResume->id}", []);

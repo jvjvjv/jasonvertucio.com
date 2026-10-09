@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Application;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\User;
@@ -37,15 +38,17 @@ class TargetedResumeDownloadOnDemandTest extends TestCase
         file_put_contents($docxPath, 'stale');
         file_put_contents($pdfPath, 'stale');
 
-        $targetedResume = TargetedResume::factory()->finalized()->create([
+        $targetedResume = TargetedResume::factory()->create([
             'docx_path' => $docxPath,
             'pdf_path' => $pdfPath,
         ]);
 
+        $application = Application::factory()->create(['targeted_resume_id' => $targetedResume->id]);
+
         $response = $this->actingAs($this->admin)
             ->post(route('admin.resume.targeted.regenerate', $targetedResume));
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('admin.resume.applications.show', $application));
 
         $this->assertFileDoesNotExist($docxPath);
         $this->assertFileDoesNotExist($pdfPath);
@@ -64,7 +67,7 @@ class TargetedResumeDownloadOnDemandTest extends TestCase
             'email' => 'jason@example.com',
         ]);
 
-        $targetedResume = TargetedResume::factory()->finalized()->create([
+        $targetedResume = TargetedResume::factory()->create([
             'resume_version_id' => $resumeVersion->id,
             'tailored_data' => [
                 'title' => 'Senior Engineer',
@@ -94,5 +97,14 @@ class TargetedResumeDownloadOnDemandTest extends TestCase
             'type' => 'docx',
             'served_cached_document' => false,
         ]);
+    }
+
+    public function test_regenerate_returns_to_the_list_for_a_resume_with_no_application(): void
+    {
+        $targetedResume = TargetedResume::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.resume.targeted.regenerate', $targetedResume))
+            ->assertRedirect(route('admin.resume.targeted.index'));
     }
 }

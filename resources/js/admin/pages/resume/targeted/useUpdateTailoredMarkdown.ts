@@ -1,3 +1,4 @@
+import { router } from "@inertiajs/react";
 import { useCallback, useState } from "react";
 
 import { api, apiErrorMessage } from "@/api";
@@ -10,7 +11,8 @@ interface UseUpdateTailoredMarkdownResult {
     isSaving: boolean;
     saveError: string | null;
     saveSuccess: boolean;
-    saveMarkdown: (markdown: string) => Promise<void>;
+    /** Resolves true when the markdown was saved. */
+    saveMarkdown: (markdown: string) => Promise<boolean>;
 }
 
 export default function useUpdateTailoredMarkdown({
@@ -21,7 +23,7 @@ export default function useUpdateTailoredMarkdown({
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     const saveMarkdown = useCallback(
-        async (markdown: string): Promise<void> => {
+        async (markdown: string): Promise<boolean> => {
             setIsSaving(true);
             setSaveError(null);
             setSaveSuccess(false);
@@ -31,7 +33,10 @@ export default function useUpdateTailoredMarkdown({
                     { markdown },
                 );
                 setSaveSuccess(true);
-                window.location.reload();
+                // Saving invalidates the rendered documents and may reparse
+                // the title; refresh the document without losing the editor.
+                router.reload({ only: ["targetedResume"] });
+                return true;
             } catch (error) {
                 setSaveError(
                     apiErrorMessage(
@@ -40,6 +45,7 @@ export default function useUpdateTailoredMarkdown({
                         "Network error. Please try again.",
                     ),
                 );
+                return false;
             } finally {
                 setIsSaving(false);
             }

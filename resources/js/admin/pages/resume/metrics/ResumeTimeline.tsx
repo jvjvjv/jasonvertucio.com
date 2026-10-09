@@ -34,8 +34,8 @@ export default function ResumeTimeline({ rows }: ResumeTimelineProps) {
     if (rows.length === 0) {
         return (
             <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                No applications yet. Mark a targeted resume as "applied" to
-                start tracking its timeline.
+                No applications in this period. Mark an application as "applied"
+                to start tracking its timeline.
             </Typography>
         );
     }

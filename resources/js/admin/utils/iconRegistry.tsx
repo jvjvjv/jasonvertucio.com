@@ -15,6 +15,7 @@ import RuleIcon from "@mui/icons-material/Rule";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 
 import type { ReactNode } from "react";
 
@@ -36,6 +37,7 @@ const registry: { [key: string]: ReactNode } = {
     SmartToy: <SmartToyIcon fontSize="large" />,
     TrackChanges: <TrackChangesIcon fontSize="large" />,
     Visibility: <VisibilityIcon fontSize="large" />,
+    WorkOutline: <WorkOutlineIcon fontSize="large" />,
 };
 
 export function getIcon(name: string): ReactNode {

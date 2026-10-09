@@ -30,6 +30,7 @@ export default function ResponsiveButton({
     icon,
     size,
     label,
+    type,
 }: ResponsiveButtonProps) {
     const { isMobile } = useDeviceInfo();
     const spreadHref = href ? { href, component: Link } : {};
@@ -37,6 +38,7 @@ export default function ResponsiveButton({
     return isMobile ? (
         <IconButton
             {...spreadHref}
+            type={type}
             color={color}
             disabled={disabled}
             aria-label={
@@ -50,6 +52,7 @@ export default function ResponsiveButton({
     ) : (
         <Button
             {...spreadHref}
+            type={type}
             size={size}
             color={color}
             variant={variant}

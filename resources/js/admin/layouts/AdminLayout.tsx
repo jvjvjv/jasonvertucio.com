@@ -37,6 +37,15 @@ export default function AdminLayout({
     const [flashOpen, setFlashOpen] = useState(
         !!(flash.success ?? flash.error),
     );
+    // A page keeps this layout mounted across visits that preserve its state
+    // (a reload, or a delete that redirects back to the same page), so a flash
+    // message can arrive after mount. Reopen the snackbar when it does, rather
+    // than only ever reading the flash the page first rendered with.
+    const [prevFlash, setPrevFlash] = useState(flash);
+    if (prevFlash !== flash) {
+        setPrevFlash(flash);
+        setFlashOpen(!!(flash.success ?? flash.error));
+    }
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     return (

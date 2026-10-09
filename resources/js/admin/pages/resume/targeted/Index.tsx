@@ -1,133 +1,208 @@
 import { Head, Link as InertiaLink, router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
-import CloseIcon from "@mui/icons-material/Close";
+import ChatIcon from "@mui/icons-material/Chat";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
-import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
-import MenuItem from "@mui/material/MenuItem";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import Select, { type SelectChangeEvent } from "@mui/material/Select";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import type { Conversation } from "@/types";
+import type { ColumnDef } from "@/admin/components/DataTable";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
-import EmptyTableRow from "@/admin/components/EmptyTableRow";
+import DataTable from "@/admin/components/DataTable";
+import DebouncedSearchField from "@/admin/components/DebouncedSearchField";
 import PageHeader from "@/admin/components/PageHeader";
-import StatusChip from "@/admin/components/StatusChip";
-import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
-import { resolveTargetedResumeDisplayStatus } from "@/admin/utils/targetedResumeStatus";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-import { formatCalendarDate } from "@/utils/date";
 
-interface StatusOption {
-    value: string;
-    label: string;
+const LIST_URL = "/admin/resume/targeted-resumes";
+const NEW_SESSION_URL = "/admin/resume/applications/new";
+const EM_DASH = "—";
+
+interface TargetedResumeRow {
+    id: number;
+    title: string | null;
+    application_id: number;
+    company_name: string;
+    position: string;
+    /** Label of the main resume version the document was tailored from. */
+    resume_version: string | null;
+    updated_at: string | null;
+    updated_at_human: string | null;
+    /** False once the application has an `applied` entry. */
+    can_discard: boolean;
 }
-
-const NOT_APPLIED_STATUSES = ["draft", "active", "pass", "finalized"];
-const APPLIED_STATUSES = [
-    "applied",
-    "interviewing",
-    "interviewed",
-    "offered",
-    "accepted",
-    "hired",
-    "rejected",
-];
 
 interface IndexProps {
-    conversations: Conversation[];
-    allStatuses: StatusOption[];
-    filters: {
-        statuses: string[];
-        search: string;
-    };
+    targetedResumes: TargetedResumeRow[];
+    filters: { search: string };
 }
 
-export default function Index({
-    conversations,
-    allStatuses,
-    filters,
-}: IndexProps) {
-    const handleSearch = (search: string) => {
-        router.get(
-            "/admin/resume/targeted-builder",
-            { search, status: filters.statuses },
-            { preserveState: true },
-        );
-    };
+function applicationUrl(row: TargetedResumeRow): string {
+    return `/admin/resume/applications/${row.application_id}`;
+}
 
-    const handleStatusChange = (event: SelectChangeEvent<string[]>) => {
-        const value = event.target.value;
-        const updated = typeof value === "string" ? value.split(",") : value;
-        router.get(
-            "/admin/resume/targeted-builder",
-            { status: updated, search: filters.search },
-            { preserveState: true },
-        );
-    };
+const columns: ColumnDef<TargetedResumeRow>[] = [
+    {
+        key: "company_name",
+        label: "Company / Job",
+        render: (row) => (
+            <>
+                <Link
+                    component={InertiaLink}
+                    href={applicationUrl(row)}
+                    underline="hover"
+                    color="primary"
+                    sx={{ fontWeight: 600, display: "block" }}
+                >
+                    {row.company_name}
+                </Link>
+                {row.position ? (
+                    <Typography variant="caption" color="text.secondary">
+                        {row.position}
+                    </Typography>
+                ) : null}
+            </>
+        ),
+    },
+    {
+        key: "title",
+        label: "Title",
+        render: (row) => row.title ?? EM_DASH,
+    },
+    {
+        key: "resume_version",
+        label: "Base Version",
+        render: (row) => row.resume_version ?? EM_DASH,
+    },
+    {
+        key: "updated_at",
+        label: "Last Edited",
+        render: (row) => (
+            <Typography
+                variant="caption"
+                title={
+                    row.updated_at
+                        ? new Date(row.updated_at).toLocaleString()
+                        : undefined
+                }
+            >
+                {row.updated_at_human ?? EM_DASH}
+            </Typography>
+        ),
+    },
+];
 
-    const applyStatusPreset = (statuses: string[]) => {
-        router.get(
-            "/admin/resume/targeted-builder",
-            { status: statuses, search: filters.search },
-            { preserveState: true },
-        );
-    };
+function searchTargetedResumes(search: string): void {
+    router.get(LIST_URL, search === "" ? {} : { search }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ["targetedResumes", "filters"],
+    });
+}
 
-    const clearStatuses = () => {
-        router.get(
-            "/admin/resume/targeted-builder",
-            { status: [], search: filters.search },
-            { preserveState: true },
-        );
-    };
-
+export default function Index({ targetedResumes, filters }: IndexProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const handleDelete = (id: number) => {
-        confirm("Delete this conversation?", () => {
-            router.delete(`/admin/resume/targeted-builder/${id}`);
-        });
-    };
-
-    const handlePass = (id: number) => {
+    const handleDiscard = (row: TargetedResumeRow) => {
         confirm(
-            "Mark this opportunity as passed?",
+            `This permanently deletes the tailored resume for ${row.company_name} and its generated documents. The application itself is kept. This cannot be undone.`,
             () => {
-                router.post(`/admin/resume/targeted-builder/${id}/pass`);
+                router.delete(`${LIST_URL}/${row.id}`, {
+                    // Discarding normally lands on the application; keep the
+                    // scroll position only if it brings us back to this list.
+                    preserveScroll: (page) =>
+                        page.component === "resume/targeted/Index",
+                });
             },
-            { confirmLabel: "Pass", confirmColor: "warning" },
+            { title: "Discard targeted resume?", confirmLabel: "Discard" },
         );
     };
+
+    const renderRowActions = (row: TargetedResumeRow) => {
+        const downloadBase = `/admin/resume/targeted-resume/${row.id}/download`;
+
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 0.5,
+                }}
+            >
+                <IconButton
+                    component="a"
+                    href={`${downloadBase}/docx`}
+                    size="small"
+                    title="Download DOCX"
+                    aria-label="Download DOCX"
+                >
+                    <StickyNote2Icon fontSize="small" />
+                </IconButton>
+                <IconButton
+                    component="a"
+                    href={`${downloadBase}/pdf`}
+                    size="small"
+                    title="Download PDF"
+                    aria-label="Download PDF"
+                >
+                    <PictureAsPdfIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                    component={InertiaLink}
+                    href={`${LIST_URL}/${row.id}/edit`}
+                    size="small"
+                    color="primary"
+                    title="Edit targeted resume"
+                    aria-label="Edit targeted resume"
+                >
+                    <EditNoteIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                    component={InertiaLink}
+                    href={applicationUrl(row)}
+                    size="small"
+                    color="primary"
+                    title="Open application"
+                    aria-label="Open application"
+                >
+                    <ChatIcon fontSize="small" />
+                </IconButton>
+                {row.can_discard ? (
+                    <IconButton
+                        size="small"
+                        color="error"
+                        title="Discard targeted resume"
+                        aria-label="Discard targeted resume"
+                        onClick={() => {
+                            handleDiscard(row);
+                        }}
+                    >
+                        <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                ) : null}
+            </Box>
+        );
+    };
+
+    const isSearching = filters.search !== "";
 
     return (
         <AdminLayout>
             <Head title="Targeted Resumes | Resume" />
             <PageHeader
-                title="Targeted Resume Builder"
+                title="Targeted Resumes"
                 backHref="/admin/resume"
                 backLabel="Back to Resume Management"
             />
 
-            {/* Filters */}
             <Box
                 sx={{
                     display: "flex",
@@ -137,243 +212,44 @@ export default function Index({
                     alignItems: "center",
                 }}
             >
-                <TextField
-                    label="Search"
-                    size="small"
-                    value={filters.search}
-                    onChange={(e) => {
-                        handleSearch(e.target.value);
-                    }}
-                    placeholder="Company, job title, or message..."
+                <DebouncedSearchField
+                    initialValue={filters.search}
+                    onSearch={searchTargetedResumes}
+                    placeholder="Company, job title, or resume title..."
                     sx={{ minWidth: 250 }}
                 />
-                <FormControl size="small" sx={{ minWidth: 240 }}>
-                    <InputLabel id="targeted-statuses-label">
-                        Statuses
-                    </InputLabel>
-                    <Select
-                        labelId="targeted-statuses-label"
-                        multiple
-                        value={filters.statuses}
-                        onChange={handleStatusChange}
-                        input={<OutlinedInput label="Statuses" />}
-                        renderValue={(selected) => {
-                            if (selected.length === 0) {
-                                return "All statuses";
-                            }
-
-                            return allStatuses
-                                .filter((status) =>
-                                    selected.includes(status.value),
-                                )
-                                .map((status) => status.label)
-                                .join(", ");
-                        }}
-                    >
-                        {allStatuses.map((status) => (
-                            <MenuItem key={status.value} value={status.value}>
-                                {status.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                <IconButton
-                    size="small"
-                    onClick={clearStatuses}
-                    disabled={filters.statuses.length === 0}
-                    title="Clear statuses"
-                    aria-label="Clear statuses"
-                >
-                    <CloseIcon fontSize="small" />
-                </IconButton>
-                <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                        applyStatusPreset(NOT_APPLIED_STATUSES);
-                    }}
-                >
-                    Not applied
-                </Button>
-                <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                        applyStatusPreset(APPLIED_STATUSES);
-                    }}
-                >
-                    Applied
-                </Button>
                 <Box sx={{ flexGrow: 1 }} />
                 <ResponsiveButton
                     icon={<AddIcon />}
                     color="primary"
                     label="New Session"
-                    href="/admin/resume/targeted-builder/new"
+                    href={NEW_SESSION_URL}
                     variant="contained"
                 />
             </Box>
 
-            <Card>
-                <TableContainer>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Company / Job</TableCell>
-                                <TableCell>Base Version</TableCell>
-                                <TableCell>Fit Score</TableCell>
-                                <TableCell>Usage</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Updated</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {conversations.length === 0 ? (
-                                <EmptyTableRow
-                                    colSpan={8}
-                                    message="No conversations found."
-                                    actionLabel="Start one"
-                                    actionHref="/admin/resume/targeted-builder/new"
-                                />
-                            ) : (
-                                conversations.map((conv) => {
-                                    const resume = conv.targeted_resume;
-                                    const companyName =
-                                        resume?.company_name ??
-                                        (conv.context?.company_name as
-                                            string | undefined) ??
-                                        "—";
-                                    const position =
-                                        resume?.position ??
-                                        (conv.context?.job_title as
-                                            string | undefined) ??
-                                        "";
-                                    const displayStatus =
-                                        resolveTargetedResumeDisplayStatus({
-                                            conversationStatus: conv.status,
-                                            resumeStatus: resume?.status,
-                                            latestStatusOccurredAt:
-                                                resume?.latest_status_update
-                                                    ?.occurred_at,
-                                        });
-
-                                    return (
-                                        <TableRow key={conv.id} hover>
-                                            <TableCell>
-                                                <Link
-                                                    component={InertiaLink}
-                                                    href={`/admin/resume/targeted-builder/${conv.id}`}
-                                                    underline="hover"
-                                                    color="inherit"
-                                                >
-                                                    <Typography
-                                                        variant="body2"
-                                                        fontWeight={600}
-                                                        color="primary"
-                                                    >
-                                                        {companyName}
-                                                    </Typography>
-                                                </Link>
-                                                {position && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                    >
-                                                        {position}
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {resume?.resume_version ?? "—"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {resume?.fit_score != null
-                                                    ? `${resume.fit_score}%`
-                                                    : "—"}
-                                            </TableCell>
-                                            <TableCell>
-                                                <UsageChip usage={conv.usage} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <StatusChip
-                                                    status={displayStatus}
-                                                    tip={
-                                                        resume
-                                                            ?.latest_status_update
-                                                            ?.occurred_at &&
-                                                        formatCalendarDate(
-                                                            resume
-                                                                .latest_status_update
-                                                                .occurred_at,
-                                                        )
-                                                    }
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Typography variant="caption">
-                                                    {conv.last_message_at ??
-                                                        "-"}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "flex-end",
-                                                        gap: 1,
-                                                    }}
-                                                >
-                                                    <IconButton
-                                                        component={InertiaLink}
-                                                        href={`/admin/resume/targeted-builder/${conv.id}`}
-                                                        size="small"
-                                                        color="primary"
-                                                        title="View"
-                                                        aria-label="View"
-                                                    >
-                                                        <AutoFixHighOutlinedIcon fontSize="small" />
-                                                    </IconButton>
-                                                    {conv.status ===
-                                                        "active" && (
-                                                        <IconButton
-                                                            size="small"
-                                                            color="warning"
-                                                            title="Pass"
-                                                            aria-label="Pass"
-                                                            onClick={() => {
-                                                                handlePass(
-                                                                    conv.id,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <BackHandOutlinedIcon fontSize="small" />
-                                                        </IconButton>
-                                                    )}
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        title="Delete"
-                                                        aria-label="Delete"
-                                                        onClick={() => {
-                                                            handleDelete(
-                                                                conv.id,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <DeleteOutlineIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Card>
+            <DataTable
+                columns={columns}
+                data={targetedResumes}
+                rowActions={renderRowActions}
+                emptyState={
+                    <Box sx={{ py: 5, px: 2, textAlign: "center" }}>
+                        <Typography color="text.secondary" sx={{ mb: 2 }}>
+                            {isSearching
+                                ? "No targeted resumes match this search."
+                                : "No targeted resumes yet. Start a session to analyse a job and tailor a resume for it."}
+                        </Typography>
+                        <Button
+                            component={InertiaLink}
+                            href={NEW_SESSION_URL}
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                        >
+                            New Session
+                        </Button>
+                    </Box>
+                }
+            />
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>
     );

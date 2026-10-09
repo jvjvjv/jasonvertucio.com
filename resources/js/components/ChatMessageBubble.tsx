@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import { markdownSx } from "../admin/utils/markdownSx";
 import mergeSx from "../utils/mergeSx";
@@ -46,14 +46,36 @@ interface ChatMessageBubbleProps {
     activeBlockType?: "text" | "reasoning" | null;
     /** Legacy single-blob reasoning (used when blocks is absent). */
     reasoningContent?: string | null;
-    /** Marks this message as a manual out-of-band edit rather than something typed into chat. */
-    isManualEdit?: boolean;
+    /**
+     * `metadata.origin` of the message. A recognised origin marks the message
+     * as recording something done outside the chat — a manual edit, a discarded
+     * resume — rather than something typed into it; see `ORIGIN_NOTICES`.
+     */
+    origin?: string | null;
     /**
      * The turn behind this message never finished — the browser hung up, or the
      * server's duration guard cut it off (code-talker 0.15.0+ persists such a
      * turn instead of discarding it). Content may be empty or stop mid-sentence.
      */
     isIncomplete?: boolean;
+}
+
+/**
+ * The label shown above a message for each out-of-band origin. Adding an
+ * origin here is all it takes to render its messages distinctly.
+ */
+const ORIGIN_NOTICES: { [origin: string]: string | undefined } = {
+    manual_edit: "✎ Edited manually",
+    resume_discarded: "✕ Targeted resume discarded",
+};
+
+/** Narrows a message's free-form `metadata.origin` to the string the bubble takes. */
+export function messageOrigin(
+    metadata: { [key: string]: unknown } | null | undefined,
+): string | null {
+    const origin = metadata?.origin;
+
+    return typeof origin === "string" ? origin : null;
 }
 
 export const userMarkdownOverrides = {
@@ -80,7 +102,14 @@ function formatReasoningAsBlockquote(text: string): string {
     return `> **_Reasoning_**\n>\n${quoted}`;
 }
 
-export default function ChatMessageBubble({
+/**
+ * Memoized: the transcript re-renders on every composer keystroke and every
+ * streaming frame, while a stored message's props never change. Callers must
+ * keep them stable — primitives, the message's own arrays, and a module-level
+ * `sx` — for that to hold; the streaming bubble gets new `blocks` each frame
+ * and so still updates.
+ */
+export default memo(function ChatMessageBubble({
     content = "",
     role,
     maxWidth = "80%",
@@ -92,7 +121,7 @@ export default function ChatMessageBubble({
     toolPanels = [],
     activeBlockType = null,
     reasoningContent = null,
-    isManualEdit = false,
+    origin = null,
     isIncomplete = false,
     sx,
 }: ChatMessageBubbleProps) {
@@ -144,6 +173,8 @@ export default function ChatMessageBubble({
             el = el.parentElement;
         }
     };
+
+    const originNotice = origin !== null ? ORIGIN_NOTICES[origin] : undefined;
 
     const hasBlocks = !isUser && !!blocks && blocks.length > 0;
 
@@ -202,7 +233,7 @@ export default function ChatMessageBubble({
             sx={mergeSx({ ...baseBubbleSx, position: "relative" }, sx)}
             onDoubleClick={handlePreDblClick}
         >
-            {isManualEdit && (
+            {originNotice ? (
                 <Box
                     sx={{
                         fontSize: "0.75rem",
@@ -211,9 +242,9 @@ export default function ChatMessageBubble({
                         mb: 0.5,
                     }}
                 >
-                    ✎ Edited manually
+                    {originNotice}
                 </Box>
-            )}
+            ) : null}
             {isIncomplete && (
                 <Box
                     sx={{
@@ -267,4 +298,4 @@ export default function ChatMessageBubble({
             )}
         </Box>
     );
-}
+});

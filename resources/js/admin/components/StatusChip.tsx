@@ -6,6 +6,15 @@ import type { ReactNode } from "react";
 
 import { statusColor } from "@/admin/utils/statusColor";
 
+/** Statuses of an application still moving through the pipeline. */
+const FILLED_STATUSES = new Set([
+    "applied",
+    "interviewing",
+    "interviewed",
+    "offered",
+    "accepted",
+]);
+
 interface StatusChipProps {
     status: string;
     label?: string;
@@ -22,15 +31,7 @@ export default function StatusChip({
     tip,
 }: StatusChipProps) {
     const color = colorMap?.[status] ?? statusColor(status);
-    const variant = [
-        "applied",
-        "interviewing",
-        "interviewed",
-        "offered",
-        "accepted",
-    ].includes(status)
-        ? "filled"
-        : "outlined";
+    const variant = FILLED_STATUSES.has(status) ? "filled" : "outlined";
     const chip = (
         <Chip
             label={label ?? status}

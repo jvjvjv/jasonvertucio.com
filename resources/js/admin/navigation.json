@@ -18,7 +18,7 @@
                 "href": "/admin/ai",
                 "icon": "SmartToy",
                 "label": "AI Tools",
-                "description": "Manage AI systems, targeted resume builder, and AI cover letter generation"
+                "description": "Manage AI systems, job application analysis, and AI cover letter generation"
               },
               {
                 "can": "edit-resume",
@@ -33,6 +33,20 @@
                 "icon": "DriveFileRenameOutline",
                 "label": "Cover Letter Management",
                 "description": "Create and manage cover letters with automatic DOCX and PDF generation"
+              },
+              {
+                "can": "edit-resume",
+                "href": "/admin/resume/applications",
+                "icon": "WorkOutline",
+                "label": "Applications",
+                "description": "Track every job you consider or apply to, with or without a tailored resume"
+              },
+              {
+                "can": "edit-resume",
+                "href": "/admin/resume/metrics",
+                "icon": "Insights",
+                "label": "Application Metrics",
+                "description": "Track applications, outcomes, and pipeline timelines"
               },
               {
                 "can": "edit-settings",
@@ -78,26 +92,19 @@
                     "description": "Build and edit resume content. Documents auto-generate on save."
                 },
                 {
-                    "can": "edit-resume",
-                    "href": "/admin/resume/targeted-builder",
-                    "icon": "TrackChanges",
-                    "label": "Targeted Resume Builder",
-                    "description": "Use AI to tailor your resume for specific job postings"
+                  "can": "edit-resume",
+                  "href": "/admin/resume/targeted-resumes",
+                  "icon": "TrackChanges",
+                  "label": "Targeted Resumes",
+                  "description": "Find, download and edit the resumes tailored for specific job postings"
                 },
                 {
-                    "can": "edit-resume",
-                    "href": "/admin/resume/metrics",
-                    "icon": "Insights",
-                    "label": "Application Metrics",
-                    "description": "Track applications, outcomes, and pipeline timelines"
-                },
-                {
-                    "can": null,
-                    "href": "/resume",
-                    "external": true,
-                    "icon": "Visibility",
-                    "label": "Resume Preview",
-                    "description": "View the resume as it appears to visitors"
+                  "can": null,
+                  "href": "/resume",
+                  "external": true,
+                  "icon": "Visibility",
+                  "label": "Resume Preview",
+                  "description": "View the resume as it appears to visitors"
                 },
                 {
                     "can": "edit-resume",
@@ -115,18 +122,11 @@
             "can": "manage-ai-tools",
             "navigationItems": [
                 {
-                    "can": "manage-ai-tools",
-                    "href": "/admin/resume/targeted-builder",
-                    "icon": "TrackChanges",
-                    "label": "Targeted Resume Builder",
-                    "description": "Use AI to tailor your resume for specific job postings"
-                },
-                {
-                    "can": "manage-ai-tools",
-                    "href": "/admin/ai/systems",
-                    "icon": "Memory",
-                    "label": "AI Systems",
-                    "description": "Manage AI providers, API keys, and feature defaults"
+                  "can": "manage-ai-tools",
+                  "href": "/admin/ai/systems",
+                  "icon": "Memory",
+                  "label": "AI Systems",
+                  "description": "Manage AI providers, API keys, and feature defaults"
                 },
                 {
                     "can": "manage-ai-tools",

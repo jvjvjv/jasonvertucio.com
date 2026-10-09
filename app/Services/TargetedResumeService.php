@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Contracts\ResumeDataServiceContract;
-use App\Enums\TargetedResumeStatus;
+use App\Models\Application;
 use App\Models\CoverLetter;
-use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use Generator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Enums\AiInteractionStatus;
@@ -56,17 +56,25 @@ class TargetedResumeService
     ) {}
 
     /**
-     * Start a new targeted resume conversation.
+     * Start the AI session for an application and attach it. The job itself
+     * stays on the application: `context` carries session behaviour only.
      */
-    public function startConversation(
-        AiSystem $system,
-        string $jobDescription,
-        ResumeVersion $resumeVersion,
-        ?string $jobTitle = null,
-        ?string $companyName = null,
-        ?string $jobLocation = null,
-        ?string $jobUrlId = null,
-    ): AiConversation {
+    public function startConversation(AiSystem $system, Application $application): AiConversation
+    {
+        return DB::transaction(function () use ($system, $application): AiConversation {
+            $conversation = $this->createConversation($system, $application);
+
+            $application->forceFill(['ai_conversation_id' => $conversation->id])->save();
+            $application->unsetRelation('conversation');
+
+            return $conversation;
+        });
+    }
+
+    private function createConversation(AiSystem $system, Application $application): AiConversation
+    {
+        $jobTitle = $application->knownPosition();
+
         $conversation = AiConversation::create([
             'user_id' => auth()->id(),
             'ai_system_id' => $system->id,
@@ -74,10 +82,6 @@ class TargetedResumeService
             'title' => $jobTitle ? "Targeted Resume: {$jobTitle}" : 'Targeted Resume',
             'status' => AiConversationStatus::Active,
             'context' => [
-                'job_title' => $jobTitle,
-                'job_description' => $jobDescription,
-                'resume_version_id' => $resumeVersion->id,
-                'job_url_id' => $jobUrlId,
                 'step' => 'analysis',
                 'auto_start_pending' => true,
             ],
@@ -106,7 +110,12 @@ class TargetedResumeService
         AiConversationMessage::create([
             'ai_conversation_id' => $conversation->id,
             'role' => 'user',
-            'content' => $this->buildInitialAnalysisMessage($jobDescription, $jobTitle, $jobLocation, $companyName),
+            'content' => $this->buildInitialAnalysisMessage(
+                $application->job_description,
+                $jobTitle,
+                $application->location,
+                $application->knownCompanyName(),
+            ),
         ]);
 
         return $conversation;
@@ -227,7 +236,7 @@ class TargetedResumeService
                 maxSteps: 10,
             );
 
-            $translator = new StreamTranslator();
+            $translator = new StreamTranslator;
             $textBlocks = [];
             $reasoningBlocks = [];
 
@@ -402,67 +411,72 @@ class TargetedResumeService
     }
 
     /**
-     * Save a finalized targeted resume from conversation context.
+     * Save a finalized targeted resume and attach it to its application,
+     * replacing the content of the one already attached. The application's
+     * status is never changed here: having a targeted resume is not a status.
      */
-    public function saveTailoredResume(AiConversation $conversation, string $tailoredContent, ?int $fitScore = null): TargetedResume
+    public function saveTailoredResume(Application $application, string $tailoredContent, ?int $fitScore = null): TargetedResume
     {
-        $context = $conversation->context ?? [];
         $parsedResume = $this->parseTailoredResumeContent($tailoredContent);
-        $existingTargetedResume = $conversation->targetedResume;
+        $existingTargetedResume = $application->targetedResume;
 
         Log::info('targeted-resume.saveTailoredResume: starting save', [
-            'conversation_id' => $conversation->id,
+            'application_id' => $application->id,
+            'conversation_id' => $application->ai_conversation_id,
             'existing_targeted_resume_id' => $existingTargetedResume?->id,
-            'existing_status' => $existingTargetedResume?->status?->value,
-            'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
+            'application_status' => $application->status->value,
+            'fit_score' => $fitScore ?? $application->fit_score,
             'parsed_title' => $parsedResume['title'],
             'markdown_length' => strlen($parsedResume['markdown']),
         ]);
 
-        $targetedResume = TargetedResume::updateOrCreate(
-            ['ai_conversation_id' => $conversation->id],
-            [
-                'resume_version_id' => $context['resume_version_id'],
-                'job_url_id' => $context['job_url_id'] ?? null,
-                'company_name' => $context['company_name'] ?? 'Unknown Company',
-                'position' => $context['job_title'] ?? 'Unknown Position',
-                'title' => $parsedResume['title'] ?? ($context['job_title'] ?? null),
-                'job_description' => $context['job_description'] ?? '',
+        $targetedResume = DB::transaction(function () use ($application, $existingTargetedResume, $parsedResume, $fitScore): TargetedResume {
+            $targetedResume = $existingTargetedResume ?? new TargetedResume;
+
+            $targetedResume->fill([
+                'resume_version_id' => $application->resume_version_id,
+                'title' => $parsedResume['title'] ?? $application->knownPosition(),
                 'tailored_data' => [
                     'title' => $parsedResume['title'],
                     'content' => $parsedResume['markdown'],
                     'format' => 'markdown',
                     'markdown' => $parsedResume['markdown'],
                 ],
-                'fit_score' => $fitScore ?? $context['fit_score'] ?? null,
-                'fit_summary' => $context['fit_summary'] ?? null,
-                'status' => ($existingTargetedResume?->status !== null && $existingTargetedResume->status !== TargetedResumeStatus::Draft)
-                    ? $existingTargetedResume->status
-                    : TargetedResumeStatus::Finalized,
-            ]
-        );
+            ])->save();
+
+            $application->targeted_resume_id = $targetedResume->id;
+
+            if ($fitScore !== null) {
+                $application->fit_score = $fitScore;
+            }
+
+            $application->save();
+            $application->setRelation('targetedResume', $targetedResume);
+
+            return $targetedResume;
+        });
 
         Log::info('targeted-resume.saveTailoredResume: resume persisted', [
-            'conversation_id' => $conversation->id,
+            'application_id' => $application->id,
             'targeted_resume_id' => $targetedResume->id,
             'was_recently_created' => $targetedResume->wasRecentlyCreated,
-            'status' => $targetedResume->status->value,
         ]);
 
         try {
             $targetedResume->invalidateDocuments();
 
-            $conversation->update(['status' => AiConversationStatus::Completed]);
+            $application->conversation?->update(['status' => AiConversationStatus::Completed]);
 
             Log::info('targeted-resume.saveTailoredResume: conversation completed', [
-                'conversation_id' => $conversation->id,
+                'application_id' => $application->id,
+                'conversation_id' => $application->ai_conversation_id,
                 'targeted_resume_id' => $targetedResume->id,
             ]);
 
             return $targetedResume->fresh();
         } catch (\Throwable $throwable) {
             Log::error('targeted-resume.saveTailoredResume: failed', [
-                'conversation_id' => $conversation->id,
+                'application_id' => $application->id,
                 'targeted_resume_id' => $targetedResume->id,
                 'exception' => $throwable::class,
                 'message' => $throwable->getMessage(),
@@ -497,7 +511,7 @@ class TargetedResumeService
 
         Log::info('targeted-resume.updateTailoredMarkdown: manual edit persisted', [
             'targeted_resume_id' => $targetedResume->id,
-            'conversation_id' => $targetedResume->ai_conversation_id,
+            'conversation_id' => $targetedResume->application?->ai_conversation_id,
             'markdown_length' => strlen($parsedResume['markdown']),
         ]);
 
@@ -513,15 +527,44 @@ class TargetedResumeService
     }
 
     /**
-     * Append a synthetic user-role message to the conversation so the chat
-     * agent has this manual edit as context on its next turn. This does not
-     * trigger an agent turn (no LLM call is made here) - it only writes to
-     * history for the next `continueConversation()` call to read.
+     * Tell the chat agent about a manual edit, through the application's
+     * session.
      */
     private function recordManualEditMessage(TargetedResume $targetedResume, string $markdown): void
     {
-        $conversationId = $targetedResume->ai_conversation_id;
+        $this->appendSessionNote(
+            $targetedResume->application?->ai_conversation_id,
+            "I manually edited the targeted resume outside of chat. Here is the current version:\n\n{$markdown}",
+            'manual_edit',
+            $targetedResume->id,
+        );
+    }
 
+    /**
+     * Tell the chat agent that the application's targeted resume was
+     * discarded, so it stops assuming the document exists. A no-op for an
+     * application with no AI session.
+     */
+    public function recordResumeDiscardedMessage(Application $application, int $targetedResumeId): void
+    {
+        $this->appendSessionNote(
+            $application->ai_conversation_id,
+            'I discarded the targeted resume for this application outside of chat. It no longer exists. '
+                .'If a targeted resume is wanted again it must be saved again with `save-tailored-resume`.',
+            'resume_discarded',
+            $targetedResumeId,
+        );
+    }
+
+    /**
+     * Append a synthetic user-role message to the conversation so the chat
+     * agent has something that happened outside of chat as context on its
+     * next turn. This does not trigger an agent turn (no LLM call is made
+     * here) - it only writes to history for the next
+     * `continueConversation()` call to read.
+     */
+    private function appendSessionNote(?int $conversationId, string $content, string $origin, int $targetedResumeId): void
+    {
         if ($conversationId === null) {
             return;
         }
@@ -529,10 +572,10 @@ class TargetedResumeService
         AiConversationMessage::create([
             'ai_conversation_id' => $conversationId,
             'role' => 'user',
-            'content' => "I manually edited the targeted resume outside of chat. Here is the current version:\n\n{$markdown}",
+            'content' => $content,
             'metadata' => [
-                'origin' => 'manual_edit',
-                'targeted_resume_id' => $targetedResume->id,
+                'origin' => $origin,
+                'targeted_resume_id' => $targetedResumeId,
             ],
         ]);
     }
@@ -614,28 +657,22 @@ class TargetedResumeService
     }
 
     /**
-     * Save a cover letter generated from the conversation.
+     * Save the cover letter generated in an application's session. An
+     * application has one such letter, replaced on each save; it does not
+     * need a targeted resume to exist.
      */
-    public function saveCoverLetter(AiConversation $conversation, string $coverLetterContent): CoverLetter
+    public function saveCoverLetter(Application $application, string $coverLetterContent): CoverLetter
     {
-        $targetedResume = $conversation->targetedResume;
-
-        if (! $targetedResume) {
-            throw new \RuntimeException('Please finalize the targeted resume before creating a cover letter.');
-        }
-
-        $context = $conversation->context ?? [];
-        $resumeVersion = ResumeVersion::find($context['resume_version_id'] ?? null);
-        $personalInfo = $resumeVersion?->personalInfo;
+        $personalInfo = $application->resumeVersion?->personalInfo;
 
         $parsed = $this->parseCoverLetterContent($coverLetterContent);
 
         $coverLetter = CoverLetter::updateOrCreate(
-            ['targeted_resume_id' => $targetedResume->id],
+            ['application_id' => $application->id],
             [
-                'resume_version_id' => $targetedResume->resume_version_id,
-                'company_name' => $context['company_name'] ?? $targetedResume->company_name ?? 'Unknown Company',
-                'position' => $context['job_title'] ?? $targetedResume->position ?? 'Unknown Position',
+                'resume_version_id' => $application->resume_version_id,
+                'company_name' => $application->company_name,
+                'position' => $application->position,
                 'date' => now(),
                 'greeting' => $parsed['greeting'],
                 'message_body' => $parsed['message_body'],
@@ -904,49 +941,66 @@ PROMPT;
 PROMPT;
     }
 
-    public function updateConversationMetadata(AiConversation $conversation, array $data): AiConversation
+    /**
+     * Apply hand-edited chat details. The company and position are written
+     * to the application; the session title and the `*_manual` flags that
+     * stop the assistant overwriting a hand-edited field stay with the
+     * session. Only the keys present in `$data` are touched.
+     *
+     * A blank company or position cannot be stored — both are required on
+     * the application — so it keeps the current value and hands the field
+     * back to the assistant by clearing its flag.
+     *
+     * @param  array{title?: ?string, company_name?: ?string, position?: ?string}  $data
+     */
+    public function updateConversationMetadata(Application $application, array $data): Application
     {
-        $context = $conversation->context ?? [];
+        return DB::transaction(function () use ($application, $data): Application {
+            $conversation = $application->conversation;
+            $context = $conversation?->context ?? [];
 
-        $title = trim((string) ($data['title'] ?? ''));
-        $companyName = trim((string) ($data['company_name'] ?? ''));
-        $jobTitle = trim((string) ($data['job_title'] ?? ''));
+            foreach (['company_name' => 'company_name_manual', 'position' => 'job_title_manual'] as $field => $flag) {
+                if (! array_key_exists($field, $data)) {
+                    continue;
+                }
 
-        $conversation->title = $title !== '' ? $title : null;
+                $value = trim((string) $data[$field]);
 
-        if ($companyName !== '') {
-            $context['company_name'] = $companyName;
-            $context['company_name_manual'] = true;
-        } else {
-            unset($context['company_name'], $context['company_name_manual']);
-        }
+                if ($value !== '') {
+                    $application->{$field} = $value;
+                    $context[$flag] = true;
+                } else {
+                    unset($context[$flag]);
+                }
+            }
 
-        if ($jobTitle !== '') {
-            $context['job_title'] = $jobTitle;
-            $context['job_title_manual'] = true;
-        } else {
-            unset($context['job_title'], $context['job_title_manual']);
-        }
+            $application->save();
 
-        $context['title_manual'] = $title !== '';
+            if ($conversation === null) {
+                return $application;
+            }
 
-        $conversation->context = $context;
-        $conversation->save();
+            if (array_key_exists('title', $data)) {
+                $title = trim((string) $data['title']);
+                $conversation->title = $title !== '' ? $title : null;
+                $context['title_manual'] = $title !== '';
+            }
 
-        if ($conversation->targetedResume) {
-            $conversation->targetedResume->update([
-                'company_name' => $context['company_name'] ?? $conversation->targetedResume->company_name,
-                'position' => $context['job_title'] ?? $conversation->targetedResume->position,
-                'fit_score' => $context['fit_score'] ?? $conversation->targetedResume->fit_score,
-                'fit_summary' => $context['fit_summary'] ?? $conversation->targetedResume->fit_summary,
-            ]);
-        }
+            $conversation->context = $context;
+            $conversation->save();
 
-        return $conversation->fresh(['targetedResume']);
+            return $application;
+        });
     }
 
     private function syncConversationMetadataFromAssistantResponse(AiConversation $conversation, string $response): void
     {
+        $application = Application::forConversation($conversation);
+
+        if ($application === null) {
+            return;
+        }
+
         $context = $conversation->context ?? [];
         $updates = [];
 
@@ -960,7 +1014,7 @@ PROMPT;
         if (! Arr::get($context, 'job_title_manual')) {
             $jobTitle = $this->extractJobTitle($response);
             if ($jobTitle !== null) {
-                $updates['job_title'] = $jobTitle;
+                $updates['position'] = $jobTitle;
             }
         }
 
@@ -978,16 +1032,21 @@ PROMPT;
             return;
         }
 
-        $conversation->context = array_merge($context, $updates);
+        foreach (['company_name', 'position'] as $column) {
+            if (isset($updates[$column])) {
+                $updates[$column] = mb_substr($updates[$column], 0, 255);
+            }
+        }
+
+        $application->update($updates);
 
         if (! Arr::get($context, 'title_manual')) {
             $conversation->title = $this->buildConversationTitle(
-                $updates['company_name'] ?? ($context['company_name'] ?? null),
-                $updates['job_title'] ?? ($context['job_title'] ?? null),
+                $application->knownCompanyName(),
+                $application->knownPosition(),
             );
+            $conversation->save();
         }
-
-        $conversation->save();
     }
 
     private function extractCompanyName(string $response): ?string

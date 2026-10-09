@@ -71,16 +71,16 @@
         },
         {
             "name": "austintoddj/canvas",
-            "version": "v7.1.0",
+            "version": "v7.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/austintoddj/canvas.git",
-                "reference": "93b091c00ab73b11265e0798e4378a95b2656c68"
+                "reference": "eb394d5ef628796bdea80c271a16099e0cba67f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/austintoddj/canvas/zipball/93b091c00ab73b11265e0798e4378a95b2656c68",
-                "reference": "93b091c00ab73b11265e0798e4378a95b2656c68",
+                "url": "https://api.github.com/repos/austintoddj/canvas/zipball/eb394d5ef628796bdea80c271a16099e0cba67f8",
+                "reference": "eb394d5ef628796bdea80c271a16099e0cba67f8",
                 "shasum": ""
             },
             "require": {
@@ -155,7 +155,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-14T13:34:27+00:00"
+            "time": "2026-10-09T12:39:01+00:00"
         },
         {
             "name": "aws/aws-crt-php",

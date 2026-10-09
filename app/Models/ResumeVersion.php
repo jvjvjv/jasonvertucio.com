@@ -13,6 +13,7 @@ class ResumeVersion extends Model
 {
     /** @use HasFactory<ResumeVersionFactory> */
     use HasFactory;
+
     use HasGeneratedDocuments;
 
     protected $fillable = [
@@ -80,6 +81,11 @@ class ResumeVersion extends Model
     public function targetedResumes(): HasMany
     {
         return $this->hasMany(TargetedResume::class);
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class);
     }
 
     public function editCandidates(): HasMany
