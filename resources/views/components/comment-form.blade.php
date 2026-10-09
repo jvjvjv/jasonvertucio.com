@@ -4,6 +4,12 @@
     // A rejected edit also flashes a `message`; it belongs to that comment's
     // edit form, not to whichever reply form happens to match `parent_id`.
     $isTarget = old('editing') === null && (string) old('parent_id') === (string) $parentId;
+
+    // A reply refused because its parent has gone has no reply form left to
+    // return to, so the main form takes the text rather than losing it.
+    if (! $isTarget && $parentId === null && old('editing') === null && $errors->has('parent_id')) {
+        $isTarget = \App\Models\Comment::query()->whereKey(old('parent_id'))->doesntExist();
+    }
 @endphp
 
 <form method="POST"
