@@ -5,10 +5,7 @@
 @section('main')
 
 <div class="max-w-7xl mx-auto px-4">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="blog lg:col-span-2">
-
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="blog bg-white rounded-lg shadow-md p-6">
         <h2 class="blog__title text-4xl font-bold mt-3 mb-5">
           {{ $post['title'] }}
         </h2>
@@ -38,8 +35,6 @@
         <div class="mt-4">
           <script type="text/javascript">amzn_assoc_ad_type = "banner";amzn_assoc_marketplace = "amazon";amzn_assoc_region = "US";amzn_assoc_placement = "assoc_banner_placement_default";amzn_assoc_banner_type = "ez";amzn_assoc_p = "13";amzn_assoc_width = "468";amzn_assoc_height = "60";amzn_assoc_tracking_id = "pk00m-20";amzn_assoc_linkid = "d7baa57a05d736fce70b74278fcab525";</script><script src="//z-na.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&Operation=GetScript&ID=OneJS&WS=1"></script>
         </div>
-      </div>
-    </div>
   </div>
 </div>
 
