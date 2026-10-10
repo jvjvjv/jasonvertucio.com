@@ -52,7 +52,7 @@
                phones the table itself becomes the scroll container. The cell
                minimum is what forces the overflow: without it the columns
                just squeeze to fit. */
-            @apply max-sm:block max-sm:max-w-full max-sm:overflow-x-auto;
+            @apply max-sm:block max-sm:max-w-full max-sm:overflow-x-auto max-sm:inset-shadow-xs;
 
             th, td {
                 @apply max-sm:min-w-32;
