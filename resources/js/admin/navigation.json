@@ -7,13 +7,6 @@
             "can": null,
             "navigationItems": [
               {
-                "can": "manage-blogs",
-                "href": "/canvas",
-                "icon": "Feed",
-                "label": "Blog Admin",
-                "description": "Manage blog, write posts."
-              },
-              {
                 "can": "manage-ai-tools",
                 "href": "/admin/ai",
                 "icon": "SmartToy",
@@ -68,6 +61,13 @@
                 "icon": "PushPin",
                 "label": "Site Navigation",
                 "description": "Manage sidebar navigation links and their order"
+              },
+              {
+                "can": "manage-blogs",
+                "href": "/canvas",
+                "icon": "Feed",
+                "label": "Blog Admin",
+                "description": "Manage blog, write posts."
               },
               {
                 "can": "moderate-comments",
