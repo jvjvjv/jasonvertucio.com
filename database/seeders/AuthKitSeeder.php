@@ -47,6 +47,7 @@ class KeystoneSeeder extends Seeder
 
             // Canvas blog management
             'manage-blog',
+            'manage-comments',
 
             // Settings
             'view-settings',

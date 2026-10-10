@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Comment;
 use App\Models\User;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Canvas\Models\Post;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CommentDisplayTest extends TestCase
@@ -32,6 +34,31 @@ class CommentDisplayTest extends TestCase
             'published_at' => now(),
             'user_id' => User::factory()->create()->id,
         ]);
+    }
+
+    private function userWith(string $permission): User
+    {
+        $user = User::factory()->create();
+        Permission::firstOrCreate(['name' => $permission]);
+        $user->givePermissionTo($permission);
+
+        return $user;
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function moderatingPermissions(): array
+    {
+        return [
+            'manage-comments only' => ['manage-comments'],
+            'manage-blog only' => ['manage-blog'],
+        ];
+    }
+
+    private function spamAction(Post $post, Comment $comment): string
+    {
+        return 'action="'.route('comments.spam', [$post->slug, $comment]).'"';
     }
 
     private function comment(Post $post, array $attributes = []): Comment
@@ -197,5 +224,116 @@ class CommentDisplayTest extends TestCase
         DB::disableQueryLog();
 
         $this->assertLessThanOrEqual(1, $queries->count(), "Expected one comment tree query, got:\n".$queries->implode("\n"));
+    }
+
+    #[DataProvider('moderatingPermissions')]
+    public function test_a_moderator_sees_a_mark_as_spam_control_on_every_displayed_comment(string $permission): void
+    {
+        $post = $this->makePost();
+        $registered = $this->comment($post, ['user_id' => User::factory()->create()->id]);
+        $anonymous = $this->comment($post, ['user_id' => null]);
+
+        $html = $this->actingAs($this->userWith($permission))
+            ->get(route('post', $post->slug))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, $this->spamAction($post, $registered)));
+        $this->assertSame(1, substr_count($html, $this->spamAction($post, $anonymous)));
+        $this->assertSame(2, substr_count($html, '>Mark as spam</summary>'));
+    }
+
+    public function test_a_logged_in_non_moderator_sees_no_mark_as_spam_control(): void
+    {
+        $post = $this->makePost();
+        $author = User::factory()->create();
+        $this->comment($post, ['user_id' => $author->id]);
+        $this->comment($post);
+
+        $this->actingAs($author)
+            ->get(route('post', $post->slug))
+            ->assertOk()
+            ->assertDontSee('Mark as spam')
+            ->assertDontSee('/spam"', false);
+    }
+
+    public function test_a_guest_sees_no_mark_as_spam_control(): void
+    {
+        $post = $this->makePost();
+        $this->comment($post);
+
+        $this->get(route('post', $post->slug))
+            ->assertOk()
+            ->assertDontSee('Mark as spam')
+            ->assertDontSee('/spam"', false);
+    }
+
+    public function test_a_tombstone_carries_no_mark_as_spam_control(): void
+    {
+        $post = $this->makePost();
+        $hidden = $this->comment($post, ['approved_at' => null, 'is_spam' => true]);
+        $reply = $this->comment($post, ['parent_id' => $hidden->id, 'depth' => 1]);
+
+        $html = $this->actingAs($this->userWith('manage-comments'))
+            ->get(route('post', $post->slug))
+            ->assertOk()
+            ->assertSee('[comment removed]')
+            ->getContent();
+
+        $this->assertSame(0, substr_count($html, $this->spamAction($post, $hidden)));
+        $this->assertSame(1, substr_count($html, $this->spamAction($post, $reply)));
+    }
+
+    public function test_the_mark_as_spam_control_needs_a_second_step(): void
+    {
+        $post = $this->makePost();
+        $comment = $this->comment($post);
+
+        $html = $this->actingAs($this->userWith('manage-comments'))
+            ->get(route('post', $post->slug))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '~<details[^>]*>\s*<summary[^>]*>Mark as spam</summary>\s*<form[^>]*'.preg_quote($this->spamAction($post, $comment), '~').'~',
+            $html
+        );
+        $this->assertDoesNotMatchRegularExpression('~<details[^>]*\bopen\b[^>]*>\s*<summary[^>]*>Mark as spam~', $html);
+    }
+
+    public function test_a_confirmation_shows_after_marking_spam_from_the_post(): void
+    {
+        $post = $this->makePost();
+        $comment = $this->comment($post, ['message' => 'Soon to be hidden']);
+
+        $this->actingAs($this->userWith('manage-comments'))
+            ->followingRedirects()
+            ->post(route('comments.spam', [$post->slug, $comment]))
+            ->assertOk()
+            ->assertSee('Comment marked as spam and hidden from this post.')
+            ->assertDontSee('Soon to be hidden');
+    }
+
+    public function test_the_moderation_control_adds_no_query_per_comment(): void
+    {
+        $moderator = $this->userWith('manage-comments');
+
+        $queriesFor = function (int $commentCount) use ($moderator): int {
+            $post = $this->makePost();
+
+            for ($i = 0; $i < $commentCount; $i++) {
+                $this->comment($post);
+            }
+
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->actingAs($moderator->fresh())->get(route('post', $post->slug))->assertOk();
+            $count = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $count;
+        };
+
+        $this->assertSame($queriesFor(3), $queriesFor(30));
     }
 }

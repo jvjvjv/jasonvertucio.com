@@ -101,6 +101,32 @@ class Comment extends Model
     }
 
     /**
+     * Hide this comment as spam.
+     *
+     * `approved_at` is what the public display query trusts, so it is cleared
+     * here; `is_spam` records why.
+     */
+    public function markAsSpam(): void
+    {
+        $this->update([
+            'is_spam' => true,
+            'approved_at' => null,
+        ]);
+    }
+
+    /**
+     * Restore this comment, approving it as of now rather than reinstating
+     * whatever approval time it held before.
+     */
+    public function markAsNotSpam(): void
+    {
+        $this->update([
+            'is_spam' => false,
+            'approved_at' => now(),
+        ]);
+    }
+
+    /**
      * Determine whether this comment may still be replied to.
      */
     public function acceptsReplies(): bool

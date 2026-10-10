@@ -17,6 +17,7 @@ class CommentNode extends Component
         public Comment $comment,
         public Collection $children,
         public string $slug,
+        public bool $canModerate = false,
     ) {
     }
 

@@ -17,6 +17,7 @@ use App\Listeners\RecordRecentlyFinishedMedia;
 use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Models\ResumeVersion;
+use App\Models\User;
 use App\Observers\CommentObserver;
 use App\Services\Mcp\PublicMcpCache;
 use App\Services\Mcp\TargetedResumeToolRegistry;
@@ -29,6 +30,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -57,6 +59,14 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Comment::observe(CommentObserver::class);
+
+        // The one definition of "may moderate comments". `moderate-comments`
+        // is an ability, not a permission: Keystone's Gate::before answers
+        // definitively for any ability matching a permission name, so a
+        // permission must never be created with this name or it would
+        // override the rule below.
+        Gate::define('moderate-comments', fn (User $user): bool => $user->hasPermissionTo('manage-comments')
+            || $user->hasPermissionTo('manage-blog'));
 
         RateLimiter::for('comments', function (Request $request) {
             return Limit::perMinute(config('comments.rate_limit_per_minute'))

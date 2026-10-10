@@ -62,6 +62,18 @@ class CommentThread extends Component
     }
 
     /**
+     * Whether the viewer may moderate comments.
+     *
+     * Resolved once for the whole thread and handed to each node: every Gate
+     * check runs Keystone's permission lookup, so asking per comment would add
+     * a query per comment.
+     */
+    public function canModerate(): bool
+    {
+        return auth()->user()?->can('moderate-comments') ?? false;
+    }
+
+    /**
      * Count the comments a visitor can actually read.
      */
     public function visibleCount(): int

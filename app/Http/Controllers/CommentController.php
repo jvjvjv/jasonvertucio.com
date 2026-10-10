@@ -38,6 +38,23 @@ class CommentController extends Controller
     }
 
     /**
+     * Hide a comment as spam from the post it is displayed on.
+     *
+     * Lands on the thread rather than the comment's own anchor, which a spam
+     * leaf no longer has.
+     */
+    public function markSpam(string $slug, Comment $comment): RedirectResponse
+    {
+        abort_unless($comment->post?->slug === $slug, 404);
+
+        $comment->markAsSpam();
+
+        return redirect()
+            ->to(route('post', $slug).'#comments')
+            ->with('comment_marked_spam', true);
+    }
+
+    /**
      * Redirect back to the comment on the post it belongs to.
      *
      * A discarded honeypot submission takes this same path with no comment, so

@@ -18,5 +18,9 @@ Route::group(['prefix' => 'blog'], function ($route) {
         ->middleware('throttle:comments')
         ->name('comments.store');
 
+    $route->post('/{slug}/comments/{comment}/spam', [CommentController::class, 'markSpam'])
+        ->middleware(['auth', 'can:moderate-comments'])
+        ->name('comments.spam');
+
     $route->get('/{slug}', [BlogController::class, 'post'])->name('post');
 });

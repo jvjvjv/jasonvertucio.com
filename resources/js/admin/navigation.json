@@ -70,7 +70,7 @@
                 "description": "Manage sidebar navigation links and their order"
               },
               {
-                "can": "manage-blog",
+                "can": "moderate-comments",
                 "href": "/admin/comments",
                 "icon": "Forum",
                 "label": "Comments",

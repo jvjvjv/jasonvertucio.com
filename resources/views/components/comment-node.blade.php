@@ -29,6 +29,22 @@
                     <x-comment-form :slug="$slug" :parent-id="$comment->id" compact />
                 </details>
             @endif
+
+            @if ($canModerate)
+                <details class="mt-2">
+                    <summary class="cursor-pointer text-sm text-primary hover:text-secondary">Mark as spam</summary>
+                    <form method="POST"
+                          action="{{ route('comments.spam', [$slug, $comment]) }}"
+                          class="mt-3 flex flex-wrap items-center gap-3">
+                        @csrf
+                        <p class="text-sm text-gray-600">This hides the comment from the post.</p>
+                        <button type="submit"
+                                class="rounded border border-red-300 px-3 py-1 text-sm text-red-800 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-primary">
+                            Mark as spam
+                        </button>
+                    </form>
+                </details>
+            @endif
         </article>
     @else
         <article class="rounded border border-dashed border-gray-300 p-4 text-sm text-gray-500">
@@ -41,7 +57,8 @@
             @foreach ($children as $child)
                 <x-comment-node :comment="$child['comment']"
                                 :children="$child['children']"
-                                :slug="$slug" />
+                                :slug="$slug"
+                                :can-moderate="$canModerate" />
             @endforeach
         </ol>
     @endif
