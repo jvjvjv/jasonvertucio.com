@@ -40,4 +40,4 @@
 
 - [x] 7.1 Update the *Comment System* section of `CLAUDE.md`: edit/delete behaviour and who may do it, `edited_at`, the tombstone rule now covering deleted comments, the new key files (`CommentPolicy`, `UpdateCommentRequest`) and the three new routes; verify the section no longer describes soft-deleted comments as tombstone-free
 - [x] 7.2 Run all five comment test files together (`php artisan test --compact --filter=Comment`) and confirm they pass, then ask the developer whether to run the full suite
-- [ ] 7.3 Load a post with nested comments in the local site as an owner, another user, a guest and a `manage-blog` user, and confirm by eye that the controls, the "(edited)" marker, the delete confirmation step and a mid-thread tombstone all render as specified
+- [x] 7.3 Load a post with nested comments in the local site as an owner, another user, a guest and a `manage-blog` user, and confirm by eye that the controls, the "(edited)" marker, the delete confirmation step and a mid-thread tombstone all render as specified
