@@ -7,13 +7,6 @@
             "can": null,
             "navigationItems": [
               {
-                "can": "manage-ai-tools",
-                "href": "/admin/ai",
-                "icon": "SmartToy",
-                "label": "AI Tools",
-                "description": "Manage AI systems, job application analysis, and AI cover letter generation"
-              },
-              {
                 "can": "edit-resume",
                 "href": "/admin/resume",
                 "icon": "Description",
@@ -47,6 +40,13 @@
                 "icon": "Inbox",
                 "label": "Mail Preview",
                 "description": "See how emails might be rendered, right here in the browser!"
+              },
+              {
+                "can": "manage-ai-tools",
+                "href": "/admin/ai",
+                "icon": "SmartToy",
+                "label": "AI Tools",
+                "description": "Manage AI systems, job application analysis, and AI cover letter generation"
               },
               {
                 "can": "view-roles",
