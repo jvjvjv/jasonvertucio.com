@@ -43,14 +43,15 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRe
         Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
     });
 
-// Comment moderation - gated on manage-blog rather than the resume/admin
-// permission above, since it is blog work.
+// Comment moderation - gated on the `moderate-comments` gate (defined in
+// AppServiceProvider: manage-comments or manage-blog) rather than the
+// resume/admin permission above, since it is blog work.
 //
 // These deliberately live under /admin, not /canvas: Canvas registers
 // Route::get('/{view?}')->where('view', '(.*)') from its own service provider,
 // which is booted before routes/web.php is loaded, so every path under the
 // canvas prefix is swallowed by its SPA view controller.
-Route::middleware(['auth', 'can:manage-blog', HandleInertiaRequests::class])
+Route::middleware(['auth', 'can:moderate-comments', HandleInertiaRequests::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

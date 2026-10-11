@@ -28,7 +28,7 @@
 
             <div class="whitespace-pre-line">{{ $comment->message }}</div>
 
-            @if ($comment->acceptsReplies() || $canManage())
+            @if ($comment->acceptsReplies() || $canManage() || $canModerate)
                 {{-- An open control takes the whole row, so its form is not
                      squeezed beside the other summaries. --}}
                 <div class="mt-2 flex flex-wrap items-start gap-x-4 gap-y-2">
@@ -90,6 +90,22 @@
                             </form>
                         </details>
                     @endif
+
+                    @if ($canModerate)
+                        <details>
+                            <summary class="cursor-pointer text-sm text-primary hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary">Mark as spam</summary>
+                            <form method="POST"
+                                  action="{{ route('comments.spam', [$slug, $comment]) }}"
+                                  class="mt-3 flex flex-wrap items-center gap-3">
+                                @csrf
+                                <p class="text-sm text-gray-600">This hides the comment from the post.</p>
+                                <button type="submit"
+                                        class="rounded border border-red-300 px-3 py-1 text-sm text-red-800 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-primary">
+                                    Mark as spam
+                                </button>
+                            </form>
+                        </details>
+                    @endif
                 </div>
             @endif
         </article>
@@ -106,7 +122,8 @@
                                 :children="$child['children']"
                                 :slug="$slug"
                                 :viewer="$viewer"
-                                :viewer-is-admin="$viewerIsAdmin" />
+                                :viewer-is-admin="$viewerIsAdmin"
+                                :can-moderate="$canModerate" />
             @endforeach
         </ol>
     @endif

@@ -15,16 +15,13 @@
     h4,
     h5,
     h6 {
-        @apply font-heading;
+        @apply font-heading font-bold;
     }
 
     .blog__body {
-        .embedded_image {
-            @apply my-2;
-            p {
-                @apply text-sm text-center mb-4;
-            }
-        }
+        h1 { @apply text-2xl; }
+        h2 { @apply text-xl; }
+        h3 { @apply text-lg; }
         code {
             white-space: pre-wrap;
         }
@@ -38,9 +35,44 @@
             font-style: italic;
             color: var(--color-dark);
         }
+
         p {
             @apply my-4;
         }
+
+        table {
+            border-collapse: collapse;
+
+            th, td {
+                border: 1px solid rgb(from var(--color-dark) r g b /0.25);
+                padding:0.5rem;
+            }
+
+            /* Post bodies are stored HTML with no wrapper to scroll, so on
+               phones the table itself becomes the scroll container. The cell
+               minimum is what forces the overflow: without it the columns
+               just squeeze to fit. */
+            @apply max-sm:block max-sm:max-w-full max-sm:overflow-x-auto max-sm:inset-shadow-lg;
+
+            th, td {
+                @apply max-sm:min-w-32;
+            }
+        }
+
+        ul, ol {
+            list-style: revert !important;
+            margin: revert !important;
+            padding:revert !important;
+        }
+
+        .canvas-post-body-image {
+            @apply my-2 w-full;
+
+            & +  p.canvas-post-body-image-credit {
+                @apply text-sm text-center mt-2;
+            }
+        }
+
     }
 }
 

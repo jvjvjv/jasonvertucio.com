@@ -7,20 +7,6 @@
             "can": null,
             "navigationItems": [
               {
-                "can": "manage-blogs",
-                "href": "/canvas",
-                "icon": "Feed",
-                "label": "Blog Admin",
-                "description": "Manage blog, write posts."
-              },
-              {
-                "can": "manage-ai-tools",
-                "href": "/admin/ai",
-                "icon": "SmartToy",
-                "label": "AI Tools",
-                "description": "Manage AI systems, job application analysis, and AI cover letter generation"
-              },
-              {
                 "can": "edit-resume",
                 "href": "/admin/resume",
                 "icon": "Description",
@@ -56,6 +42,13 @@
                 "description": "See how emails might be rendered, right here in the browser!"
               },
               {
+                "can": "manage-ai-tools",
+                "href": "/admin/ai",
+                "icon": "SmartToy",
+                "label": "AI Tools",
+                "description": "Manage AI systems, job application analysis, and AI cover letter generation"
+              },
+              {
                 "can": "view-roles",
                 "href": "/admin/roles-permissions",
                 "icon": "AdminPanelSettings",
@@ -70,7 +63,14 @@
                 "description": "Manage sidebar navigation links and their order"
               },
               {
-                "can": "manage-blog",
+                "can": "manage-blogs",
+                "href": "/canvas",
+                "icon": "Feed",
+                "label": "Blog Admin",
+                "description": "Manage blog, write posts."
+              },
+              {
+                "can": "moderate-comments",
                 "href": "/admin/comments",
                 "icon": "Forum",
                 "label": "Comments",

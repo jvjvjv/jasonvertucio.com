@@ -20,6 +20,7 @@ class CommentNode extends Component
         public string $slug,
         public ?User $viewer = null,
         public bool $viewerIsAdmin = false,
+        public bool $canModerate = false,
     ) {
     }
 

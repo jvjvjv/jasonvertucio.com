@@ -24,6 +24,9 @@ Route::group(['prefix' => 'blog'], function ($route) {
     $route->delete('/{slug}/comments/{comment}', [CommentController::class, 'destroy'])
         ->middleware('auth')
         ->name('comments.destroy');
+    $route->post('/{slug}/comments/{comment}/spam', [CommentController::class, 'markSpam'])
+        ->middleware(['auth', 'can:moderate-comments'])
+        ->name('comments.spam');
 
     $route->get('/{slug}', [BlogController::class, 'post'])->name('post');
 });
