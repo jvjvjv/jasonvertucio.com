@@ -26,35 +26,37 @@
                 @endif
             </header>
 
-            <div class="whitespace-pre-line">{{ $comment->message }}</div>
+            <div class="comment-body whitespace-pre-line">{{ $comment->message }}</div>
 
             @if ($comment->acceptsReplies() || $canManage() || $canModerate)
-                {{-- An open control takes the whole row, so its form is not
-                     squeezed beside the other summaries. --}}
-                <div class="mt-2 flex flex-wrap items-start gap-x-4 gap-y-2">
+                {{-- Native disclosures that share a name, so only one is open
+                     at a time. blog.css draws each summary as a button and the
+                     open one as a panel that takes the row's place; the summary
+                     then reads as that panel's title and its Cancel. --}}
+                <div class="comment-actions">
                     @if ($comment->acceptsReplies())
-                        <details class="open:w-full">
-                            <summary class="cursor-pointer text-sm text-primary hover:text-secondary">Reply</summary>
+                        <details name="comment-{{ $comment->id }}" class="comment-action comment-action--reply">
+                            <summary data-panel-title="Reply to {{ $comment->name }}">Reply</summary>
                             <x-comment-form :slug="$slug" :parent-id="$comment->id" compact />
                         </details>
                     @endif
 
                     @if ($canManage())
-                        <details class="open:w-full" @if ($isEditTarget()) open @endif>
-                            <summary class="cursor-pointer text-sm text-primary hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary">Edit</summary>
+                        <details name="comment-{{ $comment->id }}" class="comment-action comment-action--edit" @if ($isEditTarget()) open @endif>
+                            <summary data-panel-title="Edit comment">Edit</summary>
                             <form method="POST"
                                   action="{{ route('comments.update', [$slug, $comment]) }}"
-                                  class="mt-3">
+                                  class="mt-2">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="editing" value="{{ $comment->id }}">
 
-                                <label for="edit-message-{{ $comment->id }}" class="block text-sm font-medium mb-1">
+                                <label for="edit-message-{{ $comment->id }}" class="sr-only">
                                     Edit comment
                                 </label>
                                 <textarea id="edit-message-{{ $comment->id }}"
                                           name="message"
-                                          rows="3"
+                                          rows="4"
                                           required
                                           maxlength="5000"
                                           class="w-full rounded border border-gray-300 px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary">{{ $isEditTarget() ? old('message') : $comment->message }}</textarea>
@@ -63,45 +65,49 @@
                                 @endif
 
                                 <button type="submit"
-                                        class="mt-3 rounded bg-primary px-4 py-2 font-semibold text-white hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                                    Save
-                                </button>
-                            </form>
-                        </details>
-
-                        {{-- Opening the disclosure is the confirmation step, so
-                             deleting needs no script. --}}
-                        <details class="open:w-full">
-                            <summary class="cursor-pointer text-sm text-red-700 hover:text-red-900 focus-visible:outline-2 focus-visible:outline-red-700">Delete</summary>
-                            <form method="POST"
-                                  action="{{ route('comments.destroy', [$slug, $comment]) }}"
-                                  class="mt-3">
-                                @csrf
-                                @method('DELETE')
-
-                                <p class="text-sm text-gray-600">
-                                    This removes the comment for good. Replies to it stay where they are.
-                                </p>
-
-                                <button type="submit"
-                                        class="mt-3 rounded bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">
-                                    Delete comment
+                                        class="mt-2 rounded bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                                    Save changes
                                 </button>
                             </form>
                         </details>
                     @endif
 
+                    @if ($canModerate || $canManage())
+                        <span class="comment-actions__gap" aria-hidden="true"></span>
+                    @endif
+
                     @if ($canModerate)
-                        <details>
-                            <summary class="cursor-pointer text-sm text-primary hover:text-secondary focus-visible:outline-2 focus-visible:outline-primary">Mark as spam</summary>
+                        <details name="comment-{{ $comment->id }}" class="comment-action comment-action--spam comment-action--confirm">
+                            <summary data-panel-title="Mark this comment as spam?">Mark as spam</summary>
                             <form method="POST"
                                   action="{{ route('comments.spam', [$slug, $comment]) }}"
-                                  class="mt-3 flex flex-wrap items-center gap-3">
+                                  class="mt-1 flex flex-wrap items-center justify-between gap-3">
                                 @csrf
-                                <p class="text-sm text-gray-600">This hides the comment from the post.</p>
+                                <p class="text-sm text-gray-700">It is hidden from this post. You can restore it from the comments queue.</p>
                                 <button type="submit"
-                                        class="rounded border border-red-300 px-3 py-1 text-sm text-red-800 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-primary">
+                                        class="rounded border border-red-300 bg-white px-3 py-1.5 text-sm font-semibold text-red-800 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">
                                     Mark as spam
+                                </button>
+                            </form>
+                        </details>
+                    @endif
+
+                    @if ($canManage())
+                        {{-- Opening the disclosure is the confirmation step, so
+                             deleting needs no script. --}}
+                        <details name="comment-{{ $comment->id }}" class="comment-action comment-action--delete comment-action--confirm">
+                            <summary data-panel-title="Delete this comment?">Delete</summary>
+                            <form method="POST"
+                                  action="{{ route('comments.destroy', [$slug, $comment]) }}"
+                                  class="mt-1 flex flex-wrap items-center justify-between gap-3">
+                                @csrf
+                                @method('DELETE')
+
+                                <p class="text-sm text-gray-700">It cannot be brought back. Replies to it stay where they are.</p>
+
+                                <button type="submit"
+                                        class="rounded bg-red-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">
+                                    Delete comment
                                 </button>
                             </form>
                         </details>

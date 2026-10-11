@@ -52,7 +52,7 @@
                phones the table itself becomes the scroll container. The cell
                minimum is what forces the overflow: without it the columns
                just squeeze to fit. */
-            @apply max-sm:block max-sm:max-w-full max-sm:overflow-x-auto max-sm:inset-shadow-lg;
+            @apply max-sm:block max-sm:max-w-full max-sm:overflow-x-auto max-sm:inset-shadow-sm;
 
             th, td {
                 @apply max-sm:min-w-32;
@@ -165,5 +165,137 @@
 
     tbody tr:nth-child(even) {
         @apply bg-gray-50;
+    }
+}
+
+/* Comment thread controls.
+   Each control is a native <details>, so nothing here needs script. Closed, a
+   summary is a small button in the action row. Open, its <details> takes the
+   row's place as a panel, and the summary becomes that panel's title on the
+   left with a Cancel on the right - the summary's own text is kept for
+   assistive tech and hidden visually. */
+.comments {
+    /* Pulled left by the buttons' own padding, so their icons line up with
+       the comment text above. */
+    .comment-actions {
+        @apply -mx-2 mt-3 flex flex-wrap items-center gap-1;
+    }
+
+    .comment-actions:has(> .comment-action[open]) {
+        @apply mx-0;
+    }
+
+    .comment-actions__gap {
+        @apply grow;
+    }
+
+    .comment-action > summary {
+        @apply inline-flex cursor-pointer list-none items-center gap-1.5 rounded px-2 py-1 text-sm font-medium text-primary select-none;
+    }
+
+    .comment-action > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .comment-action > summary::before {
+        font-family: "Font Awesome 7 Free";
+        font-size: 0.8em;
+        font-weight: 900;
+        content: var(--comment-action-icon);
+    }
+
+    .comment-action > summary:hover {
+        @apply bg-primary/10;
+    }
+
+    .comment-action > summary:focus-visible {
+        @apply outline-2 outline-offset-2 outline-primary;
+    }
+
+    .comment-action--reply {
+        --comment-action-icon: "\f3e5";
+    }
+
+    .comment-action--edit {
+        --comment-action-icon: "\f304";
+    }
+
+    .comment-action--spam {
+        --comment-action-icon: "\f024";
+    }
+
+    .comment-action--delete {
+        --comment-action-icon: "\f2ed";
+    }
+
+    /* Destructive controls stay quiet until approached. */
+    .comment-action--confirm:not([open]) > summary {
+        @apply text-gray-500;
+    }
+
+    .comment-action--confirm:not([open]) > summary:hover {
+        @apply bg-red-50 text-red-800;
+    }
+
+    /* On a phone the row would wrap to three lines at the deepest indent, so
+       the destructive pair drops to icons. Their text stays in the DOM. */
+    @media (width < 40rem) {
+        .comment-actions {
+            @apply flex-nowrap gap-0;
+        }
+
+        .comment-action--confirm:not([open]) > summary {
+            @apply size-8 justify-center p-0;
+            font-size: 0;
+        }
+
+        .comment-action--confirm:not([open]) > summary::before {
+            font-size: 0.875rem;
+        }
+    }
+
+    /* One open control replaces the row. */
+    .comment-actions:has(> .comment-action[open]) > :not([open]) {
+        display: none;
+    }
+
+    .comment-action[open] {
+        @apply w-full;
+    }
+
+    .comment-action[open] > summary {
+        @apply flex justify-between gap-3 p-0;
+        font-size: 0;
+    }
+
+    .comment-action[open] > summary:hover {
+        background: none;
+    }
+
+    .comment-action[open] > summary::before {
+        @apply font-body text-sm font-semibold text-dark;
+        content: attr(data-panel-title);
+    }
+
+    .comment-action[open] > summary::after {
+        @apply rounded px-2 py-1 text-sm font-medium text-primary;
+        content: "Cancel";
+    }
+
+    .comment-action[open] > summary:hover::after {
+        @apply bg-primary/10;
+    }
+
+    .comment-action--reply[open] {
+        @apply border-t border-gray-200 pt-3;
+    }
+
+    .comment-action--confirm[open] {
+        @apply rounded border border-red-200 bg-red-50 px-3 py-2;
+    }
+
+    /* The editor stands in for the text it is editing. */
+    article:has(.comment-action--edit[open]) > .comment-body {
+        display: none;
     }
 }
