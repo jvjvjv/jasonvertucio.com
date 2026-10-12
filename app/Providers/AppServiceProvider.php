@@ -73,6 +73,15 @@ class AppServiceProvider extends ServiceProvider
                 ->by($request->header('CF-Connecting-IP') ?? $request->ip());
         });
 
+        RateLimiter::for('posts-ingest', fn (Request $request) => Limit::perMinute((int) config('posts-ingest.rate_limit_per_minute'))
+            ->by($request->header('CF-Connecting-IP') ?? $request->ip()));
+
+        RateLimiter::for('media-webhook', fn (Request $request) => Limit::perMinute(120)
+            ->by($request->header('CF-Connecting-IP') ?? $request->ip()));
+
+        RateLimiter::for('media-read', fn (Request $request) => Limit::perMinute(60)
+            ->by($request->header('CF-Connecting-IP') ?? $request->ip()));
+
         // Public MCP endpoint. Sized to stop floods and systematic harvesting,
         // not to protect the database — repeated calls are served from cache,
         // so an ordinary session (initialize, tools/list, three tool calls)

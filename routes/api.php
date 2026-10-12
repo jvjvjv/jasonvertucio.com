@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\LocalMediaController;
+use App\Http\Middleware\VerifyJellyfinWebhook;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +16,9 @@ use App\Http\Controllers\LocalMediaController;
 
 // Jellyfin Webhook and Currently Watching API
 // These will be accessible at /api/event/@2028 and /api/currently-watching
-Route::post('/event/@2028', [LocalMediaController::class, 'index']);
-Route::get('/currently-watching', [LocalMediaController::class, 'currentlyWatching']);
-Route::get('/media-stats', [LocalMediaController::class, 'mediaStats']);
+Route::post('/event/@2028', [LocalMediaController::class, 'index'])
+    ->middleware(['throttle:media-webhook', VerifyJellyfinWebhook::class]);
+Route::middleware('throttle:media-read')->group(function () {
+    Route::get('/currently-watching', [LocalMediaController::class, 'currentlyWatching']);
+    Route::get('/media-stats', [LocalMediaController::class, 'mediaStats']);
+});

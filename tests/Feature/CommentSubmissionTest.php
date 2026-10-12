@@ -119,7 +119,7 @@ class CommentSubmissionTest extends TestCase
         $post = $this->makePost(null);
 
         $this->post(route('comments.store', $post->slug), $this->payload())
-            ->assertSessionHasErrors('post');
+            ->assertNotFound();
 
         $this->assertSame(0, Comment::query()->where('post_id', $post->id)->count());
     }

@@ -63,7 +63,7 @@ class CommentController extends Controller
      */
     public function destroy(string $slug, Comment $comment): RedirectResponse
     {
-        abort_unless($comment->isOnPost($slug), 404);
+        abort_unless($comment->isOnPublishedPost($slug), 404);
 
         $this->authorize('delete', $comment);
 
@@ -82,7 +82,7 @@ class CommentController extends Controller
      */
     public function markSpam(string $slug, Comment $comment): RedirectResponse
     {
-        abort_unless($comment->isOnPost($slug), 404);
+        abort_unless($comment->isOnPublishedPost($slug), 404);
 
         $comment->markAsSpam();
 

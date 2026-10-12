@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 
@@ -16,6 +17,9 @@ interface JSONConfigEditorProps {
     endpointTypes: string[];
     streamProtocols: string[];
     systemPromptModes: string[];
+    hasCredentials: boolean;
+    clearCredentials: boolean;
+    onClearCredentialsChange: (_value: boolean) => void;
     onConfigChange: (_value: string) => void;
     onCredentialsChange: (_value: string) => void;
     onAuthTypeChange: (_value: string) => void;
@@ -31,6 +35,9 @@ export default function JSONConfigEditor({
     endpointTypes,
     streamProtocols,
     systemPromptModes,
+    hasCredentials,
+    clearCredentials,
+    onClearCredentialsChange,
     onConfigChange,
     onCredentialsChange,
     onAuthTypeChange,
@@ -160,24 +167,49 @@ export default function JSONConfigEditor({
                 </TextField>
             </Box>
 
-            <TextField
-                label="Credentials (JSON)"
-                size="small"
-                fullWidth
-                multiline
-                rows={4}
-                value={data.credentials}
-                onChange={(e) => {
-                    onCredentialsChange(e.target.value);
-                }}
-                error={!!errors.credentials}
-                helperText={
-                    errors.credentials ??
-                    "Optional encrypted credential payload for provider-specific keys"
-                }
-                slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
-                sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+                <TextField
+                    label="Credentials (JSON)"
+                    size="small"
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={data.credentials}
+                    disabled={clearCredentials}
+                    onChange={(e) => {
+                        onCredentialsChange(e.target.value);
+                        if (e.target.value) {
+                            onClearCredentialsChange(false);
+                        }
+                    }}
+                    error={!!errors.credentials}
+                    placeholder={hasCredentials ? "Credentials set" : undefined}
+                    helperText={
+                        errors.credentials ??
+                        (clearCredentials
+                            ? "The stored credentials will be removed when you save."
+                            : hasCredentials
+                              ? "Credentials are set. Leave blank to keep them, or enter new JSON to replace them."
+                              : "Optional encrypted credential payload for provider-specific keys")
+                    }
+                    slotProps={{ input: { sx: { fontFamily: "monospace" } } }}
+                />
+                {hasCredentials && (
+                    <Button
+                        size="small"
+                        color={clearCredentials ? "inherit" : "error"}
+                        onClick={() => {
+                            onCredentialsChange("");
+                            onClearCredentialsChange(!clearCredentials);
+                        }}
+                        sx={{ mt: 0.5 }}
+                    >
+                        {clearCredentials
+                            ? "Keep stored credentials"
+                            : "Remove credentials"}
+                    </Button>
+                )}
+            </Box>
         </>
     );
 }

@@ -80,6 +80,7 @@
       },
       {
         "href": "/logout",
+        "method": "post",
         "label": "Log out",
         "can": "authenticated"
       }

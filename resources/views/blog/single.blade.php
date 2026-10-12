@@ -5,6 +5,11 @@
 @section('main')
 
 <div class="max-w-7xl mx-auto px-4">
+      @if (! empty($isPreview))
+        <p class="bg-accent/20 border border-accent rounded-lg p-3 mb-4 font-bold" role="status">
+          This post is not published. Only blog authors can see this preview.
+        </p>
+      @endif
       <div class="blog bg-white rounded-lg shadow-md p-6">
         <h2 class="blog__title text-4xl font-bold mt-3 mb-5">
           {{ $post['title'] }}
@@ -16,7 +21,7 @@
 
         <div class="text-sm text-gray-600 border-t border-gray-200 pt-4 mb-6">
           <span class="inline-block mr-4">
-            <strong>Published:</strong> {{ $post['published_at']->format('m/d/Y g:ia') }}
+            <strong>Published:</strong> {{ $post['published_at']?->format('m/d/Y g:ia') ?? 'Not yet' }}
           </span>
           @ifcanvasauthenticated
           <a href="/{{ config('canvas.path') }}/posts/{{ $post['id'] }}/stats" class="text-primary hover:text-secondary mr-3">Stats</a>
@@ -24,12 +29,8 @@
           @endifcanvasauthenticated
         </div>
 
-        <x-comment-thread :post="$post" />
-
-        @if (env('APP_DEBUG'))
-          <pre class="bg-gray-100 p-4 rounded mt-4 overflow-x-auto">
-          {{ json_encode ($post, JSON_PRETTY_PRINT) }}
-          </pre>
+        @if (empty($isPreview))
+          <x-comment-thread :post="$post" />
         @endif
 
         <div class="mt-4">

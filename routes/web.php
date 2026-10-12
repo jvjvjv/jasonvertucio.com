@@ -24,7 +24,9 @@ Route::get('/about/{any?}', function () {
     return redirect('/');
 });
 
-Route::post('/posts', [PostsIngestController::class, 'store'])->name('posts.store');
+Route::post('/posts', [PostsIngestController::class, 'store'])
+    ->middleware('throttle:posts-ingest')
+    ->name('posts.store');
 
 Route::prefix('legal')->name('legal.')->group(function () {
     Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');

@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import { type ReactNode, useState } from "react";
 
 import DesktopNavItem from "./admin-layout/DesktopNavItem";
+import LogoutForm from "./admin-layout/LogoutForm";
 import MobileNavSection from "./admin-layout/MobileNavSection";
 
 import type { SharedProps } from "@/types";
@@ -97,6 +98,7 @@ export default function AdminLayout({
                                     currentPath={currentPath}
                                 />
                             ))}
+                            <LogoutForm variant="bar" />
                         </Box>
 
                         {/* Mobile hamburger */}
@@ -130,6 +132,8 @@ export default function AdminLayout({
                                     />
                                 </Box>
                             ))}
+                            <Divider />
+                            <LogoutForm variant="menu" />
                         </Menu>
                     </Toolbar>
                 </AppBar>

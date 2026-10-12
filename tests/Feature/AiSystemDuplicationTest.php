@@ -87,10 +87,9 @@ class AiSystemDuplicationTest extends TestCase
 
     public function test_resubmitting_a_pending_duplicates_unchanged_copied_api_key_keeps_it_intact(): void
     {
-        // Edit's initial form data is pre-filled with the clone's actual
-        // (copied) api_key — there is no blank/"leave untouched" convention
-        // in this form — so submitting without touching the field resends
-        // the same real value, and it must round-trip unchanged.
+        // A client that still resends the real key must see it round-trip
+        // unchanged. (The edit form no longer receives the key at all; an empty
+        // field keeps it — see AiSystemSecretDisclosureTest.)
         $clone = AiSystem::factory()->create([
             'provider' => AiProvider::Anthropic->value,
             'model' => 'claude-sonnet-4-6',

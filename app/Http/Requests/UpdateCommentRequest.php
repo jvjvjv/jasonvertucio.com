@@ -25,7 +25,7 @@ class UpdateCommentRequest extends FormRequest
     {
         $comment = $this->route('comment');
 
-        abort_unless($comment->isOnPost($this->route('slug')), 404);
+        abort_unless($comment->isOnPublishedPost($this->route('slug')), 404);
 
         return $this->user()->can('update', $comment);
     }
