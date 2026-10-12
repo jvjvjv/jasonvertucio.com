@@ -34,6 +34,10 @@ return [
         'secret' => env('SPARKPOST_SECRET'),
     ],
 
+    'jellyfin' => [
+        'webhook_secret' => env('JELLYFIN_WEBHOOK_SECRET'),
+    ],
+
     'unsplash' => [
         'key' => env('UNSPLASH_ACCESS_KEY'),
     ],

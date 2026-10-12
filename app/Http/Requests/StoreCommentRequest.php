@@ -25,6 +25,8 @@ class StoreCommentRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        abort_unless($this->targetPost()?->published, 404);
+
         return true;
     }
 
@@ -75,12 +77,6 @@ class StoreCommentRequest extends FormRequest
             }
 
             $post = $this->targetPost();
-
-            if (! $post || $post->published_at === null || $post->published_at->isFuture()) {
-                $validator->errors()->add('post', 'Comments are closed on this post.');
-
-                return;
-            }
 
             $parent = $this->parentComment();
 

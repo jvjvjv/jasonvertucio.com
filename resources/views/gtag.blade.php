@@ -1,5 +1,5 @@
 <!-- Global site tag (gtag.js) - Google Analytics -->
-@if (env('APP_DEBUG'))
+@if (config('app.debug'))
 <script cookie-consent="tracking">
 console.log("%cYou're in debug mode. No Google tracking will be performed.","font:bold 20pt Impact;color:#842111;background-color:#ff0;padding:0.25rem;")
 </script>

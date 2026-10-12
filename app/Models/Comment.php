@@ -137,6 +137,16 @@ class Comment extends Model
     }
 
     /**
+     * Like isOnPost(), but also false when the post is a draft or scheduled,
+     * so the comment routes answer for an unpublished post exactly as they do
+     * for an address with no post.
+     */
+    public function isOnPublishedPost(string $slug): bool
+    {
+        return $this->isOnPost($slug) && $this->post->published;
+    }
+
+    /**
      * Hide this comment as spam.
      *
      * `approved_at` is what the public display query trusts, so it is cleared

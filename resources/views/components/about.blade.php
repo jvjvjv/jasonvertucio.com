@@ -25,7 +25,7 @@
             @endif
         </div>
         @if($summary)
-            <p class="text-lg font-light mb-5">{!! $summary !!}</p>
+            <p class="text-lg font-light mb-5">{!! \App\Support\SafeInlineHtml::clean($summary) !!}</p>
         @else
             @foreach ($aboutMe['sections'] as $section)
                 <p class="text-lg font-light mb-5">

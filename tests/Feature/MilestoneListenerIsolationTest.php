@@ -11,6 +11,14 @@ class MilestoneListenerIsolationTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.jellyfin.webhook_secret' => 'test-webhook-secret']);
+        $this->withHeader('X-Webhook-Secret', 'test-webhook-secret');
+    }
+
     public function test_one_listener_failing_does_not_block_the_others_or_the_webhook_response(): void
     {
         // Force InvalidateCurrentlyWatchingCache's Cache::forget() call to throw,

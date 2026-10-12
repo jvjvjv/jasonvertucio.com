@@ -7,9 +7,13 @@
                 style="font-size: 1rem;">{{ $mediaType() }}</span>
         </div>
         <div class="text-lg mb-2 font-bold">{{ $title() }}</div>
-        @if($subtitle())
+        @if($subtitle() || $albumName())
             <p class="mb-2 text-sm text-gray-700 italic">
-                {!! $subtitle() !!}
+                @if($albumName())
+                    From the Album <em>{{ $albumName() }}</em>
+                @else
+                    {{ $subtitle() }}
+                @endif
                 @if($playbackTime())
                 ({{ $playbackTime()  }})
                 @endif
@@ -19,7 +23,7 @@
             <p class="mb-2">{{ $description() }}</p>
         @endif
         <p class="text-gray-600 mb-0">
-            <small>{!! $timestampLabel() !!} {{ $timestamp() }}</small>
+            <small>{{ $timestampLabel() }} {{ $timestamp() }}</small>
         </p>
     </div>
 @endif

@@ -64,7 +64,9 @@ export interface AiSystem {
     id: number;
     name: string;
     provider: string;
-    api_key: string;
+    /** Stored secrets never reach the browser; these say whether one is set. */
+    has_api_key: boolean;
+    has_credentials: boolean;
     model: string;
     model_capabilities?: {
         reasoning?: boolean | null;
@@ -78,7 +80,6 @@ export interface AiSystem {
     context_length: number | null;
     temperature: number | null;
     config: { [key: string]: unknown } | null;
-    credentials?: { [key: string]: unknown } | null;
     auth_type?: string | null;
     endpoint_type?: string | null;
     stream_protocol?: string | null;
@@ -89,7 +90,8 @@ export interface AiSystem {
     allowed_tools?: string[] | null;
     web_tool_policy?: {
         allowed_domains?: string[];
-        credentials?: { [host: string]: { [header: string]: string } };
+        /** Per domain: whether header credentials are stored (values never sent). */
+        has_headers?: { [host: string]: boolean };
     } | null;
     supports_json_mode?: boolean;
     enable_thinking?: boolean | null;

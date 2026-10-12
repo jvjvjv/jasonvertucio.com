@@ -24,7 +24,9 @@ class UpdateAiSystemRequest extends FormRequest
      * A freshly duplicated system (duplicated_at is set) is still on its
      * first edit, so provider/model/api_key are validated exactly like
      * StoreAiSystemRequest instead of being immutable. Once that first save
-     * clears duplicated_at, subsequent updates go back to omitting them.
+     * clears duplicated_at, provider and model are omitted again. The key is
+     * always accepted: it is write-only, and replacing it must not require a
+     * duplicate.
      *
      * @return array<string, array<int, mixed>>
      */
@@ -37,13 +39,13 @@ class UpdateAiSystemRequest extends FormRequest
             ? [
                 'provider' => ['required', 'string', Rule::in(AiProvider::values())],
                 'api_key' => [
-                    Rule::requiredIf(fn (): bool => ! in_array($this->input('provider'), [AiProvider::OpenAICompatible->value, AiProvider::LmStudio->value], true)),
+                    Rule::requiredIf(fn (): bool => $this->requiresNewApiKey($aiSystem)),
                     'nullable',
                     'string',
                 ],
                 'model' => ['required', 'string', 'max:255'],
             ]
-            : [];
+            : ['api_key' => ['nullable', 'string']];
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -63,6 +65,8 @@ class UpdateAiSystemRequest extends FormRequest
             'custom_system_prompt' => ['nullable', 'string'],
             'config' => ['nullable', 'json'],
             'credentials' => ['nullable', 'json'],
+            'clear_api_key' => ['boolean'],
+            'clear_credentials' => ['boolean'],
             'auth_type' => ['nullable', 'string', 'max:50'],
             'endpoint_type' => ['nullable', 'string', 'max:50'],
             'stream_protocol' => ['nullable', 'string', 'max:50'],
@@ -81,6 +85,21 @@ class UpdateAiSystemRequest extends FormRequest
             'feature_defaults' => ['nullable', 'array'],
             'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],
         ];
+    }
+
+    /**
+     * A pending duplicate carries its original's key server-side, so a key is
+     * demanded only when it has none or the provider it was issued for changed.
+     */
+    private function requiresNewApiKey(AiSystem $aiSystem): bool
+    {
+        $provider = $this->input('provider');
+
+        if (in_array($provider, [AiProvider::OpenAICompatible->value, AiProvider::LmStudio->value], true)) {
+            return false;
+        }
+
+        return $provider !== $aiSystem->provider || blank($aiSystem->api_key);
     }
 
     /**

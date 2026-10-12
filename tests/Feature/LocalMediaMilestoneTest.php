@@ -12,6 +12,14 @@ class LocalMediaMilestoneTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.jellyfin.webhook_secret' => 'test-webhook-secret']);
+        $this->withHeader('X-Webhook-Secret', 'test-webhook-secret');
+    }
+
     private function playbackPayload(array $overrides = []): array
     {
         return array_merge([

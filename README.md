@@ -284,7 +284,24 @@ PAPER_ID=your_paper_id
 TWILIO_ACCOUNT_SID=your_sid
 TWILIO_AUTH_TOKEN=your_token
 TWILIO_FROM_NUMBER=+1234567890
+
+# Jellyfin webhook shared secret (see below)
+JELLYFIN_WEBHOOK_SECRET=
 ```
+
+### Jellyfin Webhook Secret
+
+`POST /api/event/@2028` refuses (401) any request that does not send the shared
+secret in an `X-Webhook-Secret` header, and refuses everything when
+`JELLYFIN_WEBHOOK_SECRET` is empty. Set the same value on both sides **before
+deploying**:
+
+1. Add `JELLYFIN_WEBHOOK_SECRET=<long random value>` to the server's `.env`.
+2. In Jellyfin: Dashboard → Plugins → Webhook → your Generic destination →
+   **Add Request Header**, key `X-Webhook-Secret`, value the same secret. Save,
+   then reopen the destination to confirm the header persisted.
+3. After deploying, play something and check the homepage updates;
+   `curl -X POST https://<host>/api/event/@2028` with no header should return 401.
 
 ### Troubleshooting
 
