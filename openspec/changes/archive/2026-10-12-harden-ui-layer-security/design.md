@@ -80,11 +80,24 @@ their post through the same published scope.
   the stored headers for that domain server-side.
 - **Model lookup:** `fetchModels` accepts an optional `ai_system_id`; with no
   `api_key` in the request it loads that system (authorized by the route's
-  existing permission) and uses its stored key.
+  existing permission) and uses its stored key — but only when the request's
+  provider matches the system's and any `base_url` equals the stored one.
+  Otherwise a lookup naming a system plus an address of the caller's choosing
+  would deliver the stored key there (422 instead).
+- **The key is replaceable on a saved system.** The form used to lock the key
+  after creation ("change it by duplicating"). With a write-only key that lock is
+  gone: provider and model stay locked, the key does not.
+- **Known package defect (found while testing):** `ai_systems.credentials` is a
+  MySQL `json` column but the model casts it `encrypted:array`, so any non-null
+  write fails with "Invalid JSON text". Credentials therefore cannot be saved
+  today; the write contract is implemented and covered at the merger level, and
+  the presenter reads the raw column so it never decrypts. Fixing the column
+  type belongs in `jvjvjv/code-talker`.
 - **Duplicate** already runs server-side through `AiSystemManager::duplicate()`;
   it only needs its response projected.
 - **Package follow-up (not done here):** `AiSystem` should declare
-  `$hidden = ['api_key', 'credentials', 'web_tool_policy']`. Described for the
+  `$hidden = ['api_key', 'credentials', 'web_tool_policy']`, and the
+  `credentials` column should be `text`/`longText`. Described for the
   package repository; the host presenter does not depend on it.
 
 ### 5. Logout: Fortify's POST route, and a form in the navigation
@@ -106,11 +119,13 @@ preserved; values live in config.
 
 ### 7. Résumé text: a tag allowlist
 
-`{!! $summary !!}` and the skills output go through one helper that keeps
-`b`, `strong`, `i`, `em`, `br` and strips everything else including all
-attributes — `strip_tags` with an allowlist is sufficient because no attribute
-survives. If a link is ever wanted in a summary, that needs a real sanitizer and
-is out of scope.
+`{!! $summary !!}` and the skills output go through `SafeInlineHtml::clean()`,
+which keeps `b`, `strong`, `i`, `em`, `br`. `strip_tags` with an allowlist is
+**not** sufficient on its own: it keeps every attribute on a tag it allows, so
+`<b onclick=…>` survives. The helper therefore strips attributes from the allowed
+tags, then escapes whatever remains and restores only the bare allowed tags, so a
+malformed tag degrades to visible text. If a link is ever wanted in a summary,
+that needs a real sanitizer and is out of scope.
 
 ### 8. Small view clean-ups: bundle Alpine, `config()` for `env()`, drop the dump
 
