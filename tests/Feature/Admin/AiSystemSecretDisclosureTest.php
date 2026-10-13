@@ -5,7 +5,6 @@ namespace Tests\Feature\Admin;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
@@ -17,6 +16,8 @@ class AiSystemSecretDisclosureTest extends TestCase
     use DatabaseTransactions;
 
     private const API_KEY = 'sk-ant-super-secret-key';
+
+    private const CREDENTIAL = 'cred-secret-value';
 
     private const HEADER = 'Bearer header-secret-value';
 
@@ -35,6 +36,7 @@ class AiSystemSecretDisclosureTest extends TestCase
             'provider' => AiProvider::Anthropic->value,
             'model' => 'claude-sonnet-4-6',
             'api_key' => self::API_KEY,
+            'credentials' => ['token' => self::CREDENTIAL],
             'web_tool_policy' => [
                 'allowed_domains' => ['a.example.com', 'b.example.com'],
                 'credentials' => [
@@ -74,7 +76,7 @@ class AiSystemSecretDisclosureTest extends TestCase
 
     private function assertNoSecrets(string $json): void
     {
-        foreach ([self::API_KEY, self::HEADER, 'b-secret'] as $secret) {
+        foreach ([self::API_KEY, self::CREDENTIAL, self::HEADER, 'b-secret'] as $secret) {
             $this->assertStringNotContainsString($secret, $json);
         }
     }
@@ -103,7 +105,7 @@ class AiSystemSecretDisclosureTest extends TestCase
         $this->assertNoSecrets(json_encode($response->viewData('page')['props']));
         $response->assertInertia(fn (Assert $page) => $page
             ->where('aiSystem.has_api_key', true)
-            ->where('aiSystem.has_credentials', false)
+            ->where('aiSystem.has_credentials', true)
             ->where('aiSystem.web_tool_policy.allowed_domains', ['a.example.com', 'b.example.com'])
             ->where('aiSystem.web_tool_policy.has_headers', ['a.example.com' => true, 'b.example.com' => true]));
     }
@@ -144,6 +146,7 @@ class AiSystemSecretDisclosureTest extends TestCase
         $system->refresh();
         $this->assertSame('Renamed', $system->name);
         $this->assertSame(self::API_KEY, $system->api_key);
+        $this->assertSame(['token' => self::CREDENTIAL], $system->credentials);
     }
 
     public function test_entering_a_key_replaces_it(): void
@@ -153,21 +156,27 @@ class AiSystemSecretDisclosureTest extends TestCase
         $this->actingAs($this->admin())
             ->put(route('admin.ai.systems.update', $system), $this->payload($system, [
                 'api_key' => 'sk-new-key',
+                'credentials' => '{"token":"new-cred"}',
             ]));
 
-        $this->assertSame('sk-new-key', $system->refresh()->api_key);
+        $system->refresh();
+        $this->assertSame('sk-new-key', $system->api_key);
+        $this->assertSame(['token' => 'new-cred'], $system->credentials);
     }
 
-    public function test_clear_flag_removes_the_key(): void
+    public function test_clear_flags_remove_the_key_and_credentials(): void
     {
         $system = $this->makeSystem();
 
         $this->actingAs($this->admin())
             ->put(route('admin.ai.systems.update', $system), $this->payload($system, [
                 'clear_api_key' => true,
+                'clear_credentials' => true,
             ]));
 
-        $this->assertSame('', $system->refresh()->api_key);
+        $system->refresh();
+        $this->assertSame('', $system->api_key);
+        $this->assertEmpty($system->credentials);
     }
 
     public function test_a_policy_saved_with_a_new_domain_keeps_other_domains_stored_headers(): void
@@ -313,6 +322,7 @@ class AiSystemSecretDisclosureTest extends TestCase
             ->put(route('admin.ai.systems.update', $system), $this->payload($system, [
                 'base_url' => 'https://proxy.example/v1',
                 'api_key' => 'sk-new',
+                'credentials' => '{"token":"fresh"}',
             ]))
             ->assertSessionHasNoErrors();
         $this->assertSame('https://proxy.example/v1', $system->refresh()->base_url);
@@ -344,9 +354,6 @@ class AiSystemSecretDisclosureTest extends TestCase
     public function test_changing_the_base_url_also_requires_stored_credentials_to_be_entered_again(): void
     {
         $system = $this->makeSystem(['base_url' => 'https://api.anthropic.com/v1']);
-        // The credentials column cannot hold the model's ciphertext today (see
-        // design.md), so mark it set directly; the guard only reads the raw value.
-        DB::table('ai_systems')->where('id', $system->id)->update(['credentials' => '{"token":"x"}']);
         $admin = $this->admin();
 
         $this->actingAs($admin)

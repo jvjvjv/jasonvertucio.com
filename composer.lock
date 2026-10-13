@@ -1802,16 +1802,16 @@
         },
         {
             "name": "jvjvjv/code-talker",
-            "version": "v0.16.1",
+            "version": "v0.18.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jvjvjv/CodeTalker.git",
-                "reference": "41b0fd34d376578fc6420ae87c8fcac26de8d2dd"
+                "reference": "be08c29839ed350d91e20ec0ec833c460922e85f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/41b0fd34d376578fc6420ae87c8fcac26de8d2dd",
-                "reference": "41b0fd34d376578fc6420ae87c8fcac26de8d2dd",
+                "url": "https://api.github.com/repos/jvjvjv/CodeTalker/zipball/be08c29839ed350d91e20ec0ec833c460922e85f",
+                "reference": "be08c29839ed350d91e20ec0ec833c460922e85f",
                 "shasum": ""
             },
             "require": {
@@ -1866,9 +1866,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jvjvjv/CodeTalker/issues",
-                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.16.1"
+                "source": "https://github.com/jvjvjv/CodeTalker/tree/v0.18.0"
             },
-            "time": "2026-09-28T11:48:35+00:00"
+            "time": "2026-10-13T17:17:10+00:00"
         },
         {
             "name": "laravel/ai",
