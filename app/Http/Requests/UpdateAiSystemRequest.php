@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
@@ -85,6 +86,31 @@ class UpdateAiSystemRequest extends FormRequest
             'feature_defaults' => ['nullable', 'array'],
             'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],
         ];
+    }
+
+    /**
+     * The key is write-only, so it must not be redirectable: pointing a system
+     * at another base URL while keeping its stored key would deliver that key
+     * to the new address the next time the system is used. Changing the base URL
+     * therefore requires entering the key again (or removing it).
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            /** @var AiSystem $aiSystem */
+            $aiSystem = $this->route('aiSystem');
+            $requested = trim((string) $this->input('base_url'));
+
+            if ($requested === '' || blank($aiSystem->api_key) || filled($this->input('api_key')) || $this->boolean('clear_api_key')) {
+                return;
+            }
+
+            $normalize = static fn (?string $url): string => rtrim(strtolower(trim((string) $url)), '/');
+
+            if ($normalize($requested) !== $normalize($aiSystem->base_url)) {
+                $validator->errors()->add('api_key', 'Enter the API key again to change the base URL.');
+            }
+        });
     }
 
     /**

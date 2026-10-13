@@ -281,4 +281,62 @@ class AiSystemSecretDisclosureTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+    public function test_model_lookup_refuses_the_stored_key_for_a_different_or_default_base_url(): void
+    {
+        Http::fake();
+        $system = $this->makeSystem(['base_url' => 'https://proxy.internal.example/v1']);
+
+        foreach ([null, 'https://attacker.example/v1'] as $baseUrl) {
+            $this->actingAs($this->admin())->postJson('/api/admin/ai/systems/fetch-models', [
+                'provider' => AiProvider::Anthropic->value,
+                'ai_system_id' => $system->id,
+                'base_url' => $baseUrl,
+            ])->assertStatus(422);
+        }
+
+        Http::assertNothingSent();
+    }
+
+    public function test_changing_the_base_url_requires_the_key_to_be_entered_again(): void
+    {
+        $system = $this->makeSystem(['base_url' => 'https://api.anthropic.com/v1']);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->put(route('admin.ai.systems.update', $system), $this->payload($system, ['base_url' => 'https://attacker.example/v1']))
+            ->assertSessionHasErrors('api_key');
+        $this->assertSame('https://api.anthropic.com/v1', $system->refresh()->base_url);
+
+        $this->actingAs($admin)
+            ->put(route('admin.ai.systems.update', $system), $this->payload($system, [
+                'base_url' => 'https://proxy.example/v1',
+                'api_key' => 'sk-new',
+            ]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame('https://proxy.example/v1', $system->refresh()->base_url);
+
+        $this->actingAs($admin)
+            ->put(route('admin.ai.systems.update', $system), $this->payload($system, ['base_url' => 'https://proxy.example/v1/']))
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_omitting_the_policy_keeps_it_and_submitting_an_empty_one_clears_it(): void
+    {
+        $system = $this->makeSystem();
+        $payload = $this->payload($system);
+        unset($payload['web_tool_policy']);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.ai.systems.update', $system), $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(['a.example.com', 'b.example.com'], $system->refresh()->web_tool_policy['allowed_domains']);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.ai.systems.update', $system), $this->payload($system, ['web_tool_policy' => '']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertEmpty($system->refresh()->web_tool_policy);
+    }
 }

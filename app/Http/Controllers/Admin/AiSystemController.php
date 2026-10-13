@@ -282,7 +282,7 @@ class AiSystemController extends Controller
         $system = AiSystem::query()->findOrFail($request->integer('ai_system_id'));
 
         $sameEndpoint = $system->provider === $provider->value
-            && ($baseUrl === null || $baseUrl === $system->base_url);
+            && $this->sameBaseUrl($baseUrl, $system->base_url);
 
         if (! $sameEndpoint) {
             return response()->json([
@@ -292,6 +292,18 @@ class AiSystemController extends Controller
         }
 
         return (string) $system->api_key;
+    }
+
+    /**
+     * Whether two base URLs name the same endpoint. An absent URL means the
+     * provider default, so it only matches another absent URL — never a custom
+     * one, or the stored key would be sent to the default provider instead.
+     */
+    private function sameBaseUrl(?string $requested, ?string $stored): bool
+    {
+        $normalize = static fn (?string $url): string => rtrim(strtolower(trim((string) $url)), '/');
+
+        return $normalize($requested) === $normalize($stored);
     }
 
     /**
@@ -388,11 +400,15 @@ class AiSystemController extends Controller
         $data['api_key'] = $this->secrets->apiKey((string) $system->api_key, $data['api_key'] ?? null, $clearApiKey);
         $data['credentials'] = $this->secrets->credentials($system->credentials, $data['credentials'] ?? null, $clearCredentials);
 
-        $policy = $data['web_tool_policy'] ?? null;
-        $data['web_tool_policy'] = $this->secrets->webToolPolicy(
-            $system->web_tool_policy,
-            is_array($policy) ? $policy : null,
-        );
+        // An omitted policy leaves the stored one alone; a submitted empty one
+        // means "unrestricted" and clears it.
+        if (array_key_exists('web_tool_policy', $data)) {
+            $policy = $data['web_tool_policy'];
+            $data['web_tool_policy'] = $this->secrets->webToolPolicy(
+                $system->web_tool_policy,
+                is_array($policy) ? $policy : null,
+            );
+        }
     }
 
     /**

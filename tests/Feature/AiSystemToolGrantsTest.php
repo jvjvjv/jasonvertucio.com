@@ -91,6 +91,7 @@ class AiSystemToolGrantsTest extends TestCase
         $this->tool($this->server('docs'), 'search');
         $system = AiSystem::factory()->create([
             'provider' => 'openai-compatible',
+            'base_url' => 'http://localhost:1234/v1',
             'allowed_tools' => ['fetch-web-page'],
         ]);
 
