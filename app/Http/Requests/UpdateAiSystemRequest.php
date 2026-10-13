@@ -92,7 +92,8 @@ class UpdateAiSystemRequest extends FormRequest
      * The key is write-only, so it must not be redirectable: pointing a system
      * at another base URL while keeping its stored key would deliver that key
      * to the new address the next time the system is used. Changing the base URL
-     * therefore requires entering the key again (or removing it).
+     * therefore requires entering the key — and any stored credentials, which
+     * travel to the same address — again, or removing them.
      */
     public function withValidator(Validator $validator): void
     {
@@ -101,14 +102,25 @@ class UpdateAiSystemRequest extends FormRequest
             $aiSystem = $this->route('aiSystem');
             $requested = trim((string) $this->input('base_url'));
 
-            if ($requested === '' || blank($aiSystem->api_key) || filled($this->input('api_key')) || $this->boolean('clear_api_key')) {
+            $normalize = static fn (?string $url): string => rtrim(strtolower(trim((string) $url)), '/');
+
+            if ($requested === '' || $normalize($requested) === $normalize($aiSystem->base_url)) {
                 return;
             }
 
-            $normalize = static fn (?string $url): string => rtrim(strtolower(trim((string) $url)), '/');
+            $keyWouldBeKept = filled($aiSystem->api_key)
+                && blank($this->input('api_key'))
+                && ! $this->boolean('clear_api_key');
+            $credentialsWouldBeKept = filled($aiSystem->getRawOriginal('credentials'))
+                && blank($this->input('credentials'))
+                && ! $this->boolean('clear_credentials');
 
-            if ($normalize($requested) !== $normalize($aiSystem->base_url)) {
+            if ($keyWouldBeKept) {
                 $validator->errors()->add('api_key', 'Enter the API key again to change the base URL.');
+            }
+
+            if ($credentialsWouldBeKept) {
+                $validator->errors()->add('credentials', 'Enter the credentials again to change the base URL.');
             }
         });
     }

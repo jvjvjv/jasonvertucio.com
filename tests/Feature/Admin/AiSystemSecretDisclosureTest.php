@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
@@ -338,5 +339,23 @@ class AiSystemSecretDisclosureTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertEmpty($system->refresh()->web_tool_policy);
+    }
+
+    public function test_changing_the_base_url_also_requires_stored_credentials_to_be_entered_again(): void
+    {
+        $system = $this->makeSystem(['base_url' => 'https://api.anthropic.com/v1']);
+        // The credentials column cannot hold the model's ciphertext today (see
+        // design.md), so mark it set directly; the guard only reads the raw value.
+        DB::table('ai_systems')->where('id', $system->id)->update(['credentials' => '{"token":"x"}']);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->put(route('admin.ai.systems.update', $system), $this->payload($system, [
+                'base_url' => 'https://attacker.example/v1',
+                'api_key' => 'sk-new',
+            ]))
+            ->assertSessionHasErrors('credentials');
+
+        $this->assertSame('https://api.anthropic.com/v1', $system->refresh()->base_url);
     }
 }
