@@ -9,6 +9,8 @@ import useUpdateTailoredMarkdown from "./useUpdateTailoredMarkdown";
 
 import type { TargetedResume } from "@/types";
 
+import useMarkdownPaste from "@/hooks/useMarkdownPaste";
+
 import "@uiw/react-md-editor/markdown-editor.css";
 
 interface TailoredResumeEditorProps {
@@ -23,6 +25,7 @@ export default function TailoredResumeEditor({
     );
     /** The text as last saved, so the confirmation clears on the next edit. */
     const [savedMarkdown, setSavedMarkdown] = useState(markdown);
+    const onMarkdownPaste = useMarkdownPaste();
 
     const { isSaving, saveError, saveSuccess, saveMarkdown } =
         useUpdateTailoredMarkdown({
@@ -66,6 +69,7 @@ export default function TailoredResumeEditor({
                     }}
                     height={480}
                     preview="live"
+                    textareaProps={{ onPaste: onMarkdownPaste }}
                 />
             </Box>
 

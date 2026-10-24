@@ -11,6 +11,8 @@ import { CHAT_COLUMN_MAX_WIDTH } from "./chat-interface/chatColumn";
 
 import type { KeyboardEvent, ReactNode } from "react";
 
+import useMarkdownPaste from "@/hooks/useMarkdownPaste";
+
 export interface ChatInputAreaSlots {
     beforeSend?: ReactNode;
     /** Rendered as a small caption below the input. */
@@ -43,6 +45,7 @@ export default function ChatInputArea({
     // Drives the composer's height: collapsed to one line when the composer is
     // not being used, auto-growing up to a cap while it is.
     const [isFocused, setIsFocused] = useState(false);
+    const onMarkdownPaste = useMarkdownPaste();
 
     return (
         <Box
@@ -82,6 +85,7 @@ export default function ChatInputArea({
                             onChange(e.target.value);
                         }}
                         onKeyDown={onKeyDown}
+                        onPaste={onMarkdownPaste}
                         onFocus={() => {
                             setIsFocused(true);
                         }}

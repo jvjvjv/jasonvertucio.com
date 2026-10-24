@@ -1,5 +1,7 @@
 import TextField from "@mui/material/TextField";
 
+import useMarkdownPaste from "@/hooks/useMarkdownPaste";
+
 interface JobDetailsFormProps {
     jobTitle: string;
     companyName: string;
@@ -21,6 +23,8 @@ export default function JobDetailsForm({
     onJobLocationChange,
     onJobDescriptionChange,
 }: JobDetailsFormProps) {
+    const onMarkdownPaste = useMarkdownPaste();
+
     return (
         <>
             <TextField
@@ -70,7 +74,8 @@ export default function JobDetailsForm({
                 onChange={(e) => {
                     onJobDescriptionChange(e.target.value);
                 }}
-                placeholder="Paste or type the full job description here..."
+                onPaste={onMarkdownPaste}
+                placeholder="Paste or type the full job description here. Formatting is kept as Markdown; Ctrl/Cmd+Shift+V pastes plain text."
                 sx={{ mb: 3 }}
             />
         </>

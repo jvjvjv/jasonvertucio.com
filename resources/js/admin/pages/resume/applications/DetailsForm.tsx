@@ -27,6 +27,7 @@ import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { ApiError, api, apiErrorMessage } from "@/api";
+import useMarkdownPaste from "@/hooks/useMarkdownPaste";
 
 interface DetailsFormData {
     title: string;
@@ -165,6 +166,7 @@ export default function DetailsForm({
     deleteStatusUpdate,
     onDiscardResume,
 }: DetailsFormProps) {
+    const onMarkdownPaste = useMarkdownPaste();
     const [edits, setEdits] = useState<DetailsEdits>({});
     const form: DetailsFormData = {
         title: conversation?.title ?? "",
@@ -370,6 +372,7 @@ export default function DetailsForm({
                         onChange={(e) => {
                             setField("job_description", e.target.value);
                         }}
+                        onPaste={onMarkdownPaste}
                         error={!!errors.job_description}
                         helperText={errors.job_description}
                         sx={{ mb: 3 }}

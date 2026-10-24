@@ -2,6 +2,8 @@ import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 
+import useMarkdownPaste from "@/hooks/useMarkdownPaste";
+
 interface ResumeVersion {
     id: number;
     version: string;
@@ -33,6 +35,8 @@ export default function CoverLetterForm({
     errors,
     resumeVersions,
 }: CoverLetterFormProps) {
+    const onMarkdownPaste = useMarkdownPaste();
+
     return (
         <>
             <Box
@@ -156,10 +160,11 @@ export default function CoverLetterForm({
                 onChange={(e) => {
                     setData("message_body", e.target.value);
                 }}
+                onPaste={onMarkdownPaste}
                 error={!!errors.message_body}
                 helperText={
                     errors.message_body ??
-                    "Markdown supported. Use blank lines for paragraph breaks."
+                    "Markdown supported. Use blank lines for paragraph breaks. Pasted formatting is kept as Markdown; Ctrl/Cmd+Shift+V pastes plain text."
                 }
                 sx={{ mb: 2 }}
             />
