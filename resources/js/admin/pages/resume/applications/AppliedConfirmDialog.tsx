@@ -1,10 +1,12 @@
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
@@ -22,8 +24,19 @@ interface AppliedConfirmDialogProps {
     currentResumeVersionId: number | null;
     isSubmitting?: boolean;
     error?: string | null;
-    /** Receives the chosen main resume version, or null when the targeted resume was used. */
-    onConfirm: (resumeVersionId: number | null) => void;
+    /**
+     * When set, the dialog offers to start a fit-score-only session with this
+     * AI system (on by default).
+     */
+    fitScoreSystemName?: string | null;
+    /**
+     * Receives the chosen main resume version, or null when the targeted
+     * resume was used, and whether a fit-score session was asked for.
+     */
+    onConfirm: (
+        resumeVersionId: number | null,
+        requestFitScore: boolean,
+    ) => void;
     onCancel: () => void;
 }
 
@@ -39,6 +52,7 @@ export default function AppliedConfirmDialog({
     currentResumeVersionId,
     isSubmitting = false,
     error = null,
+    fitScoreSystemName = null,
     onConfirm,
     onCancel,
 }: AppliedConfirmDialogProps) {
@@ -48,6 +62,8 @@ export default function AppliedConfirmDialog({
             resumeVersions.find((version) => version.is_current)?.id ??
             "",
     );
+
+    const [requestFitScore, setRequestFitScore] = useState(true);
 
     const needsVersion = !hasTargetedResume;
 
@@ -65,6 +81,7 @@ export default function AppliedConfirmDialog({
                         needsVersion && resumeVersionId !== ""
                             ? resumeVersionId
                             : null,
+                        fitScoreSystemName !== null && requestFitScore,
                     );
                 }}
             >
@@ -103,6 +120,21 @@ export default function AppliedConfirmDialog({
                             </TextField>
                         </>
                     )}
+                    {fitScoreSystemName !== null ? (
+                        <FormControlLabel
+                            sx={{ mt: 2, alignItems: "flex-start" }}
+                            control={
+                                <Checkbox
+                                    checked={requestFitScore}
+                                    onChange={(e) => {
+                                        setRequestFitScore(e.target.checked);
+                                    }}
+                                    sx={{ mt: -0.75 }}
+                                />
+                            }
+                            label={`Ask ${fitScoreSystemName} for a fit score. No targeted resume or cover letter is written.`}
+                        />
+                    ) : null}
                     {error ? (
                         <Alert severity="error" sx={{ mt: 2 }}>
                             {error}

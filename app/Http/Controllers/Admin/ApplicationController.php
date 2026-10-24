@@ -11,6 +11,7 @@ use App\Models\AiConversation;
 use App\Models\Application;
 use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
+use App\Models\RoleIntel;
 use App\Models\TargetedResume;
 use App\Services\ApplicationService;
 use App\Support\AnalysisSystemGuard;
@@ -21,6 +22,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Jvjvjv\CodeTalker\Models\AiSystem;
@@ -52,6 +55,7 @@ class ApplicationController extends Controller
             ->with([
                 'resumeVersion:id,version',
                 'latestStatusUpdate',
+                'roleIntel:id,application_id,status,company_id',
                 'conversation' => fn ($conversation) => $conversation
                     ->withLastMessageAt()
                     ->withCount(['messages' => fn ($messages) => $messages->where('role', '!=', 'system')]),
@@ -69,8 +73,10 @@ class ApplicationController extends Controller
             }))
             ->get()
             ->sortByDesc(fn (Application $application): int => $this->lastActivityAt($application)?->getTimestamp() ?? 0)
-            ->values()
-            ->map(fn (Application $application): array => $this->listRow($application));
+            ->values();
+
+        $companyIntel = $this->companyIntelByName($applications);
+        $applications = $applications->map(fn (Application $application): array => $this->listRow($application, $companyIntel));
 
         return Inertia::render('resume/applications/Index', [
             'applications' => $applications,
@@ -131,6 +137,7 @@ class ApplicationController extends Controller
                 jobUrlId: $request->validated('job_url_id'),
                 resumeVersionId: $request->integer('resume_version_id') ?: null,
                 occurredAt: $request->date('occurred_at'),
+                system: $request->filled('ai_system_id') ? AiSystem::findOrFail($request->validated('ai_system_id')) : null,
             );
         }
 
@@ -153,6 +160,7 @@ class ApplicationController extends Controller
             'targetedResume.resumeVersion:id,version',
             'conversation.aiSystem',
             'conversation.messages',
+            'roleIntel:id,application_id,status',
         ]);
 
         $conversation = $application->conversation;
@@ -201,6 +209,10 @@ class ApplicationController extends Controller
             'targetedResume' => $this->targetedResumeCard($application->targetedResume),
             'coverLetter' => $this->coverLetterCard($application->coverLetters()->latest()->first()),
             'shouldAutoStart' => $shouldAutoStart,
+            'roleIntel' => $application->roleIntel !== null ? [
+                'id' => $application->roleIntel->id,
+                'status' => $application->roleIntel->status->value,
+            ] : null,
             'resumeVersions' => $this->payload->resumeVersions(),
             'currentResumeVersionId' => ResumeVersion::current()->value('id'),
             'systems' => $this->payload->selectableSystems(),
@@ -320,7 +332,69 @@ class ApplicationController extends Controller
      *     last_activity_at: ?string
      * }
      */
-    private function listRow(Application $application): array
+    /**
+     * For applications without intel of their own: the newest intel, on
+     * another live application, whose company has the same name — so the
+     * list can link to what is already known about the company. Keyed by
+     * the lowercased name; one query for the whole list.
+     *
+     * @param  Collection<int, Application>  $applications
+     * @return array<string, RoleIntel>
+     */
+    private function companyIntelByName(Collection $applications): array
+    {
+        $names = $applications
+            ->filter(fn (Application $application): bool => $application->roleIntel === null && $application->knownCompanyName() !== null)
+            ->map(fn (Application $application): string => mb_strtolower($application->company_name))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($names === []) {
+            return [];
+        }
+
+        return RoleIntel::query()
+            ->select('role_intels.*', 'companies.name as matched_company_name')
+            ->join('companies', 'companies.id', '=', 'role_intels.company_id')
+            ->whereIn(DB::raw('LOWER(companies.name)'), $names)
+            ->whereHas('application')
+            ->orderByDesc('role_intels.updated_at')
+            ->get()
+            ->unique(fn (RoleIntel $roleIntel): string => mb_strtolower($roleIntel->matched_company_name))
+            ->keyBy(fn (RoleIntel $roleIntel): string => mb_strtolower($roleIntel->matched_company_name))
+            ->all();
+    }
+
+    /**
+     * @param  array<string, RoleIntel>  $companyIntel
+     * @return array{id: int, status: string, scope: string, company_name: ?string}|null
+     */
+    private function intelCell(Application $application, array $companyIntel): ?array
+    {
+        if ($application->roleIntel !== null) {
+            return [
+                'id' => $application->roleIntel->id,
+                'status' => $application->roleIntel->status->value,
+                'scope' => 'role',
+                'company_name' => null,
+            ];
+        }
+
+        $match = $companyIntel[mb_strtolower($application->company_name)] ?? null;
+
+        return $match !== null ? [
+            'id' => $match->id,
+            'status' => $match->status->value,
+            'scope' => 'company',
+            'company_name' => $match->matched_company_name,
+        ] : null;
+    }
+
+    /**
+     * @param  array<string, RoleIntel>  $companyIntel
+     */
+    private function listRow(Application $application, array $companyIntel = []): array
     {
         $conversation = $application->conversation;
         $latestStatusUpdate = $application->latestStatusUpdate;
@@ -342,6 +416,7 @@ class ApplicationController extends Controller
                 'occurred_at' => $latestStatusUpdate->occurred_at?->toDateString(),
             ] : null,
             'last_activity_at' => $this->lastActivityAt($application)?->diffForHumans(),
+            'intel' => $this->intelCell($application, $companyIntel),
         ];
     }
 

@@ -64,7 +64,7 @@ class StoreAiSystemRequest extends FormRequest
             // Slated for removal from the app entirely.
             'pricing_profile' => ['nullable', 'json'],
             'feature_defaults' => ['nullable', 'array'],
-            'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],
+            'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter,company-intel'],
         ];
     }
 

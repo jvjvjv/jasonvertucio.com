@@ -15,6 +15,7 @@ use App\Models\Application;
 use App\Models\ApplicationStatusUpdate;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
+use App\Services\CompanyIntel\CompanyIntelService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
@@ -29,6 +30,7 @@ class ApplicationService
 {
     public function __construct(
         private TargetedResumeService $targetedResumeService,
+        private CompanyIntelService $companyIntel,
     ) {}
 
     /**
@@ -64,9 +66,10 @@ class ApplicationService
     }
 
     /**
-     * Record a job that was applied to with a main resume: no AI session, the
-     * chosen resume version (the current one by default) and a first
-     * `applied` history entry, dated now unless a date is given.
+     * Record a job that was applied to with a main resume: the chosen resume
+     * version (the current one by default) and a first `applied` history
+     * entry, dated now unless a date is given. With a system, an AI session
+     * is attached that asks only for a fit score; without one, none is.
      *
      * @throws ResumeVersionUnavailableException when the chosen version does not exist, or none was chosen and there is no current one
      */
@@ -78,8 +81,9 @@ class ApplicationService
         ?string $jobUrlId = null,
         ?int $resumeVersionId = null,
         ?CarbonInterface $occurredAt = null,
+        ?AiSystem $system = null,
     ): Application {
-        return DB::transaction(function () use ($jobDescription, $companyName, $position, $location, $jobUrlId, $resumeVersionId, $occurredAt): Application {
+        return DB::transaction(function () use ($jobDescription, $companyName, $position, $location, $jobUrlId, $resumeVersionId, $occurredAt, $system): Application {
             $application = $this->newApplication(
                 $this->resolveResumeVersion($resumeVersionId),
                 ApplicationStatus::Draft,
@@ -91,6 +95,12 @@ class ApplicationService
             );
 
             $this->addStatusUpdate($application, ApplicationStatus::Applied, null, $occurredAt);
+
+            // After the entry, so the session opens with the fit-score-only
+            // message an applied application gets.
+            if ($system !== null) {
+                $this->targetedResumeService->startConversation($system, $application);
+            }
 
             return $application;
         });
@@ -240,6 +250,10 @@ class ApplicationService
             $application->status = $status;
             $application->save();
             $application->unsetRelation('statusUpdates')->unsetRelation('latestStatusUpdate');
+
+            if ($status === ApplicationStatus::Applied) {
+                DB::afterCommit(fn () => $this->companyIntel->autoStart($application));
+            }
 
             return $statusUpdate;
         });

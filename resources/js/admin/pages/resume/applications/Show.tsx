@@ -5,6 +5,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import DoneIcon from "@mui/icons-material/Done";
 import InfoIcon from "@mui/icons-material/Info";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
@@ -37,6 +38,9 @@ import type {
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import IntelSystemDialog from "@/admin/pages/employment/company-intel/IntelSystemDialog";
+import { INTEL_PAGES } from "@/admin/pages/employment/company-intel/types";
+import useBeginIntel from "@/admin/pages/employment/company-intel/useBeginIntel";
 import { isPipelineStatus } from "@/admin/utils/applicationStatus";
 import { api, apiErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
@@ -57,6 +61,8 @@ interface ShowProps {
     currentResumeVersionId: number | null;
     systems: Pick<AiSystem, "id" | "name" | "model">[];
     defaultSystemId: number | null;
+    /** The application's own intel, when it has any. */
+    roleIntel: { id: number; status: string } | null;
 }
 
 export default function Show({
@@ -70,6 +76,7 @@ export default function Show({
     currentResumeVersionId,
     systems,
     defaultSystemId,
+    roleIntel,
 }: ShowProps) {
     const page = usePage<SharedProps>();
     const isAuthenticated = !!page.props.auth.user;
@@ -180,6 +187,22 @@ export default function Show({
         );
     };
 
+    // Opening intel that does not exist yet starts it, and the intel page
+    // then streams the first turn.
+    const beginIntel = useBeginIntel(
+        useCallback((started: { redirect: string }) => {
+            router.visit(started.redirect);
+        }, []),
+    );
+    const handleIntel = () => {
+        if (roleIntel !== null) {
+            router.visit(`${INTEL_PAGES}/${roleIntel.id}`);
+        } else {
+            void beginIntel.begin(application.id, "stream");
+        }
+    };
+    const isStartingIntel = beginIntel.startingId !== null;
+
     const isApplied = isPipelineStatus(status.status);
     const canPass = status.status === "draft";
 
@@ -192,7 +215,8 @@ export default function Show({
         finalizeError !== null ||
         finalizeCoverLetterError !== null ||
         status.statusError !== null ||
-        actionError !== null;
+        actionError !== null ||
+        (beginIntel.error !== null && beginIntel.chooser === null);
 
     return (
         <>
@@ -306,6 +330,20 @@ export default function Show({
                             disabled={!canPass}
                             onClick={handlePass}
                         />
+                        <ResponsiveButton
+                            size="small"
+                            color="primary"
+                            icon={<TravelExploreIcon />}
+                            label={isStartingIntel ? "Starting..." : "Intel"}
+                            title={
+                                roleIntel !== null
+                                    ? "Open company and role intel"
+                                    : "Research the company and role"
+                            }
+                            variant="outlined"
+                            disabled={isStartingIntel}
+                            onClick={handleIntel}
+                        />
                         {jobUrl ? (
                             <ResponsiveButton
                                 size="small"
@@ -349,6 +387,15 @@ export default function Show({
                         {actionError ? (
                             <Alert severity="error">{actionError}</Alert>
                         ) : null}
+                        {beginIntel.error !== null &&
+                        beginIntel.chooser === null ? (
+                            <Alert
+                                severity="error"
+                                onClose={beginIntel.clearError}
+                            >
+                                {beginIntel.error}
+                            </Alert>
+                        ) : null}
                     </Box>
                 ) : null}
 
@@ -391,6 +438,7 @@ export default function Show({
                                 applicationId={application.id}
                                 systems={systems}
                                 defaultSystemId={defaultSystemId}
+                                alreadyApplied={isApplied}
                             />
                         </Container>
                     )}
@@ -430,6 +478,16 @@ export default function Show({
                     onCancel={() => {
                         setAppliedDialogOpen(false);
                     }}
+                />
+                <IntelSystemDialog
+                    open={beginIntel.chooser !== null}
+                    systems={beginIntel.chooser?.systems ?? []}
+                    isStarting={isStartingIntel}
+                    error={
+                        beginIntel.chooser !== null ? beginIntel.error : null
+                    }
+                    onChoose={beginIntel.choose}
+                    onClose={beginIntel.closeChooser}
                 />
                 <ConfirmDialog {...dialogProps} />
             </AdminLayout>

@@ -17,12 +17,18 @@ import LogoutForm from "./admin-layout/LogoutForm";
 import MobileNavSection from "./admin-layout/MobileNavSection";
 
 import type { SharedProps } from "@/types";
+import type { ContainerProps } from "@mui/material/Container";
 
 interface AdminLayoutProps {
     children: ReactNode;
     title?: string;
     noMargin?: boolean;
     showChrome?: boolean;
+    /**
+     * The page content's maximum width, as MUI Container's `maxWidth`. Admin
+     * pages are full width unless a page asks for less.
+     */
+    maxContainerWidth?: ContainerProps["maxWidth"];
 }
 
 export default function AdminLayout({
@@ -30,6 +36,7 @@ export default function AdminLayout({
     title,
     noMargin,
     showChrome = true,
+    maxContainerWidth = false,
 }: AdminLayoutProps) {
     const page = usePage<SharedProps>();
     const { flash } = page.props;
@@ -143,7 +150,10 @@ export default function AdminLayout({
                 component="main"
                 sx={{ flexGrow: 1, py: noMargin ? {} : { xs: 2, md: 4 } }}
             >
-                <Container maxWidth={false} disableGutters={!showChrome}>
+                <Container
+                    maxWidth={maxContainerWidth}
+                    disableGutters={!showChrome}
+                >
                     {title && (
                         <Typography
                             variant="h4"

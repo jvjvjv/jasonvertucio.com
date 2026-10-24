@@ -13,7 +13,8 @@ class StoreApplicationRequest extends FormRequest
     public const string INTENT_ANALYZE = 'analyze';
 
     /**
-     * Record a job that was already applied to with a main resume.
+     * Record a job that was already applied to with a main resume, with a
+     * fit-score-only AI session when a system is chosen.
      */
     public const string INTENT_APPLIED = 'applied';
 

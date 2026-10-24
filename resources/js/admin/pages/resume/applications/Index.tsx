@@ -5,11 +5,14 @@ import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import PersonSearchOutlinedIcon from "@mui/icons-material/PersonSearchOutlined";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import Alert from "@mui/material/Alert";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
@@ -18,6 +21,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { memo, useCallback, useRef, useState } from "react";
 
@@ -29,6 +33,7 @@ import type {
     UsesTargetedResume,
 } from "./FiltersDialog";
 import type { DebouncedSearchFieldHandle } from "@/admin/components/DebouncedSearchField";
+import type { StartedIntel } from "@/admin/pages/employment/company-intel/useBeginIntel";
 import type { ApplicationListItem } from "@/types";
 
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
@@ -38,6 +43,9 @@ import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import IntelSystemDialog from "@/admin/pages/employment/company-intel/IntelSystemDialog";
+import { INTEL_PAGES } from "@/admin/pages/employment/company-intel/types";
+import useBeginIntel from "@/admin/pages/employment/company-intel/useBeginIntel";
 import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { api, apiErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
@@ -46,7 +54,7 @@ import { formatCalendarDate } from "@/utils/date";
 
 const LIST_URL = "/admin/resume/applications";
 const NEW_SESSION_URL = "/admin/resume/applications/new";
-const COLUMN_COUNT = 8;
+const COLUMN_COUNT = 9;
 const EM_DASH = "—";
 
 interface IndexFilters {
@@ -100,6 +108,55 @@ interface ApplicationRowProps {
     ghostedAfterDays: number;
     onPass: (id: number) => void;
     onDelete: (application: ApplicationListItem) => void;
+    onBeginIntel: (id: number) => void;
+    /** Only the row whose intel is starting re-renders. */
+    isStartingIntel: boolean;
+}
+
+/**
+ * Links to the application's intel, or to intel already gathered on the same
+ * company for another application. A spinner stands in while research runs.
+ */
+function IntelCell({ intel }: { intel: ApplicationListItem["intel"] }) {
+    if (intel === null) {
+        return EM_DASH;
+    }
+
+    const isCompanyOnly = intel.scope === "company";
+    const label = isCompanyOnly
+        ? `Intel on ${intel.company_name ?? "this company"} from another application`
+        : intel.status === "failed"
+          ? "Intel failed — open to retry"
+          : intel.status === "ready"
+            ? "Open intel"
+            : "Researching — open intel";
+
+    return (
+        <Tooltip title={label} arrow>
+            <IconButton
+                component={InertiaLink}
+                href={`${INTEL_PAGES}/${intel.id}`}
+                size="small"
+                color={
+                    intel.status === "failed"
+                        ? "error"
+                        : isCompanyOnly
+                          ? "default"
+                          : "primary"
+                }
+                aria-label={label}
+            >
+                {intel.status === "queued" || intel.status === "running" ? (
+                    <CircularProgress size={16} color="inherit" />
+                ) : (
+                    <TravelExploreIcon
+                        fontSize="small"
+                        sx={isCompanyOnly ? { opacity: 0.6 } : undefined}
+                    />
+                )}
+            </IconButton>
+        </Tooltip>
+    );
 }
 
 /**
@@ -111,6 +168,8 @@ const ApplicationRow = memo(function ApplicationRow({
     ghostedAfterDays,
     onPass,
     onDelete,
+    onBeginIntel,
+    isStartingIntel,
 }: ApplicationRowProps) {
     const showUrl = `${LIST_URL}/${application.id}`;
     const latestOccurredAt = application.latest_status_update?.occurred_at;
@@ -170,6 +229,9 @@ const ApplicationRow = memo(function ApplicationRow({
                     <UsageChip usage={application.usage} />
                 ) : null}
             </TableCell>
+            <TableCell align="center">
+                <IntelCell intel={application.intel} />
+            </TableCell>
             <TableCell>
                 <StatusChip
                     status={displayStatus}
@@ -193,16 +255,8 @@ const ApplicationRow = memo(function ApplicationRow({
                         gap: 1,
                     }}
                 >
-                    <IconButton
-                        component={InertiaLink}
-                        href={showUrl}
-                        size="small"
-                        color="primary"
-                        title="Open"
-                        aria-label="Open"
-                    >
-                        <AutoFixHighOutlinedIcon fontSize="small" />
-                    </IconButton>
+                    {/* Conditional actions first, so Open and Delete keep
+                        their places on every row. */}
                     {application.status === "draft" ? (
                         <IconButton
                             size="small"
@@ -216,6 +270,34 @@ const ApplicationRow = memo(function ApplicationRow({
                             <BackHandOutlinedIcon fontSize="small" />
                         </IconButton>
                     ) : null}
+                    {application.intel?.scope !== "role" ? (
+                        <IconButton
+                            size="small"
+                            color="primary"
+                            title="Begin intel"
+                            aria-label="Begin intel"
+                            disabled={isStartingIntel}
+                            onClick={() => {
+                                onBeginIntel(application.id);
+                            }}
+                        >
+                            {isStartingIntel ? (
+                                <CircularProgress size={16} color="inherit" />
+                            ) : (
+                                <PersonSearchOutlinedIcon fontSize="small" />
+                            )}
+                        </IconButton>
+                    ) : null}
+                    <IconButton
+                        component={InertiaLink}
+                        href={showUrl}
+                        size="small"
+                        color="primary"
+                        title="Open"
+                        aria-label="Open"
+                    >
+                        <AutoFixHighOutlinedIcon fontSize="small" />
+                    </IconButton>
                     <IconButton
                         size="small"
                         color="error"
@@ -322,15 +404,37 @@ export default function Index({
         [confirm],
     );
 
+    const handleIntelStarted = useCallback((_started: StartedIntel) => {
+        router.reload({ only: ["applications"] });
+    }, []);
+    const beginIntel = useBeginIntel(handleIntelStarted);
+    const { begin: beginIntelFor } = beginIntel;
+    const handleBeginIntel = useCallback(
+        (id: number) => {
+            void beginIntelFor(id, "background");
+        },
+        [beginIntelFor],
+    );
+    const intelError = beginIntel.chooser === null ? beginIntel.error : null;
+
     return (
         <AdminLayout>
             <Head title="Applications | Resume" />
             <PageHeader
                 title="Applications"
-                backHref="/admin/resume"
-                backLabel="Back to Resume Management"
+                backHref="/admin/employment"
+                backLabel="Back to Employment"
             />
 
+            {intelError ? (
+                <Alert
+                    severity="error"
+                    sx={{ mb: 2 }}
+                    onClose={beginIntel.clearError}
+                >
+                    {intelError}
+                </Alert>
+            ) : null}
             {actionError ? (
                 <Alert
                     severity="error"
@@ -401,6 +505,7 @@ export default function Index({
                                 <TableCell>Base Version</TableCell>
                                 <TableCell>Fit Score</TableCell>
                                 <TableCell>AI Usage</TableCell>
+                                <TableCell align="center">Intel</TableCell>
                                 <TableCell>Status</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>
@@ -426,6 +531,11 @@ export default function Index({
                                         ghostedAfterDays={ghostedAfterDays}
                                         onPass={handlePass}
                                         onDelete={handleDelete}
+                                        onBeginIntel={handleBeginIntel}
+                                        isStartingIntel={
+                                            beginIntel.startingId ===
+                                            application.id
+                                        }
                                     />
                                 ))
                             )}
@@ -443,6 +553,15 @@ export default function Index({
                 onClose={() => {
                     setFiltersOpen(false);
                 }}
+            />
+            <IntelSystemDialog
+                key={beginIntel.chooser?.applicationId ?? "closed"}
+                open={beginIntel.chooser !== null}
+                systems={beginIntel.chooser?.systems ?? []}
+                isStarting={beginIntel.startingId !== null}
+                error={beginIntel.chooser !== null ? beginIntel.error : null}
+                onChoose={beginIntel.choose}
+                onClose={beginIntel.closeChooser}
             />
             <ConfirmDialog {...dialogProps} />
         </AdminLayout>

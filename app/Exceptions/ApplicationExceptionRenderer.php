@@ -27,6 +27,10 @@ class ApplicationExceptionRenderer
         TerminalApplicationException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
         NonPipelineStatusException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
         ResumeVersionUnavailableException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
+        RoleIntelAlreadyExistsException::class => Response::HTTP_CONFLICT,
+        RoleIntelNotFailedException::class => Response::HTTP_CONFLICT,
+        RoleIntelHasNoCompanyException::class => Response::HTTP_CONFLICT,
+        NoIntelSystemException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
     ];
 
     public function __construct(

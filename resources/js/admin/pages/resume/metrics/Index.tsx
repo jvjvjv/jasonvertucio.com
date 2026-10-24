@@ -137,8 +137,8 @@ export default function Index({
             <Head title="Application Metrics | Resume" />
             <PageHeader
                 title="Application Metrics"
-                backHref="/admin/resume"
-                backLabel="Back to Resume Management"
+                backHref="/admin/employment"
+                backLabel="Back to Employment"
             />
 
             <MetricsFilterBar filter={filter} />

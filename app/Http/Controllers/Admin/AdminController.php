@@ -15,10 +15,24 @@ class AdminController extends BaseAdminController
         ]);
     }
 
+    public function employmentHub(Request $request): InertiaResponse
+    {
+        return Inertia::render('employment/Hub', [
+            'navBlocks' => $this->navBlocksFor('/admin/employment', $request),
+        ]);
+    }
+
     public function resumeHub(Request $request): InertiaResponse
     {
         return Inertia::render('resume/Hub', [
             'navBlocks' => $this->navBlocksFor('/admin/resume', $request),
+        ]);
+    }
+
+    public function blogHub(Request $request): InertiaResponse
+    {
+        return Inertia::render('blog/Hub', [
+            'navBlocks' => $this->navBlocksFor('/admin/blog', $request),
         ]);
     }
 }
