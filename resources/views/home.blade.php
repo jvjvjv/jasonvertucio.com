@@ -14,7 +14,9 @@
     <meta name="twitter:site" value="@jasondidathing">
     <meta name="twitter:image" value="https://bspdx.com/images/bspdx.png">
 
-    <title>{{ env('APP_ENV', '') == 'dev' ? 'DEV:' : ''}}{{ $config['html_title'] }}</title>
+    <title>{{ config('app.env') === 'dev' ? 'DEV:' : '' }}{{ $config['html_title'] }}</title>
+    @include("partials.structured-data")
+    <link rel="alternate" type="application/rss+xml" title="Jason Vertucio's Blog" href="{{ route('feed') }}">
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,6 +69,14 @@
             <img class="my-8 w-full h-full rounded-full border-4 border-white/20 mx-auto" src="{{ asset('img/jv.png') }}"
                 alt="Jason Vertucio">
         </section>
+
+        <nav class="w-full lg:w-4/5 px-6 md:px-8 lg:px-20 pb-8 text-right text-xs" aria-label="Legal">
+            <a class="text-link underline-offset-2 hover:underline focus-visible:underline"
+                href="{{ route('legal.privacy') }}">Privacy Policy</a>
+            <span class="text-link/60 mx-2" aria-hidden="true">&middot;</span>
+            <a class="text-link underline-offset-2 hover:underline focus-visible:underline"
+                href="{{ route('legal.terms') }}">Terms of Service</a>
+        </nav>
 
     </main>
 

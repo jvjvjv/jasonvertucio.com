@@ -83,6 +83,16 @@ export default function useModelStatus(
             try {
                 const wp = await api.post<{ status?: ModelStatus }>(warmupUrl);
                 if (wp.status) updateModelStatus(wp.status);
+            } catch {
+                // Reported through the status banner like the check above.
+                // The state stays `not_loaded` rather than `unavailable`: a
+                // warm-up that timed out says nothing about the provider, and
+                // `unavailable` would lock the composer.
+                updateModelStatus({
+                    ...status,
+                    message:
+                        "The model could not be warmed up. It may still load when you send a message.",
+                });
             } finally {
                 setIsWarmingModel(false);
                 setLoadingMessage("");

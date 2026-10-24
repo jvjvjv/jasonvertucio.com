@@ -48,7 +48,7 @@ class JobUrlParseTest extends TestCase
 
     public function test_parse_url_requires_authentication(): void
     {
-        $response = $this->postJson(route('admin.resume.targeted.parse-url'), [
+        $response = $this->postJson(route('admin.resume.applications.parse-url'), [
             'url' => 'https://example.com/job',
             'ai_system_id' => $this->aiSystem->id,
         ]);
@@ -59,7 +59,7 @@ class JobUrlParseTest extends TestCase
     public function test_parse_url_validates_required_fields(): void
     {
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), []);
+            ->postJson(route('admin.resume.applications.parse-url'), []);
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['url', 'ai_system_id']);
@@ -68,7 +68,7 @@ class JobUrlParseTest extends TestCase
     public function test_parse_url_validates_url_format(): void
     {
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), [
+            ->postJson(route('admin.resume.applications.parse-url'), [
                 'url' => 'not-a-url',
                 'ai_system_id' => $this->aiSystem->id,
             ]);
@@ -93,7 +93,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), [
+            ->postJson(route('admin.resume.applications.parse-url'), [
                 'url' => 'https://example.com/jobs/123',
                 'ai_system_id' => $this->aiSystem->id,
             ]);
@@ -115,7 +115,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parser.confirm', $parser));
+            ->postJson(route('admin.resume.applications.parser.confirm', $parser));
 
         $response->assertOk();
         $this->assertDatabaseHas('job_url_parsers', [
@@ -140,7 +140,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parser.confirm', $newParser));
+            ->postJson(route('admin.resume.applications.parser.confirm', $newParser));
 
         $this->assertDatabaseHas('job_url_parsers', [
             'id' => $newParser->id,
@@ -165,7 +165,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parser.reject', $parser), [
+            ->postJson(route('admin.resume.applications.parser.reject', $parser), [
                 'feedback' => 'Wrong job title extracted',
             ]);
 
@@ -184,7 +184,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parser.reparse', $parser), [
+            ->postJson(route('admin.resume.applications.parser.reparse', $parser), [
                 'ai_system_id' => $this->aiSystem->id,
             ]);
 
@@ -199,7 +199,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), [
+            ->postJson(route('admin.resume.applications.parse-url'), [
                 'url' => 'https://example.com/jobs/timeout',
                 'ai_system_id' => $this->aiSystem->id,
             ]);
@@ -214,7 +214,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), [
+            ->postJson(route('admin.resume.applications.parse-url'), [
                 'url' => 'https://example.com/api/job',
                 'ai_system_id' => $this->aiSystem->id,
             ]);
@@ -245,7 +245,7 @@ class JobUrlParseTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), [
+            ->postJson(route('admin.resume.applications.parse-url'), [
                 'url' => 'https://example.com/jobs/123',
                 'ai_system_id' => $this->aiSystem->id,
             ]);
@@ -312,7 +312,7 @@ class JobUrlParseTest extends TestCase
         $this->app->instance(AgentFactory::class, $factory);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.targeted.parse-url'), [
+            ->postJson(route('admin.resume.applications.parse-url'), [
                 'url' => 'https://no-parser.com/jobs/456',
                 'ai_system_id' => $this->aiSystem->id,
             ]);

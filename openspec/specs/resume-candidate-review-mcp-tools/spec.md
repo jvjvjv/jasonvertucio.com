@@ -44,7 +44,7 @@ The system SHALL expose an MCP tool that returns every `pending` resume edit can
 
 ### Requirement: A tool approves a pending candidate by revision number with a caller-supplied version
 
-The system SHALL expose an MCP tool that approves a `pending` resume edit candidate for the live resume version, identified by revision number, given a version to publish it as. The tool SHALL validate the revision number resolves to a `pending` candidate for the live version and SHALL delegate version validation and materialization to the same service logic the web-form approval path uses (format check, strictly-greater-than-base check, sibling rejection, DOCX/PDF regeneration). A successful approval SHALL be recorded as a tagged message on the conversation transcript, consistent with how a persona-initiated edit is recorded.
+The system SHALL expose an MCP tool that approves a `pending` resume edit candidate for the live resume version, identified by revision number, given a version to publish it as. The tool SHALL validate the revision number resolves to a `pending` candidate for the live version and SHALL delegate version validation and materialization to the same service logic the web-form approval path uses (format check, strictly-greater-than-base check, sibling rejection, cached-document invalidation). A successful approval SHALL be recorded as a tagged message on the conversation transcript, consistent with how a persona-initiated edit is recorded.
 
 #### Scenario: Successful approval via the tool
 

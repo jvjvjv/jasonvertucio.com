@@ -64,7 +64,9 @@ export interface AiSystem {
     id: number;
     name: string;
     provider: string;
-    api_key: string;
+    /** Stored secrets never reach the browser; these say whether one is set. */
+    has_api_key: boolean;
+    has_credentials: boolean;
     model: string;
     model_capabilities?: {
         reasoning?: boolean | null;
@@ -78,7 +80,6 @@ export interface AiSystem {
     context_length: number | null;
     temperature: number | null;
     config: { [key: string]: unknown } | null;
-    credentials?: { [key: string]: unknown } | null;
     auth_type?: string | null;
     endpoint_type?: string | null;
     stream_protocol?: string | null;
@@ -89,7 +90,8 @@ export interface AiSystem {
     allowed_tools?: string[] | null;
     web_tool_policy?: {
         allowed_domains?: string[];
-        credentials?: { [host: string]: { [header: string]: string } };
+        /** Per domain: whether header credentials are stored (values never sent). */
+        has_headers?: { [host: string]: boolean };
     } | null;
     supports_json_mode?: boolean;
     enable_thinking?: boolean | null;
@@ -125,6 +127,53 @@ export interface AiChatBot {
 export interface McpToolSummary {
     name: string;
     description: string;
+    source?: "internal" | "remote";
+    server_slug?: string | null;
+}
+
+// External MCP servers (code-talker AiMcpServerManager::list() shape — never
+// carries the server's auth, only its type)
+
+export type McpServerAuthType =
+    "none" | "bearer" | "headers" | "client_credentials";
+
+export interface McpServerTool {
+    exposed_name: string | null;
+    remote_name: string;
+    title: string | null;
+    description: string | null;
+    available: boolean;
+    unavailable_reason: string | null;
+    synced_at: string | null;
+}
+
+export interface McpServer {
+    id: number;
+    slug: string;
+    name: string;
+    transport: string;
+    url: string;
+    auth_type: McpServerAuthType;
+    timeout_seconds: number | null;
+    enabled: boolean;
+    last_synced_at: string | null;
+    last_sync_error: string | null;
+    tools: McpServerTool[];
+    tool_count: number;
+}
+
+/** The per-server catalog the AI system tool picker groups remote tools by. */
+export interface McpServerCatalogEntry {
+    id: number;
+    slug: string;
+    name: string;
+    enabled: boolean;
+    tools: {
+        exposed_name: string | null;
+        description: string | null;
+        available: boolean;
+        unavailable_reason: string | null;
+    }[];
 }
 
 export interface LogEntry {
@@ -163,7 +212,7 @@ export interface PaginatedResponse<T> {
     last_page: number;
 }
 
-// Resume / Targeted
+// Resume / Applications
 
 export interface StatusUpdate {
     id: number;
@@ -172,20 +221,87 @@ export interface StatusUpdate {
     occurred_at: string;
 }
 
+/** A dated entry in an application's pipeline history. */
+export type ApplicationStatusUpdate = StatusUpdate;
+
+export interface ResumeVersionOption {
+    id: number;
+    version: string;
+    is_current: boolean;
+}
+
+/**
+ * The tailored document only. Everything about the job it was written for —
+ * company, position, fit, status, history — lives on the `Application`.
+ */
 export interface TargetedResume {
+    id: number;
+    /** Professional headline substituted into the document's letterhead. */
+    title: string | null;
+    tailored_content: string | null;
+    /** Label of the main resume version this document was tailored from. */
+    resume_version: string | null;
+    docx_path: boolean;
+    pdf_path: boolean;
+}
+
+/** A tracked job, as the Application Discussion page receives it. */
+export interface Application {
+    id: number;
+    /** One of the nine `ApplicationStatus` values. */
+    status: string;
+    company_name: string;
+    position: string;
+    location: string | null;
+    job_description: string;
+    job_url: string | null;
+    fit_score: number | null;
+    fit_summary: string | null;
+    /** The main resume version recorded for the application. */
+    resume_version: { id: number; version: string } | null;
+    status_updates: ApplicationStatusUpdate[];
+    allowed_next_statuses: string[];
+    /** An `applied` history entry exists: the resume is the record of what was sent. */
+    has_applied: boolean;
+}
+
+/** A row of the Applications list. */
+export interface ApplicationListItem {
     id: number;
     company_name: string;
     position: string;
-    fit_score: number | null;
+    location: string | null;
     status: string;
-    resume_version?: string | null;
-    latest_status_update?: { status: string; occurred_at: string } | null;
-    docx_path?: boolean;
-    pdf_path?: boolean;
-    tailored_content?: string | null;
-    tailored_title?: string | null;
-    status_updates?: StatusUpdate[];
-    allowed_next_statuses?: string[];
+    fit_score: number | null;
+    resume_version: string | null;
+    targeted_resume_id: number | null;
+    has_conversation: boolean;
+    messages_count: number | null;
+    usage: ConversationUsage | null;
+    latest_status_update: { status: string; occurred_at: string } | null;
+    /** Already humanised by the server ("3 days ago"). */
+    last_activity_at: string | null;
+    /**
+     * The application's own intel (`scope: "role"`), or else another
+     * application's intel at the same company (`scope: "company"`).
+     */
+    intel: {
+        id: number;
+        status: string;
+        scope: "role" | "company";
+        company_name: string | null;
+    } | null;
+}
+
+/** The AI session attached to an application, when it has one. */
+export interface ApplicationConversation {
+    id: number;
+    status: string;
+    title: string | null;
+    context: { [key: string]: unknown } | null;
+    ai_system_id: number | null;
+    ai_system_name: string | null;
+    usage: ConversationUsage | null;
 }
 
 export interface ConversationUsage {
@@ -201,7 +317,6 @@ export interface Conversation {
     status: string;
     ai_system_id?: number | null;
     title?: string | null;
-    job_url?: string | null;
     last_message_at?: string;
     updated_at?: string;
     messages_count?: number;
@@ -214,7 +329,6 @@ export interface Conversation {
     ai_chat_bot_name?: string | null;
     ai_chat_bot_slug?: string | null;
     context: { [key: string]: unknown } | null;
-    targeted_resume?: TargetedResume | null;
     ai_system_name?: string | null;
     usage?: ConversationUsage | null;
 }

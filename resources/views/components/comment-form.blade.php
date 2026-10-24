@@ -1,12 +1,20 @@
 @props(['slug', 'parentId' => null, 'compact' => false])
 
 @php
-    $isTarget = (string) old('parent_id') === (string) $parentId;
+    // A rejected edit also flashes a `message`; it belongs to that comment's
+    // edit form, not to whichever reply form happens to match `parent_id`.
+    $isTarget = old('editing') === null && (string) old('parent_id') === (string) $parentId;
+
+    // A reply refused because its parent has gone has no reply form left to
+    // return to, so the main form takes the text rather than losing it.
+    if (! $isTarget && $parentId === null && old('editing') === null && $errors->has('parent_id')) {
+        $isTarget = \App\Models\Comment::query()->whereKey(old('parent_id'))->doesntExist();
+    }
 @endphp
 
 <form method="POST"
       action="{{ route('comments.store', $slug) }}"
-      class="{{ $compact ? 'mt-3' : 'mt-6 border-t border-gray-200 pt-6' }}">
+      class="{{ $compact ? 'mt-2' : 'mt-6 border-t border-gray-200 pt-6' }}">
     @csrf
 
     @if ($parentId)
@@ -30,7 +38,7 @@
     @endunless
 
     @auth
-        <p class="text-sm text-gray-600 mb-3">
+        <p class="{{ $compact ? 'mb-2 text-xs text-gray-500' : 'mb-3 text-sm text-gray-600' }}">
             Commenting as <strong>{{ auth()->user()->name }}</strong>.
         </p>
     @else
@@ -66,7 +74,7 @@
     @endauth
 
     <div>
-        <label for="message-{{ $parentId ?? 'root' }}" class="block text-sm font-medium mb-1">
+        <label for="message-{{ $parentId ?? 'root' }}" class="{{ $compact ? 'sr-only' : 'block text-sm font-medium mb-1' }}">
             {{ $compact ? 'Your reply' : 'Comment' }}
         </label>
         <textarea id="message-{{ $parentId ?? 'root' }}"
@@ -82,7 +90,7 @@
     </div>
 
     <button type="submit"
-            class="mt-3 rounded bg-primary px-4 py-2 font-semibold text-white hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+            class="{{ $compact ? 'mt-2 px-3 py-1.5 text-sm' : 'mt-3 px-4 py-2' }} rounded bg-primary font-semibold text-white hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
         {{ $compact ? 'Post reply' : 'Post comment' }}
     </button>
 </form>

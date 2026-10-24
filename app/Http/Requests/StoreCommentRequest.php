@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Comment;
 use Canvas\Models\Post;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreCommentRequest extends FormRequest
@@ -24,13 +25,15 @@ class StoreCommentRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        abort_unless($this->targetPost()?->published, 404);
+
         return true;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
@@ -38,7 +41,7 @@ class StoreCommentRequest extends FormRequest
             'name' => [$this->user() ? 'nullable' : 'required', 'string', 'max:128'],
             'email' => [$this->user() ? 'nullable' : 'required', 'email', 'max:128'],
             'message' => ['required', 'string', 'max:5000'],
-            'parent_id' => ['nullable', 'integer', 'exists:comments,id'],
+            'parent_id' => ['nullable', 'integer', Rule::exists('comments', 'id')->whereNull('deleted_at')],
             // The honeypot must never fail validation: a rejected submission
             // would tell a bot the field exists. The controller silently
             // discards it instead, via looksAutomated().
@@ -59,6 +62,7 @@ class StoreCommentRequest extends FormRequest
             'email.email' => 'That does not look like an email address.',
             'message.required' => 'A comment needs something to say.',
             'message.max' => 'Comments are limited to 5,000 characters.',
+            'parent_id.exists' => 'That comment is no longer available.',
         ];
     }
 
@@ -73,12 +77,6 @@ class StoreCommentRequest extends FormRequest
             }
 
             $post = $this->targetPost();
-
-            if (! $post || $post->published_at === null || $post->published_at->isFuture()) {
-                $validator->errors()->add('post', 'Comments are closed on this post.');
-
-                return;
-            }
 
             $parent = $this->parentComment();
 

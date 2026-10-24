@@ -33,8 +33,7 @@ class UpdateFitAssessmentTool extends AuthorizedResumeTool
             return $response;
         }
 
-        $conversation = $this->context->conversation;
-        $context = $conversation?->context ?? [];
+        $application = $this->application();
         $updates = [];
 
         $fitScore = $request->get('fit_score') !== null ? (int) $request->get('fit_score') : null;
@@ -55,9 +54,13 @@ class UpdateFitAssessmentTool extends AuthorizedResumeTool
             $updates['job_title'] = (string) $request->get('job_title');
         }
 
-        if ($updates !== [] && $conversation !== null) {
-            $conversation->update(['context' => array_merge($context, $updates)]);
-            $conversation->refresh();
+        if ($updates !== [] && $application !== null) {
+            $application->update([
+                'fit_score' => $updates['fit_score'] ?? $application->fit_score,
+                'fit_summary' => $updates['fit_summary'] ?? $application->fit_summary,
+                'company_name' => mb_substr($updates['company_name'] ?? $application->company_name, 0, 255),
+                'position' => mb_substr($updates['job_title'] ?? $application->position, 0, 255),
+            ]);
         }
 
         return Response::structured(['success' => true, 'updated' => array_keys($updates)]);

@@ -2,6 +2,7 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
+use App\Models\Application;
 use App\Models\User;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Response;
@@ -35,6 +36,28 @@ abstract class AuthorizedResumeTool extends Tool
         }
 
         return null;
+    }
+
+    /**
+     * The tracked job the tool's conversation belongs to. Null outside a
+     * targeted-resume session, and for an external caller with no
+     * conversation at all.
+     */
+    protected function application(): ?Application
+    {
+        $conversation = $this->context->conversation;
+
+        return $conversation !== null ? Application::forConversation($conversation) : null;
+    }
+
+    /**
+     * The status these tools have always reported for a saved resume. A
+     * resume that has not been applied with reads `finalized`, which is no
+     * longer an application status but is the word the model was given.
+     */
+    protected function reportedStatus(Application $application): string
+    {
+        return $application->status->isPipeline() ? $application->status->value : 'finalized';
     }
 
     private function resolveAuthorizedUser(): ?User

@@ -2,6 +2,8 @@
 
 namespace App\Services\Auth;
 
+use App\Enums\SecurityMethodKind;
+use App\Events\UserSecurityMethodRemoved;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Spatie\LaravelPasskeys\Actions\FindPasskeyToAuthenticateAction;
 use Spatie\LaravelPasskeys\Actions\GeneratePasskeyAuthenticationOptionsAction;
@@ -74,5 +76,25 @@ class PasskeyService
     public function getAuthenticatableFromPasskey(Passkey $passkey): Authenticatable
     {
         return $passkey->authenticatable;
+    }
+
+    /**
+     * Delete a passkey belonging to the user, dispatching a downgrade event
+     * when this was their last remaining passkey.
+     */
+    public function deletePasskey(Authenticatable $user, string $passkeyId): void
+    {
+        /** @var HasPasskeys $user */
+        $passkey = $user->passkeys()->findOrFail($passkeyId);
+        $passkey->delete();
+
+        if (! $user->hasPasskeysRegistered()) {
+            UserSecurityMethodRemoved::dispatch(
+                $user,
+                SecurityMethodKind::Passkey,
+                0,
+                now()->toImmutable(),
+            );
+        }
     }
 }

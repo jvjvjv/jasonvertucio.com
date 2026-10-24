@@ -110,7 +110,7 @@ The admin resume preview page SHALL accept an optional revision identifier. When
 
 ### Requirement: Approving a candidate materializes it as the new live resume version
 
-The system SHALL let a user with `edit-resume` approve a `pending` resume edit candidate by supplying the version number the approved resume should be published as. The supplied version SHALL be validated against the `YYYY.MAJOR.MINOR` format and SHALL be rejected if it is not strictly greater than the candidate's base resume version (compared component-wise: year, then major, then minor). Approval SHALL create a new resume version using the supplied version number, mark it as the current (`is_current`) version, write the candidate's data into that version's related records, regenerate the resume's DOCX and PDF artifacts, and mark the candidate `approved`. Approval SHALL also permanently reject (delete) every other `pending` candidate branched from the same base resume version, since their snapshots were seeded from data this approval has now superseded and materializing one of them later would silently overwrite the approved version's data.
+The system SHALL let a user with `edit-resume` approve a `pending` resume edit candidate by supplying the version number the approved resume should be published as. The supplied version SHALL be validated against the `YYYY.MAJOR.MINOR` format and SHALL be rejected if it is not strictly greater than the candidate's base resume version (compared component-wise: year, then major, then minor). Approval SHALL create a new resume version using the supplied version number, mark it as the current (`is_current`) version, write the candidate's data into that version's related records, invalidate any DOCX/PDF previously rendered for that version (per `on-demand-document-generation`, so a later download renders fresh rather than serving stale content), and mark the candidate `approved`. Approval SHALL also permanently reject (delete) every other `pending` candidate branched from the same base resume version, since their snapshots were seeded from data this approval has now superseded and materializing one of them later would silently overwrite the approved version's data.
 
 #### Scenario: Approving one candidate rejects its pending siblings
 
@@ -126,7 +126,7 @@ The system SHALL let a user with `edit-resume` approve a `pending` resume edit c
 - **THEN** a new resume version is created at that version number and becomes the current version
 - **AND** the previously current version is no longer current
 - **AND** the new version's data matches the approved candidate's snapshot
-- **AND** DOCX and PDF files are regenerated for the new version
+- **AND** the new version has no DOCX or PDF considered currently valid, so the next download of either renders fresh
 - **AND** the candidate's status becomes `approved`, with an approval timestamp and the approving user recorded
 
 #### Scenario: Successful approval with a reviewer-chosen major or minor version
@@ -152,9 +152,9 @@ The system SHALL let a user with `edit-resume` approve a `pending` resume edit c
 #### Scenario: Approval succeeds even if document regeneration fails
 
 - **WHEN** a candidate's data is successfully written to a new live resume version at the submitted version
-- **AND** subsequent DOCX/PDF regeneration fails
-- **THEN** the new version still becomes current with the approved data
-- **AND** the user is shown the generation error instead of a silent failure
+- **THEN** the new version becomes current with the approved data
+- **AND** the approval itself never renders a DOCX or PDF, so there is no synchronous rendering step for approval to depend on or be failed by
+- **AND** a rendering problem, if one ever occurs, can only surface later, at the next download of that version (per `on-demand-document-generation`), not as part of approval
 
 #### Scenario: Only a pending candidate can be approved
 

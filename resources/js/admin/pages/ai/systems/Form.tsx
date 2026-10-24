@@ -48,6 +48,7 @@ interface FormData {
     name: string;
     provider: string;
     api_key: string;
+    clear_api_key: boolean;
     model: string;
     model_capabilities: ModelCapabilities | null;
     base_url: string;
@@ -59,6 +60,7 @@ interface FormData {
     custom_system_prompt: string;
     config: string;
     credentials: string;
+    clear_credentials: boolean;
     auth_type: string;
     endpoint_type: string;
     stream_protocol: string;
@@ -86,9 +88,15 @@ interface AiSystemFormProps {
     // A freshly duplicated system that hasn't been saved yet — Provider,
     // Model, and API Key behave like Create instead of being locked.
     pendingFirstEdit?: boolean;
+    // Stored secrets are never sent to the browser, so the form only learns
+    // whether one is set. An empty field keeps it.
+    aiSystemId?: number;
+    hasApiKey?: boolean;
+    hasCredentials?: boolean;
+    domainsWithHeaders?: { [domain: string]: boolean };
 }
 
-const ALL_FEATURES = ["targeted-resume", "cover-letter"];
+const ALL_FEATURES = ["targeted-resume", "cover-letter", "company-intel"];
 const PROVIDERS = [
     { value: "anthropic", label: "Anthropic" },
     { value: "openai", label: "OpenAI" },
@@ -204,6 +212,10 @@ export default function AiSystemForm({
     systemPrompts: initialSystemPrompts,
     isEdit = false,
     pendingFirstEdit = false,
+    aiSystemId,
+    hasApiKey = false,
+    hasCredentials = false,
+    domainsWithHeaders = {},
 }: AiSystemFormProps) {
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [fetchingModels, setFetchingModels] = useState(false);
@@ -223,7 +235,14 @@ export default function AiSystemForm({
             return;
         }
 
-        if (PROVIDERS_REQUIRING_API_KEY.has(data.provider) && !data.api_key) {
+        const canUseStoredKey =
+            aiSystemId !== undefined && hasApiKey && !data.clear_api_key;
+
+        if (
+            PROVIDERS_REQUIRING_API_KEY.has(data.provider) &&
+            !data.api_key &&
+            !canUseStoredKey
+        ) {
             return;
         }
 
@@ -236,6 +255,7 @@ export default function AiSystemForm({
                 {
                     provider: data.provider,
                     api_key: data.api_key,
+                    ai_system_id: data.api_key ? undefined : aiSystemId,
                     base_url: data.base_url || null,
                 },
             );
@@ -288,15 +308,23 @@ export default function AiSystemForm({
     const fetchModelOnFieldChange = () => {
         if (
             data.provider &&
-            (!PROVIDERS_REQUIRING_API_KEY.has(data.provider) || data.api_key)
+            (!PROVIDERS_REQUIRING_API_KEY.has(data.provider) ||
+                data.api_key ||
+                (hasApiKey && !data.clear_api_key))
         ) {
             void fetchModels();
         }
     };
 
-    const apiKeyHelperText = PROVIDERS_REQUIRING_API_KEY.has(data.provider)
-        ? (errors.api_key ?? "Models will be fetched when you leave this field")
-        : (errors.api_key ?? "Optional for local/self-hosted endpoints");
+    const apiKeyHelperText =
+        errors.api_key ??
+        (data.clear_api_key
+            ? "The stored key will be removed when you save."
+            : hasApiKey
+              ? "A key is set. Leave this blank to keep it, or enter a new key to replace it."
+              : PROVIDERS_REQUIRING_API_KEY.has(data.provider)
+                ? "Models will be fetched when you leave this field"
+                : "Optional for local/self-hosted endpoints");
 
     const providerDefaults =
         PROVIDER_DEFAULTS[data.provider] ?? PROVIDER_DEFAULTS.anthropic;
@@ -335,14 +363,17 @@ export default function AiSystemForm({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [toolsUnsupported]);
 
-    // Prompt id locked by feature defaults: targeted-resume locks to 4, cover-letter locks to 5
+    // Prompt id locked by feature defaults: targeted-resume locks to 4,
+    // cover-letter to 5, company-intel to 6
     const featureLockedPromptId: number | null = data.feature_defaults.includes(
         "targeted-resume",
     )
         ? 4
         : data.feature_defaults.includes("cover-letter")
           ? 5
-          : null;
+          : data.feature_defaults.includes("company-intel")
+            ? 6
+            : null;
     const isPromptLocked = featureLockedPromptId !== null;
     const effectivePromptId = isPromptLocked
         ? featureLockedPromptId
@@ -415,7 +446,15 @@ export default function AiSystemForm({
                 fetchError={fetchError}
                 isEdit={isEdit}
                 pendingFirstEdit={pendingFirstEdit}
-                apiKeyRequired={PROVIDERS_REQUIRING_API_KEY.has(data.provider)}
+                apiKeyRequired={
+                    PROVIDERS_REQUIRING_API_KEY.has(data.provider) &&
+                    (!isEdit || !hasApiKey)
+                }
+                hasApiKey={hasApiKey}
+                clearApiKey={data.clear_api_key}
+                onClearApiKeyChange={(value) => {
+                    setData("clear_api_key", value);
+                }}
                 apiKeyHelperText={apiKeyHelperText}
                 modelPlaceholder={modelPlaceholder}
                 baseUrlPlaceholder={baseUrlPlaceholder}
@@ -656,6 +695,11 @@ export default function AiSystemForm({
                 onConfigChange={(value) => {
                     setData("config", value);
                 }}
+                hasCredentials={hasCredentials}
+                clearCredentials={data.clear_credentials}
+                onClearCredentialsChange={(value) => {
+                    setData("clear_credentials", value);
+                }}
                 onCredentialsChange={(value) => {
                     setData("credentials", value);
                 }}
@@ -675,6 +719,7 @@ export default function AiSystemForm({
 
             <WebToolPolicyEditor
                 value={data.web_tool_policy}
+                domainsWithHeaders={domainsWithHeaders}
                 error={errors.web_tool_policy}
                 onChange={(value) => {
                     setData("web_tool_policy", value);

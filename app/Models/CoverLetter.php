@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGeneratedDocuments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,13 +10,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CoverLetter extends Model
 {
     use HasFactory;
+    use HasGeneratedDocuments;
+
+    /**
+     * Filename suffix of a letter that belongs to no application.
+     */
+    private const string STANDALONE_FILENAME_SUFFIX = 'unknown';
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
         'resume_version_id',
-        'targeted_resume_id',
+        'application_id',
         'company_name',
         'position',
         'date',
@@ -43,9 +50,13 @@ class CoverLetter extends Model
         return $this->belongsTo(ResumeVersion::class, 'resume_version_id');
     }
 
-    public function targetedResume(): BelongsTo
+    /**
+     * The job this letter was written for. Null for a standalone letter
+     * created from the Cover Letters page with no application chosen.
+     */
+    public function application(): BelongsTo
     {
-        return $this->belongsTo(TargetedResume::class);
+        return $this->belongsTo(Application::class);
     }
 
     /**
@@ -53,14 +64,14 @@ class CoverLetter extends Model
      */
     public function generateFilename(): string
     {
-        $this->loadMissing('resumeVersion.personalInfo', 'targetedResume.conversation');
+        $this->loadMissing('resumeVersion.personalInfo', 'application.conversation');
 
         $name = $this->sanitizeFilenamePart($this->resumeVersion?->personalInfo?->name);
         $company = $this->sanitizeFilenamePart($this->company_name);
-        $uuid = $this->targetedResume?->conversation?->uuid ?? 'unknown';
+        $suffix = $this->application?->documentFilenameSuffix() ?? self::STANDALONE_FILENAME_SUFFIX;
         $date = $this->date->format('Y-m-d');
 
-        return trim("{$name} Cover Letter {$company} {$date} {$uuid}");
+        return trim("{$name} Cover Letter {$company} {$date} {$suffix}");
     }
 
     private function sanitizeFilenamePart(?string $value): string
@@ -70,21 +81,5 @@ class CoverLetter extends Model
         $sanitized = trim($sanitized, " .-\t\n\r\0\x0B");
 
         return $sanitized !== '' ? $sanitized : 'Unknown';
-    }
-
-    /**
-     * Check if a DOCX file exists for this cover letter.
-     */
-    public function docxExists(): bool
-    {
-        return $this->docx_path !== null && file_exists($this->docx_path);
-    }
-
-    /**
-     * Check if a PDF file exists for this cover letter.
-     */
-    public function pdfExists(): bool
-    {
-        return $this->pdf_path !== null && file_exists($this->pdf_path);
     }
 }

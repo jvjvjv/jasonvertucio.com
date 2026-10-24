@@ -34,6 +34,13 @@ class CommentFactory extends Factory
         ]);
     }
 
+    public function edited(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'edited_at' => now(),
+        ]);
+    }
+
     public function asReply(?Comment $parent = null): self
     {
         return $this->state(fn (array $attributes) => [

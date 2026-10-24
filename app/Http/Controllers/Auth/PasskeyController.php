@@ -75,8 +75,7 @@ class PasskeyController extends Controller
      */
     public function destroy(Request $request, string $passkeyId): RedirectResponse|JsonResponse
     {
-        $passkey = $request->user()->passkeys()->findOrFail($passkeyId);
-        $passkey->delete();
+        $this->passkeyService->deletePasskey($request->user(), $passkeyId);
 
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Passkey deleted successfully.']);

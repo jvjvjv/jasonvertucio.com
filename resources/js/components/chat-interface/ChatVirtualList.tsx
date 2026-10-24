@@ -12,7 +12,15 @@ import type { ToolPanel } from "@/components/ToolsPanel";
 import type { ReactNode } from "react";
 import type { ContextProp, VirtuosoHandle } from "react-virtuoso";
 
-import ChatMessageBubble from "@/components/ChatMessageBubble";
+import ChatMessageBubble, {
+    messageOrigin,
+} from "@/components/ChatMessageBubble";
+
+/** Module-level so every stored bubble gets the same `sx` reference. */
+const CHAT_BUBBLE_SX = {
+    maxWidth: CHAT_COLUMN_MAX_WIDTH,
+    margin: "0 auto",
+} as const;
 
 type VirtualItem =
     | { _kind: "above-messages" }
@@ -107,11 +115,6 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
         const virtuosoHeight = `calc(100dvh - ${chromeHeight}px)`;
         const virtuosoMinHeight = isMobile ? 200 : 300;
 
-        const chatBubbleStyle = {
-            maxWidth: CHAT_COLUMN_MAX_WIDTH,
-            margin: "0 auto",
-        };
-
         return (
             <Virtuoso<VirtualItem, ListContext>
                 ref={ref}
@@ -163,12 +166,9 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                         item.msg.reasoning_content ?? null
                                     }
                                     isAuthenticated={isAuthenticated}
-                                    isManualEdit={
-                                        item.msg.metadata?.origin ===
-                                        "manual_edit"
-                                    }
+                                    origin={messageOrigin(item.msg.metadata)}
                                     isIncomplete={item.msg.incomplete ?? false}
-                                    sx={chatBubbleStyle}
+                                    sx={CHAT_BUBBLE_SX}
                                 />
                             </Box>
                         );
@@ -212,7 +212,7 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
                                 toolPanels={item.toolPanels}
                                 activeBlockType={lastBlock?.type ?? null}
                                 isAuthenticated={isAuthenticated}
-                                sx={chatBubbleStyle}
+                                sx={CHAT_BUBBLE_SX}
                             />
                         </Box>
                     );

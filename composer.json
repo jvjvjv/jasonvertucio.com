@@ -23,7 +23,7 @@
   "require": {
     "php": "^8.4.0",
     "anthropic-ai/sdk": "^0.25.0",
-    "austintoddj/canvas": "^6.0.56",
+    "austintoddj/canvas": "^7.0",
     "bspdx/keystone": "^0.10.1",
     "fakerphp/faker": "^1.24.1",
     "google-gemini-php/client": "^2.7",

@@ -7,25 +7,11 @@
             "can": null,
             "navigationItems": [
                 {
-                    "can": "manage-ai-tools",
-                    "href": "/admin/ai",
-                    "icon": "SmartToy",
-                    "label": "AI Tools",
-                    "description": "Manage AI systems, targeted resume builder, and AI cover letter generation"
-                },
-                {
                     "can": "edit-resume",
-                    "href": "/admin/resume",
-                    "icon": "Description",
-                    "label": "Resume Management",
-                    "description": "Edit resume content, manage share codes, and generate documents"
-                },
-                {
-                    "can": "edit-resume",
-                    "href": "/admin/cover-letters",
-                    "icon": "DriveFileRenameOutline",
-                    "label": "Cover Letter Management",
-                    "description": "Create and manage cover letters with automatic DOCX and PDF generation"
+                    "href": "/admin/employment",
+                    "icon": "WorkHistory",
+                    "label": "Employment",
+                    "description": "Applications, metrics, resumes, cover letters and company intel"
                 },
                 {
                     "can": "edit-settings",
@@ -33,6 +19,13 @@
                     "icon": "Inbox",
                     "label": "Mail Preview",
                     "description": "See how emails might be rendered, right here in the browser!"
+                },
+                {
+                    "can": "manage-ai-tools",
+                    "href": "/admin/ai",
+                    "icon": "SmartToy",
+                    "label": "AI Tools",
+                    "description": "Manage AI systems, job application analysis, and AI cover letter generation"
                 },
                 {
                     "can": "view-roles",
@@ -49,11 +42,54 @@
                     "description": "Manage sidebar navigation links and their order"
                 },
                 {
-                    "can": "manage-blog",
-                    "href": "/admin/comments",
-                    "icon": "Forum",
-                    "label": "Comments",
-                    "description": "Review blog comments and mark spam"
+                    "can": "moderate-comments",
+                    "href": "/admin/blog",
+                    "icon": "Article",
+                    "label": "Blog",
+                    "description": "Write posts and moderate comments"
+                }
+            ]
+        },
+        {
+            "route": "/admin/employment",
+            "name": "Employment",
+            "appBar": true,
+            "can": "edit-resume",
+            "navigationItems": [
+                {
+                    "can": "edit-resume",
+                    "href": "/admin/resume/applications",
+                    "icon": "WorkOutline",
+                    "label": "Applications",
+                    "description": "Track every job you consider or apply to, with or without a tailored resume"
+                },
+                {
+                    "can": "edit-resume",
+                    "href": "/admin/resume/metrics",
+                    "icon": "Insights",
+                    "label": "Application Metrics",
+                    "description": "Track applications, outcomes, and pipeline timelines"
+                },
+                {
+                    "can": "edit-resume",
+                    "href": "/admin/resume",
+                    "icon": "Description",
+                    "label": "Resume Management",
+                    "description": "Edit resume content, manage share codes, and generate documents"
+                },
+                {
+                    "can": "edit-resume",
+                    "href": "/admin/cover-letters",
+                    "icon": "DriveFileRenameOutline",
+                    "label": "Cover Letter Management",
+                    "description": "Create and manage cover letters with automatic DOCX and PDF generation"
+                },
+                {
+                    "can": "edit-resume",
+                    "href": "/admin/employment/company-intel",
+                    "icon": "TravelExplore",
+                    "label": "Company Intel",
+                    "description": "Research on the companies and roles you have applied to"
                 }
             ]
         },
@@ -72,17 +108,10 @@
                 },
                 {
                     "can": "edit-resume",
-                    "href": "/admin/resume/targeted-builder",
+                    "href": "/admin/resume/targeted-resumes",
                     "icon": "TrackChanges",
-                    "label": "Targeted Resume Builder",
-                    "description": "Use AI to tailor your resume for specific job postings"
-                },
-                {
-                    "can": "edit-resume",
-                    "href": "/admin/resume/metrics",
-                    "icon": "Insights",
-                    "label": "Application Metrics",
-                    "description": "Track applications, outcomes, and pipeline timelines"
+                    "label": "Targeted Resumes",
+                    "description": "Find, download and edit the resumes tailored for specific job postings"
                 },
                 {
                     "can": null,
@@ -109,13 +138,6 @@
             "navigationItems": [
                 {
                     "can": "manage-ai-tools",
-                    "href": "/admin/resume/targeted-builder",
-                    "icon": "TrackChanges",
-                    "label": "Targeted Resume Builder",
-                    "description": "Use AI to tailor your resume for specific job postings"
-                },
-                {
-                    "can": "manage-ai-tools",
                     "href": "/admin/ai/systems",
                     "icon": "Memory",
                     "label": "AI Systems",
@@ -127,6 +149,13 @@
                     "icon": "Description",
                     "label": "System Prompts",
                     "description": "Manage reusable system prompts for AI systems"
+                },
+                {
+                    "can": "manage-ai-tools",
+                    "href": "/admin/ai/mcp-servers",
+                    "icon": "Hub",
+                    "label": "MCP Servers",
+                    "description": "Connect external MCP servers and review their tools"
                 },
                 {
                     "can": "manage-ai-tools",
@@ -164,6 +193,29 @@
             "appBar": true,
             "can": "view-roles",
             "navigationItems": []
+        },
+        {
+            "route": "/admin/blog",
+            "name": "Blog",
+            "appBar": true,
+            "can": "moderate-comments",
+            "navigationItems": [
+                {
+                    "can": "manage-blog",
+                    "href": "/canvas",
+                    "icon": "Feed",
+                    "label": "Blog Admin",
+                    "description": "Manage blog, write posts.",
+                    "external": true
+                },
+                {
+                    "can": "moderate-comments",
+                    "href": "/admin/comments",
+                    "icon": "Forum",
+                    "label": "Comments",
+                    "description": "Review blog comments and mark spam"
+                }
+            ]
         }
     ]
 }

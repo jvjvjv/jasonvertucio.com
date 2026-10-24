@@ -45,7 +45,13 @@ class SaveCoverLetterTool extends AuthorizedResumeTool
             return Response::error('cover_letter_content must not be empty.');
         }
 
-        $coverLetter = $this->targetedResumeService->saveCoverLetter($this->context->conversation, $content);
+        $application = $this->application();
+
+        if ($application === null) {
+            return Response::error('No application found for this conversation.');
+        }
+
+        $coverLetter = $this->targetedResumeService->saveCoverLetter($application, $content);
 
         return Response::structured([
             'success' => true,

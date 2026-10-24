@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
@@ -24,7 +25,9 @@ class UpdateAiSystemRequest extends FormRequest
      * A freshly duplicated system (duplicated_at is set) is still on its
      * first edit, so provider/model/api_key are validated exactly like
      * StoreAiSystemRequest instead of being immutable. Once that first save
-     * clears duplicated_at, subsequent updates go back to omitting them.
+     * clears duplicated_at, provider and model are omitted again. The key is
+     * always accepted: it is write-only, and replacing it must not require a
+     * duplicate.
      *
      * @return array<string, array<int, mixed>>
      */
@@ -37,13 +40,13 @@ class UpdateAiSystemRequest extends FormRequest
             ? [
                 'provider' => ['required', 'string', Rule::in(AiProvider::values())],
                 'api_key' => [
-                    Rule::requiredIf(fn (): bool => ! in_array($this->input('provider'), [AiProvider::OpenAICompatible->value, AiProvider::LmStudio->value], true)),
+                    Rule::requiredIf(fn (): bool => $this->requiresNewApiKey($aiSystem)),
                     'nullable',
                     'string',
                 ],
                 'model' => ['required', 'string', 'max:255'],
             ]
-            : [];
+            : ['api_key' => ['nullable', 'string']];
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -63,6 +66,8 @@ class UpdateAiSystemRequest extends FormRequest
             'custom_system_prompt' => ['nullable', 'string'],
             'config' => ['nullable', 'json'],
             'credentials' => ['nullable', 'json'],
+            'clear_api_key' => ['boolean'],
+            'clear_credentials' => ['boolean'],
             'auth_type' => ['nullable', 'string', 'max:50'],
             'endpoint_type' => ['nullable', 'string', 'max:50'],
             'stream_protocol' => ['nullable', 'string', 'max:50'],
@@ -79,8 +84,60 @@ class UpdateAiSystemRequest extends FormRequest
             // Slated for removal from the app entirely.
             'pricing_profile' => ['nullable', 'json'],
             'feature_defaults' => ['nullable', 'array'],
-            'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter'],
+            'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter,company-intel'],
         ];
+    }
+
+    /**
+     * The key is write-only, so it must not be redirectable: pointing a system
+     * at another base URL while keeping its stored key would deliver that key
+     * to the new address the next time the system is used. Changing the base URL
+     * therefore requires entering the key — and any stored credentials, which
+     * travel to the same address — again, or removing them.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            /** @var AiSystem $aiSystem */
+            $aiSystem = $this->route('aiSystem');
+            $requested = trim((string) $this->input('base_url'));
+
+            $normalize = static fn (?string $url): string => rtrim(strtolower(trim((string) $url)), '/');
+
+            if ($requested === '' || $normalize($requested) === $normalize($aiSystem->base_url)) {
+                return;
+            }
+
+            $keyWouldBeKept = filled($aiSystem->api_key)
+                && blank($this->input('api_key'))
+                && ! $this->boolean('clear_api_key');
+            $credentialsWouldBeKept = filled($aiSystem->getRawOriginal('credentials'))
+                && blank($this->input('credentials'))
+                && ! $this->boolean('clear_credentials');
+
+            if ($keyWouldBeKept) {
+                $validator->errors()->add('api_key', 'Enter the API key again to change the base URL.');
+            }
+
+            if ($credentialsWouldBeKept) {
+                $validator->errors()->add('credentials', 'Enter the credentials again to change the base URL.');
+            }
+        });
+    }
+
+    /**
+     * A pending duplicate carries its original's key server-side, so a key is
+     * demanded only when it has none or the provider it was issued for changed.
+     */
+    private function requiresNewApiKey(AiSystem $aiSystem): bool
+    {
+        $provider = $this->input('provider');
+
+        if (in_array($provider, [AiProvider::OpenAICompatible->value, AiProvider::LmStudio->value], true)) {
+            return false;
+        }
+
+        return $provider !== $aiSystem->provider || blank($aiSystem->api_key);
     }
 
     /**

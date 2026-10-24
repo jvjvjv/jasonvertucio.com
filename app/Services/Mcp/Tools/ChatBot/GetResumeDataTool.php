@@ -30,9 +30,9 @@ class GetResumeDataTool extends Tool
     use LoadsResumeDataWithRevisionInfo;
 
     public function __construct(
-        private ToolContext $context,
-        private ResumeDataServiceContract $resumeDataService,
-        private ResumeEditCandidateService $candidateService,
+        protected ToolContext $context,
+        protected ResumeDataServiceContract $resumeDataService,
+        protected ResumeEditCandidateService $candidateService,
     ) {}
 
     /**
@@ -48,6 +48,20 @@ class GetResumeDataTool extends Tool
 
     public function handle(Request $request): Response|ResponseFactory
     {
+        return Response::structured($this->resumeDataFor($request));
+    }
+
+    /**
+     * Build the resume payload this caller is entitled to.
+     *
+     * Separated from {@see handle()} so a transport that discloses less than
+     * the chat loop does — the public MCP endpoint — can project this array
+     * before it is wrapped, without reimplementing the load.
+     *
+     * @return array<string, mixed>
+     */
+    protected function resumeDataFor(Request $request): array
+    {
         $requestedRevisionNumber = $request->filled('revision_number') ? $request->integer('revision_number') : null;
 
         $resumeData = $this->loadResumeDataWithRevisionInfo($this->resumeDataService, $this->candidateService, $requestedRevisionNumber);
@@ -61,10 +75,10 @@ class GetResumeDataTool extends Tool
             }, $resumeData['experience'] ?? []);
         }
 
-        return Response::structured($resumeData);
+        return $resumeData;
     }
 
-    private function canViewSalary(): bool
+    protected function canViewSalary(): bool
     {
         if ($this->context->userId === null) {
             return false;

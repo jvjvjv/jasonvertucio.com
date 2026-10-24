@@ -91,7 +91,9 @@ export default function useChatStream({
         setMessages(initialMessages);
     }
 
-    // Notify parent whenever messages change (including on conversation reset above)
+    // Notify parent whenever messages change (including on conversation reset
+    // above). This is the only place the parent is told: the state updaters
+    // below stay pure, since React may run an updater more than once.
     useEffect(() => {
         onMessagesChangeRef.current?.(messages);
     }, [messages]);
@@ -141,18 +143,15 @@ export default function useChatStream({
             if (isExpired) return;
 
             if (text) {
-                setMessages((prev) => {
-                    const next = [
-                        ...prev,
-                        {
-                            role: "user" as const,
-                            content: text,
-                            created_at: new Date().toISOString(),
-                        },
-                    ];
-                    onMessagesChangeRef.current?.(next);
-                    return next;
-                });
+                const sentAt = new Date().toISOString();
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        role: "user" as const,
+                        content: text,
+                        created_at: sentAt,
+                    },
+                ]);
                 onMessageSent();
             }
 
@@ -211,24 +210,22 @@ export default function useChatStream({
                     .map((b) => b.content)
                     .join("");
 
-                setMessages((prev) => {
-                    const next = [
-                        ...prev,
-                        {
-                            role: "assistant" as const,
-                            content: finalText,
-                            blocks: liveBlocks,
-                            tool_panels:
-                                liveToolPanels.length > 0
-                                    ? liveToolPanels
-                                    : undefined,
-                            created_at: new Date().toISOString(),
-                            incomplete,
-                        },
-                    ];
-                    onMessagesChangeRef.current?.(next);
-                    return next;
-                });
+                const persistedBlocks = liveBlocks;
+                const persistedToolPanels =
+                    liveToolPanels.length > 0 ? liveToolPanels : undefined;
+                const persistedAt = new Date().toISOString();
+
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        role: "assistant" as const,
+                        content: finalText,
+                        blocks: persistedBlocks,
+                        tool_panels: persistedToolPanels,
+                        created_at: persistedAt,
+                        incomplete,
+                    },
+                ]);
             };
 
             const abortController = new AbortController();

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
+use App\Services\ChatBot\McpServerCatalog;
 use BSPDX\Keystone\Models\KeystonePermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -26,8 +27,10 @@ class AiChatBotController extends Controller
 {
     use ProvidesAdminNavigation;
 
-    public function __construct(private AiPersonaManager $bots)
-    {
+    public function __construct(
+        private AiPersonaManager $bots,
+        private McpServerCatalog $mcpServers,
+    ) {
     }
 
     /**
@@ -152,7 +155,7 @@ class AiChatBotController extends Controller
             userId: $request->user()?->getKey(),
         );
 
-        return response()->json(['tools' => $tools]);
+        return response()->json(['tools' => $this->mcpServers->annotateSources($tools)]);
     }
 
     /**

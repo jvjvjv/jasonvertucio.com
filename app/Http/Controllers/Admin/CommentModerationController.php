@@ -43,16 +43,10 @@ class CommentModerationController extends Controller
 
     /**
      * Hide a comment as spam.
-     *
-     * `approved_at` is what the public display query trusts, so it is cleared
-     * here; `is_spam` records why.
      */
     public function markSpam(Comment $comment): RedirectResponse
     {
-        $comment->update([
-            'is_spam' => true,
-            'approved_at' => null,
-        ]);
+        $comment->markAsSpam();
 
         return back()->with('success', 'Comment marked as spam.');
     }
@@ -62,11 +56,21 @@ class CommentModerationController extends Controller
      */
     public function markNotSpam(Comment $comment): RedirectResponse
     {
-        $comment->update([
-            'is_spam' => false,
-            'approved_at' => now(),
-        ]);
+        $comment->markAsNotSpam();
 
         return back()->with('success', 'Comment restored.');
+    }
+
+    /**
+     * Soft delete a comment, whatever its approval or spam state.
+     *
+     * A spam comment is hidden on its post and so offers no controls there;
+     * the queue is the only place it can be deleted from.
+     */
+    public function destroy(Comment $comment): RedirectResponse
+    {
+        $comment->delete();
+
+        return back()->with('success', 'Comment deleted.');
     }
 }

@@ -37,6 +37,11 @@ interface ResumeVersionServiceContract
     public function docxExistsForCurrentVersion(): bool;
 
     /**
+     * Check if a PDF exists for the current version.
+     */
+    public function pdfExistsForCurrentVersion(): bool;
+
+    /**
      * Generate a DOCX file for the current version.
      *
      * @return array{success: bool, path?: string, error?: string}
@@ -49,6 +54,20 @@ interface ResumeVersionServiceContract
      * @return array{success: bool, path?: string, error?: string}
      */
     public function generatePdf(): array;
+
+    /**
+     * Generate the DOCX only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensureDocx(): array;
+
+    /**
+     * Generate the PDF only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensurePdf(): array;
 
     /**
      * Get all available versions.

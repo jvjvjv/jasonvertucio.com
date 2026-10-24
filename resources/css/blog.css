@@ -5,104 +5,7 @@
 @import "@fortawesome/fontawesome-free/css/brands.css";
 @import "./font-loading.css";
 @import "./scrollbars.css";
-
-@theme {
-    --color-primary: #1b587c;
-    --color-secondary: #b35e06;
-    --color-dark: #495057;
-    --color-link: #4351a0;
-
-    --font-heading: "Josefin Sans", Arial, sans-serif;
-    --font-body: "Montserrat", Arial, sans-serif;
-}
-
-/* Chat bubble markdown rendering */
-.chat-markdown p {
-    margin-bottom: 0.5rem;
-}
-.chat-markdown p:last-child {
-    margin-bottom: 0;
-}
-.chat-markdown ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-.chat-markdown ol {
-    list-style-type: decimal;
-    padding-left: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-.chat-markdown li {
-    margin-bottom: 0.25rem;
-}
-.chat-markdown strong,
-.chat-markdown b {
-    font-weight: 700;
-}
-.chat-markdown em,
-.chat-markdown i {
-    font-style: italic;
-}
-.chat-markdown a {
-    color: #4351a0;
-    text-decoration: underline;
-}
-.chat-markdown blockquote {
-    border-left: 3px solid #d1d5db;
-    padding-left: 1rem;
-    color: #6b7280;
-    margin-bottom: 0.5rem;
-}
-.chat-markdown code {
-    background: rgba(0, 0, 0, 0.06);
-    padding: 0.1em 0.3em;
-    border-radius: 3px;
-    font-size: 0.85em;
-    font-family: monospace;
-}
-.chat-markdown pre {
-    background: rgba(0, 0, 0, 0.06);
-    padding: 0.75rem;
-    border-radius: 4px;
-    overflow-x: auto;
-    margin-bottom: 0.5rem;
-}
-.chat-markdown pre code {
-    background: transparent;
-    padding: 0;
-}
-.chat-markdown hr {
-    border: none;
-    border-top: 1px solid #e5e7eb;
-    margin: 1em 0;
-}
-.chat-markdown h1,
-.chat-markdown h2,
-.chat-markdown h3 {
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    margin-top: 0.75rem;
-}
-.chat-markdown h1:first-child,
-.chat-markdown h2:first-child,
-.chat-markdown h3:first-child {
-    margin-top: 0;
-}
-
-.chat-markdown--user a {
-    color: inherit;
-}
-.chat-markdown--user code {
-    background: rgba(255, 255, 255, 0.2);
-}
-.chat-markdown--user pre {
-    background: rgba(255, 255, 255, 0.2);
-}
-.chat-markdown--user blockquote {
-    border-left-color: rgba(255, 255, 255, 0.55);
-    color: inherit;
-}
+@import "./theme.css";
 
 /* Blog */
 .blog {
@@ -112,18 +15,287 @@
     h4,
     h5,
     h6 {
-        @apply font-heading;
+        @apply font-heading font-bold;
     }
 
     .blog__body {
-        .embedded_image {
-            @apply my-2;
-            p {
-                @apply text-sm text-center mb-4;
+        h1 { @apply text-2xl; }
+        h2 { @apply text-xl; }
+        h3 { @apply text-lg; }
+        code {
+            white-space: pre-wrap;
+        }
+        blockquote {
+            /* border-left: 3px solid var(--color-secondary); */
+            /* padding-left: 1rem; */
+            width: 80%;
+            margin: 2rem auto;
+            font-size: 1.2rem;
+            font-family: var(--font-serif);
+            font-style: italic;
+            color: var(--color-dark);
+        }
+
+        p {
+            @apply my-4;
+        }
+
+        table {
+            border-collapse: collapse;
+
+            th, td {
+                border: 1px solid rgb(from var(--color-dark) r g b /0.25);
+                padding:0.5rem;
+            }
+
+            /* Post bodies are stored HTML with no wrapper to scroll, so on
+               phones the table itself becomes the scroll container. The cell
+               minimum is what forces the overflow: without it the columns
+               just squeeze to fit. */
+            @apply max-sm:block max-sm:max-w-full max-sm:overflow-x-auto max-sm:inset-shadow-sm;
+
+            th, td {
+                @apply max-sm:min-w-32;
             }
         }
-        p {
-            @apply my-2;
+
+        ul, ol {
+            list-style: revert !important;
+            margin: revert !important;
+            padding:revert !important;
         }
+
+        .canvas-post-body-image {
+            @apply my-2 w-full;
+
+            & +  p.canvas-post-body-image-credit {
+                @apply text-sm text-center mt-2;
+            }
+        }
+
+    }
+}
+
+/* Legal documents (privacy policy, terms of service) */
+.legal {
+    @apply text-dark;
+
+    p {
+        @apply my-4;
+    }
+
+    h1 {
+        @apply mb-2 text-4xl font-bold;
+    }
+
+    h2 {
+        @apply mt-10 mb-3 border-t border-dark/15 pt-6 text-2xl font-bold;
+    }
+
+    h2:first-of-type {
+        @apply border-t-0 pt-0;
+    }
+
+    h3 {
+        @apply mt-6 mb-2 text-xl font-bold;
+    }
+
+    ul,
+    ol {
+        @apply my-4 ps-6;
+    }
+
+    ul {
+        @apply list-disc;
+    }
+
+    ol {
+        @apply list-decimal;
+    }
+
+    li {
+        @apply my-1;
+    }
+
+    li > ul,
+    li > ol {
+        @apply my-1;
+    }
+
+    a {
+        @apply text-primary underline underline-offset-2;
+    }
+
+    code {
+        @apply rounded bg-gray-100 px-1 py-0.5 text-[0.9em];
+        white-space: pre-wrap;
+    }
+
+    hr {
+        @apply my-8 border-0 border-t border-dark/15;
+    }
+
+    blockquote {
+        @apply my-4 border-s-4 border-secondary bg-gray-50 px-4 py-3;
+        p {
+            @apply my-0;
+        }
+    }
+
+    .table-scroll {
+        @apply my-6 w-full overflow-x-auto;
+    }
+
+    table {
+        @apply w-full min-w-[36rem] border-collapse text-sm;
+    }
+
+    thead {
+        @apply bg-primary text-white;
+    }
+
+    th,
+    td {
+        @apply border border-dark/15 px-3 py-2 text-left align-top;
+    }
+
+    th {
+        @apply font-heading font-bold;
+    }
+
+    tbody tr:nth-child(even) {
+        @apply bg-gray-50;
+    }
+}
+
+/* Comment thread controls.
+   Each control is a native <details>, so nothing here needs script. Closed, a
+   summary is a small button in the action row. Open, its <details> takes the
+   row's place as a panel, and the summary becomes that panel's title on the
+   left with a Cancel on the right - the summary's own text is kept for
+   assistive tech and hidden visually. */
+.comments {
+    /* Pulled left by the buttons' own padding, so their icons line up with
+       the comment text above. */
+    .comment-actions {
+        @apply -mx-2 mt-3 flex flex-wrap items-center gap-1;
+    }
+
+    .comment-actions:has(> .comment-action[open]) {
+        @apply mx-0;
+    }
+
+    .comment-actions__gap {
+        @apply grow;
+    }
+
+    .comment-action > summary {
+        @apply inline-flex cursor-pointer list-none items-center gap-1.5 rounded px-2 py-1 text-sm font-medium text-primary select-none;
+    }
+
+    .comment-action > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .comment-action > summary::before {
+        font-family: "Font Awesome 7 Free";
+        font-size: 0.8em;
+        font-weight: 900;
+        content: var(--comment-action-icon);
+    }
+
+    .comment-action > summary:hover {
+        @apply bg-primary/10;
+    }
+
+    .comment-action > summary:focus-visible {
+        @apply outline-2 outline-offset-2 outline-primary;
+    }
+
+    .comment-action--reply {
+        --comment-action-icon: "\f3e5";
+    }
+
+    .comment-action--edit {
+        --comment-action-icon: "\f304";
+    }
+
+    .comment-action--spam {
+        --comment-action-icon: "\f024";
+    }
+
+    .comment-action--delete {
+        --comment-action-icon: "\f2ed";
+    }
+
+    /* Destructive controls stay quiet until approached. */
+    .comment-action--confirm:not([open]) > summary {
+        @apply text-gray-500;
+    }
+
+    .comment-action--confirm:not([open]) > summary:hover {
+        @apply bg-red-50 text-red-800;
+    }
+
+    /* On a phone the row would wrap to three lines at the deepest indent, so
+       the destructive pair drops to icons. Their text stays in the DOM. */
+    @media (width < 40rem) {
+        .comment-actions {
+            @apply flex-nowrap gap-0;
+        }
+
+        .comment-action--confirm:not([open]) > summary {
+            @apply size-8 justify-center p-0;
+            font-size: 0;
+        }
+
+        .comment-action--confirm:not([open]) > summary::before {
+            font-size: 0.875rem;
+        }
+    }
+
+    /* One open control replaces the row. */
+    .comment-actions:has(> .comment-action[open]) > :not([open]) {
+        display: none;
+    }
+
+    .comment-action[open] {
+        @apply w-full;
+    }
+
+    .comment-action[open] > summary {
+        @apply flex justify-between gap-3 p-0;
+        font-size: 0;
+    }
+
+    .comment-action[open] > summary:hover {
+        background: none;
+    }
+
+    .comment-action[open] > summary::before {
+        @apply font-body text-sm font-semibold text-dark;
+        content: attr(data-panel-title);
+    }
+
+    .comment-action[open] > summary::after {
+        @apply rounded px-2 py-1 text-sm font-medium text-primary;
+        content: "Cancel";
+    }
+
+    .comment-action[open] > summary:hover::after {
+        @apply bg-primary/10;
+    }
+
+    .comment-action--reply[open] {
+        @apply border-t border-gray-200 pt-3;
+    }
+
+    .comment-action--confirm[open] {
+        @apply rounded border border-red-200 bg-red-50 px-3 py-2;
+    }
+
+    /* The editor stands in for the text it is editing. */
+    article:has(.comment-action--edit[open]) > .comment-body {
+        display: none;
     }
 }

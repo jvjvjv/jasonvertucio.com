@@ -13,15 +13,22 @@ import Typography from "@mui/material/Typography";
 import { type ReactNode, useState } from "react";
 
 import DesktopNavItem from "./admin-layout/DesktopNavItem";
+import LogoutForm from "./admin-layout/LogoutForm";
 import MobileNavSection from "./admin-layout/MobileNavSection";
 
 import type { SharedProps } from "@/types";
+import type { ContainerProps } from "@mui/material/Container";
 
 interface AdminLayoutProps {
     children: ReactNode;
     title?: string;
     noMargin?: boolean;
     showChrome?: boolean;
+    /**
+     * The page content's maximum width, as MUI Container's `maxWidth`. Admin
+     * pages are full width unless a page asks for less.
+     */
+    maxContainerWidth?: ContainerProps["maxWidth"];
 }
 
 export default function AdminLayout({
@@ -29,6 +36,7 @@ export default function AdminLayout({
     title,
     noMargin,
     showChrome = true,
+    maxContainerWidth = false,
 }: AdminLayoutProps) {
     const page = usePage<SharedProps>();
     const { flash } = page.props;
@@ -37,6 +45,15 @@ export default function AdminLayout({
     const [flashOpen, setFlashOpen] = useState(
         !!(flash.success ?? flash.error),
     );
+    // A page keeps this layout mounted across visits that preserve its state
+    // (a reload, or a delete that redirects back to the same page), so a flash
+    // message can arrive after mount. Reopen the snackbar when it does, rather
+    // than only ever reading the flash the page first rendered with.
+    const [prevFlash, setPrevFlash] = useState(flash);
+    if (prevFlash !== flash) {
+        setPrevFlash(flash);
+        setFlashOpen(!!(flash.success ?? flash.error));
+    }
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     return (
@@ -88,6 +105,7 @@ export default function AdminLayout({
                                     currentPath={currentPath}
                                 />
                             ))}
+                            <LogoutForm variant="bar" />
                         </Box>
 
                         {/* Mobile hamburger */}
@@ -121,6 +139,8 @@ export default function AdminLayout({
                                     />
                                 </Box>
                             ))}
+                            <Divider />
+                            <LogoutForm variant="menu" />
                         </Menu>
                     </Toolbar>
                 </AppBar>
@@ -130,7 +150,10 @@ export default function AdminLayout({
                 component="main"
                 sx={{ flexGrow: 1, py: noMargin ? {} : { xs: 2, md: 4 } }}
             >
-                <Container maxWidth={false} disableGutters={!showChrome}>
+                <Container
+                    maxWidth={maxContainerWidth}
+                    disableGutters={!showChrome}
+                >
                     {title && (
                         <Typography
                             variant="h4"

@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'driver' => env('RESUME_DRIVER', 'json'),
+    'driver' => env('RESUME_DRIVER', 'database'),
 
     /*
     |--------------------------------------------------------------------------
@@ -28,15 +28,98 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Resume Template Path
+    | Shared Document Template Path
     |--------------------------------------------------------------------------
     |
-    | The path to the DOCX template file used for generating downloadable
-    | resume documents. This template should contain docxtemplater placeholders.
+    | The one DOCX template behind every document the site generates — the
+    | main resume, targeted resumes, and cover letters. It carries only the
+    | header placeholders ({name}, {title}, {email}, {phone}, {url}) and no
+    | body; each document type composes its own body onto it at generation
+    | time. Editing this file in Word restyles all three documents at once.
     |
     */
 
-    'template' => resource_path('resume/2026 resume template.docx'),
+    'template' => resource_path('resume/2026 template.docx'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cover Letter Signature Image
+    |--------------------------------------------------------------------------
+    |
+    | The source image SignatureImageService recolors and embeds into cover
+    | letters. Like the template path, this is the single source of truth —
+    | no service may hardcode its own.
+    |
+    */
+
+    'signature' => resource_path('resume/assets/signature.png'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Embeddable Font Directory
+    |--------------------------------------------------------------------------
+    |
+    | Static TTF faces that `resume:embed-fonts` writes into the template's
+    | font parts. Keeping the faces in the repo makes embedding reproducible
+    | instead of dependent on whatever is installed on whoever last opened the
+    | template in Word — a variable-font install silently collapses every
+    | weight onto one face and renders the whole document Thin.
+    |
+    */
+
+    'fonts' => resource_path('resume/assets/fonts'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | WeasyPrint Binary
+    |--------------------------------------------------------------------------
+    |
+    | The `weasyprint` executable PdfRenderer invokes to render a document's
+    | composed HTML to PDF. Like the template path, this is the single source
+    | of truth — no service may hardcode its own. Defaults to whatever
+    | "weasyprint" resolves to on PATH; point it at a venv's binary
+    | (e.g. /opt/weasyprint/bin/weasyprint) when the host has no distro
+    | package.
+    |
+    */
+
+    'weasyprint' => env('RESUME_WEASYPRINT_BINARY', 'weasyprint'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | WeasyPrint Render Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Seconds PdfRenderer allows a single render to run before it is
+    | abandoned and reported as a failure.
+    |
+    */
+
+    'weasyprint_timeout' => (int) env('RESUME_WEASYPRINT_TIMEOUT', 30),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cover Letter Signature Placement
+    |--------------------------------------------------------------------------
+    |
+    | Where the signature is drawn across the sign-off, shared by the DOCX
+    | and PDF composers so the two formats cannot drift onto different
+    | placements. Tuned by hand against a rendered page — see
+    | CoverLetterBodyComposer for how to adjust them.
+    |
+    | signature_rise: EMU. How far the signature is lifted above the typed
+    | name paragraph. Negative lifts it upward.
+    | signature_gap: twentieths of a point. Height of the blank line between
+    | the closing and the typed name.
+    | signature_indent: EMU. Horizontal offset from the left margin.
+    |
+    */
+
+    'signature_rise' => (int) env('RESUME_SIGNATURE_RISE', -1143000),
+
+    'signature_gap' => (int) env('RESUME_SIGNATURE_GAP', 720),
+
+    'signature_indent' => (int) env('RESUME_SIGNATURE_INDENT', 91440),
 
     /*
     |--------------------------------------------------------------------------
@@ -86,5 +169,26 @@ return [
     */
 
     'ai_edit_batch_window_hours' => (int) env('RESUME_AI_EDIT_BATCH_WINDOW_HOURS', 12),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generated Document Retention
+    |--------------------------------------------------------------------------
+    |
+    | Documents (DOCX/PDF for the main resume, targeted resumes, and cover
+    | letters) are generated on the first download request, not on save.
+    | This controls how long a generated file is kept before it is
+    | considered stale and must be regenerated on the next download.
+    |
+    | retention_mode: "cache" keeps a file for `retention_hours` after it is
+    | generated, serving it again on repeat downloads within that window.
+    | "delete_after_serve" deletes the file as soon as it has been streamed
+    | to the requester, so every download renders fresh.
+    |
+    */
+
+    'document_retention_mode' => env('RESUME_DOCUMENT_RETENTION_MODE', 'cache'),
+
+    'document_retention_hours' => (int) env('RESUME_DOCUMENT_RETENTION_HOURS', 12),
 
 ];

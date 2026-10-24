@@ -2,6 +2,7 @@ import HandymanIcon from "@mui/icons-material/Handyman";
 import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import MenuItem from "@mui/material/MenuItem";
@@ -65,6 +66,9 @@ interface ProviderModelSelectorProps {
     pendingFirstEdit: boolean;
     apiKeyRequired: boolean;
     apiKeyHelperText: string;
+    hasApiKey: boolean;
+    clearApiKey: boolean;
+    onClearApiKeyChange: (_value: boolean) => void;
     modelPlaceholder: string;
     baseUrlPlaceholder: string;
     apiVersionPlaceholder: string;
@@ -94,6 +98,9 @@ export default function ProviderModelSelector({
     pendingFirstEdit,
     apiKeyRequired,
     apiKeyHelperText,
+    hasApiKey,
+    clearApiKey,
+    onClearApiKeyChange,
     modelPlaceholder,
     baseUrlPlaceholder,
     apiVersionPlaceholder,
@@ -169,24 +176,41 @@ export default function ProviderModelSelector({
                     mb: 2,
                 }}
             >
-                <TextField
-                    label="API Key"
-                    type="password"
-                    required={apiKeyRequired}
-                    size="small"
-                    value={data.api_key}
-                    onChange={(e) => {
-                        onApiKeyChange(e.target.value);
-                    }}
-                    disabled={fieldsLocked}
-                    onBlur={onApiKeyBlur}
-                    error={!!errors.api_key}
-                    helperText={
-                        fieldsLocked
-                            ? "API key is stored securely and can only be changed by duplicating this system."
-                            : apiKeyHelperText
-                    }
-                />
+                <Box>
+                    <TextField
+                        label="API Key"
+                        type="password"
+                        required={apiKeyRequired}
+                        size="small"
+                        fullWidth
+                        value={data.api_key}
+                        onChange={(e) => {
+                            onApiKeyChange(e.target.value);
+                            if (e.target.value) {
+                                onClearApiKeyChange(false);
+                            }
+                        }}
+                        disabled={clearApiKey}
+                        onBlur={onApiKeyBlur}
+                        error={!!errors.api_key}
+                        placeholder={hasApiKey ? "Key set" : undefined}
+                        autoComplete="off"
+                        helperText={apiKeyHelperText}
+                    />
+                    {hasApiKey && (
+                        <Button
+                            size="small"
+                            color={clearApiKey ? "inherit" : "error"}
+                            onClick={() => {
+                                onApiKeyChange("");
+                                onClearApiKeyChange(!clearApiKey);
+                            }}
+                            sx={{ mt: 0.5 }}
+                        >
+                            {clearApiKey ? "Keep stored key" : "Remove key"}
+                        </Button>
+                    )}
+                </Box>
 
                 <Box>
                     <TextField

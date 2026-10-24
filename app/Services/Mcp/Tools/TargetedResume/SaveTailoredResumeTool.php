@@ -71,23 +71,35 @@ class SaveTailoredResumeTool extends AuthorizedResumeTool
             'fit_score' => $fitScore,
         ]);
 
+        $application = $this->application();
+
+        if ($application === null) {
+            Log::warning('targeted-resume.save-tailored-resume: no application for conversation', [
+                'conversation_id' => $this->context->conversation?->id,
+                'user_id' => $this->context->userId,
+            ]);
+
+            return Response::error('No application found for this conversation.');
+        }
+
         try {
             $targetedResume = $this->targetedResumeService->saveTailoredResume(
-                $this->context->conversation,
+                $application,
                 $tailoredContent,
                 $fitScore,
             );
 
             Log::info('targeted-resume.save-tailored-resume: save completed', [
                 'conversation_id' => $this->context->conversation?->id,
+                'application_id' => $application->id,
                 'targeted_resume_id' => $targetedResume->id,
-                'status' => $targetedResume->status->value,
+                'status' => $this->reportedStatus($application),
             ]);
 
             return Response::structured([
                 'success' => true,
                 'targeted_resume_id' => $targetedResume->id,
-                'status' => $targetedResume->status->value,
+                'status' => $this->reportedStatus($application),
                 '_page_reload' => true,
             ]);
         } catch (\Throwable $throwable) {

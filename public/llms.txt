@@ -1,0 +1,42 @@
+# Jason Vertucio
+
+> Personal site and blog of Jason Vertucio, a lead front-end engineer with
+> full-stack depth. Resume, writing, and selected projects.
+
+This site exposes a Model Context Protocol (MCP) server so agents can query it
+directly instead of scraping pages.
+
+## AI work and endpoint documentation
+
+- https://jasonvertucio.com/ai — what Jason has built with AI, and the
+  human-readable documentation for the endpoint below.
+
+## MCP endpoint
+
+- URL: https://jasonvertucio.com/mcp
+- Transport: streamable HTTP (JSON-RPC over `POST`; `GET` returns 405 by design)
+- Credentials: none required
+
+Tools:
+
+- `get-resume-data` — experience, skills, education and projects
+- `get-recent-blog-posts` — recent posts with titles, summaries and URLs;
+  supports a keyword `search` argument
+- `get-site-info` — site title, selected projects and interests
+
+## Access levels
+
+Calling anonymously returns the public projection: direct contact details
+(email address, phone number) are omitted. The LinkedIn profile and site URL
+are included as contact paths.
+
+Presenting a bearer token returns everything that token's owner is permitted to
+see. Tokens are issued by request, not self-service — ask through the contact
+options on the site. An invalid or revoked token is rejected rather than
+silently downgraded, so a reduced response is never mistaken for a complete one.
+
+## Pages
+
+- Home: https://jasonvertucio.com/
+- Blog: https://jasonvertucio.com/blog
+- AI work: https://jasonvertucio.com/ai

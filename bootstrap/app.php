@@ -1,5 +1,7 @@
 <?php
 
+use App\Exceptions\ApplicationException;
+use App\Exceptions\ApplicationExceptionRenderer;
 use App\Http\Middleware\IpMiddleware;
 use App\Http\Middleware\PreventFraming;
 use Illuminate\Foundation\Application;
@@ -44,6 +46,12 @@ return Application::configure(basePath: dirname(__DIR__))
             PreventFraming::class,
         ]);
 
+        // /posts accepts unauthenticated POSTs from external callers, so it
+        // cannot carry a CSRF token.
+        $middleware->preventRequestForgery(except: [
+            '/posts',
+        ]);
+
         // Framework defaults: an unauthenticated non-JSON request redirects
         // nowhere (no path configured), and an already-authenticated guest
         // route redirects to a Laravel-standard path. This app wants /login
@@ -53,5 +61,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo('/');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // The application-tracking domain's refusals are client errors, not
+        // faults: they are mapped to HTTP statuses in one place and kept out
+        // of the error log.
+        $exceptions->dontReport(ApplicationException::class);
+        $exceptions->render(
+            fn (ApplicationException $exception, Request $request) => app(ApplicationExceptionRenderer::class)->render($exception, $request)
+        );
     })->create();

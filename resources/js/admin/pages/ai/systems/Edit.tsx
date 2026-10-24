@@ -7,7 +7,7 @@ import CardContent from "@mui/material/CardContent";
 import AiSystemForm from "./Form";
 
 import type { FormData } from "./Form";
-import type { AiSystem, AiSystemPrompt } from "@/types";
+import type { AiSystem, AiSystemPrompt, McpServerCatalogEntry } from "@/types";
 import type { SyntheticEvent } from "react";
 
 import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
@@ -21,6 +21,7 @@ interface EditProps {
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
     pendingFirstEdit: boolean;
+    mcpServers: McpServerCatalogEntry[];
 }
 
 export default function Edit({
@@ -28,11 +29,13 @@ export default function Edit({
     existingDefaults,
     systemPrompts,
     pendingFirstEdit,
+    mcpServers,
 }: EditProps) {
     const form = useForm<FormData>({
         name: aiSystem.name,
         provider: aiSystem.provider,
-        api_key: aiSystem.api_key,
+        api_key: "",
+        clear_api_key: false,
         model: aiSystem.model,
         model_capabilities: aiSystem.model_capabilities ?? null,
         base_url: aiSystem.base_url ?? "",
@@ -43,9 +46,8 @@ export default function Edit({
         system_prompt_id: aiSystem.system_prompt_id ?? null,
         custom_system_prompt: "",
         config: aiSystem.config ? JSON.stringify(aiSystem.config, null, 2) : "",
-        credentials: aiSystem.credentials
-            ? JSON.stringify(aiSystem.credentials, null, 2)
-            : "",
+        credentials: "",
+        clear_credentials: false,
         auth_type: aiSystem.auth_type ?? "",
         endpoint_type: aiSystem.endpoint_type ?? "",
         stream_protocol: aiSystem.stream_protocol ?? "",
@@ -53,7 +55,10 @@ export default function Edit({
         supports_tools: aiSystem.supports_tools ?? false,
         allowed_tools: aiSystem.allowed_tools ?? [],
         web_tool_policy: aiSystem.web_tool_policy
-            ? JSON.stringify(aiSystem.web_tool_policy, null, 2)
+            ? JSON.stringify({
+                  allowed_domains:
+                      aiSystem.web_tool_policy.allowed_domains ?? [],
+              })
             : "",
         supports_json_mode: aiSystem.supports_json_mode ?? false,
         enable_thinking: aiSystem.enable_thinking ?? false,
@@ -126,6 +131,12 @@ export default function Edit({
                             systemPrompts={systemPrompts}
                             isEdit
                             pendingFirstEdit={pendingFirstEdit}
+                            aiSystemId={aiSystem.id}
+                            hasApiKey={aiSystem.has_api_key}
+                            hasCredentials={aiSystem.has_credentials}
+                            domainsWithHeaders={
+                                aiSystem.web_tool_policy?.has_headers ?? {}
+                            }
                         />
 
                         <Box
@@ -176,7 +187,8 @@ export default function Edit({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, personas on this system cannot use MCP tools."
+                    mcpServers={mcpServers}
+                    description="Select the tools this system may expose — built-in tools and tools from connected MCP servers alike. If none are selected, personas on this system cannot use tools."
                 />
             </Box>
             <ConfirmDialog {...dialogProps} />

@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CommentTest extends TestCase
@@ -77,5 +79,92 @@ class CommentTest extends TestCase
 
         $this->assertNull($comment->user_id);
         $this->assertNotNull($comment->name);
+    }
+
+    public function test_a_trashed_approved_comment_is_not_visible(): void
+    {
+        Mail::fake();
+
+        $comment = Comment::factory()->create(['approved_at' => now(), 'is_spam' => false]);
+        $this->assertTrue($comment->isVisible());
+
+        $comment->delete();
+
+        $this->assertFalse($comment->isVisible());
+    }
+
+    public function test_a_comment_reports_edited_only_once_edited_at_is_set(): void
+    {
+        Mail::fake();
+
+        $comment = Comment::factory()->create(['approved_at' => now(), 'is_spam' => false]);
+        $this->assertFalse($comment->fresh()->isEdited());
+
+        $comment->edited_at = now();
+        $comment->save();
+
+        $this->assertTrue($comment->fresh()->isEdited());
+        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $comment->fresh()->edited_at);
+    }
+
+    public function test_edited_at_cannot_be_mass_assigned(): void
+    {
+        Mail::fake();
+
+        $comment = Comment::factory()->create(['approved_at' => now(), 'is_spam' => false]);
+        $comment->update(['edited_at' => now()]);
+
+        $this->assertNull($comment->fresh()->edited_at);
+    }
+
+    public function test_the_edited_factory_state_marks_a_comment_edited(): void
+    {
+        Mail::fake();
+
+        $this->assertTrue(Comment::factory()->edited()->create()->fresh()->isEdited());
+    }
+
+    /**
+     * @return array<string, array{string, string, bool, bool}>
+     */
+    public static function manageabilityCases(): array
+    {
+        return [
+            'owner of a visible comment' => ['owner', 'visible', false, true],
+            'owner of a spam comment' => ['owner', 'spam', false, false],
+            'owner of a deleted comment' => ['owner', 'deleted', false, false],
+            'another user' => ['other', 'visible', false, false],
+            'anonymous comment with a matching email' => ['email-match', 'visible', false, false],
+            'no user' => ['guest', 'visible', false, false],
+            'admin on an owned visible comment' => ['owner', 'visible', true, true],
+            'admin on a spam comment' => ['owner', 'spam', true, true],
+            'admin on another user\'s comment' => ['other', 'visible', true, true],
+            'admin on an anonymous comment' => ['email-match', 'visible', true, true],
+        ];
+    }
+
+    #[DataProvider('manageabilityCases')]
+    public function test_is_manageable_by(string $relation, string $state, bool $isAdmin, bool $expected): void
+    {
+        Mail::fake();
+
+        $viewer = User::factory()->create();
+
+        $attributes = match ($state) {
+            'spam' => ['approved_at' => null, 'is_spam' => true],
+            default => ['approved_at' => now(), 'is_spam' => false],
+        };
+
+        $comment = match ($relation) {
+            'owner' => Comment::factory()->create($attributes + ['user_id' => $viewer->id]),
+            'email-match' => Comment::factory()->anonymous()->create($attributes + ['email' => $viewer->email]),
+            default => Comment::factory()->create($attributes),
+        };
+
+        if ($state === 'deleted') {
+            $comment->delete();
+        }
+
+        $this->assertSame($expected, $comment->isManageableBy($relation === 'guest' ? null : $viewer, $isAdmin));
     }
 }

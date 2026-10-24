@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\AiPageController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LegalController;
+use App\Http\Controllers\PostsIngestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,10 +24,28 @@ Route::get('/about/{any?}', function () {
     return redirect('/');
 });
 
+Route::post('/posts', [PostsIngestController::class, 'store'])
+    ->middleware('throttle:posts-ingest')
+    ->name('posts.store');
+
+Route::prefix('legal')->name('legal.')->group(function () {
+    Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
+    Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
+});
+
+// The AI work page, which also documents the public /mcp endpoint. This is a
+// literal top-level path, so it must be registered above the
+// routes/codetalker-chatbots.php require at the bottom of this file — that
+// file's root-level `/{aiChatBot:slug}` wildcard would otherwise claim it.
+// Consequence: a chat bot slugged `ai` is shadowed here and stays reachable at
+// /chat/ai.
+Route::get('/ai', [AiPageController::class, 'show'])->name('ai');
+
 require base_path('routes/auth.php');
 require base_path('routes/passkeys.php');
 require base_path('routes/admin.php');
 require base_path('routes/admin-resume.php');
+require base_path('routes/admin-employment.php');
 require base_path('routes/admin-roles.php');
 require base_path('routes/resume.php');
 require base_path('routes/blog.php');

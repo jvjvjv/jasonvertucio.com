@@ -1,6 +1,7 @@
 @php
     $tree = $tree();
     $count = $visibleCount();
+    $canModerate = $canModerate();
 @endphp
 
 <section id="comments" class="comments mt-6 border-t border-gray-200 pt-6">
@@ -17,6 +18,24 @@
         </p>
     @endif
 
+    @if (session('comment_updated'))
+        <p class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-3 text-green-800">
+            Your comment was updated.
+        </p>
+    @endif
+
+    @if (session('comment_deleted'))
+        <p class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-3 text-green-800">
+            The comment was deleted.
+        </p>
+    @endif
+
+    @if (session('comment_marked_spam'))
+        <p class="mb-4 rounded border border-green-300 bg-green-50 px-4 py-3 text-green-800">
+            Comment marked as spam and hidden from this post.
+        </p>
+    @endif
+
     @error('post')
         <p class="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800">{{ $message }}</p>
     @enderror
@@ -28,7 +47,10 @@
             @foreach ($tree as $node)
                 <x-comment-node :comment="$node['comment']"
                                 :children="$node['children']"
-                                :slug="$post->slug" />
+                                :slug="$post->slug"
+                                :viewer="$viewer"
+                                :viewer-is-admin="$viewerIsAdmin"
+                                :can-moderate="$canModerate" />
             @endforeach
         </ol>
     @endif

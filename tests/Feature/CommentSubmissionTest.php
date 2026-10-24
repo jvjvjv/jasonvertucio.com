@@ -119,7 +119,7 @@ class CommentSubmissionTest extends TestCase
         $post = $this->makePost(null);
 
         $this->post(route('comments.store', $post->slug), $this->payload())
-            ->assertSessionHasErrors('post');
+            ->assertNotFound();
 
         $this->assertSame(0, Comment::query()->where('post_id', $post->id)->count());
     }
@@ -173,6 +173,53 @@ class CommentSubmissionTest extends TestCase
 
         $this->post(route('comments.store', $post->slug), $this->payload(['message' => '']))
             ->assertSessionHasErrors('message');
+
+        $this->assertSame(0, Comment::query()->where('post_id', $post->id)->count());
+    }
+
+    public function test_a_reply_to_a_deleted_comment_is_refused(): void
+    {
+        $post = $this->makePost();
+        $parent = Comment::factory()->create(['post_id' => $post->id, 'depth' => 0, 'approved_at' => now()]);
+        $parent->delete();
+        $before = Comment::withTrashed()->where('post_id', $post->id)->count();
+
+        $this->post(route('comments.store', $post->slug), $this->payload([
+            'parent_id' => $parent->id,
+            'message' => 'Reply typed before the deletion',
+        ]))
+            ->assertSessionHasErrors(['parent_id' => 'That comment is no longer available.'])
+            ->assertSessionHasInput('message', 'Reply typed before the deletion');
+
+        $this->assertSame($before, Comment::withTrashed()->where('post_id', $post->id)->count());
+        $this->assertSame(0, Comment::query()->where('post_id', $post->id)->whereNull('parent_id')->count());
+    }
+
+    public function test_a_refused_reply_to_a_deleted_comment_gets_its_text_back_on_the_page(): void
+    {
+        $post = $this->makePost();
+        $parent = Comment::factory()->create(['post_id' => $post->id, 'depth' => 0, 'approved_at' => now()]);
+        $parent->delete();
+
+        $html = $this->followingRedirects()
+            ->from(route('post', $post->slug))
+            ->post(route('comments.store', $post->slug), $this->payload([
+                'parent_id' => $parent->id,
+                'message' => 'Reply typed before the deletion',
+            ]))
+            ->assertOk()
+            ->assertSee('That comment is no longer available.')
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, 'Reply typed before the deletion'));
+    }
+
+    public function test_a_reply_to_a_nonexistent_comment_is_still_refused(): void
+    {
+        $post = $this->makePost();
+
+        $this->post(route('comments.store', $post->slug), $this->payload(['parent_id' => 999999999]))
+            ->assertSessionHasErrors('parent_id');
 
         $this->assertSame(0, Comment::query()->where('post_id', $post->id)->count());
     }

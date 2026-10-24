@@ -6,17 +6,27 @@ use App\Contracts\ResumeDataServiceContract;
 use App\Contracts\ResumeVersionServiceContract;
 use App\Models\ResumeVersion;
 use App\Services\Concerns\GeneratesResumeDocuments;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
+use App\Services\Resume\ResumeMarkdownComposer;
 use RuntimeException;
 
 class DatabaseResumeVersionService implements ResumeVersionServiceContract
 {
     use GeneratesResumeDocuments;
 
-    protected ResumeDataServiceContract $dataService;
-
-    public function __construct(ResumeDataServiceContract $dataService)
-    {
-        $this->dataService = $dataService;
+    public function __construct(
+        protected ResumeDataServiceContract $dataService,
+        protected DocumentRenderer $renderer,
+        protected ResumeMarkdownComposer $markdownComposer,
+        protected MarkdownToOpenXmlConverter $markdownConverter,
+        protected MarkdownToHtmlConverter $htmlConverter,
+        protected HtmlDocumentComposer $htmlComposer,
+        protected PdfRenderer $pdfRenderer,
+    ) {
         $this->initDocumentPaths();
     }
 
@@ -28,12 +38,50 @@ class DatabaseResumeVersionService implements ResumeVersionServiceContract
         return $this->dataService;
     }
 
+    protected function getDocumentRenderer(): DocumentRenderer
+    {
+        return $this->renderer;
+    }
+
+    protected function getMarkdownComposer(): ResumeMarkdownComposer
+    {
+        return $this->markdownComposer;
+    }
+
+    protected function getMarkdownConverter(): MarkdownToOpenXmlConverter
+    {
+        return $this->markdownConverter;
+    }
+
+    protected function getHtmlConverter(): MarkdownToHtmlConverter
+    {
+        return $this->htmlConverter;
+    }
+
+    protected function getHtmlComposer(): HtmlDocumentComposer
+    {
+        return $this->htmlComposer;
+    }
+
+    protected function getPdfRenderer(): PdfRenderer
+    {
+        return $this->pdfRenderer;
+    }
+
     /**
      * Get the current version from the database.
      */
     public function getCurrentVersion(): string
     {
         return ResumeVersion::current()->first()?->version ?? '0.0.0';
+    }
+
+    /**
+     * Get the current live resume version model, if one exists.
+     */
+    protected function getCurrentVersionModel(): ?ResumeVersion
+    {
+        return ResumeVersion::current()->first();
     }
 
     /**

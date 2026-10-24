@@ -6,6 +6,8 @@ use App\Http\Controllers\CommentController;
 Route::group(['prefix' => 'blog'], function ($route) {
     $route->get('/', [BlogController::class, 'index'])->name('blog');
 
+    $route->get('/feed', [BlogController::class, 'feed'])->name('feed');
+
     $route->get('/topics', [BlogController::class, 'topics'])->name('topics');
     $route->get('/tags', [BlogController::class, 'tags'])->name('tags');
 
@@ -15,6 +17,16 @@ Route::group(['prefix' => 'blog'], function ($route) {
     $route->post('/{slug}/comments', [CommentController::class, 'store'])
         ->middleware('throttle:comments')
         ->name('comments.store');
+
+    $route->put('/{slug}/comments/{comment}', [CommentController::class, 'update'])
+        ->middleware('auth')
+        ->name('comments.update');
+    $route->delete('/{slug}/comments/{comment}', [CommentController::class, 'destroy'])
+        ->middleware('auth')
+        ->name('comments.destroy');
+    $route->post('/{slug}/comments/{comment}/spam', [CommentController::class, 'markSpam'])
+        ->middleware(['auth', 'can:moderate-comments'])
+        ->name('comments.spam');
 
     $route->get('/{slug}', [BlogController::class, 'post'])->name('post');
 });

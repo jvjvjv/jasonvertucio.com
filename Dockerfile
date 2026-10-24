@@ -8,13 +8,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 ARG PHP_VERSION=8.4
-ARG ALPINE_VERSION=3.21
+ARG ALPINE_VERSION=3.23
 
 # ── base ────────────────────────────────────────────────────────────────────
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
 
 LABEL org.opencontainers.image.title="jasonvertucio.com"
-LABEL org.opencontainers.image.description="Laravel 12 portfolio site"
+LABEL org.opencontainers.image.description="Laravel 13 portfolio site"
 
 # System dependencies required by Laravel + PHP extensions
 RUN apk add --no-cache \
@@ -76,6 +76,27 @@ RUN pecl install redis && docker-php-ext-enable redis
 
 # ── development ─────────────────────────────────────────────────────────────
 FROM base AS development
+
+# WeasyPrint — every generatePdf() renders a document's composed HTML with
+# the `weasyprint` CLI (see PdfRenderer). Production is not Docker (see
+# CLAUDE.md: the real host runs apache + supervisord) and installs its own
+# system WeasyPrint, so this is needed only so PDF generation works in the
+# local container. Without it every PDF render fails with the renderer
+# reported as unavailable while DOCX generation still succeeds, which
+# surfaces as "approved, but document generation failed".
+#
+# The documents' own faces come from `@font-face` rules pointing at the
+# static TTFs in resources/resume/assets/fonts (see HtmlDocumentComposer), not
+# from anything installed here. But WeasyPrint's text layer (Pango/FontConfig)
+# segfaults on startup if FontConfig has *no* face at all to fall back to,
+# even one that ends up unused — font-dejavu exists purely to give it one.
+RUN apk add --no-cache weasyprint font-dejavu
+
+# poppler-utils / qpdf — pdffonts/pdftotext/pdfinfo and qpdf's stream
+# decompression back the PDF fidelity test suite (embedded-font, page-count
+# and content-stream assertions). Test tooling only; production never runs
+# PHPUnit.
+RUN apk add --no-cache poppler-utils qpdf
 
 # Xdebug
 RUN pecl install xdebug && docker-php-ext-enable xdebug

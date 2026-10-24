@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CanvasViewer;
 use Canvas\Events\PostViewed;
 use Canvas\Models\Post;
 use Canvas\Models\Tag;
 use Canvas\Models\Topic;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class BlogController extends Controller
 {
@@ -27,7 +29,7 @@ class BlogController extends Controller
     public function topics()
     {
         return view('blog.topics', [
-            'list' => Topic::with('user', 'posts')->get(),
+            'list' => Topic::with(['user', 'posts' => fn ($posts) => $posts->published()])->get(),
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
@@ -39,7 +41,7 @@ class BlogController extends Controller
     public function tags()
     {
         return view('blog.tags', [
-            'list' => Tag::with('user', 'posts')->get(),
+            'list' => Tag::with(['user', 'posts' => fn ($posts) => $posts->published()])->get(),
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
@@ -50,10 +52,10 @@ class BlogController extends Controller
 
     public function topicList(string $slug)
     {
-        $topic = Topic::with('posts')->where('slug', $slug)->firstOrFail();
+        $topic = Topic::with(['posts' => fn ($posts) => $posts->published()])->where('slug', $slug)->firstOrFail();
 
         return view('blog.list', [
-            'list' => $topic->posts->whereNotNull('published_at'),
+            'list' => $topic->posts,
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
@@ -64,10 +66,10 @@ class BlogController extends Controller
 
     public function tagList(string $slug)
     {
-        $tag = Tag::with('posts')->where('slug', $slug)->firstOrFail();
+        $tag = Tag::with(['posts' => fn ($posts) => $posts->published()])->where('slug', $slug)->firstOrFail();
 
         return view('blog.list', [
-            'list' => $tag->posts->whereNotNull('published_at'),
+            'list' => $tag->posts,
             'links' => [
                 ['href' => '/blog', 'label' => 'Posts'],
                 ['href' => '/blog/topics', 'label' => 'Topics'],
@@ -85,22 +87,46 @@ class BlogController extends Controller
         }
     }
 
+    public function feed()
+    {
+        $posts = Cache::remember('blog.feed', now()->addDay(), function () {
+            return Post::published()->with('user')->orderBy('published_at', 'DESC')->limit(20)->get();
+        });
+
+        return response()
+            ->view('blog.feed', ['posts' => $posts])
+            ->header('Content-Type', 'application/rss+xml; charset=UTF-8');
+    }
+
     public function post($slug)
     {
-        $post = Post::with(['user', 'tags', 'topic'])->where('slug', $slug)->first();
+        $query = Post::with(['user', 'tags', 'topic'])->where('slug', $slug);
+
+        if (! CanvasViewer::isAuthor()) {
+            $query->published();
+        }
+
+        $post = $query->first();
         if (! $post) {
             return $this->topicsOrTags($slug);
         }
-        $auth = Auth::guard('canvas');
-        if ($auth->check() && $post->user && $post->user->id === $auth->user()->id) {
-            // Do nothing - author viewing their own post
-        } else {
-            // If it's not the author, or if there IS no user
-            event(new PostViewed($post));
+
+        $isPreview = ! $post->published;
+        $authorId = $post->getRawOriginal('user_id');
+        $viewerIsAuthor = Auth::check() && $authorId !== null && Auth::id() === $authorId;
+
+        if (! $viewerIsAuthor && ! $isPreview) {
+            event(new PostViewed(
+                post: $post,
+                ip: request()->ip(),
+                agent: request()->userAgent(),
+                referer: request()->header('referer'),
+            ));
         }
 
         return view('blog.single', [
             'post' => $post,
+            'isPreview' => $isPreview,
         ]);
     }
 }

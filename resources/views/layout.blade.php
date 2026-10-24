@@ -59,13 +59,14 @@
     @endphp
 
     <title>{{ $fullTitle }}</title>
+    <link rel="alternate" type="application/rss+xml" title="Jason Vertucio's Blog" href="{{ route('feed') }}">
     {{-- Preconnect to font CDNs for faster loading --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect"
           href="https://fonts.gstatic.com"
           crossorigin>
     {{-- Fonts --}}
-    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;700&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;700&family=Montserrat:wght@400;500;700&family=Cormorant:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     {{-- Custom styles for this template --}}
     @vite(["resources/css/blog.css"])
     @stack("styles")
@@ -92,7 +93,13 @@
 
     <footer class="mt-auto bg-secondary py-3 text-white">
         <div class="mx-auto max-w-7xl px-4">
-            <div class="text-right">
+            <div class="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
+                <nav class="flex gap-4 text-sm" aria-label="Legal">
+                    <a class="underline-offset-2 hover:underline focus-visible:underline"
+                       href="{{ route("legal.privacy") }}">Privacy Policy</a>
+                    <a class="underline-offset-2 hover:underline focus-visible:underline"
+                       href="{{ route("legal.terms") }}">Terms of Service</a>
+                </nav>
                 <span>Copyright &copy; {{ date("Y") }}, Jason Vertucio.</span>
             </div>
         </div>
@@ -109,7 +116,6 @@
     </script>
 
     @include("gtag")
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @stack("scripts")
 </body>
 

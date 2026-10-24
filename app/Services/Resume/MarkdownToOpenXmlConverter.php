@@ -16,6 +16,8 @@ class MarkdownToOpenXmlConverter
         'paragraph' => 'Normal',
     ];
 
+    protected const SINGLE_COLUMN = MarkdownDocumentParser::SINGLE_COLUMN;
+
     protected const CONTEXTUAL_STYLES = [
         'Experience' => [
             'h2' => 'JobTitle',
@@ -29,38 +31,42 @@ class MarkdownToOpenXmlConverter
 
     protected ?string $currentSection = null;
 
-    protected bool $pendingSkillsColumnsStart = false;
+    /**
+     * The column count of the run of paragraphs currently being emitted.
+     *
+     * Starts at one because that is what the template's own body `sectPr`
+     * specifies, which is what governs everything after the last break.
+     */
+    protected int $currentColumns = self::SINGLE_COLUMN;
+
+    public function __construct(protected MarkdownDocumentParser $parser = new MarkdownDocumentParser) {}
 
     /**
      * Convert a markdown string into an OpenXML fragment.
      */
     public function convert(string $markdown): string
     {
-        $markdown = $this->stripCodeFences($markdown);
+        $lines = $this->parser->parse($markdown);
 
-        // Remove any leading newlines that could cause blank first paragraph
-        $markdown = ltrim($markdown, "\r");
-        $markdown = ltrim($markdown, "\n");
-
-        $lines = $this->parseLines($markdown);
-
-        if (empty($lines)) {
+        if ($lines === []) {
             return '';
         }
 
+        $this->currentSection = null;
+        $this->currentColumns = self::SINGLE_COLUMN;
+
         $xml = '';
 
-        // Process each line
         foreach ($lines as $line) {
-            $xml .= $this->processLine($line);
+            $xml .= $this->processLine($line, $line['columns']);
         }
 
-        if ($this->currentSection === 'Skills') {
-            $xml .= $this->buildColumnBreak(1);
+        if ($this->currentColumns !== self::SINGLE_COLUMN) {
+            $xml .= $this->buildColumnBreak($this->currentColumns);
         }
 
         $this->currentSection = null;
-        $this->pendingSkillsColumnsStart = false;
+        $this->currentColumns = self::SINGLE_COLUMN;
 
         return $xml;
     }
@@ -68,34 +74,27 @@ class MarkdownToOpenXmlConverter
     /**
      * Process each line and build the corresponding XML, handling section changes and special cases.
      */
-    protected function processLine(array $line): string
+    protected function processLine(array $line, int $columns): string
     {
-        // Initialize $xml
         $xml = '';
-        // Check for section changes
-        if ($line['type'] === 'h1') {
-            if ($this->currentSection === 'Skills') {
-                $xml = $this->buildColumnBreak(1);
-            }
 
+        if ($columns !== $this->currentColumns) {
+            // A sectPr describes the section that *ends* with its paragraph, so
+            // the break closing the preceding run carries that run's own column
+            // count, not the count of what follows it.
+            $xml .= $this->buildColumnBreak($this->currentColumns);
+            $this->currentColumns = $columns;
+        }
+
+        if ($line['type'] === 'h1') {
             $this->currentSection = $line['text'];
         }
 
-        if ($this->pendingSkillsColumnsStart && $this->currentSection === 'Skills' && $line['type'] !== 'h1') {
-            $xml .= $this->buildColumnBreak(2);
-            $this->pendingSkillsColumnsStart = false;
+        if ($line['type'] === 'rule') {
+            return $xml;
         }
 
-        $xml .= $this->buildLineXml($line);
-
-        if ($line['type'] === 'h1' && $line['text'] === 'Skills') {
-            // Keep the Skills heading outside columns, then start two-column flow
-            // on the first content line within the section.
-            $xml .= $this->buildColumnBreak(1);
-            $this->pendingSkillsColumnsStart = true;
-        }
-
-        return $xml;
+        return $xml.$this->buildLineXml($line);
     }
 
     /**
@@ -105,58 +104,16 @@ class MarkdownToOpenXmlConverter
     {
         $styleId = $this->resolveStyleId($line['type'], $line['text']);
         $extraPpr = $line['type'] === 'bullet' ? $this->buildBulletNumPr() : null;
+        $text = $line['type'] === 'h1'
+            ? (MarkdownDocumentParser::SECTION_LABELS[$line['text']] ?? $line['text'])
+            : $line['text'];
 
         if ($line['type'] === 'bullet' && str_starts_with($line['text'], 'Key Technologies:')) {
             $styleId = 'KeyTechnologies';
             $extraPpr = null;
         }
 
-        return $this->buildParagraphXml($styleId, $line['text'], $extraPpr);
-    }
-
-    /**
-     * Strip ```tailored-resume``` code fences from the markdown.
-     */
-    protected function stripCodeFences(string $markdown): string
-    {
-        $markdown = preg_replace('/^```tailored-resume\s*\n/m', '', $markdown);
-        $markdown = preg_replace('/^```\s*$/m', '', $markdown);
-
-        return trim($markdown);
-    }
-
-    /**
-     * Parse markdown lines into structured type/text pairs.
-     *
-     * @return array<int, array{type: string, text: string}>
-     */
-    protected function parseLines(string $markdown): array
-    {
-        $lines = explode("\n", $markdown);
-        $parsed = [];
-
-        foreach ($lines as $line) {
-            $trimmed = trim($line);
-
-            // Skip empty lines and whitespace-only lines
-            if ($trimmed === '' || preg_match('/^\s*$/', $line)) {
-                continue;
-            }
-
-            if (preg_match('/^###\s+(.+)$/', $trimmed, $matches)) {
-                $parsed[] = ['type' => 'h3', 'text' => trim($matches[1])];
-            } elseif (preg_match('/^##\s+(.+)$/', $trimmed, $matches)) {
-                $parsed[] = ['type' => 'h2', 'text' => trim($matches[1])];
-            } elseif (preg_match('/^#\s+(.+)$/', $trimmed, $matches)) {
-                $parsed[] = ['type' => 'h1', 'text' => trim($matches[1])];
-            } elseif (preg_match('/^[-*]\s+(.+)$/', $trimmed, $matches)) {
-                $parsed[] = ['type' => 'bullet', 'text' => trim($matches[1])];
-            } else {
-                $parsed[] = ['type' => 'paragraph', 'text' => $trimmed];
-            }
-        }
-
-        return $parsed;
+        return $this->buildParagraphXml($styleId, $text, $extraPpr);
     }
 
     /**

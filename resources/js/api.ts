@@ -233,16 +233,39 @@ async function* stream(
         chunk = await reader.read()
     ) {
         buffer += decoder.decode(chunk.value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
 
-        for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const data = line.slice(6);
+        // Frames are separated by a blank line and can be split across reads,
+        // so the tail of the buffer is carried forward rather than parsed early.
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() ?? "";
+
+        for (const frame of frames) {
+            const data = frameData(frame);
             if (!data.trim()) continue;
             yield data;
         }
     }
+
+    // A stream can close without a trailing separator — an error frame is
+    // terminal on its own — so flush the decoder and dispatch whatever is left
+    // rather than discarding it.
+    buffer += decoder.decode();
+
+    if (buffer.trim() !== "") {
+        const data = frameData(buffer);
+        if (data.trim()) yield data;
+    }
+}
+
+/**
+ * Join every `data:` line within one SSE frame into a single payload string.
+ */
+function frameData(frame: string): string {
+    return frame
+        .split("\n")
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trim())
+        .join("");
 }
 
 export const api = {

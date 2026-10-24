@@ -21,7 +21,7 @@ class AiConversationController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $query = AiConversation::query()
-            ->with(['aiSystem', 'aiPersona', 'user', 'targetedResume'])
+            ->with(['aiSystem', 'aiPersona', 'user', 'application:id,ai_conversation_id'])
             ->withCount(['messages' => fn ($messages) => $messages->where('role', '!=', 'system')])
             ->orderByLastMessageAtDesc();
 
@@ -86,11 +86,7 @@ class AiConversationController extends Controller
                 'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
                 'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
             ],
-            'targeted_resume' => $conversation->targetedResume ? [
-                'id' => $conversation->targetedResume->id,
-                'company_name' => $conversation->targetedResume->company_name,
-                'position' => $conversation->targetedResume->position,
-            ] : null,
+            'application_id' => $conversation->application?->id,
         ]);
 
         return Inertia::render('ai/conversations/Index', [
@@ -107,7 +103,7 @@ class AiConversationController extends Controller
      */
     public function show(AiConversation $conversation): InertiaResponse
     {
-        $conversation->load(['messages', 'aiSystem', 'aiPersona', 'user', 'targetedResume']);
+        $conversation->load(['messages', 'aiSystem', 'aiPersona', 'user', 'application:id,ai_conversation_id']);
 
         $memories = AiFeatureMemory::query()
             ->where('source_conversation_id', $conversation->id)
@@ -139,11 +135,7 @@ class AiConversationController extends Controller
                     'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
                     'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
                 ],
-                'targeted_resume' => $conversation->targetedResume ? [
-                    'id' => $conversation->targetedResume->id,
-                    'company_name' => $conversation->targetedResume->company_name,
-                    'position' => $conversation->targetedResume->position,
-                ] : null,
+                'application_id' => $conversation->application?->id,
             ],
             'messages' => $conversation->messages
                 ->sortBy('created_at')

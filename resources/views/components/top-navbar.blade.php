@@ -38,12 +38,18 @@
                             @if (!empty($link["divider"]))
                                 <hr aria-hidden="true" class="my-1 border-gray-200">
                             @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
+                                @if (($link["method"] ?? null) === "post")
+                                    <x-logout-button :label="$link['label']"
+                                                     class="block w-full cursor-pointer px-4 py-2 text-left text-dark hover:bg-gray-100"
+                                                     role="menuitem" />
+                                @else
                                 <a class="block px-4 py-2 text-dark hover:bg-gray-100"
                                    role="menuitem"
                                    href="{{ $link["href"] }}"
                                    @if (!empty($link["target"])) target="{{ $link["target"] }}" rel="noopener noreferrer" @endif>
                                     {{ $link["label"] }}
                                 </a>
+                                @endif
                             @endif
                         @endforeach
                     </div>
@@ -63,11 +69,16 @@
                 @if (!empty($link["divider"]))
                     <hr aria-hidden="true" class="my-1 border-white/20">
                 @elseif (empty($link["can"]) || ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"])))
+                    @if (($link["method"] ?? null) === "post")
+                        <x-logout-button :label="$link['label']"
+                                         class="block w-full cursor-pointer px-4 py-2 text-left text-white hover:text-white/75 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2" />
+                    @else
                     <a href="{{ $link["href"] }}"
                        class="block px-4 py-2 text-white hover:text-white/75 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
                        @if (!empty($link["target"])) target="{{ $link["target"] }}" rel="noopener noreferrer" @endif>
                         {{ $link["label"] }}
                     </a>
+                    @endif
                 @endif
             @endforeach
         </nav>

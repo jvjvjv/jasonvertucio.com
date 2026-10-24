@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
-use Canvas\Models\User as CanvasUser;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 

@@ -3,81 +3,65 @@
 namespace App\Services;
 
 use App\Models\TargetedResume;
+use App\Services\Concerns\ChecksDocumentRetention;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
 use App\Services\Resume\MarkdownToOpenXmlConverter;
-use DOMDocument;
-use DOMXPath;
+use App\Services\Resume\PdfRenderer;
 use Illuminate\Support\Facades\Log;
-use ZipArchive;
 
 class TargetedResumeDocumentService
 {
-    protected const NAMESPACE_W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-
-    protected string $templatePath;
+    use ChecksDocumentRetention;
 
     protected string $outputDir;
 
-    public function __construct(protected MarkdownToOpenXmlConverter $converter)
-    {
-        $this->templatePath = base_path('resources/resume/2026 targeted resume template.docx');
+    public function __construct(
+        protected MarkdownToOpenXmlConverter $converter,
+        protected DocumentRenderer $renderer,
+        protected MarkdownToHtmlConverter $htmlConverter,
+        protected HtmlDocumentComposer $htmlComposer,
+        protected PdfRenderer $pdfRenderer,
+    ) {
         $this->outputDir = storage_path('app/targeted-resumes');
     }
 
     /**
      * Generate a DOCX file for the given targeted resume.
      *
-     * @return array{success: bool, path?: string, error?: string}
+     * @return array{success: bool, path?: string, size?: int, error?: string}
      */
     public function generateDocx(TargetedResume $targetedResume): array
     {
         $filename = $targetedResume->generateFilename();
         $outputPath = $this->outputDir.'/'.$filename.'.docx';
 
-        if (! file_exists($this->outputDir)) {
-            mkdir($this->outputDir, 0755, true);
-        }
-
         try {
             $data = $this->buildTemplateData($targetedResume);
+            $resumeMarkdown = $data['resume'];
+            unset($data['resume']);
 
-            copy($this->templatePath, $outputPath);
+            $result = $this->renderer->render(
+                config('resume.template'),
+                $outputPath,
+                $data,
+                $this->converter->convert($resumeMarkdown),
+            );
 
-            $zip = new ZipArchive;
-            if ($zip->open($outputPath) !== true) {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to open DOCX template as ZIP archive.',
-                ];
+            if (! $result['success']) {
+                Log::error('Targeted resume DOCX generation failed', [
+                    'error' => $result['error'],
+                    'targeted_resume_id' => $targetedResume->id,
+                ]);
+
+                return $result;
             }
-
-            $xml = $zip->getFromName('word/document.xml');
-            if ($xml === false) {
-                $zip->close();
-
-                return [
-                    'success' => false,
-                    'error' => 'Failed to read word/document.xml from template.',
-                ];
-            }
-
-            $xml = $this->replaceSimplePlaceholders($xml, $data);
-            $xml = $this->appendResumeContent($xml, $data['resume']);
-
-            Log::debug('Final generated XML', ['xml' => $xml]);
-
-            $zip->addFromString('word/document.xml', $xml);
-            $zip->close();
 
             $targetedResume->docx_path = $outputPath;
             $targetedResume->save();
 
-            $size = filesize($outputPath);
-
-            return [
-                'success' => true,
-                'path' => $outputPath,
-                'size' => $size,
-            ];
+            return $result;
         } catch (\Exception $e) {
             Log::error('Targeted resume DOCX generation failed', [
                 'message' => $e->getMessage(),
@@ -97,185 +81,38 @@ class TargetedResumeDocumentService
     }
 
     /**
-     * Replace simple placeholders in the raw XML.
-     *
-     * @param  array{name: string, title: string, email: string, phone: string, url: string, resume: string}  $data
-     */
-    protected function replaceSimplePlaceholders(string $xml, array $data): string
-    {
-        $placeholders = [
-            '{name}' => $data['name'],
-            '{title}' => $data['title'],
-            '{email}' => $data['email'],
-            '{phone}' => $data['phone'],
-            '{url}' => $data['url'],
-        ];
-
-        foreach ($placeholders as $placeholder => $value) {
-            $xml = str_replace($placeholder, htmlspecialchars($value, ENT_XML1, 'UTF-8'), $xml);
-
-            // Word sometimes splits placeholders into separate text runs (e.g. "{", "url", "}").
-            $xml = $this->replaceSplitPlaceholderRuns($xml, trim($placeholder, '{}'), $value);
-        }
-
-        return $xml;
-    }
-
-    protected function replaceSplitPlaceholderRuns(string $xml, string $placeholder, string $value): string
-    {
-        $dom = new DOMDocument;
-        if (! $dom->loadXML($xml)) {
-            return $xml;
-        }
-
-        $xpath = new DOMXPath($dom);
-        $xpath->registerNamespace('w', self::NAMESPACE_W);
-        $textNodes = $xpath->query('//w:t');
-
-        if ($textNodes === false || $textNodes->length === 0) {
-            return $xml;
-        }
-
-        $nodes = [];
-        foreach ($textNodes as $textNode) {
-            $nodes[] = $textNode;
-        }
-
-        $nodeCount = count($nodes);
-        for ($i = 0; $i < $nodeCount; $i++) {
-            if ($nodes[$i]->textContent !== '{') {
-                continue;
-            }
-
-            $token = '';
-            $endIndex = null;
-
-            for ($j = $i + 1; $j < min($i + 12, $nodeCount); $j++) {
-                $content = $nodes[$j]->textContent;
-                if ($content === '}') {
-                    $endIndex = $j;
-                    break;
-                }
-
-                $token .= $content;
-            }
-
-            if ($endIndex === null || $token !== $placeholder) {
-                continue;
-            }
-
-            $nodes[$i]->nodeValue = $value;
-            for ($k = $i + 1; $k <= $endIndex; $k++) {
-                $nodes[$k]->nodeValue = '';
-            }
-
-            $i = $endIndex;
-        }
-
-        return $dom->saveXML() ?: $xml;
-    }
-
-    /**
-     * Insert styled paragraphs.
-     * This function is mis-named.
-     */
-    protected function appendResumeContent(string $xml, string $resumeMarkdown): string
-    {
-        $dom = new DOMDocument;
-        $dom->preserveWhiteSpace = true;
-        $dom->formatOutput = false;
-        $dom->loadXML($xml);
-
-        $xpath = new DOMXPath($dom);
-        $xpath->registerNamespace('w', self::NAMESPACE_W);
-
-        $body = $xpath->query('//w:body')->item(0);
-
-        $openXmlFragment = $this->converter->convert($resumeMarkdown);
-
-        if ($openXmlFragment === '') {
-            return $dom->saveXML();
-        }
-
-        $sectPr = $xpath->query('//w:body/w:sectPr')->item(0);
-        $insertBefore = $sectPr ?? null;
-
-        $wrapperXml = '<?xml version="1.0" encoding="UTF-8"?>'
-            .'<w:body xmlns:w="'.self::NAMESPACE_W.'">'
-            .$openXmlFragment
-            .'</w:body>';
-
-        $fragmentDom = new DOMDocument;
-        $fragmentDom->loadXML($wrapperXml);
-
-        $paragraphs = $fragmentDom->getElementsByTagNameNS(self::NAMESPACE_W, 'p');
-        foreach ($paragraphs as $p) {
-            $imported = $dom->importNode($p, true);
-            if ($insertBefore) {
-                $body->insertBefore($imported, $insertBefore);
-            } else {
-                $body->appendChild($imported);
-            }
-        }
-
-        return $dom->saveXML();
-    }
-
-    /**
-     * Generate a PDF from the DOCX file for the given targeted resume.
+     * Generate a PDF for the given targeted resume, rendered from its stored
+     * `tailored_data` rather than by converting the DOCX.
      *
      * @return array{success: bool, path?: string, error?: string}
      */
     public function generatePdf(TargetedResume $targetedResume): array
     {
-        if (! $targetedResume->docxExists()) {
-            return [
-                'success' => false,
-                'error' => 'DOCX file not found. Generate DOCX first.',
-            ];
-        }
-
         $filename = $targetedResume->generateFilename();
         $pdfPath = $this->outputDir.'/'.$filename.'.pdf';
 
         try {
-            $command = sprintf(
-                'libreoffice --headless -env:UserInstallation=file:///tmp/libreoffice-user --convert-to pdf --outdir %s %s 2>&1',
-                escapeshellarg($this->outputDir),
-                escapeshellarg($targetedResume->docx_path)
-            );
+            $data = $this->buildTemplateData($targetedResume);
+            $resumeMarkdown = $data['resume'];
+            unset($data['resume']);
 
-            exec($command, $output, $exitCode);
+            $bodyHtml = $this->htmlConverter->convert($resumeMarkdown);
+            $html = $this->htmlComposer->compose($bodyHtml, $data);
 
-            if ($exitCode !== 0) {
-                Log::error('Targeted resume PDF conversion failed', [
-                    'command' => $command,
-                    'output' => implode("\n", $output),
-                    'exitCode' => $exitCode,
+            $result = $this->pdfRenderer->render($html, $pdfPath);
+
+            if (! $result['success']) {
+                Log::error('Targeted resume PDF generation failed', $result + [
                     'targeted_resume_id' => $targetedResume->id,
                 ]);
 
-                return [
-                    'success' => false,
-                    'error' => 'LibreOffice conversion failed: '.implode("\n", $output),
-                ];
-            }
-
-            if (! file_exists($pdfPath)) {
-                return [
-                    'success' => false,
-                    'error' => 'PDF file was not created.',
-                ];
+                return $result;
             }
 
             $targetedResume->pdf_path = $pdfPath;
             $targetedResume->save();
 
-            return [
-                'success' => true,
-                'path' => $pdfPath,
-                'size' => filesize($pdfPath),
-            ];
+            return $result;
         } catch (\Exception $e) {
             Log::error('Targeted resume PDF generation exception', [
                 'message' => $e->getMessage(),
@@ -288,6 +125,34 @@ class TargetedResumeDocumentService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Generate the DOCX only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensureDocx(TargetedResume $targetedResume): array
+    {
+        if ($this->isCurrentlyValid($targetedResume->docx_path)) {
+            return ['success' => true, 'path' => $targetedResume->docx_path, 'served_cached_document' => true];
+        }
+
+        return $this->generateDocx($targetedResume) + ['served_cached_document' => false];
+    }
+
+    /**
+     * Generate the PDF only if no currently-valid one exists.
+     *
+     * @return array{success: bool, path?: string, error?: string, served_cached_document: bool}
+     */
+    public function ensurePdf(TargetedResume $targetedResume): array
+    {
+        if ($this->isCurrentlyValid($targetedResume->pdf_path)) {
+            return ['success' => true, 'path' => $targetedResume->pdf_path, 'served_cached_document' => true];
+        }
+
+        return $this->generatePdf($targetedResume) + ['served_cached_document' => false];
     }
 
     /**

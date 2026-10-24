@@ -232,22 +232,49 @@ class ChatBotController extends Controller
      */
     private function startConversation(Request $request, AiChatBot $aiChatBot): BaseAiConversation
     {
-        if ($aiChatBot->require_visitor_identity && ! $request->user()) {
+        [$visitorName, $visitorEmail] = $this->visitorIdentity($request, $aiChatBot);
+
+        $conversation = $this->conversationService->startConversation(
+            persona: $aiChatBot,
+            user: $request->user(),
+            visitorName: $visitorName,
+            visitorEmail: $visitorEmail,
+        );
+
+        $this->sessions->remember($request, $aiChatBot, $conversation);
+
+        return $conversation;
+    }
+
+    /**
+     * The name and email a new conversation is attributed to.
+     *
+     * For a bot that requires identity, a signed-in user has already identified
+     * themselves: their account is authoritative and any submitted fields are
+     * ignored. The package refuses a blank value for such a bot even when a user
+     * is passed, so a blank account name falls back to the email. Guests must
+     * submit both.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function visitorIdentity(Request $request, AiChatBot $aiChatBot): array
+    {
+        $user = $request->user();
+
+        if ($aiChatBot->require_visitor_identity && $user) {
+            return [filled($user->name) ? $user->name : $user->email, $user->email];
+        }
+
+        if ($aiChatBot->require_visitor_identity) {
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'email', 'max:255'],
             ]);
         }
 
-        $conversation = $this->conversationService->startConversation(
-            persona: $aiChatBot,
-            user: $request->user(),
-            visitorName: $request->string('name')->toString() ?: null,
-            visitorEmail: $request->string('email')->toString() ?: null,
-        );
-
-        $this->sessions->remember($request, $aiChatBot, $conversation);
-
-        return $conversation;
+        return [
+            $request->string('name')->toString() ?: null,
+            $request->string('email')->toString() ?: null,
+        ];
     }
 }

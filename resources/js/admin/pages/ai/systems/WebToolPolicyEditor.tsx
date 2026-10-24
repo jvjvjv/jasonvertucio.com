@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
 import Switch from "@mui/material/Switch";
@@ -18,6 +19,8 @@ interface WebToolPolicyEditorProps {
     /** The `web_tool_policy` form field: a JSON string, or "" for unrestricted. */
     value: string;
     error?: string;
+    /** Domains whose header credentials are stored. The values are never sent. */
+    domainsWithHeaders?: { [domain: string]: boolean };
     onChange: (_value: string) => void;
 }
 
@@ -27,48 +30,29 @@ interface HeadersTextByDomain {
 
 interface ParsedPolicy {
     allowedDomains: string[];
-    headersTextByDomain: HeadersTextByDomain;
 }
 
-/** Renders one credential's header map back as "Name: value" lines. */
-function headersToText(headers: unknown): string {
-    if (typeof headers !== "object" || headers === null) return "";
-    return Object.entries(headers as { [key: string]: unknown })
-        .map(([name, val]) => `${name}: ${String(val)}`)
-        .join("\n");
-}
-
-/** Parses the incoming JSON string once, tolerating blank/invalid input. */
+/**
+ * Parses the incoming JSON string once, tolerating blank/invalid input. Stored
+ * header values are never in it: the editor starts every textarea empty, and an
+ * empty textarea means "keep what is stored".
+ */
 function parseInitial(value: string): ParsedPolicy {
     if (value.trim() === "") {
-        return { allowedDomains: [], headersTextByDomain: {} };
+        return { allowedDomains: [] };
     }
 
     try {
-        const decoded = JSON.parse(value) as {
-            allowed_domains?: unknown;
-            credentials?: unknown;
-        };
+        const decoded = JSON.parse(value) as { allowed_domains?: unknown };
         const allowedDomains = Array.isArray(decoded.allowed_domains)
             ? decoded.allowed_domains.filter(
                   (d): d is string => typeof d === "string",
               )
             : [];
-        const credentials =
-            typeof decoded.credentials === "object" &&
-            decoded.credentials !== null
-                ? (decoded.credentials as { [domain: string]: unknown })
-                : {};
-        const headersTextByDomain: HeadersTextByDomain = {};
-        allowedDomains.forEach((domain) => {
-            headersTextByDomain[domain] = headersToText(
-                credentials[domain] ?? {},
-            );
-        });
 
-        return { allowedDomains, headersTextByDomain };
+        return { allowedDomains };
     } catch {
-        return { allowedDomains: [], headersTextByDomain: {} };
+        return { allowedDomains: [] };
     }
 }
 
@@ -87,10 +71,15 @@ function parseHeadersText(text: string): { [name: string]: string } {
     return headers;
 }
 
-/** Serializes the editor's state back into the `web_tool_policy` JSON string. */
+/**
+ * Serializes the editor's state back into the `web_tool_policy` JSON string.
+ * Only headers typed this session are sent; `cleared_hosts` names domains whose
+ * stored headers should be removed.
+ */
 function buildValue(
     allowedDomains: string[],
     headersTextByDomain: HeadersTextByDomain,
+    clearedHosts: string[],
 ): string {
     if (allowedDomains.length === 0) return "";
 
@@ -102,18 +91,25 @@ function buildValue(
         }
     });
 
+    const cleared = clearedHosts.filter((domain) =>
+        allowedDomains.includes(domain),
+    );
+
     return JSON.stringify({
         allowed_domains: allowedDomains,
         ...(Object.keys(credentials).length > 0 ? { credentials } : {}),
+        ...(cleared.length > 0 ? { cleared_hosts: cleared } : {}),
     });
 }
 
 export default function WebToolPolicyEditor({
     value,
     error,
+    domainsWithHeaders = {},
     onChange,
 }: WebToolPolicyEditorProps) {
     const [initial] = useState(() => parseInitial(value));
+    const [clearedHosts, setClearedHosts] = useState<string[]>([]);
     const [unrestricted, setUnrestricted] = useState(
         () => initial.allowedDomains.length === 0,
     );
@@ -121,7 +117,7 @@ export default function WebToolPolicyEditor({
         initial.allowedDomains,
     );
     const [headersTextByDomain, setHeadersTextByDomain] =
-        useState<HeadersTextByDomain>(initial.headersTextByDomain);
+        useState<HeadersTextByDomain>({});
 
     const handleUnrestrictedToggle = (checked: boolean) => {
         setUnrestricted(checked);
@@ -129,9 +125,12 @@ export default function WebToolPolicyEditor({
         if (checked) {
             setAllowedDomains([]);
             setHeadersTextByDomain({});
+            setClearedHosts([]);
             onChange("");
         } else {
-            onChange(buildValue(allowedDomains, headersTextByDomain));
+            onChange(
+                buildValue(allowedDomains, headersTextByDomain, clearedHosts),
+            );
         }
     };
 
@@ -142,15 +141,37 @@ export default function WebToolPolicyEditor({
             nextHeaders[domain] = headersTextByDomain[domain] ?? "";
         });
 
+        const nextCleared = clearedHosts.filter((domain) =>
+            domains.includes(domain),
+        );
+
         setAllowedDomains(domains);
         setHeadersTextByDomain(nextHeaders);
-        onChange(buildValue(domains, nextHeaders));
+        setClearedHosts(nextCleared);
+        onChange(buildValue(domains, nextHeaders, nextCleared));
     };
 
     const handleHeaderTextChange = (domain: string, text: string) => {
         const nextHeaders = { ...headersTextByDomain, [domain]: text };
+        const nextCleared =
+            text === ""
+                ? clearedHosts
+                : clearedHosts.filter((host) => host !== domain);
+
         setHeadersTextByDomain(nextHeaders);
-        onChange(buildValue(allowedDomains, nextHeaders));
+        setClearedHosts(nextCleared);
+        onChange(buildValue(allowedDomains, nextHeaders, nextCleared));
+    };
+
+    const handleToggleCleared = (domain: string) => {
+        const nextCleared = clearedHosts.includes(domain)
+            ? clearedHosts.filter((host) => host !== domain)
+            : [...clearedHosts, domain];
+        const nextHeaders = { ...headersTextByDomain, [domain]: "" };
+
+        setClearedHosts(nextCleared);
+        setHeadersTextByDomain(nextHeaders);
+        onChange(buildValue(allowedDomains, nextHeaders, nextCleared));
     };
 
     return (
@@ -229,7 +250,23 @@ export default function WebToolPolicyEditor({
                                                     fullWidth
                                                     multiline
                                                     minRows={2}
-                                                    placeholder="Authorization: Bearer ..."
+                                                    disabled={clearedHosts.includes(
+                                                        domain,
+                                                    )}
+                                                    placeholder={
+                                                        domainsWithHeaders[
+                                                            domain
+                                                        ]
+                                                            ? "Headers set — leave blank to keep, or enter new headers to replace"
+                                                            : "Authorization: Bearer ..."
+                                                    }
+                                                    helperText={
+                                                        clearedHosts.includes(
+                                                            domain,
+                                                        )
+                                                            ? "Stored headers will be removed when you save."
+                                                            : undefined
+                                                    }
                                                     value={
                                                         headersTextByDomain[
                                                             domain
@@ -250,6 +287,30 @@ export default function WebToolPolicyEditor({
                                                         },
                                                     }}
                                                 />
+                                                {domainsWithHeaders[domain] && (
+                                                    <Button
+                                                        size="small"
+                                                        color={
+                                                            clearedHosts.includes(
+                                                                domain,
+                                                            )
+                                                                ? "inherit"
+                                                                : "error"
+                                                        }
+                                                        onClick={() => {
+                                                            handleToggleCleared(
+                                                                domain,
+                                                            );
+                                                        }}
+                                                        sx={{ mt: 0.5 }}
+                                                    >
+                                                        {clearedHosts.includes(
+                                                            domain,
+                                                        )
+                                                            ? "Keep stored headers"
+                                                            : "Remove headers"}
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}

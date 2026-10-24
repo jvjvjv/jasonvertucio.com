@@ -7,6 +7,12 @@ use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Services\DatabaseResumeDataService;
 use App\Services\DatabaseResumeVersionService;
+use App\Services\Resume\DocumentRenderer;
+use App\Services\Resume\HtmlDocumentComposer;
+use App\Services\Resume\MarkdownToHtmlConverter;
+use App\Services\Resume\MarkdownToOpenXmlConverter;
+use App\Services\Resume\PdfRenderer;
+use App\Services\Resume\ResumeMarkdownComposer;
 use App\Services\Resume\ResumeSectionValidator;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -25,7 +31,7 @@ class ResumeEditCandidateServiceTest extends TestCase
         parent::setUp();
 
         $dataService = new DatabaseResumeDataService;
-        $versionService = new DatabaseResumeVersionService($dataService);
+        $versionService = new DatabaseResumeVersionService($dataService, new DocumentRenderer, new ResumeMarkdownComposer, new MarkdownToOpenXmlConverter, new MarkdownToHtmlConverter, new HtmlDocumentComposer, new PdfRenderer);
 
         $this->service = new ResumeEditCandidateService($dataService, $versionService, new ResumeSectionValidator);
     }
@@ -152,6 +158,36 @@ class ResumeEditCandidateServiceTest extends TestCase
         $this->assertFalse($base->fresh()->is_current);
         $this->assertTrue($newLive->is_current);
         $this->assertSame('New Name', $newLive->personalInfo->name);
+    }
+
+    public function test_approve_invalidates_documents_on_the_new_live_version_instead_of_regenerating(): void
+    {
+        $base = $this->liveVersion();
+        $approver = User::factory()->create();
+        $version = $this->service->suggestedNextVersion($base);
+
+        $docxPath = tempnam(sys_get_temp_dir(), 'docx-').'.docx';
+        $pdfPath = tempnam(sys_get_temp_dir(), 'pdf-').'.pdf';
+        file_put_contents($docxPath, 'stale');
+        file_put_contents($pdfPath, 'stale');
+        ResumeVersion::factory()->create([
+            'version' => $version,
+            'docx_path' => $docxPath,
+            'pdf_path' => $pdfPath,
+        ]);
+
+        $candidate = $this->service->resolveOrCreateCandidateForEdit($base, null);
+        $this->service->applySectionEdit($candidate, 'personal', ['name' => 'New Name', 'title' => 'Engineer', 'email' => 'jason@example.com']);
+
+        $result = $this->service->approve($candidate, $approver->id, $version);
+
+        $this->assertSame(['success' => true], $result);
+        $this->assertFileDoesNotExist($docxPath);
+        $this->assertFileDoesNotExist($pdfPath);
+
+        $newLive = ResumeVersion::current()->first();
+        $this->assertNull($newLive->docx_path);
+        $this->assertNull($newLive->pdf_path);
     }
 
     public function test_only_a_pending_candidate_can_be_approved(): void

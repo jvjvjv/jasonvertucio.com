@@ -2,11 +2,15 @@
 
 namespace App\Services\Mcp\Tools\TargetedResume;
 
-use App\Enums\TargetedResumeApplicationStatus;
-use App\Enums\TargetedResumeStatus;
-use App\Models\TargetedResumeStatusUpdate;
+use App\Enums\ApplicationStatus;
+use App\Exceptions\ApplicationException;
+use App\Exceptions\TerminalApplicationException;
+use App\Services\ApplicationService;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
+use Illuminate\Support\Carbon;
+use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
@@ -23,6 +27,13 @@ use Laravel\Mcp\Server\Attributes\Name;
 )]
 class UpdateStatusTool extends AuthorizedResumeTool
 {
+    public function __construct(
+        ToolContext $context,
+        private ApplicationService $applicationService,
+    ) {
+        parent::__construct($context);
+    }
+
     /**
      * @return array<string, Type>
      */
@@ -30,7 +41,7 @@ class UpdateStatusTool extends AuthorizedResumeTool
     {
         return [
             'status' => $schema->string()
-                ->enum(array_column(TargetedResumeApplicationStatus::cases(), 'value'))
+                ->enum(array_column(ApplicationStatus::pipeline(), 'value'))
                 ->description('The new application status.')
                 ->required(),
             'occurred_at' => $schema->string()
@@ -46,42 +57,38 @@ class UpdateStatusTool extends AuthorizedResumeTool
             return $response;
         }
 
-        $targetedResume = $this->context->conversation?->targetedResume;
+        $application = $this->application();
 
-        if ($targetedResume === null) {
-            return Response::error('No finalized resume found for this conversation. Save the tailored resume first.');
+        if ($application === null) {
+            return Response::error('No application found for this conversation.');
         }
 
-        $newStatus = TargetedResumeApplicationStatus::tryFrom((string) ($request->get('status') ?? ''));
+        $newStatus = ApplicationStatus::tryFrom((string) ($request->get('status') ?? ''));
 
-        if ($newStatus === null) {
+        if ($newStatus === null || ! $newStatus->isPipeline()) {
             return Response::error('Invalid status value.');
         }
 
-        $currentStatus = TargetedResumeApplicationStatus::tryFrom($targetedResume->status->value);
-
-        if ($currentStatus?->isTerminal()) {
-            return Response::error(
-                'Cannot update status — application is already in a terminal state ('.$targetedResume->status->value.').'
-            );
+        try {
+            $occurredAt = $this->resolveOccurredAt($request->get('occurred_at'));
+        } catch (\Throwable) {
+            return Response::error('occurred_at must be a valid date (YYYY-MM-DD).');
         }
 
-        $occurredAtInput = $request->get('occurred_at');
-
-        $occurredAt = isset($occurredAtInput) && $occurredAtInput !== ''
-            ? $occurredAtInput
-            ? stripos($occurredAtInput, ' ') || stripos($occurredAtInput, 'T')
-            : now()->parse($occurredAtInput.' 12:00:00')
-            : now();
-
-        TargetedResumeStatusUpdate::create([
-            'targeted_resume_id' => $targetedResume->id,
-            'status' => $newStatus->value,
-            'notes' => $request->get('notes'),
-            'occurred_at' => $occurredAt,
-        ]);
-
-        $targetedResume->update(['status' => TargetedResumeStatus::from($newStatus->value)]);
+        try {
+            $this->applicationService->addStatusUpdate(
+                $application,
+                $newStatus,
+                $request->get('notes') !== null ? (string) $request->get('notes') : null,
+                $occurredAt,
+            );
+        } catch (TerminalApplicationException) {
+            return Response::error(
+                'Cannot update status — application is already in a terminal state ('.$application->status->value.').'
+            );
+        } catch (ApplicationException $exception) {
+            return Response::error($exception->getMessage());
+        }
 
         return Response::structured([
             'success' => true,
@@ -89,5 +96,23 @@ class UpdateStatusTool extends AuthorizedResumeTool
             'occurred_at' => $occurredAt->toDateString(),
             '_page_reload' => true,
         ]);
+    }
+
+    /**
+     * A bare date is pinned to midday so it does not drift to the previous
+     * day when shown in another timezone; a value that already carries a
+     * time is taken as given.
+     */
+    private function resolveOccurredAt(mixed $input): CarbonInterface
+    {
+        $input = is_string($input) ? trim($input) : '';
+
+        if ($input === '') {
+            return now();
+        }
+
+        $hasTime = str_contains($input, ' ') || stripos($input, 'T') !== false;
+
+        return Carbon::parse($hasTime ? $input : $input.' 12:00:00');
     }
 }

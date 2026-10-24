@@ -12,9 +12,7 @@ class CurrentlyWatching extends Component
 
     public function __construct()
     {
-        $this->media = LocalMedia::whereNotNull('last_playback_at')
-            ->orderBy('last_playback_at', 'desc')
-            ->first();
+        $this->media = LocalMedia::currentlyWatching();
     }
 
     public function title()
@@ -63,11 +61,20 @@ class CurrentlyWatching extends Component
             return $subtitle;
         }
 
-        if (in_array($this->media->media_type, ['Album', 'Song', 'Audio']) && $this->media->album_name) {
-            return "From the Album <em>{$this->media->album_name}</em>";
+        return null;
+    }
+
+    /**
+     * The album of a music item, as plain text. The template wraps it in
+     * emphasis so no media-supplied value is ever interpolated into markup.
+     */
+    public function albumName(): ?string
+    {
+        if (! $this->media || ! $this->media->album_name) {
+            return null;
         }
 
-        return null;
+        return in_array($this->media->media_type, ['Album', 'Song', 'Audio']) ? $this->media->album_name : null;
     }
 
     public function playbackTime()

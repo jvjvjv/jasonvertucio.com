@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\CanvasViewer;
 use App\View\Components\TechSkill;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -35,9 +36,7 @@ class BladeServiceProvider extends ServiceProvider
         });
 
         Blade::if('ifcanvasauthenticated', function () {
-            $auth = Auth::guard('canvas');
-
-            return $auth->check();
+            return CanvasViewer::isAuthor();
         });
 
         Blade::if('ifauthenticated', function () {

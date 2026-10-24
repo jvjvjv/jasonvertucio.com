@@ -3,6 +3,7 @@
 namespace App\View\Components;
 
 use App\Models\Comment;
+use App\Models\User;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -17,7 +18,26 @@ class CommentNode extends Component
         public Comment $comment,
         public Collection $children,
         public string $slug,
+        public ?User $viewer = null,
+        public bool $viewerIsAdmin = false,
+        public bool $canModerate = false,
     ) {
+    }
+
+    /**
+     * Whether the viewer may edit and delete this comment.
+     */
+    public function canManage(): bool
+    {
+        return $this->comment->isManageableBy($this->viewer, $this->viewerIsAdmin);
+    }
+
+    /**
+     * Whether a rejected edit is being returned to this comment's edit form.
+     */
+    public function isEditTarget(): bool
+    {
+        return (string) old('editing') === (string) $this->comment->id;
     }
 
     /**

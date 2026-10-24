@@ -128,13 +128,24 @@ export default function Index({ comments }: IndexProps) {
         });
     };
 
+    const deleteComment = (id: number) => {
+        confirm(
+            "Delete this comment? Replies to it stay in place. This cannot be undone.",
+            () => {
+                router.delete(`/admin/comments/${id}`, {
+                    preserveScroll: true,
+                });
+            },
+        );
+    };
+
     return (
         <AdminLayout>
             <Head title="Comments" />
             <PageHeader
                 title="Comments"
-                backHref="/admin"
-                backLabel="Back to Admin"
+                backHref="/admin/blog"
+                backLabel="Back to Blog"
             />
 
             <DataTable
@@ -173,6 +184,15 @@ export default function Index({ comments }: IndexProps) {
                                 Mark spam
                             </Button>
                         )}
+                        <Button
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                                deleteComment(comment.id);
+                            }}
+                        >
+                            Delete
+                        </Button>
                     </Box>
                 )}
             />

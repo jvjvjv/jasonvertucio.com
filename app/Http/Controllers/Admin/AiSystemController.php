@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAiSystemRequest;
 use App\Http\Requests\UpdateAiSystemRequest;
+use App\Services\AiSystemPresenter;
+use App\Services\AiSystemSecretMerger;
+use App\Services\ChatBot\McpServerCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +29,9 @@ class AiSystemController extends Controller
         private AiSystemCapabilityService $aiSystemCapabilityService,
         private AiModelReadinessService $aiModelReadinessService,
         private ProviderModelsClient $providerModelsClient,
+        private McpServerCatalog $mcpServers,
+        private AiSystemPresenter $presenter,
+        private AiSystemSecretMerger $secrets,
     ) {}
 
     /**
@@ -43,7 +49,7 @@ class AiSystemController extends Controller
         });
 
         return Inertia::render('ai/systems/Index', [
-            'systems' => $systems,
+            'systems' => $systems->map(fn (AiSystem $system) => $this->presenter->present($system))->values(),
         ]);
     }
 
@@ -57,6 +63,7 @@ class AiSystemController extends Controller
         return Inertia::render('ai/systems/Create', [
             'existingDefaults' => $existingDefaults,
             'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
+            'mcpServers' => $this->mcpServers->forToolPicker(),
         ]);
     }
 
@@ -99,10 +106,11 @@ class AiSystemController extends Controller
             ->toArray();
 
         return Inertia::render('ai/systems/Edit', [
-            'aiSystem' => $aiSystem,
+            'aiSystem' => $this->presenter->present($aiSystem),
             'existingDefaults' => $existingDefaults,
             'systemPrompts' => AiSystemPrompt::ordered()->get(['id', 'title', 'description', 'content']),
             'pendingFirstEdit' => $aiSystem->duplicated_at !== null,
+            'mcpServers' => $this->mcpServers->forToolPicker(),
         ]);
     }
 
@@ -125,6 +133,7 @@ class AiSystemController extends Controller
         // UI, slated for removal) but stays in this list so an existing
         // value round-trips untouched rather than silently being dropped.
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
+        $this->applySecretWrites($aiSystem, $data);
 
         if (! $isPendingFirstEdit) {
             $data['provider'] = $aiSystem->provider;
@@ -196,7 +205,7 @@ class AiSystemController extends Controller
         });
 
         return Inertia::render('ai/systems/Logs', [
-            'aiSystem' => $aiSystem,
+            'aiSystem' => $this->presenter->present($aiSystem),
             'logs' => $logs,
         ]);
     }
@@ -210,20 +219,29 @@ class AiSystemController extends Controller
             'provider' => ['required', 'string', Rule::in(AiProvider::values())],
             'api_key' => ['nullable', 'string'],
             'base_url' => ['nullable', 'string', 'url', 'max:255'],
+            'ai_system_id' => ['nullable', 'integer', Rule::exists('ai_systems', 'id')->whereNull('deleted_at')],
         ]);
 
         try {
             $provider = AiProvider::from($request->string('provider')->toString());
+            $apiKey = $request->input('api_key') !== null ? (string) $request->input('api_key') : null;
+            $baseUrl = $request->string('base_url')->toString() ?: null;
 
-            if ($provider->requiresApiKey() && blank($request->input('api_key'))) {
+            if (blank($apiKey) && $request->filled('ai_system_id')) {
+                $stored = $this->storedKeyFor($request, $provider, $baseUrl);
+
+                if ($stored instanceof JsonResponse) {
+                    return $stored;
+                }
+
+                $apiKey = $stored;
+            }
+
+            if ($provider->requiresApiKey() && blank($apiKey)) {
                 return response()->json(['models' => [], 'error' => 'API key is required for this provider.'], 422);
             }
 
-            $models = $this->providerModelsClient->listModels(
-                $provider,
-                $request->input('api_key') !== null ? (string) $request->input('api_key') : null,
-                $request->string('base_url')->toString() ?: null,
-            );
+            $models = $this->providerModelsClient->listModels($provider, $apiKey, $baseUrl);
 
             $formatted = collect($models)->map(fn (array $m) => [
                 'id' => $m['id'],
@@ -250,6 +268,42 @@ class AiSystemController extends Controller
         } catch (\Exception $e) {
             return response()->json(['models' => [], 'error' => 'Failed to fetch models: '.$e->getMessage()], 422);
         }
+    }
+
+    /**
+     * The stored key of the system a model lookup names, or a 422 when using it
+     * would send it somewhere other than where it was configured for.
+     *
+     * Without this check, a lookup naming a system plus a different provider or
+     * base URL would deliver the stored key to an address the caller chose.
+     */
+    private function storedKeyFor(Request $request, AiProvider $provider, ?string $baseUrl): string|JsonResponse
+    {
+        $system = AiSystem::query()->findOrFail($request->integer('ai_system_id'));
+
+        $sameEndpoint = $system->provider === $provider->value
+            && $this->sameBaseUrl($baseUrl, $system->base_url);
+
+        if (! $sameEndpoint) {
+            return response()->json([
+                'models' => [],
+                'error' => 'The provider or base URL differs from the saved system. Enter the API key to use it.',
+            ], 422);
+        }
+
+        return (string) $system->api_key;
+    }
+
+    /**
+     * Whether two base URLs name the same endpoint. An absent URL means the
+     * provider default, so it only matches another absent URL — never a custom
+     * one, or the stored key would be sent to the default provider instead.
+     */
+    private function sameBaseUrl(?string $requested, ?string $stored): bool
+    {
+        $normalize = static fn (?string $url): string => rtrim(strtolower(trim((string) $url)), '/');
+
+        return $normalize($requested) === $normalize($stored);
     }
 
     /**
@@ -327,6 +381,33 @@ class AiSystemController extends Controller
                 'ai_system_id' => $system->id,
                 'feature' => $feature,
             ]);
+        }
+    }
+
+    /**
+     * Stored secrets are never sent to the browser, so the form cannot resend
+     * them: an empty secret field keeps the stored value, a value replaces it,
+     * and the `clear_*` flags remove it.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function applySecretWrites(AiSystem $system, array &$data): void
+    {
+        $clearApiKey = (bool) ($data['clear_api_key'] ?? false);
+        $clearCredentials = (bool) ($data['clear_credentials'] ?? false);
+        unset($data['clear_api_key'], $data['clear_credentials']);
+
+        $data['api_key'] = $this->secrets->apiKey((string) $system->api_key, $data['api_key'] ?? null, $clearApiKey);
+        $data['credentials'] = $this->secrets->credentials($system->credentials, $data['credentials'] ?? null, $clearCredentials);
+
+        // An omitted policy leaves the stored one alone; a submitted empty one
+        // means "unrestricted" and clears it.
+        if (array_key_exists('web_tool_policy', $data)) {
+            $policy = $data['web_tool_policy'];
+            $data['web_tool_policy'] = $this->secrets->webToolPolicy(
+                $system->web_tool_policy,
+                is_array($policy) ? $policy : null,
+            );
         }
     }
 

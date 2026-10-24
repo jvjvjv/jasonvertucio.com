@@ -7,7 +7,7 @@ import CardContent from "@mui/material/CardContent";
 import AiSystemForm from "./Form";
 
 import type { FormData } from "./Form";
-import type { AiSystemPrompt } from "@/types";
+import type { AiSystemPrompt, McpServerCatalogEntry } from "@/types";
 import type { SyntheticEvent } from "react";
 
 import AvailableMcpTools from "@/admin/components/AvailableMcpTools";
@@ -17,16 +17,19 @@ import AdminLayout from "@/admin/layouts/AdminLayout";
 interface CreateProps {
     existingDefaults: string[];
     systemPrompts: AiSystemPrompt[];
+    mcpServers: McpServerCatalogEntry[];
 }
 
 export default function Create({
     existingDefaults,
     systemPrompts,
+    mcpServers,
 }: CreateProps) {
     const form = useForm<FormData>({
         name: "",
         provider: "anthropic",
         api_key: "",
+        clear_api_key: false,
         model: "",
         model_capabilities: null,
         base_url: "",
@@ -38,6 +41,7 @@ export default function Create({
         custom_system_prompt: "",
         config: "",
         credentials: "",
+        clear_credentials: false,
         auth_type: "",
         endpoint_type: "",
         stream_protocol: "",
@@ -121,7 +125,8 @@ export default function Create({
 
                         form.setData("allowed_tools", nextTools);
                     }}
-                    description="Select the MCP tools this system may expose. If none are selected, personas on this system cannot use MCP tools."
+                    mcpServers={mcpServers}
+                    description="Select the tools this system may expose — built-in tools and tools from connected MCP servers alike. If none are selected, personas on this system cannot use tools."
                 />
             </Box>
         </AdminLayout>

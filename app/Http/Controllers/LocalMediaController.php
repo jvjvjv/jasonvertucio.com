@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MediaPlaybackMilestoneReached;
 use App\Models\LocalMedia;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Log;
 
@@ -49,9 +51,7 @@ class LocalMediaController extends Controller
 
     public function currentlyWatching()
     {
-        $media = LocalMedia::whereNotNull('last_playback_at')
-            ->orderBy('last_playback_at', 'desc')
-            ->first();
+        $media = LocalMedia::currentlyWatching();
 
         if (! $media) {
             return response()->json(null);
@@ -145,32 +145,69 @@ class LocalMediaController extends Controller
             $providerIds['tmdb'] = $data['Provider_tmdb'];
         }
 
+        $notificationType = $data['NotificationType'] ?? 'UnknownEventType';
+
+        $attributes = [
+            'jellyfin_user_id' => $data['UserId'] ?? null,
+            'event_type' => $notificationType,
+            'media_type' => $data['ItemType'] ?? null,
+            'title' => $data['Name'] ?? 'Unknown',
+            'series_name' => $data['SeriesName'] ?? null,
+            'artist_name' => $data['Artist'] ?? $data['AlbumArtist'] ?? null,
+            'album_name' => $data['Album'] ?? null,
+            'season_number' => $data['SeasonNumber'] ?? null,
+            'episode_number' => $data['EpisodeNumber'] ?? null,
+            'year' => $data['Year'] ?? null,
+            'provider_ids' => ! empty($providerIds) ? $providerIds : null,
+            'playback_position' => $data['PlaybackPositionTicks'] ?? 0,
+            'playback_duration' => $data['RunTimeTicks'] ?? null,
+            'is_paused' => $data['IsPaused'] ?? false,
+            'last_playback_at' => now(),
+            'webhook_data' => $data,
+        ];
+
+        // A new session begins on PlaybackStart, so a prior session's milestone
+        // must not suppress this session's milestone.
+        if ($notificationType === 'PlaybackStart') {
+            $attributes['milestone_reached_at'] = null;
+        }
+
         $media = LocalMedia::updateOrCreate(
             ['jellyfin_item_id' => $data['ItemId']],
-            [
-                'jellyfin_user_id' => $data['UserId'] ?? null,
-                'event_type' => $data['NotificationType'] ?? 'UnknownEventType',
-                'media_type' => $data['ItemType'] ?? null,
-                'title' => $data['Name'] ?? 'Unknown',
-                'series_name' => $data['SeriesName'] ?? null,
-                'artist_name' => $data['Artist'] ?? $data['AlbumArtist'] ?? null,
-                'album_name' => $data['Album'] ?? null,
-                'season_number' => $data['SeasonNumber'] ?? null,
-                'episode_number' => $data['EpisodeNumber'] ?? null,
-                'year' => $data['Year'] ?? null,
-                'provider_ids' => ! empty($providerIds) ? $providerIds : null,
-                'playback_position' => $data['PlaybackPositionTicks'] ?? 0,
-                'playback_duration' => $data['RunTimeTicks'] ?? null,
-                'is_paused' => $data['IsPaused'] ?? false,
-                'last_playback_at' => now(),
-                'webhook_data' => $data,
-            ]
+            $attributes
         );
 
         // Only increment play count on PlaybackStart, not Progress
-        if (($data['NotificationType'] ?? '') === 'PlaybackStart') {
+        if ($notificationType === 'PlaybackStart') {
             $media->increment('play_count');
         }
+
+        $this->dispatchMilestoneIfReached($media, $data);
+    }
+
+    protected function dispatchMilestoneIfReached(LocalMedia $media, array $data): void
+    {
+        $playbackPositionTicks = (int) ($data['PlaybackPositionTicks'] ?? 0);
+        $playbackDurationTicks = (int) ($data['RunTimeTicks'] ?? 0);
+
+        if ($playbackDurationTicks <= 0) {
+            return;
+        }
+
+        if (($playbackPositionTicks / $playbackDurationTicks) < 0.90) {
+            return;
+        }
+
+        if ($media->milestone_reached_at !== null) {
+            return;
+        }
+
+        $reachedAt = CarbonImmutable::now();
+
+        $media->milestone_reached_at = $reachedAt;
+        $media->save();
+
+        MediaPlaybackMilestoneReached::dispatch($media, $playbackPositionTicks, $playbackDurationTicks, $reachedAt);
     }
 
     protected function handlePlaybackStop($data)

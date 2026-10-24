@@ -27,9 +27,13 @@
         <ul class="flex flex-col items-center gap-y-2">
             @foreach ($links as $link)
                 @if (!empty($link["can"]))
-                    @can($link["can"])
+                    @if ($link["can"] === "authenticated" ? auth()->check() : Gate::allows($link["can"]))
                         <li>
-                            @if (isset($link["target"]))
+                            @if (($link["method"] ?? null) === "post")
+                                <x-logout-button :label="$link['label']"
+                                                 class="block cursor-pointer rounded-md px-4 py-1 font-bold uppercase tracking-wider text-white transition-all hover:text-white hover:underline"
+                                                 title="{{ $link_label($link) }}" />
+                            @elseif (isset($link["target"]))
                                 <a class="block rounded-md px-4 py-2 font-bold uppercase tracking-wider text-white transition-all hover:text-white hover:underline"
                                    href="{{ $link["href"] }}"
                                    target="{{ $link["target"] }}"
@@ -42,7 +46,7 @@
                                    title="{{ $link_label($link) }}">{{ $link["label"] }}</a>
                             @endif
                         </li>
-                    @endcan
+                    @endif
                 @else
                     <li>
                         @if (isset($link["href"]))
