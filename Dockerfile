@@ -8,7 +8,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 ARG PHP_VERSION=8.4
-ARG ALPINE_VERSION=3.21
+ARG ALPINE_VERSION=3.23
 
 # ── base ────────────────────────────────────────────────────────────────────
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
