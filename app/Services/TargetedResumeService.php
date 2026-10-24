@@ -46,6 +46,8 @@ class TargetedResumeService
 
     public const int PROMPT_ID_COVER_LETTER = 5;
 
+    public const string ALREADY_APPLIED_MESSAGE = 'I have already applied to this. Please provide a fit score, but there is no need for a targeted resume or cover letter.';
+
     public function __construct(
         private AgentFactory $agentFactory,
         private ResumeDataServiceContract $resumeDataService,
@@ -115,6 +117,7 @@ class TargetedResumeService
                 $jobTitle,
                 $application->location,
                 $application->knownCompanyName(),
+                $application->status->isPipeline(),
             ),
         ]);
 
@@ -1114,9 +1117,15 @@ PROMPT;
     /**
      * Build the initial user message that starts analysis with the job description.
      */
-    private function buildInitialAnalysisMessage(string $jobDescription, ?string $jobTitle, ?string $jobLocation, ?string $companyName): string
+    /**
+     * The session's first message. An application already applied to only
+     * needs a fit score: its resume and cover letter have been sent.
+     */
+    private function buildInitialAnalysisMessage(string $jobDescription, ?string $jobTitle, ?string $jobLocation, ?string $companyName, bool $alreadyApplied = false): string
     {
-        $message = "Please begin the analysis on the following job description\n\n";
+        $message = $alreadyApplied
+            ? self::ALREADY_APPLIED_MESSAGE."\n\n"
+            : "Please begin the analysis on the following job description\n\n";
 
         if ($jobTitle) {
             $message .= "Job Title: {$jobTitle}\n\n";

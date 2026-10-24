@@ -90,6 +90,7 @@
             text-decoration: underline;
         }
     </style>
+    @yield('styles')
 </head>
 
 <body>
@@ -99,11 +100,15 @@
     </header>
 
     <main>
-        <div class="error-body">
-            <h2>@yield('status')</h2>
-            <div class="divider"></div>
-            <p>@yield('message')</p>
-        </div>
+        @hasSection('content')
+            @yield('content')
+        @else
+            <div class="error-body">
+                <h2>@yield('status')</h2>
+                <div class="divider"></div>
+                <p>@yield('message')</p>
+            </div>
+        @endif
     </main>
 
     <footer>

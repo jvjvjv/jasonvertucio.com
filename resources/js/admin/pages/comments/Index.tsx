@@ -144,8 +144,8 @@ export default function Index({ comments }: IndexProps) {
             <Head title="Comments" />
             <PageHeader
                 title="Comments"
-                backHref="/admin"
-                backLabel="Back to Admin"
+                backHref="/admin/blog"
+                backLabel="Back to Blog"
             />
 
             <DataTable

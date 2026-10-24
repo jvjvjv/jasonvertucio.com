@@ -281,6 +281,16 @@ export interface ApplicationListItem {
     latest_status_update: { status: string; occurred_at: string } | null;
     /** Already humanised by the server ("3 days ago"). */
     last_activity_at: string | null;
+    /**
+     * The application's own intel (`scope: "role"`), or else another
+     * application's intel at the same company (`scope: "company"`).
+     */
+    intel: {
+        id: number;
+        status: string;
+        scope: "role" | "company";
+        company_name: string | null;
+    } | null;
 }
 
 /** The AI session attached to an application, when it has one. */

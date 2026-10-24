@@ -28,8 +28,8 @@ export default function ResumeHub({ navBlocks }: ResumeHubProps) {
             <Head title="Resume Management" />
             <PageHeader
                 title="Resume Management"
-                backHref="/admin"
-                backLabel="Back to Admin"
+                backHref="/admin/employment"
+                backLabel="Back to Employment"
             />
             <NavGrid blocks={blocks} />
         </AdminLayout>

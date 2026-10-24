@@ -68,7 +68,9 @@ class AdminNavigationService
     }
 
     /**
-     * Return AppBar navigation entries (with filtered children) for the given user.
+     * Return AppBar navigation entries (with filtered children) for the given
+     * user. Entries flagged `"appBar": false` are hubs reached from another
+     * area, and are left out.
      *
      * @return array<int, array{href: string, label: string, external: bool, children: array<int, array{href: string, label: string, external: bool}>}>
      */
@@ -78,7 +80,7 @@ class AdminNavigationService
 
         $entries = array_filter(
             $config['navigation'],
-            fn (array $entry) => $this->canAccess($entry, $user)
+            fn (array $entry) => ($entry['appBar'] ?? true) && $this->canAccess($entry, $user)
         );
 
         return array_values(array_map(

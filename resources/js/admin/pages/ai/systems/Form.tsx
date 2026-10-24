@@ -96,7 +96,7 @@ interface AiSystemFormProps {
     domainsWithHeaders?: { [domain: string]: boolean };
 }
 
-const ALL_FEATURES = ["targeted-resume", "cover-letter"];
+const ALL_FEATURES = ["targeted-resume", "cover-letter", "company-intel"];
 const PROVIDERS = [
     { value: "anthropic", label: "Anthropic" },
     { value: "openai", label: "OpenAI" },
@@ -363,14 +363,17 @@ export default function AiSystemForm({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [toolsUnsupported]);
 
-    // Prompt id locked by feature defaults: targeted-resume locks to 4, cover-letter locks to 5
+    // Prompt id locked by feature defaults: targeted-resume locks to 4,
+    // cover-letter to 5, company-intel to 6
     const featureLockedPromptId: number | null = data.feature_defaults.includes(
         "targeted-resume",
     )
         ? 4
         : data.feature_defaults.includes("cover-letter")
           ? 5
-          : null;
+          : data.feature_defaults.includes("company-intel")
+            ? 6
+            : null;
     const isPromptLocked = featureLockedPromptId !== null;
     const effectivePromptId = isPromptLocked
         ? featureLockedPromptId

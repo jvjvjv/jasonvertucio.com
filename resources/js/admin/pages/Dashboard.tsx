@@ -23,7 +23,7 @@ export default function Dashboard({ navBlocks }: DashboardProps) {
     }));
 
     return (
-        <AdminLayout title="Admin Dashboard">
+        <AdminLayout title="Admin Dashboard" maxContainerWidth={"lg"}>
             <Head title="Admin Dashboard" />
             <NavGrid blocks={blocks} />
         </AdminLayout>

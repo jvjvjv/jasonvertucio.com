@@ -1,4 +1,5 @@
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import ArticleIcon from "@mui/icons-material/Article";
 import CodeIcon from "@mui/icons-material/Code";
 import DescriptionIcon from "@mui/icons-material/Description";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
@@ -14,13 +15,16 @@ import PushPinIcon from "@mui/icons-material/PushPin";
 import RuleIcon from "@mui/icons-material/Rule";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import WorkHistoryIcon from "@mui/icons-material/WorkHistory";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 
 import type { ReactNode } from "react";
 
 const registry: { [key: string]: ReactNode } = {
     AdminPanelSettings: <AdminPanelSettingsIcon fontSize="large" />,
+    Article: <ArticleIcon fontSize="large" />,
     Code: <CodeIcon fontSize="large" />,
     Description: <DescriptionIcon fontSize="large" />,
     DriveFileRenameOutline: <DriveFileRenameOutlineIcon fontSize="large" />,
@@ -36,7 +40,9 @@ const registry: { [key: string]: ReactNode } = {
     Rule: <RuleIcon fontSize="large" />,
     SmartToy: <SmartToyIcon fontSize="large" />,
     TrackChanges: <TrackChangesIcon fontSize="large" />,
+    TravelExplore: <TravelExploreIcon fontSize="large" />,
     Visibility: <VisibilityIcon fontSize="large" />,
+    WorkHistory: <WorkHistoryIcon fontSize="large" />,
     WorkOutline: <WorkOutlineIcon fontSize="large" />,
 };
 

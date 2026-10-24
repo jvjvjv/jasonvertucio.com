@@ -15,6 +15,9 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRe
     ->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
 
+        // Employment hub (applications, metrics, resumes, cover letters, company intel)
+        Route::get('/employment', [AdminController::class, 'employmentHub'])->name('employment.index');
+
         // Resume management hub
         Route::get('/resume', [AdminController::class, 'resumeHub'])->name('resume.index');
 
@@ -55,6 +58,9 @@ Route::middleware(['auth', 'can:moderate-comments', HandleInertiaRequests::class
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        // Blog hub (Canvas and comment moderation)
+        Route::get('/blog', [AdminController::class, 'blogHub'])->name('blog.index');
+
         Route::get('/comments', [CommentModerationController::class, 'index'])->name('comments.index');
         Route::post('/comments/{comment}/spam', [CommentModerationController::class, 'markSpam'])->name('comments.spam');
         Route::post('/comments/{comment}/not-spam', [CommentModerationController::class, 'markNotSpam'])->name('comments.not-spam');

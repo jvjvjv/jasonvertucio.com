@@ -83,6 +83,11 @@ export default function Create({
     const [appliedDialogOpen, setAppliedDialogOpen] = useState(false);
     const [appliedError, setAppliedError] = useState<string | null>(null);
 
+    const selectedSystem =
+        aiSystemId === ""
+            ? null
+            : (systems.find((system) => system.id === aiSystemId) ?? null);
+
     const separateModelsConfigured =
         defaultSystemId !== null &&
         coverLetterDefaultId !== null &&
@@ -274,7 +279,10 @@ export default function Create({
         setAppliedDialogOpen(true);
     };
 
-    const handleConfirmApplied = async (resumeVersionId: number | null) => {
+    const handleConfirmApplied = async (
+        resumeVersionId: number | null,
+        requestFitScore: boolean,
+    ) => {
         setSubmitting("applied");
         setAppliedError(null);
 
@@ -285,6 +293,10 @@ export default function Create({
                     ...jobPayload(),
                     intent: "applied",
                     resume_version_id: resumeVersionId,
+                    ai_system_id:
+                        requestFitScore && aiSystemId !== ""
+                            ? aiSystemId
+                            : null,
                 },
             );
 
@@ -435,8 +447,9 @@ export default function Create({
                 currentResumeVersionId={currentResumeVersionId}
                 isSubmitting={submitting === "applied"}
                 error={appliedError}
-                onConfirm={(resumeVersionId) => {
-                    void handleConfirmApplied(resumeVersionId);
+                fitScoreSystemName={selectedSystem?.name ?? null}
+                onConfirm={(resumeVersionId, requestFitScore) => {
+                    void handleConfirmApplied(resumeVersionId, requestFitScore);
                 }}
                 onCancel={() => {
                     setAppliedDialogOpen(false);

@@ -105,6 +105,11 @@ class Application extends Model
         return $this->hasMany(CoverLetter::class);
     }
 
+    public function roleIntel(): HasOne
+    {
+        return $this->hasOne(RoleIntel::class);
+    }
+
     public function statusUpdates(): HasMany
     {
         return $this->hasMany(ApplicationStatusUpdate::class)->orderBy('occurred_at');

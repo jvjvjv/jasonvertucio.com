@@ -73,8 +73,8 @@ export default function Index({ coverLetters }: IndexProps) {
             <Head title="Cover Letters" />
             <PageHeader
                 title="Cover Letters"
-                backHref="/admin"
-                backLabel="Back to Admin"
+                backHref="/admin/employment"
+                backLabel="Back to Employment"
             />
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>

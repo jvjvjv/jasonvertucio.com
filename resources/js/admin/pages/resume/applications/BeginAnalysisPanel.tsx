@@ -25,6 +25,8 @@ interface BeginAnalysisPanelProps {
     applicationId: number;
     systems: Pick<AiSystem, "id" | "name" | "model">[];
     defaultSystemId: number | null;
+    /** An application already sent gets a fit score only. */
+    alreadyApplied: boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export default function BeginAnalysisPanel({
     applicationId,
     systems,
     defaultSystemId,
+    alreadyApplied,
 }: BeginAnalysisPanelProps) {
     const [aiSystemId, setAiSystemId] = useState<number | "">(
         defaultSystemId ?? "",
@@ -81,8 +84,9 @@ export default function BeginAnalysisPanel({
                     color="text.secondary"
                     sx={{ mb: 2 }}
                 >
-                    This application was recorded without an analysis. Begin one
-                    to assess the fit, tailor a resume or draft a cover letter.
+                    {alreadyApplied
+                        ? "This application was recorded without an analysis. Since it has already been sent, the analysis gives a fit score only."
+                        : "This application was recorded without an analysis. Begin one to assess the fit, tailor a resume or draft a cover letter."}{" "}
                     Its status and history stay as they are.
                 </Typography>
 

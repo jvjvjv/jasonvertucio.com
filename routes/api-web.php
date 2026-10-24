@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\ApplicationSessionController;
 use App\Http\Controllers\Admin\ApplicationStatusUpdateController;
+use App\Http\Controllers\Admin\CompanyIntelSessionController;
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
@@ -75,6 +76,25 @@ Route::middleware(['auth', 'can:edit-resume'])
                             ->whereNumber('statusUpdate')
                             ->name('status-updates.destroy');
                     });
+            });
+    });
+
+Route::middleware(['auth', 'can:edit-resume'])
+    ->prefix('api/admin/employment/company-intel')
+    ->name('admin.employment.company-intel.')
+    ->group(function () {
+        Route::get('/eligible-systems', [CompanyIntelSessionController::class, 'eligibleSystems'])->name('eligible-systems');
+        Route::post('/applications/{application}', [CompanyIntelSessionController::class, 'start'])
+            ->whereNumber('application')
+            ->name('start');
+
+        Route::prefix('{roleIntel}')
+            ->whereNumber('roleIntel')
+            ->group(function () {
+                Route::get('/state', [CompanyIntelSessionController::class, 'state'])->name('state');
+                Route::post('/chat', [CompanyIntelSessionController::class, 'chat'])->name('chat');
+                Route::post('/retry', [CompanyIntelSessionController::class, 'retry'])->name('retry');
+                Route::post('/wrong-company', [CompanyIntelSessionController::class, 'wrongCompany'])->name('wrong-company');
             });
     });
 
