@@ -2,6 +2,8 @@ import TextField from "@mui/material/TextField";
 
 import type { InertiaFormProps } from "@inertiajs/react";
 
+import useMarkdownPaste from "@/hooks/useMarkdownPaste";
+
 export interface FormData {
     title: string;
     description: string;
@@ -15,6 +17,8 @@ interface FormProps {
 }
 
 export default function Form({ data, setData, errors }: FormProps) {
+    const onMarkdownPaste = useMarkdownPaste();
+
     return (
         <>
             <TextField
@@ -60,6 +64,7 @@ export default function Form({ data, setData, errors }: FormProps) {
                 onChange={(e) => {
                     setData("content", e.target.value);
                 }}
+                onPaste={onMarkdownPaste}
                 error={!!errors.content}
                 helperText={
                     errors.content ??
