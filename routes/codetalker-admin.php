@@ -32,7 +32,7 @@ Route::middleware(['web', 'auth', 'can:manage-ai-tools', HandleInertiaRequests::
         // Their forms save through the systems.store / systems.update routes.
         Route::get('/voice-systems', [VoiceSystemController::class, 'index'])->name('voice-systems.index');
         Route::get('/voice-systems/new', [VoiceSystemController::class, 'create'])->name('voice-systems.create');
-        Route::get('/voice-systems/{aiSystem}', [VoiceSystemController::class, 'edit'])->name('voice-systems.edit');
+        Route::get('/voice-systems/{voiceSystem}', [VoiceSystemController::class, 'edit'])->name('voice-systems.edit');
 
         // AI System Prompts CRUD
         Route::get('/system-prompts', [AiSystemPromptController::class, 'index'])->name('system-prompts.index');

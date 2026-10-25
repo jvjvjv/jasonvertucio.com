@@ -393,7 +393,7 @@ class AiSystemVoiceRoleTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_each_edit_page_redirects_to_the_page_for_the_systems_role(): void
+    public function test_a_voice_system_opened_from_ai_systems_redirects_and_a_chat_system_is_not_a_voice_system(): void
     {
         $audio = AiSystem::factory()->audio()->create();
         $chat = AiSystem::factory()->create();
@@ -401,14 +401,14 @@ class AiSystemVoiceRoleTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.ai.systems.edit', $audio))
-            ->assertRedirect(route('admin.ai.voice-systems.edit', $audio));
+            ->assertRedirect(route('admin.ai.voice-systems.edit', $audio->id));
 
         $this->actingAs($admin)
-            ->get(route('admin.ai.voice-systems.edit', $chat))
-            ->assertRedirect(route('admin.ai.systems.edit', $chat));
+            ->get(route('admin.ai.voice-systems.edit', $chat->id))
+            ->assertNotFound();
 
         $this->actingAs($admin)
-            ->get(route('admin.ai.voice-systems.edit', $audio))
+            ->get(route('admin.ai.voice-systems.edit', $audio->id))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('ai/voice-systems/Edit', false)

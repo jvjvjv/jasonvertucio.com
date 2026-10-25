@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAiSystemRequest;
 use App\Http\Requests\UpdateAiSystemRequest;
+use App\Models\ChatSystem;
 use App\Services\AiSystemPresenter;
 use App\Services\AiSystemSecretMerger;
 use App\Services\ChatBot\McpServerCatalog;
@@ -41,8 +42,7 @@ class AiSystemController extends Controller
      */
     public function index(): InertiaResponse
     {
-        $systems = AiSystem::withCount(['interactionLogs', 'personas as chat_bots_count'])
-            ->role(AiSystemRole::Chat)
+        $systems = ChatSystem::withCount(['interactionLogs', 'personas as chat_bots_count'])
             ->with('featureDefaults')
             ->orderBy('name')
             ->get();
@@ -105,8 +105,9 @@ class AiSystemController extends Controller
      */
     public function edit(AiSystem $aiSystem): InertiaResponse|RedirectResponse
     {
+        // The old URL of a voice system still finds it.
         if (self::isVoice($aiSystem)) {
-            return redirect()->route('admin.ai.voice-systems.edit', $aiSystem);
+            return redirect()->route('admin.ai.voice-systems.edit', $aiSystem->id);
         }
 
         $aiSystem->load('featureDefaults');

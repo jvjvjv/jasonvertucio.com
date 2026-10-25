@@ -54,7 +54,12 @@ Feature defaults SHALL include `voice:dictation` and `voice:speech`. Only a `tra
 - **THEN** validation fails and no default changes
 
 ### Requirement: Voice systems are not offered as chat models
-Every picker that selects an AiSystem to hold a conversation SHALL list only `chat` systems. This includes a persona's backing system and the system choices on the New Session / I Applied flow.
+Every picker that selects an AiSystem to hold a conversation SHALL list only `chat` systems. This includes a persona's backing system, the system choices on the New Session / I Applied flow, and the systems eligible for Company Intel. The host SHALL read these through a chat-only model (`ChatSystem`) rather than by remembering a role filter at each query, and the Voice Systems pages through a voice-only model (`VoiceSystem`).
+
+#### Scenario: A chat-only model cannot return a voice system
+- **WHEN** an audio system exists and the host queries `ChatSystem`
+- **THEN** the audio system is not returned
+- **AND** `VoiceSystem` returns it, while not returning any chat system
 
 #### Scenario: Persona system picker
 - **WHEN** an administrator opens a persona's create or edit form while an active `audio` system exists
@@ -65,7 +70,7 @@ Every picker that selects an AiSystem to hold a conversation SHALL list only `ch
 - **THEN** the `transcription` system is not listed
 
 ### Requirement: Voice systems have their own pages
-The AI Systems index SHALL list only `chat` systems. A separate Voice Systems page (`/admin/ai/voice-systems`, `manage-ai-tools`) SHALL list the `audio` and `transcription` systems with what each is used for, and SHALL have its own create and edit forms holding only the fields a voice system uses. Opening a system's edit page from the wrong list SHALL redirect to the page for its role. Both forms save through the same validation.
+The AI Systems index SHALL list only `chat` systems. A separate Voice Systems page (`/admin/ai/voice-systems`, `manage-ai-tools`) SHALL list the `audio` and `transcription` systems with what each is used for, and SHALL have its own create and edit forms holding only the fields a voice system uses. Opening a voice system's edit page from the AI Systems URL SHALL redirect to its Voice Systems page; a chat system's id SHALL NOT be found on the Voice Systems pages. Both forms save through the same validation.
 
 #### Scenario: Lists are split by role
 - **WHEN** an administrator views the AI Systems index while chat, audio and transcription systems exist

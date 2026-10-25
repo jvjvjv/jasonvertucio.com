@@ -43,3 +43,7 @@
 
 - [x] 6.1 List only chat systems on the AI Systems index, and add a Voice Systems page (`/admin/ai/voice-systems`) with its own index, create and edit forms that save through the existing store/update endpoints. Redirect each edit page to the other for a system of the wrong role, and add a Voice Systems entry to the AI Tools navigation. Verify with feature tests for both lists, both redirects, the post-save redirect, and an update that omits `config`.
 - [x] 6.2 Relayout the shared provider block: Name full width; Provider, API Key and Model in one row (one per line when narrow); Base URL on its own line; API Version, Max Tokens, Context Length and Temperature as a two-by-two grid at every width. Remove the role field from the chat form. Verify `npm run build` and screenshots at desktop and phone width, shared with the developer.
+
+## 7. Role-scoped models
+
+- [x] 7.1 Add `ChatSystem` and `VoiceSystem` (subclasses of code-talker's `AiSystem` with a global `role` scope), pinning table, foreign key and morph class through `IsAiSystemSubset`. Use them in the persona and New Session pickers, `CompanyIntelSystems`, the AI Systems index and the Voice Systems pages (route-bound to `{voiceSystem}`). Verify with tests that each reads only its roles, that relations and counts resolve against `ai_systems` / `ai_system_id`, that creating sets or requires the role, and that a chat id is not found on the Voice Systems edit page.

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAiChatBotRequest;
 use App\Http\Requests\Admin\UpdateAiChatBotRequest;
 use App\Models\AiChatBot;
+use App\Models\ChatSystem;
 use App\Services\ChatBot\McpServerCatalog;
 use BSPDX\Keystone\Models\KeystonePermission;
 use Illuminate\Http\JsonResponse;
@@ -14,8 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Jvjvjv\CodeTalker\Enums\AiSystemRole;
-use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 
 /**
@@ -171,12 +170,11 @@ class AiChatBotController extends Controller
      */
     private function systems(): array
     {
-        return AiSystem::query()
+        return ChatSystem::query()
             ->active()
-            ->role(AiSystemRole::Chat)
             ->orderBy('name')
             ->get()
-            ->map(fn (AiSystem $system) => [
+            ->map(fn (ChatSystem $system) => [
                 'id' => $system->id,
                 'name' => $system->name,
                 'model' => $system->model,

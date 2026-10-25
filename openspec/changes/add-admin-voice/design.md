@@ -46,6 +46,11 @@ The first build put a role field on the AI Systems form and a role column on its
 
 The same pass relaid out the shared provider block: Name full width; Provider, API Key and Model on one row (one per line when narrow); Base URL on its own line; API Version, Max Tokens, Context Length and Temperature as a two-by-two grid at every width.
 
+### 3b. Role-scoped models in the host (revised during implementation)
+`App\Models\ChatSystem` and `App\Models\VoiceSystem` extend code-talker's `AiSystem` with a global scope on `role` (chat; audio or transcription). Creating through `ChatSystem` sets the chat role; `VoiceSystem` refuses a non-voice role. The pickers, the AI Systems index, the Voice Systems pages (bound to `{voiceSystem}`, so a chat id is not found) and `CompanyIntelSystems` use them, which replaces the per-query role filters below.
+- The package model names neither its table nor its foreign key, and Eloquent derives both from the runtime class, so a bare subclass would read a `chat_systems` table and `chat_system_id` keys. `Concerns\IsAiSystemSubset` pins the table, the foreign key and the morph class to the parent's.
+- Only this app's queries return the subclasses. code-talker's services (`defaultForFeature()`, `AiSystemResolver`, the audio services) still return plain `AiSystem` and keep their own role guards. The idea arguably belongs upstream in code-talker; it is built here first, as jasonvertucio.com's own.
+
 ### 4. Chat pickers filter with the package scope
 `AiChatBotController::systems()` and `ApplicationPayload::selectableSystems()` add `->role(AiSystemRole::Chat)`. `CompanyIntelSystems` already filters by role.
 
