@@ -110,10 +110,23 @@ class VoiceController extends Controller
                 'feature' => $feature,
                 'ai_system_id' => AiSystem::defaultForFeature($feature)?->id,
                 'exception' => $e::class,
-                'message' => $e->getMessage(),
+                'message' => $this->scrubbed($e->getMessage()),
             ]);
 
             return response()->json(['message' => 'Voice is unavailable.'], 503);
         }
+    }
+
+    /**
+     * An HTTP client exception's message carries the request URL. Credentials
+     * in a base URL (`http://user:pass@host`) or a key sent as a query string
+     * must not reach the log, so both are cut before it is written.
+     */
+    private function scrubbed(string $message): string
+    {
+        $message = (string) preg_replace('#(https?://)[^/\s@]+@#i', '$1[credentials]@', $message);
+        $message = (string) preg_replace('#(https?://[^\s?"\']+)\?[^\s"\']*#i', '$1?[query]', $message);
+
+        return mb_substr($message, 0, 500);
     }
 }

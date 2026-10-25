@@ -11,6 +11,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Models\AiSystem;
@@ -357,6 +358,29 @@ class VoiceTest extends TestCase
         $this->assertStringNotContainsString('10.10.0.2', $response->getContent());
         $this->assertStringNotContainsString('Connection refused', $response->getContent());
         $this->assertSame([], Storage::disk('local')->allFiles());
+    }
+
+    public function test_a_failure_is_logged_without_url_credentials_or_query_strings(): void
+    {
+        $this->speechSystem(['base_url' => 'http://speech-user:hunter2@10.10.0.2:18820/v1']);
+        Http::fake(fn () => throw new ConnectionException(
+            'cURL error 7: Failed to connect to http://speech-user:hunter2@10.10.0.2:18820/v1/audio/speech?key=sk-secret-123'
+        ));
+        Log::spy();
+
+        $this->actingAs($this->voiceUser())
+            ->postJson('/api/admin/voice/speech', ['text' => 'Hello there'])
+            ->assertServiceUnavailable();
+
+        Log::shouldHaveReceived('warning')->withArgs(function (string $message, array $context): bool {
+            $logged = json_encode($context);
+
+            return $message === 'Voice request failed.'
+                && ! str_contains($logged, 'hunter2')
+                && ! str_contains($logged, 'speech-user')
+                && ! str_contains($logged, 'sk-secret-123')
+                && str_contains($logged, '10.10.0.2');
+        })->once();
     }
 
     public function test_dictation_without_a_default_is_a_generic_503(): void
