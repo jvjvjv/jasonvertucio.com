@@ -145,6 +145,13 @@
                 },
                 {
                     "can": "manage-ai-tools",
+                    "href": "/admin/ai/voice-systems",
+                    "icon": "RecordVoiceOver",
+                    "label": "Voice Systems",
+                    "description": "Set up the speech servers behind dictation and read-aloud"
+                },
+                {
+                    "can": "manage-ai-tools",
                     "href": "/admin/ai/system-prompts",
                     "icon": "Description",
                     "label": "System Prompts",

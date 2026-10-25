@@ -38,11 +38,24 @@ export interface SessionInfo {
     expiresAt: string;
 }
 
+/**
+ * Shared by both Inertia middlewares; null for anyone without `use-voice`, so
+ * no voice control renders for them.
+ */
+export interface VoiceConfig {
+    statusUrl: string;
+    transcribeUrl: string;
+    speechUrl: string;
+    maxRecordingSeconds: number;
+    maxSpeechChars: number;
+}
+
 export interface SharedProps extends PageProps {
     [key: string]: unknown;
     auth: {
         user: AuthUser | null;
     };
+    voice?: VoiceConfig | null;
     adminNav: AppBarItem[];
     navLinks: NavLink[];
     session: SessionInfo;
@@ -60,10 +73,14 @@ export interface AiSystemPrompt {
 
 // AI Systems
 
+export type AiSystemRole = "chat" | "audio" | "transcription";
+
 export interface AiSystem {
     id: number;
     name: string;
     provider: string;
+    /** What the system serves; only `chat` systems hold conversations. */
+    role: AiSystemRole;
     /** Stored secrets never reach the browser; these say whether one is set. */
     has_api_key: boolean;
     has_credentials: boolean;

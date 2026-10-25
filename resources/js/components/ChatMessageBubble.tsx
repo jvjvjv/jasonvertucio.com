@@ -8,10 +8,13 @@ import BlockContent from "./chat-message-bubble/BlockContent";
 import CopyMessageButton from "./chat-message-bubble/CopyMessageButton";
 import LegacyContent from "./chat-message-bubble/LegacyContent";
 import ToolsPanel from "./ToolsPanel";
+import SpeakMessageButton from "./voice/SpeakMessageButton";
 
 import type { ToolPanel } from "./ToolsPanel";
 import type { MessageBlock } from "@/types/code-talker";
 import type { SxProps, SystemStyleObject, Theme } from "@mui/system";
+
+import useVoice from "@/hooks/useVoice";
 
 /**
  * Re-exported from the package contract rather than redeclared — the shapes are
@@ -202,6 +205,23 @@ export default memo(function ChatMessageBubble({
               .filter((part): part is string => !!part)
               .join("\n\n");
 
+    /** What a play button reads: the reply itself, never its reasoning. */
+    const spokenText = hasBlocks
+        ? blocks
+              .filter((block) => block.type === "text")
+              .map((block) => block.content)
+              .join("\n\n")
+        : content;
+
+    // The play button sits beside the copy button; with two of them in the
+    // corner, the last line of a reply would run underneath, so the bubble
+    // keeps a strip clear for them.
+    const showSpeak =
+        useVoice() !== null &&
+        !isStreaming &&
+        role === "assistant" &&
+        spokenText.trim() !== "";
+
     const body = hasBlocks ? (
         <BlockContent
             blocks={blocks}
@@ -230,7 +250,14 @@ export default memo(function ChatMessageBubble({
             // position: relative always, not just for LegacyContent's own
             // absolutely-positioned reasoning toggle — CopyMessageButton below
             // needs it too, for both content modes.
-            sx={mergeSx({ ...baseBubbleSx, position: "relative" }, sx)}
+            sx={mergeSx(
+                {
+                    ...baseBubbleSx,
+                    position: "relative",
+                    ...(showSpeak ? { pb: 3.5 } : {}),
+                },
+                sx,
+            )}
             onDoubleClick={handlePreDblClick}
         >
             {originNotice ? (
@@ -296,6 +323,7 @@ export default memo(function ChatMessageBubble({
                     }
                 />
             )}
+            {showSpeak && <SpeakMessageButton text={spokenText} />}
         </Box>
     );
 });

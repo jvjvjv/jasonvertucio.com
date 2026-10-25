@@ -5,10 +5,10 @@ Defines how an administrator creates and maintains AiSystems that serve speech-t
 ## ADDED Requirements
 
 ### Requirement: An AiSystem is created with a role
-The AI system create form SHALL offer a role of `chat`, `audio` (text-to-speech) or `transcription` (speech-to-text), defaulting to `chat`. The role SHALL be locked after creation under the same rule as Provider: editable only while the system is a pending duplicate.
+Every AiSystem SHALL have a role of `chat`, `audio` (text-to-speech) or `transcription` (speech-to-text). Systems created from the AI Systems pages SHALL be `chat`; the Voice Systems create page SHALL offer `transcription` ("Dictation") and `audio` ("Read aloud"). A request without a role SHALL create a `chat` system. The role SHALL be locked after creation under the same rule as Provider: editable only while the system is a pending duplicate.
 
 #### Scenario: Creating a voice system
-- **WHEN** an administrator creates an AiSystem with role `transcription`
+- **WHEN** an administrator creates a system on the Voice Systems page with role `transcription`
 - **THEN** the system is stored with role `transcription`
 
 #### Scenario: Role is locked on an established system
@@ -64,9 +64,22 @@ Every picker that selects an AiSystem to hold a conversation SHALL list only `ch
 - **WHEN** the New Session page lists selectable systems while an active `transcription` system with a feature default exists
 - **THEN** the `transcription` system is not listed
 
-### Requirement: The systems list shows each system's role
-The AI systems index SHALL show the role of each system.
+### Requirement: Voice systems have their own pages
+The AI Systems index SHALL list only `chat` systems. A separate Voice Systems page (`/admin/ai/voice-systems`, `manage-ai-tools`) SHALL list the `audio` and `transcription` systems with what each is used for, and SHALL have its own create and edit forms holding only the fields a voice system uses. Opening a system's edit page from the wrong list SHALL redirect to the page for its role. Both forms save through the same validation.
 
-#### Scenario: Index shows role
-- **WHEN** an administrator views the AI systems index
-- **THEN** each row indicates whether the system is chat, audio or transcription
+#### Scenario: Lists are split by role
+- **WHEN** an administrator views the AI Systems index while chat, audio and transcription systems exist
+- **THEN** only the chat systems are listed
+- **AND** the Voice Systems page lists only the audio and transcription systems, each with its use
+
+#### Scenario: Edit page follows the role
+- **WHEN** an administrator opens `/admin/ai/systems/{id}` for an audio system
+- **THEN** they are redirected to that system's Voice Systems edit page
+
+### Requirement: The AI system form groups provider fields
+On the system forms, Name SHALL span the full width. Provider, API Key and Model SHALL share one row where the width allows and stack one per line where it does not. Base URL SHALL span its own line. On the chat form, API Version, Max Tokens, Context Length and Temperature SHALL appear as two rows of two columns at every width, phones included.
+
+#### Scenario: Phone width
+- **WHEN** the chat system form is viewed at phone width
+- **THEN** Provider, API Key and Model each take a full line
+- **AND** API Version, Max Tokens, Context Length and Temperature form a two-by-two grid

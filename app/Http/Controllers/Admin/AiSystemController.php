@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 use Jvjvjv\CodeTalker\Models\AiInteractionLog;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Models\AiSystemFeatureDefault;
@@ -35,11 +36,13 @@ class AiSystemController extends Controller
     ) {}
 
     /**
-     * Display a list of all AI systems.
+     * Display the chat systems. Voice systems have their own page
+     * (VoiceSystemController).
      */
     public function index(): InertiaResponse
     {
         $systems = AiSystem::withCount(['interactionLogs', 'personas as chat_bots_count'])
+            ->role(AiSystemRole::Chat)
             ->with('featureDefaults')
             ->orderBy('name')
             ->get();
@@ -81,22 +84,31 @@ class AiSystemController extends Controller
         // UI, slated for removal) but stays in this list so an existing
         // value round-trips untouched rather than silently being dropped.
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
+        $role = AiSystemRole::from($data['role']);
+        $this->applyRoleFields($data, $role, settingModel: true);
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
-        $this->aiSystemCapabilityService->hydrateForPersistence($data);
+
+        if ($role === AiSystemRole::Chat) {
+            $this->aiSystemCapabilityService->hydrateForPersistence($data);
+        }
 
         $system = AiSystem::create($data);
 
         $this->syncFeatureDefaults($system, $featureDefaults);
 
-        return redirect()->route('admin.ai.systems.index')
+        return redirect()->route(self::indexRouteFor($role))
             ->with('success', "AI system \"{$system->name}\" created successfully.");
     }
 
     /**
      * Show the form for editing an AI system.
      */
-    public function edit(AiSystem $aiSystem): InertiaResponse
+    public function edit(AiSystem $aiSystem): InertiaResponse|RedirectResponse
     {
+        if (self::isVoice($aiSystem)) {
+            return redirect()->route('admin.ai.voice-systems.edit', $aiSystem);
+        }
+
         $aiSystem->load('featureDefaults');
         $aiSystem->loadCount(['personas as chat_bots_count']);
         $aiSystem->feature_defaults_list = $aiSystem->featureDefaults->pluck('feature')->toArray();
@@ -135,6 +147,11 @@ class AiSystemController extends Controller
         $this->decodeJsonFields($data, ['config', 'credentials', 'pricing_profile', 'web_tool_policy']);
         $this->applySecretWrites($aiSystem, $data);
 
+        $role = $isPendingFirstEdit
+            ? AiSystemRole::from($data['role'])
+            : ($aiSystem->role ?? AiSystemRole::Chat);
+        $this->applyRoleFields($data, $role, settingModel: $isPendingFirstEdit, storedConfig: $aiSystem->config);
+
         if (! $isPendingFirstEdit) {
             $data['provider'] = $aiSystem->provider;
             $data['model'] = $aiSystem->model;
@@ -145,7 +162,10 @@ class AiSystemController extends Controller
         }
 
         $this->aiSystemCapabilityService->normalizeForPersistence($data);
-        $this->aiSystemCapabilityService->hydrateForPersistence($data);
+
+        if ($role === AiSystemRole::Chat) {
+            $this->aiSystemCapabilityService->hydrateForPersistence($data);
+        }
 
         if (! $isPendingFirstEdit) {
             unset($data['provider'], $data['model']);
@@ -159,7 +179,7 @@ class AiSystemController extends Controller
 
         $this->syncFeatureDefaults($aiSystem, $featureDefaults);
 
-        return redirect()->route('admin.ai.systems.index')
+        return redirect()->route(self::indexRouteFor($role))
             ->with('success', "AI system \"{$aiSystem->name}\" updated successfully.");
     }
 
@@ -183,7 +203,7 @@ class AiSystemController extends Controller
             ? "AI system \"{$name}\" deleted. {$botCount} chat bot(s) were deactivated."
             : "AI system \"{$name}\" deleted successfully.";
 
-        return redirect()->route('admin.ai.systems.index')
+        return redirect()->route(self::indexRouteFor($aiSystem->role ?? AiSystemRole::Chat))
             ->with('success', $message);
     }
 
@@ -341,6 +361,19 @@ class AiSystemController extends Controller
     }
 
     /**
+     * Voice systems are listed and edited on their own pages.
+     */
+    public static function isVoice(AiSystem $system): bool
+    {
+        return ($system->role ?? AiSystemRole::Chat) !== AiSystemRole::Chat;
+    }
+
+    private static function indexRouteFor(AiSystemRole $role): string
+    {
+        return $role === AiSystemRole::Chat ? 'admin.ai.systems.index' : 'admin.ai.voice-systems.index';
+    }
+
+    /**
      * If no system_prompt_id was provided but custom_system_prompt text was, create a new prompt record.
      *
      * @param  array<string, mixed>  $data
@@ -408,6 +441,46 @@ class AiSystemController extends Controller
                 $system->web_tool_policy,
                 is_array($policy) ? $policy : null,
             );
+        }
+    }
+
+    /**
+     * Shape the validated data for the system's role. A voice system's blank
+     * model is stored empty (the column is not nullable) so the provider's
+     * default applies, a blank token limit keeps the column default, and an
+     * audio system's default voice lives in `config.voice`, leaving the
+     * rest of `config` as submitted (or as stored, when none was submitted).
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>|null  $storedConfig
+     */
+    private function applyRoleFields(array &$data, AiSystemRole $role, bool $settingModel, ?array $storedConfig = null): void
+    {
+        $defaultVoice = $data['default_voice'] ?? null;
+        unset($data['default_voice']);
+
+        if ($role === AiSystemRole::Chat) {
+            return;
+        }
+
+        if ($settingModel) {
+            $data['model'] = $data['model'] ?? '';
+        }
+
+        if (($data['max_tokens'] ?? null) === null) {
+            unset($data['max_tokens']);
+        }
+
+        if ($role === AiSystemRole::Audio) {
+            $config = array_key_exists('config', $data) ? $data['config'] : $storedConfig;
+            $config = is_array($config) ? $config : [];
+            unset($config['voice']);
+
+            if (filled($defaultVoice)) {
+                $config['voice'] = $defaultVoice;
+            }
+
+            $data['config'] = $config === [] ? null : $config;
         }
     }
 

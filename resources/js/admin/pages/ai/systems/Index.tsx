@@ -196,6 +196,13 @@ export default function Index({ systems }: IndexProps) {
                     >
                         System Prompts
                     </Button>
+                    <Button
+                        component={InertiaLink}
+                        href="/admin/ai/voice-systems"
+                        variant="outlined"
+                    >
+                        Voice Systems
+                    </Button>
                 </Box>
                 <Button
                     component={InertiaLink}

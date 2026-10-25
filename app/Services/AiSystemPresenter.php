@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
@@ -23,6 +24,7 @@ class AiSystemPresenter
             'id' => $system->id,
             'name' => $system->name,
             'provider' => $system->provider,
+            'role' => ($system->role ?? AiSystemRole::Chat)->value,
             'model' => $system->model,
             'model_capabilities' => $system->model_capabilities,
             'base_url' => $system->base_url,

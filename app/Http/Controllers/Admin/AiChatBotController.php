@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Jvjvjv\CodeTalker\Services\Management\AiPersonaManager;
 
@@ -30,8 +31,7 @@ class AiChatBotController extends Controller
     public function __construct(
         private AiPersonaManager $bots,
         private McpServerCatalog $mcpServers,
-    ) {
-    }
+    ) {}
 
     /**
      * Display a list of AI chat bots.
@@ -173,6 +173,7 @@ class AiChatBotController extends Controller
     {
         return AiSystem::query()
             ->active()
+            ->role(AiSystemRole::Chat)
             ->orderBy('name')
             ->get()
             ->map(fn (AiSystem $system) => [

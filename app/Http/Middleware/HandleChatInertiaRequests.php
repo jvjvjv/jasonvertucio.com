@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\VoiceProps;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -52,6 +53,7 @@ class HandleChatInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                 ] : null,
             ],
+            'voice' => fn () => VoiceProps::for($request->user()),
             'session' => [
                 'expiresAt' => now()->addMinutes((int) config('session.lifetime'))->toIso8601String(),
             ],

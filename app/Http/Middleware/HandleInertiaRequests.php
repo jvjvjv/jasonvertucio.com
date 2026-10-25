@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\AdminNavigationService;
+use App\Support\VoiceProps;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -52,6 +53,7 @@ class HandleInertiaRequests extends Middleware
                     'permissions' => fn () => $request->user()->getAllPermissions()->pluck('name'),
                 ] : null,
             ],
+            'voice' => fn () => VoiceProps::for($request->user()),
             'adminNav' => fn () => $this->navigationService->getAppBarItems($request->user()),
             'navLinks' => $config['links'] ?? [],
             'session' => [

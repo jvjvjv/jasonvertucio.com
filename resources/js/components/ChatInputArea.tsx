@@ -5,12 +5,14 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { CHAT_COLUMN_MAX_WIDTH } from "./chat-interface/chatColumn";
 
+import type { UseVoiceResult } from "@/hooks/useVoice";
 import type { KeyboardEvent, ReactNode } from "react";
 
+import DictationControl from "@/components/voice/DictationControl";
 import useMarkdownPaste from "@/hooks/useMarkdownPaste";
 
 export interface ChatInputAreaSlots {
@@ -30,6 +32,8 @@ export interface ChatInputAreaProps {
     /** Called when the user cancels an in-flight turn (Stop button or ESC). */
     onStop?: () => void;
     slots?: ChatInputAreaSlots;
+    /** Present only for holders of `use-voice`; adds the dictation microphone. */
+    voice?: UseVoiceResult | null;
 }
 
 export default function ChatInputArea({
@@ -41,11 +45,33 @@ export default function ChatInputArea({
     isStreaming = false,
     onStop,
     slots,
+    voice = null,
 }: ChatInputAreaProps) {
     // Drives the composer's height: collapsed to one line when the composer is
     // not being used, auto-growing up to a cap while it is.
     const [isFocused, setIsFocused] = useState(false);
     const onMarkdownPaste = useMarkdownPaste();
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const insertTranscript = (transcript: string) => {
+        const input = inputRef.current;
+        // The transcript arrives after an upload, by which time the draft may
+        // have changed; the box itself holds the latest text.
+        const current = input?.value ?? messageText;
+        const start = input?.selectionStart ?? current.length;
+        const end = input?.selectionEnd ?? current.length;
+        const before = current.slice(0, start);
+        const after = current.slice(end);
+        const lead = before !== "" && !/\s$/.test(before) ? " " : "";
+        const trail = after !== "" && !/^\s/.test(after) ? " " : "";
+        const caret = before.length + lead.length + transcript.length;
+
+        onChange(before + lead + transcript + trail + after);
+
+        requestAnimationFrame(() => {
+            input?.focus();
+            input?.setSelectionRange(caret, caret);
+        });
+    };
 
     return (
         <Box
@@ -81,6 +107,7 @@ export default function ChatInputArea({
                         // in full. The draft itself is untouched either way.
                         maxRows={isFocused ? 8 : 1}
                         value={messageText}
+                        inputRef={inputRef}
                         onChange={(e) => {
                             onChange(e.target.value);
                         }}
@@ -105,6 +132,12 @@ export default function ChatInputArea({
                             },
                         }}
                     />
+                    {voice ? (
+                        <DictationControl
+                            voice={voice}
+                            onTranscript={insertTranscript}
+                        />
+                    ) : null}
                     {isStreaming && onStop ? (
                         <IconButton
                             type="button"

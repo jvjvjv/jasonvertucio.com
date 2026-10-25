@@ -6,6 +6,7 @@ use App\Models\AiConversation;
 use App\Models\Application;
 use App\Models\ResumeVersion;
 use Illuminate\Support\Collection;
+use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
@@ -93,6 +94,7 @@ class ApplicationPayload
     public function selectableSystems(): Collection
     {
         return AiSystem::active()
+            ->role(AiSystemRole::Chat)
             ->where(function ($query): void {
                 $query->whereNotNull('system_prompt_id')
                     ->orWhereHas('featureDefaults');
