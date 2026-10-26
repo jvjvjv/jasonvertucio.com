@@ -27,6 +27,7 @@ import ModelStatusDisplay from "@/components/ModelStatusDisplay";
 import useChatStream from "@/hooks/useChatStream";
 import useModelStatus from "@/hooks/useModelStatus";
 import useSessionExpiry from "@/hooks/useSessionExpiry";
+import useVoice from "@/hooks/useVoice";
 
 // Used when no session deadline is supplied, so the hook always has a
 // stable initial value to call (rules-of-hooks) but effectively never fires.
@@ -166,6 +167,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         } = useModelStatus(statusUrl, warmupUrl, onModelStatusChange);
 
         const [messageText, setMessageText] = useState("");
+        const voice = useVoice();
 
         const {
             messages,
@@ -268,6 +270,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
                             }
                             isStreaming={isStreaming}
                             onStop={stopStreaming}
+                            voice={voice}
                             slots={{
                                 beforeSend: slots?.beforeSend,
                                 afterSend: slots?.afterSend,

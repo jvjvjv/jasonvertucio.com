@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\TargetedResumeController;
+use App\Http\Controllers\Admin\VoiceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,19 @@ Route::middleware(['auth', 'can:manage-ai-tools'])
         Route::get('/systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
         Route::post('/systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
         Route::post('/job-url-parsers/{jobUrlParser}/preview', [JobUrlParserController::class, 'preview']);
+    });
+
+Route::middleware(['auth', 'can:use-voice'])
+    ->prefix('api/admin/voice')
+    ->name('admin.voice.')
+    ->group(function () {
+        Route::get('/status', [VoiceController::class, 'status'])->name('status');
+        Route::post('/transcriptions', [VoiceController::class, 'transcribe'])
+            ->middleware('throttle:voice-transcribe')
+            ->name('transcriptions');
+        Route::post('/speech', [VoiceController::class, 'speech'])
+            ->middleware('throttle:voice-speech')
+            ->name('speech');
     });
 
 Route::middleware(['auth', 'can:edit-resume'])

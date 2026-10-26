@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiSystemPromptController;
 use App\Http\Controllers\Admin\AiToolsController;
 use App\Http\Controllers\Admin\JobUrlParserController;
+use App\Http\Controllers\Admin\VoiceSystemController;
 use App\Http\Middleware\HandleInertiaRequests;
 
 // AI Tools routes - requires auth + manage-ai-tools permission
@@ -26,6 +27,12 @@ Route::middleware(['web', 'auth', 'can:manage-ai-tools', HandleInertiaRequests::
         Route::post('/systems/{aiSystem}/duplicate', [AiSystemController::class, 'duplicate'])->name('systems.duplicate');
         Route::delete('/systems/{aiSystem}', [AiSystemController::class, 'destroy'])->name('systems.destroy');
         Route::get('/systems/{aiSystem}/logs', [AiSystemController::class, 'logs'])->name('systems.logs');
+
+        // Voice systems are AiSystems with the audio or transcription role.
+        // Their forms save through the systems.store / systems.update routes.
+        Route::get('/voice-systems', [VoiceSystemController::class, 'index'])->name('voice-systems.index');
+        Route::get('/voice-systems/new', [VoiceSystemController::class, 'create'])->name('voice-systems.create');
+        Route::get('/voice-systems/{voiceSystem}', [VoiceSystemController::class, 'edit'])->name('voice-systems.edit');
 
         // AI System Prompts CRUD
         Route::get('/system-prompts', [AiSystemPromptController::class, 'index'])->name('system-prompts.index');

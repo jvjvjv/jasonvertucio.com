@@ -16,6 +16,11 @@ import FeatureDefaultsCheckboxes from "./FeatureDefaultsCheckboxes";
 import JSONConfigEditor from "./JSONConfigEditor";
 import ModelCapabilitiesCheckboxes from "./ModelCapabilitiesCheckboxes";
 import ProviderModelSelector from "./ProviderModelSelector";
+import {
+    PROVIDER_DEFAULTS,
+    PROVIDERS_REQUIRING_API_KEY,
+    providersFor,
+} from "./providers";
 import WebToolPolicyEditor from "./WebToolPolicyEditor";
 
 import type { AiSystemPrompt } from "@/types";
@@ -96,107 +101,14 @@ interface AiSystemFormProps {
     domainsWithHeaders?: { [domain: string]: boolean };
 }
 
-const ALL_FEATURES = ["targeted-resume", "cover-letter", "company-intel"];
-const PROVIDERS = [
-    { value: "anthropic", label: "Anthropic" },
-    { value: "openai", label: "OpenAI" },
-    { value: "gemini", label: "Google Gemini" },
-    { value: "grok", label: "xAI Grok" },
-    {
-        value: "lm-studio",
-        label: "LM Studio (Native API)",
-    },
-    {
-        value: "openai-compatible",
-        label: "OpenAI-Compatible (OpenRouter, Together, Groq, etc.)",
-    },
-];
+const CHAT_FEATURES = ["targeted-resume", "cover-letter", "company-intel"];
+const CHAT_PROVIDERS = providersFor("chat");
 
-const PROVIDERS_REQUIRING_API_KEY = new Set([
-    "anthropic",
-    "openai",
-    "gemini",
-    "grok",
-]);
 const AUTH_TYPES = ["bearer", "x-api-key", "none", "custom"];
 const ENDPOINT_TYPES = ["managed", "openai-compatible", "local"];
 const STREAM_PROTOCOLS = ["sse", "chunked-json", "json-lines"];
 const SYSTEM_PROMPT_MODES = ["top-level", "messages"];
 const PROVIDERS_SUPPORTING_CONTEXT_LENGTH = new Set(["lm-studio"]);
-
-const PROVIDER_DEFAULTS: {
-    [key: string]: {
-        model: string;
-        baseUrl: string;
-        apiVersion: string;
-        authType: string;
-        endpointType: string;
-        streamProtocol: string;
-        systemPromptMode: string;
-        isLocalEndpoint: boolean;
-    };
-} = {
-    anthropic: {
-        model: "claude-sonnet-4-6",
-        baseUrl: "https://api.anthropic.com/v1",
-        apiVersion: "2023-06-01",
-        authType: "x-api-key",
-        endpointType: "managed",
-        streamProtocol: "sse",
-        systemPromptMode: "top-level",
-        isLocalEndpoint: false,
-    },
-    openai: {
-        model: "gpt-4o-mini",
-        baseUrl: "https://api.openai.com/v1",
-        apiVersion: "",
-        authType: "bearer",
-        endpointType: "managed",
-        streamProtocol: "chunked-json",
-        systemPromptMode: "messages",
-        isLocalEndpoint: false,
-    },
-    gemini: {
-        model: "gemini-2.5-flash",
-        baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-        apiVersion: "v1beta",
-        authType: "x-api-key",
-        endpointType: "managed",
-        streamProtocol: "sse",
-        systemPromptMode: "top-level",
-        isLocalEndpoint: false,
-    },
-    grok: {
-        model: "grok-3-mini",
-        baseUrl: "https://api.x.ai/v1",
-        apiVersion: "",
-        authType: "bearer",
-        endpointType: "managed",
-        streamProtocol: "chunked-json",
-        systemPromptMode: "messages",
-        isLocalEndpoint: false,
-    },
-    "openai-compatible": {
-        model: "",
-        baseUrl: "http://10.10.0.2:1234/v1",
-        apiVersion: "",
-        authType: "none",
-        endpointType: "openai-compatible",
-        streamProtocol: "chunked-json",
-        systemPromptMode: "messages",
-        isLocalEndpoint: true,
-    },
-    "lm-studio": {
-        model: "",
-        baseUrl: "http://10.10.0.2:1234",
-        apiVersion: "",
-        authType: "none",
-        endpointType: "local",
-        streamProtocol: "chunked-json",
-        systemPromptMode: "messages",
-        isLocalEndpoint: true,
-    },
-};
 
 interface EditPromptFormData {
     title: string;
@@ -438,7 +350,7 @@ export default function AiSystemForm({
             <ProviderModelSelector
                 data={data}
                 errors={errors}
-                providers={PROVIDERS}
+                providers={CHAT_PROVIDERS}
                 availableModels={availableModels}
                 selectedModelCapabilities={selectedModelCapabilities}
                 selectedModelLoaded={!!selectedModel?.loaded}
@@ -512,7 +424,13 @@ export default function AiSystemForm({
 
             {/* System Prompt selector */}
             <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1,
+                    }}
+                >
                     <TextField
                         label="System Prompt"
                         select
@@ -752,7 +670,7 @@ export default function AiSystemForm({
             />
 
             <FeatureDefaultsCheckboxes
-                allFeatures={ALL_FEATURES}
+                allFeatures={CHAT_FEATURES}
                 existingDefaults={existingDefaults}
                 selectedDefaults={data.feature_defaults}
                 onToggle={handleFeatureToggle}

@@ -41,6 +41,16 @@ A single container serves faster-whisper speech-to-text and Kokoro/Piper text-to
 - *Alternative: switch the controller to `AiSystemManager::create()/update()`.* That is a larger refactor of a controller with its own capability normalization and secret merging (`AiSystemSecretMerger`), and out of scope.
 - The default voice is stored in the existing `config` JSON column as `config.voice`. There is no schema change and no package change. The form shows it as a plain "Default voice" text field for the `audio` role.
 
+### 3a. Voice systems get their own pages (revised during implementation)
+The first build put a role field on the AI Systems form and a role column on its index. In use, voice systems were lost among chat systems, and the chat form's many chat-only fields made a voice system hard to read. Voice systems stay AiSystem records (the package's audio services need them), but `VoiceSystemController` lists them at `/admin/ai/voice-systems` with a short form of their own: name, what the system is used for (Dictation or Read aloud, as two large choices because that answer decides every field below), provider, key, model, base URL, default voice, the one feature default the role allows, and Active. Both forms save through `AiSystemController::store()/update()` so validation is not duplicated; the AI Systems index lists chat systems only, and each edit page redirects to the other when given a system of the wrong role. The provider list and defaults moved to a shared `providers.ts`.
+
+The same pass relaid out the shared provider block: Name full width; Provider, API Key and Model on one row (one per line when narrow); Base URL on its own line; API Version, Max Tokens, Context Length and Temperature as a two-by-two grid at every width.
+
+### 3b. Role-scoped models in the host (revised during implementation)
+`App\Models\ChatSystem` and `App\Models\VoiceSystem` extend code-talker's `AiSystem` with a global scope on `role` (chat; audio or transcription). Creating through `ChatSystem` sets the chat role; `VoiceSystem` refuses a non-voice role. The pickers, the AI Systems index, the Voice Systems pages (bound to `{voiceSystem}`, so a chat id is not found) and `CompanyIntelSystems` use them, which replaces the per-query role filters below.
+- The package model names neither its table nor its foreign key, and Eloquent derives both from the runtime class, so a bare subclass would read a `chat_systems` table and `chat_system_id` keys. `Concerns\IsAiSystemSubset` pins the table, the foreign key and the morph class to the parent's.
+- Only this app's queries return the subclasses. code-talker's services (`defaultForFeature()`, `AiSystemResolver`, the audio services) still return plain `AiSystem` and keep their own role guards. The idea arguably belongs upstream in code-talker; it is built here first, as jasonvertucio.com's own.
+
 ### 4. Chat pickers filter with the package scope
 `AiChatBotController::systems()` and `ApplicationPayload::selectableSystems()` add `->role(AiSystemRole::Chat)`. `CompanyIntelSystems` already filters by role.
 
@@ -90,7 +100,7 @@ The key is `sha256(system_id | model | voice | plain_text)`, stored as `storage/
 2. **Developer-owned (production):** deploy as usual and run migrations. Grant `use-voice` from Roles & Permissions. Run Speaches on the LM Studio host, bound to its WireGuard address and firewalled to the tunnel. Create two AiSystems (`openai` / `transcription` and `openai` / `audio`) with `base_url`, explicit models, a placeholder key and, for audio, a default voice, then assign the `voice:dictation` and `voice:speech` defaults. Check the status endpoint from the admin pages. No queue worker restart is needed (no queued work changes), and the scheduler picks up the sweep.
 3. Rollback: revert the deploy. The `use-voice` migration's `down()` removes the permission. Voice-role AiSystems can stay; they are inert without the code, and chat pickers in the reverted code would list them again, so deactivate them if rolling back.
 
-## Open Questions
+## Resolved Questions
 
-- Exact Speaches model IDs and the Kokoro voice name are chosen at setup time. They are data on the AiSystem records, not code.
-- Whether to send `language: en` on every transcription or let the server auto-detect. This can be set later as a `voice.transcription_language` config value without changing behavior elsewhere.
+- **Speaches model IDs and the Kokoro voice name** are chosen at setup time. They are data on the AiSystem records (Model and Default voice), not code.
+- **Transcription language: the server detects it.** `config/voice.php` carries `transcription_language`, blank by default. A request's own `language` wins; otherwise a non-blank config value is sent; otherwise no language is sent and the server auto-detects.

@@ -12,6 +12,7 @@ import InsightsIcon from "@mui/icons-material/Insights";
 import MemoryIcon from "@mui/icons-material/Memory";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import PushPinIcon from "@mui/icons-material/PushPin";
+import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
 import RuleIcon from "@mui/icons-material/Rule";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
@@ -37,6 +38,7 @@ const registry: { [key: string]: ReactNode } = {
     Memory: <MemoryIcon fontSize="large" />,
     Psychology: <PsychologyIcon fontSize="large" />,
     PushPin: <PushPinIcon fontSize="large" />,
+    RecordVoiceOver: <RecordVoiceOverIcon fontSize="large" />,
     Rule: <RuleIcon fontSize="large" />,
     SmartToy: <SmartToyIcon fontSize="large" />,
     TrackChanges: <TrackChangesIcon fontSize="large" />,

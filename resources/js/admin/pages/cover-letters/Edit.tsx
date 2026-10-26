@@ -12,6 +12,7 @@ import type { SyntheticEvent } from "react";
 import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import PageHeader from "@/admin/components/PageHeader";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import ListenButton from "@/components/voice/ListenButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 interface CoverLetter extends FormData {
@@ -61,7 +62,16 @@ export default function Edit({ coverLetter, resumeVersions }: EditProps) {
                 backLabel="Back to Cover Letters"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 2,
+                }}
+            >
+                <ListenButton getText={() => form.data.message_body} />
                 <Button
                     component={InertiaLink}
                     href={`/admin/cover-letters/${coverLetter.id}/preview`}

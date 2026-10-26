@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
@@ -31,6 +33,33 @@ class AiSystemFactory extends Factory
             'config' => [],
             'allowed_tools' => null,
         ];
+    }
+
+    /**
+     * A text-to-speech system on a local OpenAI-compatible speech server.
+     */
+    public function audio(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'provider' => AiProvider::OpenAI->value,
+            'role' => AiSystemRole::Audio,
+            'model' => 'kokoro',
+            'base_url' => 'http://10.10.0.2:8000/v1',
+            'config' => ['voice' => 'af_heart'],
+        ]);
+    }
+
+    /**
+     * A speech-to-text system on a local OpenAI-compatible speech server.
+     */
+    public function transcription(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'provider' => AiProvider::OpenAI->value,
+            'role' => AiSystemRole::Transcription,
+            'model' => 'Systran/faster-whisper-medium',
+            'base_url' => 'http://10.10.0.2:8000/v1',
+        ]);
     }
 
     public function inactive(): static

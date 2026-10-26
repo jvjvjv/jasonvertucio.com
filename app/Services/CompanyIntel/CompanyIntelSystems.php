@@ -2,8 +2,8 @@
 
 namespace App\Services\CompanyIntel;
 
+use App\Models\ChatSystem;
 use Illuminate\Database\Eloquent\Collection;
-use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
 /**
@@ -24,9 +24,8 @@ class CompanyIntelSystems
      */
     public function eligible(): Collection
     {
-        return AiSystem::active()
+        return ChatSystem::active()
             ->where('system_prompt_id', CompanyIntelService::PROMPT_ID_COMPANY_INTEL)
-            ->where(fn ($query) => $query->where('role', AiSystemRole::Chat->value)->orWhereNull('role'))
             ->orderBy('name')
             ->get();
     }

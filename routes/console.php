@@ -32,6 +32,10 @@ Schedule::command('resume:sweep-expired-documents')
     ->hourly()
     ->withoutOverlapping();
 
+Schedule::command('voice:sweep-cache')
+    ->daily()
+    ->withoutOverlapping();
+
 Schedule::command('mcp:sweep-call-log')
     ->daily()
     ->withoutOverlapping();

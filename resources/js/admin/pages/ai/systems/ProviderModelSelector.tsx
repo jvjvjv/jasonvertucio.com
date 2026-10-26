@@ -9,6 +9,8 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
+import type { ReactNode } from "react";
+
 interface ModelCapabilities {
     reasoning?: boolean | null;
     vision?: boolean;
@@ -57,6 +59,14 @@ interface ProviderModelSelectorProps {
     };
     errors: Partial<{ [key: string]: string }>;
     providers: ProviderOption[];
+    // API version, max tokens, context length and temperature only shape a
+    // chat turn; a voice system leaves them out, and its model is optional.
+    showChatSettings?: boolean;
+    modelRequired?: boolean;
+    modelHelperText?: string;
+    baseUrlHelperText?: string;
+    /** Rendered between the name and the provider row (the voice form's role choice). */
+    afterName?: ReactNode;
     availableModels: ModelOption[];
     selectedModelCapabilities: ModelCapabilities | null;
     selectedModelLoaded: boolean;
@@ -89,6 +99,11 @@ export default function ProviderModelSelector({
     data,
     errors,
     providers,
+    showChatSettings = true,
+    modelRequired = true,
+    modelHelperText,
+    baseUrlHelperText,
+    afterName,
     availableModels,
     selectedModelCapabilities,
     selectedModelLoaded,
@@ -122,31 +137,43 @@ export default function ProviderModelSelector({
 
     return (
         <>
+            <TextField
+                label="Name"
+                required
+                size="small"
+                fullWidth
+                value={data.name}
+                onChange={(e) => {
+                    onNameChange(e.target.value);
+                }}
+                error={!!errors.name}
+                helperText={errors.name}
+                placeholder="My Claude System"
+                sx={{ mb: 2 }}
+            />
+
+            {afterName}
+
+            {/* Provider, key and model belong together: one row when there is
+                room, one field per line when there is not. */}
             <Box
                 sx={{
                     display: "grid",
                     gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    gridTemplateColumns: {
+                        xs: "minmax(0, 1fr)",
+                        md: "repeat(3, minmax(0, 1fr))",
+                    },
+                    alignItems: "start",
                     mb: 2,
                 }}
             >
-                <TextField
-                    label="Name"
-                    required
-                    size="small"
-                    value={data.name}
-                    onChange={(e) => {
-                        onNameChange(e.target.value);
-                    }}
-                    error={!!errors.name}
-                    helperText={errors.name}
-                    placeholder="My Claude System"
-                />
                 <TextField
                     label="Provider"
                     select
                     required
                     size="small"
+                    fullWidth
                     value={data.provider}
                     onChange={(e) => {
                         onProviderChange(e.target.value);
@@ -166,16 +193,7 @@ export default function ProviderModelSelector({
                         </MenuItem>
                     ))}
                 </TextField>
-            </Box>
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
-                }}
-            >
                 <Box>
                     <TextField
                         label="API Key"
@@ -216,7 +234,7 @@ export default function ProviderModelSelector({
                     <TextField
                         label="Model"
                         select={availableModels.length > 0}
-                        required
+                        required={modelRequired}
                         size="small"
                         fullWidth
                         value={data.model}
@@ -230,7 +248,7 @@ export default function ProviderModelSelector({
                             (errors.model ?? fetchError) ||
                             (fieldsLocked
                                 ? "Model cannot be changed after creation."
-                                : undefined)
+                                : modelHelperText)
                         }
                         slotProps={{
                             input: {
@@ -316,95 +334,84 @@ export default function ProviderModelSelector({
                 Provider Settings
             </Typography>
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
+            <TextField
+                label="Base URL"
+                size="small"
+                fullWidth
+                value={data.base_url}
+                onChange={(e) => {
+                    onBaseUrlChange(e.target.value);
                 }}
-            >
-                <TextField
-                    label="Base URL"
-                    size="small"
-                    value={data.base_url}
-                    onChange={(e) => {
-                        onBaseUrlChange(e.target.value);
-                    }}
-                    error={!!errors.base_url}
-                    helperText={errors.base_url}
-                    placeholder={baseUrlPlaceholder}
-                />
+                error={!!errors.base_url}
+                helperText={errors.base_url ?? baseUrlHelperText}
+                placeholder={baseUrlPlaceholder}
+                sx={{ mb: 2 }}
+            />
 
-                <TextField
-                    label="API Version"
-                    size="small"
-                    value={data.api_version}
-                    onChange={(e) => {
-                        onApiVersionChange(e.target.value);
+            {showChatSettings && (
+                // Four short numeric-ish fields: two columns at every width,
+                // phone included.
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2,
+                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                        mb: 2,
                     }}
-                    error={!!errors.api_version}
-                    helperText={errors.api_version}
-                    placeholder={apiVersionPlaceholder}
-                />
-            </Box>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
-                }}
-            >
-                <TextField
-                    label="Max Tokens"
-                    type="number"
-                    required
-                    size="small"
-                    value={data.max_tokens}
-                    onChange={(e) => {
-                        onMaxTokensChange(e.target.value);
-                    }}
-                    error={!!errors.max_tokens}
-                    helperText={errors.max_tokens}
-                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
-                />
-                <TextField
-                    label="Context Length"
-                    type="number"
-                    size="small"
-                    value={data.context_length ?? ""}
-                    onChange={(e) => {
-                        onContextLengthChange(e.target.value);
-                    }}
-                    disabled={!supportsContextLength}
-                    error={!!errors.context_length}
-                    slotProps={{ htmlInput: { min: 1, max: 200000 } }}
-                />
-            </Box>
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                    mb: 2,
-                }}
-            >
-                <TextField
-                    label="Temperature"
-                    type="number"
-                    size="small"
-                    value={data.temperature}
-                    onChange={(e) => {
-                        onTemperatureChange(e.target.value);
-                    }}
-                    error={!!errors.temperature}
-                    helperText={errors.temperature}
-                    slotProps={{ htmlInput: { min: 0, max: 1, step: 0.01 } }}
-                />
-            </Box>
+                >
+                    <TextField
+                        label="API Version"
+                        size="small"
+                        value={data.api_version}
+                        onChange={(e) => {
+                            onApiVersionChange(e.target.value);
+                        }}
+                        error={!!errors.api_version}
+                        helperText={errors.api_version}
+                        placeholder={apiVersionPlaceholder}
+                    />
+                    <TextField
+                        label="Max Tokens"
+                        type="number"
+                        required
+                        size="small"
+                        value={data.max_tokens}
+                        onChange={(e) => {
+                            onMaxTokensChange(e.target.value);
+                        }}
+                        error={!!errors.max_tokens}
+                        helperText={errors.max_tokens}
+                        slotProps={{ htmlInput: { min: 1, max: 200000 } }}
+                    />
+                    <TextField
+                        label="Context Length"
+                        type="number"
+                        size="small"
+                        value={data.context_length ?? ""}
+                        onChange={(e) => {
+                            onContextLengthChange(e.target.value);
+                        }}
+                        disabled={!supportsContextLength}
+                        error={!!errors.context_length}
+                        helperText={errors.context_length}
+                        slotProps={{ htmlInput: { min: 1, max: 200000 } }}
+                    />
+                    <TextField
+                        label="Temperature"
+                        type="number"
+                        size="small"
+                        value={data.temperature}
+                        onChange={(e) => {
+                            onTemperatureChange(e.target.value);
+                        }}
+                        error={!!errors.temperature}
+                        helperText={errors.temperature}
+                        slotProps={{
+                            htmlInput: { min: 0, max: 1, step: 0.01 },
+                        }}
+                    />
+                </Box>
+            )}
         </>
     );
 }

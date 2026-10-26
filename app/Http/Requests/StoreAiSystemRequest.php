@@ -2,13 +2,18 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesAiSystemRole;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
+use Jvjvjv\CodeTalker\Enums\AiSystemRole;
 
 class StoreAiSystemRequest extends FormRequest
 {
+    use ValidatesAiSystemRole;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -18,54 +23,59 @@ class StoreAiSystemRequest extends FormRequest
     }
 
     /**
+     * A system created without a role is a chat system, as every system was
+     * before roles existed.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (blank($this->input('role'))) {
+            $this->merge(['role' => AiSystemRole::Chat->value]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'provider' => ['required', 'string', Rule::in(AiProvider::values())],
+            'role' => ['required', Rule::enum(AiSystemRole::class)],
+            'provider' => ['required', 'string', Rule::in(AiProvider::values()), $this->providerServesRoleRule()],
             'api_key' => [
                 Rule::requiredIf(fn (): bool => ! in_array($this->input('provider'), [AiProvider::OpenAICompatible->value, AiProvider::LmStudio->value], true)),
                 'nullable',
                 'string',
             ],
-            'model' => ['required', 'string', 'max:255'],
-            'model_capabilities' => ['nullable', 'array'],
-            'model_capabilities.reasoning' => ['nullable', 'boolean'],
-            'model_capabilities.vision' => ['nullable', 'boolean'],
-            'model_capabilities.tools' => ['nullable', 'boolean'],
-            'model_capabilities.max_context_length' => ['nullable', 'integer', 'min:1', 'max:2000000'],
+            // A voice system may leave the model blank to use the provider's
+            // default; a local server needs it set, which the form says.
+            'model' => ['required_if:role,chat', 'nullable', 'string', 'max:255'],
             'base_url' => ['nullable', 'string', 'url', 'max:255'],
             'api_version' => ['nullable', 'string', 'max:50'],
-            'max_tokens' => ['required', 'integer', 'min:1', 'max:200000'],
-            'context_length' => ['nullable', 'integer', 'min:1', 'max:200000'],
-            'temperature' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'is_active' => ['boolean'],
-            'system_prompt_id' => ['nullable', 'integer', 'exists:ai_system_prompts,id'],
-            'custom_system_prompt' => ['nullable', 'string'],
+            ...$this->chatOnlyRules($this->webToolPolicyRule()),
+            ...$this->roleDependentRules(),
             'config' => ['nullable', 'json'],
             'credentials' => ['nullable', 'json'],
             'auth_type' => ['nullable', 'string', 'max:50'],
             'endpoint_type' => ['nullable', 'string', 'max:50'],
             'stream_protocol' => ['nullable', 'string', 'max:50'],
             'system_prompt_mode' => ['nullable', 'string', 'max:50'],
-            'supports_tools' => ['boolean'],
-            'allowed_tools' => ['nullable', 'array'],
-            'allowed_tools.*' => ['string', 'max:255'],
-            'web_tool_policy' => ['nullable', 'json', $this->webToolPolicyRule()],
-            'supports_json_mode' => ['boolean'],
-            'enable_thinking' => ['nullable', 'boolean'],
             'is_local_endpoint' => ['boolean'],
             // @deprecated Removed from the admin UI; kept validated only so
             // an existing value round-trips untouched, not for new writes.
             // Slated for removal from the app entirely.
             'pricing_profile' => ['nullable', 'json'],
-            'feature_defaults' => ['nullable', 'array'],
-            'feature_defaults.*' => ['string', 'in:targeted-resume,cover-letter,company-intel'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $this->validateFeatureDefaultsMatchRole($validator);
+        });
     }
 
     /**

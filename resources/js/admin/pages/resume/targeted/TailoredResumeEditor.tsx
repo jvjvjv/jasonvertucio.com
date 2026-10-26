@@ -9,6 +9,7 @@ import useUpdateTailoredMarkdown from "./useUpdateTailoredMarkdown";
 
 import type { TargetedResume } from "@/types";
 
+import ListenButton from "@/components/voice/ListenButton";
 import useMarkdownPaste from "@/hooks/useMarkdownPaste";
 
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -73,15 +74,25 @@ export default function TailoredResumeEditor({
                 />
             </Box>
 
-            <Button
-                variant="contained"
-                disabled={isSaving}
-                onClick={() => {
-                    void handleSave();
+            <Box
+                sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    gap: 1,
                 }}
             >
-                {isSaving ? "Saving..." : "Save & Regenerate"}
-            </Button>
+                <Button
+                    variant="contained"
+                    disabled={isSaving}
+                    onClick={() => {
+                        void handleSave();
+                    }}
+                >
+                    {isSaving ? "Saving..." : "Save & Regenerate"}
+                </Button>
+                <ListenButton getText={() => markdown} />
+            </Box>
         </Box>
     );
 }

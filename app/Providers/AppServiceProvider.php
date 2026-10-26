@@ -27,7 +27,6 @@ use Canvas\Events\PostPublished;
 use Canvas\Events\PostUnpublished;
 use Canvas\Events\PostUpdated;
 use Illuminate\Cache\RateLimiting\Limit;
-use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -39,6 +38,7 @@ use Illuminate\Support\ServiceProvider;
 use Jvjvjv\CodeTalker\CodeTalkerServiceProvider;
 use Jvjvjv\CodeTalker\Services\Conversation\CodeTalkerConversationStore;
 use Laravel\Ai\Contracts\ConversationStore;
+use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Laravel\Mcp\Events\SessionInitialized;
 
 class AppServiceProvider extends ServiceProvider
@@ -109,6 +109,12 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour(config('mcp-server.limits.anonymous.per_hour'))->by("mcp-anon-hour:{$address}"),
             ];
         });
+
+        RateLimiter::for('voice-transcribe', fn (Request $request) => Limit::perMinute((int) config('voice.rate_limits.transcribe_per_minute'))
+            ->by('voice-transcribe:'.$request->user()?->getAuthIdentifier()));
+
+        RateLimiter::for('voice-speech', fn (Request $request) => Limit::perMinute((int) config('voice.rate_limits.speech_per_minute'))
+            ->by('voice-speech:'.$request->user()?->getAuthIdentifier()));
 
         Route::model('aiChatBot', AiChatBot::class);
 
