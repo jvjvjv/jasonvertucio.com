@@ -65,7 +65,7 @@ class ApplicationListTest extends TestCase
 
     public function test_store_seeds_a_single_initial_user_message_with_analysis_prompt_and_job_description(): void
     {
-        $system = AiSystem::factory()->create(['is_active' => true]);
+        $system = AiSystem::factory()->targetedResume()->create(['is_active' => true]);
         ResumeVersion::factory()->create(['is_current' => true]);
 
         $jobTitle = 'Senior Laravel Engineer';

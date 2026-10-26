@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\TargetedResumeSystems;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BeginApplicationAnalysisRequest extends FormRequest
@@ -17,12 +18,12 @@ class BeginApplicationAnalysisRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id'],
+            'ai_system_id' => ['nullable', 'integer', 'exists:ai_systems,id', app(TargetedResumeSystems::class)->validationRule()],
         ];
     }
 

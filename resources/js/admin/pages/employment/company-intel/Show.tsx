@@ -34,6 +34,7 @@ import type {
 } from "@/components/ChatInterface";
 import type { Message, SharedProps } from "@/types";
 
+import SessionSystemSwitch from "@/admin/components/SessionSystemSwitch";
 import StatusChip from "@/admin/components/StatusChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import { api, apiErrorMessage, networkErrorMessage } from "@/api";
@@ -48,7 +49,12 @@ const MODEL_API = "/api/admin/resume/applications/ai-systems";
 
 interface ShowProps {
     intel: RoleIntel;
-    conversation: { id: number; ai_system_id: number | null } | null;
+    conversation: {
+        id: number;
+        ai_system_id: number | null;
+        ai_system_name: string | null;
+        can_switch: boolean;
+    } | null;
     messages: Message[];
     shouldAutoStart: boolean;
     companyOptions: CompanyOption[];
@@ -80,7 +86,13 @@ export default function Show({
 
     const reloadTranscript = useCallback(() => {
         router.reload({
-            only: ["intel", "messages", "shouldAutoStart", "companyOptions"],
+            only: [
+                "intel",
+                "conversation",
+                "messages",
+                "shouldAutoStart",
+                "companyOptions",
+            ],
             onSuccess: () => {
                 setChatKey((key) => key + 1);
             },
@@ -370,6 +382,28 @@ export default function Show({
                         sessionExpiresAt={sessionExpiresAt}
                         shouldAutoStart={shouldAutoStart}
                         slots={{
+                            header:
+                                conversation !== null ? (
+                                    <Container
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "flex-end",
+                                            mt: 1,
+                                        }}
+                                    >
+                                        <SessionSystemSwitch
+                                            url={`${INTEL_API}/${intel.id}/system-switch`}
+                                            currentName={
+                                                conversation.ai_system_name
+                                            }
+                                            canSwitch={conversation.can_switch}
+                                            disabled={
+                                                isStreaming || inBackground
+                                            }
+                                            onSwitched={reloadTranscript}
+                                        />
+                                    </Container>
+                                ) : undefined,
                             aboveMessages: inBackground ? (
                                 <Container>
                                     <Alert severity="info" sx={{ my: 2 }}>

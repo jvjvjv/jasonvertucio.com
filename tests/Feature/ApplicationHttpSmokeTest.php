@@ -165,7 +165,7 @@ class ApplicationHttpSmokeTest extends TestCase
 
     public function test_analysis_attaches_a_session_once(): void
     {
-        $system = AiSystem::factory()->create(['is_active' => true]);
+        $system = AiSystem::factory()->targetedResume()->create(['is_active' => true]);
         $application = Application::factory()->applied()->create();
 
         $response = $this->actingAs($this->admin)

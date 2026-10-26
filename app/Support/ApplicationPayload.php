@@ -4,8 +4,8 @@ namespace App\Support;
 
 use App\Models\AiConversation;
 use App\Models\Application;
-use App\Models\ChatSystem;
 use App\Models\ResumeVersion;
+use App\Services\TargetedResumeSystems;
 use Illuminate\Support\Collection;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 
@@ -86,20 +86,14 @@ class ApplicationPayload
     }
 
     /**
-     * The AI systems a session may be started with: those with a system
-     * prompt assigned, or that are a feature default.
+     * The AI systems a targeted-resume session may be started with.
      *
      * @return Collection<int, array{id: int, name: string, model: string}>
      */
     public function selectableSystems(): Collection
     {
-        return ChatSystem::active()
-            ->where(function ($query): void {
-                $query->whereNotNull('system_prompt_id')
-                    ->orWhereHas('featureDefaults');
-            })
-            ->orderBy('name')
-            ->get()
+        return app(TargetedResumeSystems::class)->selectable()
+            ->toBase()
             ->map(fn (AiSystem $system): array => [
                 'id' => $system->id,
                 'name' => $system->name,

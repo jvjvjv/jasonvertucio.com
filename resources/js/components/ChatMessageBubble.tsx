@@ -70,6 +70,7 @@ interface ChatMessageBubbleProps {
 const ORIGIN_NOTICES: { [origin: string]: string | undefined } = {
     manual_edit: "✎ Edited manually",
     resume_discarded: "✕ Targeted resume discarded",
+    system_switched: "⇄ AI system switched",
 };
 
 /** Narrows a message's free-form `metadata.origin` to the string the bubble takes. */

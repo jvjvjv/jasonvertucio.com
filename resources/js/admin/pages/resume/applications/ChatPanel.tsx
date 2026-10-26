@@ -5,7 +5,7 @@ import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import IconButton from "@mui/material/IconButton";
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 
 import ArtifactStatusCard from "./ArtifactStatusCard";
 import StatusBar from "./StatusBar";
@@ -20,6 +20,7 @@ import type {
     TargetedResume,
 } from "@/types";
 
+import SessionSystemSwitch from "@/admin/components/SessionSystemSwitch";
 import ChatInterface from "@/components/ChatInterface";
 
 interface ChatPanelProps {
@@ -90,6 +91,21 @@ export default memo(function ChatPanel({
 }: ChatPanelProps) {
     const page = usePage<SharedProps>();
     const sessionExpiresAt = page.props.session.expiresAt;
+    const [isStreaming, setIsStreaming] = useState(false);
+
+    const handleStreamResponse = useCallback(() => {
+        setIsStreaming(true);
+    }, []);
+
+    const handleStreamEnd = useCallback(() => {
+        setIsStreaming(false);
+    }, []);
+
+    // The transcript gains the switch note, and the model checks follow
+    // the new system.
+    const handleSwitched = useCallback(() => {
+        router.reload({ only: ["conversation", "messages"] });
+    }, []);
 
     const aiSystemId = conversation.ai_system_id;
     const statusUrl =
@@ -239,12 +255,23 @@ export default memo(function ChatPanel({
                             statusUpdates={statusUpdates}
                             fitScore={application.fit_score}
                             usage={conversation.usage}
+                            action={
+                                <SessionSystemSwitch
+                                    url={`${APPLICATIONS_API}/${application.id}/system-switch`}
+                                    currentName={conversation.ai_system_name}
+                                    canSwitch={conversation.can_switch}
+                                    disabled={isStreaming}
+                                    onSwitched={handleSwitched}
+                                />
+                            }
                             sx={{ my: 2 }}
                         />
                     </Container>
                 ),
             }}
             onEvent={handleStreamEvent}
+            onStreamResponse={handleStreamResponse}
+            onStreamEnd={handleStreamEnd}
             onMessagesChange={onMessagesChange}
         />
     );

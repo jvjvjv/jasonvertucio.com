@@ -13,7 +13,9 @@ use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\RoleIntel;
 use App\Models\TargetedResume;
+use App\Services\AiSession\SessionSystemSwitcher;
 use App\Services\ApplicationService;
+use App\Services\TargetedResumeSystems;
 use App\Support\AnalysisSystemGuard;
 use App\Support\ApplicationPayload;
 use Carbon\CarbonInterface;
@@ -151,7 +153,7 @@ class ApplicationController extends Controller
      * Show an application's Discussion page: its chat (when it has an AI
      * session), job details, status history and documents.
      */
-    public function show(Application $application): InertiaResponse
+    public function show(Application $application, SessionSystemSwitcher $switcher, TargetedResumeSystems $systems): InertiaResponse
     {
         $application->load([
             'resumeVersion:id,version',
@@ -196,6 +198,7 @@ class ApplicationController extends Controller
                 'context' => $conversation->context,
                 'ai_system_id' => $conversation->aiSystem?->id,
                 'ai_system_name' => $conversation->aiSystem?->name,
+                'can_switch' => $switcher->canSwitch($conversation, $systems),
                 'usage' => $this->payload->usage($conversation),
             ] : null,
             'messages' => $messages
