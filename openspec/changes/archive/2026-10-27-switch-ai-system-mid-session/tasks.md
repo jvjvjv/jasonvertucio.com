@@ -7,7 +7,7 @@
 ## 2. Display-only notes
 
 - [x] 2.1 Define the display-only origins constant (`system_switched`) and filter those rows in `TargetedResumeService`'s history build and `CompanyIntelService::messagesFor()`, before choosing the last user message. Verify tests where a note follows the last user message: the prompt is still that user message and no history entry contains the note's text, for both features
-- [ ] 2.2 Add `system_switched: "⇄ AI system switched"` to `ORIGIN_NOTICES` in `ChatMessageBubble.tsx`. Verify by viewing a seeded note in the Discussion chat locally
+- [x] 2.2 Add `system_switched: "⇄ AI system switched"` to `ORIGIN_NOTICES` in `ChatMessageBubble.tsx`. Verify by viewing a seeded note in the Discussion chat locally
 
 ## 3. Switch service and guards
 
@@ -25,8 +25,8 @@
 ## 5. Frontend
 
 - [x] 5.1 Build `SwitchSystemControl` in `resources/js/admin/components/`: current system, Switch button, a dialog that fetches options, a select, the size warning per the spec wording and the tool-results caveat, and Confirm. It's disabled while streaming and hidden when `can_switch` is false. Verify `npm run build` succeeds and the husky lint passes on the new files
-- [ ] 5.2 Mount it in `applications/ChatPanel.tsx` and `employment/company-intel/Show.tsx`, reloading the conversation and messages after a switch so the warm-up detector follows the new system. Verify locally (Docker `jv-app`, Vivaldi) that switching shows the note, the new current system, and that the next reply comes from the new model per the interaction log
-- [ ] 5.3 Do a frontend-design pass on the control and dialog (existing look, no gradients or box shadows), then take screenshots of the control, the dialog in its exceed, model-max and unknown states, and the note. Show them to the developer before merging
+- [x] 5.2 Mount it in `applications/ChatPanel.tsx` and `employment/company-intel/Show.tsx`, reloading the conversation and messages after a switch so the warm-up detector follows the new system. Verify locally (Docker `jv-app`, Vivaldi) that switching shows the note, the new current system, and that the next reply comes from the new model per the interaction log
+- [x] 5.3 Do a frontend-design pass on the control and dialog (existing look, no gradients or box shadows), then take screenshots of the control, the dialog in its exceed, model-max and unknown states, and the note. Show them to the developer before merging
 
 ## 6. Docs and wrap-up
 
