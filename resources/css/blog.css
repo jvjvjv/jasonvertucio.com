@@ -65,6 +65,10 @@
             padding:revert !important;
         }
 
+        iframe {
+            margin: 0 auto;
+        }
+
         .canvas-post-body-image {
             @apply my-2 w-full;
 
