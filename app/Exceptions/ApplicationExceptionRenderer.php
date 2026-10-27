@@ -31,6 +31,8 @@ class ApplicationExceptionRenderer
         RoleIntelNotFailedException::class => Response::HTTP_CONFLICT,
         RoleIntelHasNoCompanyException::class => Response::HTTP_CONFLICT,
         NoIntelSystemException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
+        SystemNotEligibleException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
+        SessionTurnInProgressException::class => Response::HTTP_CONFLICT,
     ];
 
     public function __construct(

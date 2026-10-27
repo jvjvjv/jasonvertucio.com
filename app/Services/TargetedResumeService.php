@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\CoverLetter;
 use App\Models\TargetedResume;
 use App\Services\Mcp\TargetedResumeToolRegistry;
+use App\Support\SessionNotes;
 use Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -166,7 +167,7 @@ class TargetedResumeService
         // Build the laravel/ai message history. The system message becomes the
         // agent's instructions, and the trailing user message becomes the
         // prompt rather than part of the history.
-        $allMessages = $conversation->messages()->orderBy('created_at')->orderBy('id')->get();
+        $allMessages = SessionNotes::replayable($conversation->messages()->orderBy('created_at')->orderBy('id')->get());
         $systemPrompt = null;
         $history = [];
         $prompt = '';

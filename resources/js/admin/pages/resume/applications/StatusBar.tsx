@@ -5,6 +5,7 @@ import useGhostedAfterDays from "./useGhostedAfterDays";
 
 import type { ConversationUsage, StatusUpdate } from "@/types";
 import type { SxProps } from "@mui/material";
+import type { ReactNode } from "react";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
@@ -19,6 +20,8 @@ interface StatusBarProps {
     fitScore: number | null;
     /** AI usage of the application's session; omit when it has none. */
     usage?: ConversationUsage | null;
+    /** Shown at the end of the bar, pushed to the right. */
+    action?: ReactNode;
     sx?: SxProps;
 }
 
@@ -27,6 +30,7 @@ export default function StatusBar({
     statusUpdates,
     fitScore,
     usage,
+    action,
     sx,
 }: StatusBarProps) {
     const latestUpdate =
@@ -67,6 +71,9 @@ export default function StatusBar({
                         latestUpdate.status.slice(1)}
                     : {formatCalendarDate(latestUpdate.occurred_at)}
                 </Typography>
+            ) : null}
+            {action ? (
+                <Box sx={{ ml: "auto", minWidth: 0 }}>{action}</Box>
             ) : null}
         </Box>
     );

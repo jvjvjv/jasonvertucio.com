@@ -100,7 +100,7 @@ class ApplicationCreateTest extends TestCase
     public function test_begin_analysis(): void
     {
         $current = $this->currentResumeVersion();
-        $system = AiSystem::factory()->create();
+        $system = AiSystem::factory()->targetedResume()->create();
         $applications = Application::withTrashed()->count();
 
         $response = $this->actingAs($this->admin)
@@ -160,7 +160,7 @@ class ApplicationCreateTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->postJson(route('admin.resume.applications.store'), [
                 'intent' => 'analyze',
-                'ai_system_id' => AiSystem::factory()->create()->id,
+                'ai_system_id' => AiSystem::factory()->targetedResume()->create()->id,
                 'job_description' => self::JOB_DESCRIPTION,
                 'resume_version_id' => $other->id,
                 'occurred_at' => '2026-07-01',

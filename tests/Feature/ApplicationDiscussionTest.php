@@ -265,7 +265,7 @@ class ApplicationDiscussionTest extends TestCase
 
     public function test_beginning_analysis_later(): void
     {
-        $system = AiSystem::factory()->create();
+        $system = AiSystem::factory()->targetedResume()->create();
         $application = Application::factory()->create([
             'company_name' => 'Laterzq Co',
             'position' => 'Staff Engineer',
@@ -379,7 +379,7 @@ class ApplicationDiscussionTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->create()->id])
+            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
             ->assertStatus(409)
             ->assertJsonStructure(['message']);
 
@@ -389,7 +389,7 @@ class ApplicationDiscussionTest extends TestCase
 
     public function test_beginning_analysis_replaces_a_session_that_was_deleted(): void
     {
-        $system = AiSystem::factory()->create();
+        $system = AiSystem::factory()->targetedResume()->create();
         $application = Application::factory()->withConversation()->applied(Carbon::parse('2026-03-01 09:00:00'))->create();
         $deletedConversationId = $application->ai_conversation_id;
         $this->message($application->conversation, 'user', 'Earlier turn');

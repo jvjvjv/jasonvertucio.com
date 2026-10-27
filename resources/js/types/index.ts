@@ -318,6 +318,8 @@ export interface ApplicationConversation {
     context: { [key: string]: unknown } | null;
     ai_system_id: number | null;
     ai_system_name: string | null;
+    /** Whether another eligible AI system can take over the session. */
+    can_switch: boolean;
     usage: ConversationUsage | null;
 }
 

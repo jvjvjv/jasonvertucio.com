@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CompanyIntelSessionController;
 use App\Http\Controllers\Admin\JobUrlParseController;
 use App\Http\Controllers\Admin\JobUrlParserController;
 use App\Http\Controllers\Admin\ResumeEditorController;
+use App\Http\Controllers\Admin\SessionSystemSwitchController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\TargetedResumeController;
 use App\Http\Controllers\Admin\VoiceController;
@@ -81,6 +82,8 @@ Route::middleware(['auth', 'can:edit-resume'])
                         Route::post('/chat', [ApplicationSessionController::class, 'chat'])->name('chat');
                         Route::post('/finalize', [ApplicationSessionController::class, 'finalize'])->name('finalize');
                         Route::post('/finalize-cover-letter', [ApplicationSessionController::class, 'finalizeCoverLetter'])->name('finalize-cover-letter');
+                        Route::get('/system-switch', [SessionSystemSwitchController::class, 'applicationOptions'])->name('system-switch.show');
+                        Route::post('/system-switch', [SessionSystemSwitchController::class, 'switchApplication'])->name('system-switch.update');
 
                         Route::post('/status-updates', [ApplicationStatusUpdateController::class, 'store'])->name('status-updates.store');
                         Route::put('/status-updates/{statusUpdate}', [ApplicationStatusUpdateController::class, 'update'])
@@ -109,6 +112,8 @@ Route::middleware(['auth', 'can:edit-resume'])
                 Route::post('/chat', [CompanyIntelSessionController::class, 'chat'])->name('chat');
                 Route::post('/retry', [CompanyIntelSessionController::class, 'retry'])->name('retry');
                 Route::post('/wrong-company', [CompanyIntelSessionController::class, 'wrongCompany'])->name('wrong-company');
+                Route::get('/system-switch', [SessionSystemSwitchController::class, 'intelOptions'])->name('system-switch.show');
+                Route::post('/system-switch', [SessionSystemSwitchController::class, 'switchIntel'])->name('system-switch.update');
             });
     });
 

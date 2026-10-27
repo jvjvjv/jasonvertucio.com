@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Company;
 use App\Models\RoleIntel;
+use App\Services\AiSession\SessionSystemSwitcher;
+use App\Services\CompanyIntel\CompanyIntelSystems;
 use App\Support\CompanyIntelPayload;
 use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
@@ -45,7 +47,7 @@ class CompanyIntelController extends BaseAdminController
         ]);
     }
 
-    public function show(RoleIntel $roleIntel): InertiaResponse
+    public function show(RoleIntel $roleIntel, SessionSystemSwitcher $switcher, CompanyIntelSystems $systems): InertiaResponse
     {
         abort_if($roleIntel->application === null, 404);
 
@@ -61,6 +63,8 @@ class CompanyIntelController extends BaseAdminController
             'conversation' => $conversation !== null ? [
                 'id' => $conversation->id,
                 'ai_system_id' => $conversation->ai_system_id,
+                'ai_system_name' => $conversation->aiSystem?->name,
+                'can_switch' => $switcher->canSwitch($conversation, $systems),
             ] : null,
             'messages' => $messages
                 ->map(fn ($message): array => [

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Services\TargetedResumeService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Jvjvjv\CodeTalker\Enums\AiProvider;
 use Jvjvjv\CodeTalker\Enums\AiSystemRole;
@@ -59,6 +60,17 @@ class AiSystemFactory extends Factory
             'role' => AiSystemRole::Transcription,
             'model' => 'Systran/faster-whisper-medium',
             'base_url' => 'http://10.10.0.2:8000/v1',
+        ]);
+    }
+
+    /**
+     * A chat system assigned the Targeted Resume prompt, so it may run
+     * targeted-resume sessions.
+     */
+    public function targetedResume(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'system_prompt_id' => TargetedResumeService::PROMPT_ID_TARGETED_RESUME,
         ]);
     }
 

@@ -14,6 +14,7 @@ use App\Models\Company;
 use App\Models\RoleIntel;
 use App\Services\Mcp\CompanyIntelToolRegistry;
 use App\Services\TargetedResumeService;
+use App\Support\SessionNotes;
 use Generator;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\RequestException;
@@ -496,7 +497,7 @@ class CompanyIntelService
      */
     private function messagesFor(AiConversation $conversation): array
     {
-        $messages = $conversation->messages()->orderBy('created_at')->orderBy('id')->get();
+        $messages = SessionNotes::replayable($conversation->messages()->orderBy('created_at')->orderBy('id')->get());
         $instructions = (string) ($messages->firstWhere('role', 'system')?->content ?? self::instructions(null));
         $dialogue = $messages->where('role', '!=', 'system')->values();
 

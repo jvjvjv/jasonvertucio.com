@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\TargetedResumeSystems;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -40,7 +41,7 @@ class StoreApplicationRequest extends FormRequest
             'company_name' => ['nullable', 'string', 'max:191'],
             'job_location' => ['nullable', 'string', 'max:191'],
             'job_url_id' => ['nullable', 'string', 'exists:job_urls,id'],
-            'ai_system_id' => ['required_if:intent,'.self::INTENT_ANALYZE, 'nullable', 'integer', 'exists:ai_systems,id'],
+            'ai_system_id' => ['required_if:intent,'.self::INTENT_ANALYZE, 'nullable', 'integer', 'exists:ai_systems,id', app(TargetedResumeSystems::class)->validationRule()],
             'resume_version_id' => ['nullable', 'integer', 'exists:resume_versions,id'],
             'occurred_at' => ['nullable', 'date'],
         ];

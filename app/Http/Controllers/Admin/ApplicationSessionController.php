@@ -8,9 +8,11 @@ use App\Http\Requests\BeginApplicationAnalysisRequest;
 use App\Http\Requests\FinalizeCoverLetterRequest;
 use App\Http\Requests\FinalizeTargetedResumeRequest;
 use App\Models\Application;
+use App\Services\AiSession\SessionSystemSwitcher;
 use App\Services\ApplicationService;
 use App\Services\TargetedResumeService;
 use App\Support\AnalysisSystemGuard;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
@@ -96,6 +98,18 @@ class ApplicationSessionController extends Controller
             }
             flush();
 
+            $turnLock = SessionSystemSwitcher::turnLock($conversation->id);
+
+            try {
+                $turnLock->block(5);
+            } catch (LockTimeoutException) {
+                echo 'data: '.json_encode(['type' => 'error', 'message' => 'The AI system is being switched. Try again in a moment.'])."\n\n";
+                echo "data: [DONE]\n\n";
+                flush();
+
+                return;
+            }
+
             $generator = $this->targetedResumeService->continueConversation($conversation, $message);
 
             try {
@@ -123,6 +137,8 @@ class ApplicationSessionController extends Controller
                     ob_flush();
                 }
                 flush();
+            } finally {
+                $turnLock->release();
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',
