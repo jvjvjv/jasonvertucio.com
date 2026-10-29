@@ -27,7 +27,7 @@ The system SHALL provide an Employment hub page at `/admin/employment` that show
 
 ### Requirement: Blog hub
 
-The system SHALL provide a Blog hub page at `/admin/blog` that shows, as navigation tiles and in this order, Blog Admin (opening `/canvas` as a full page load) and Comments (opening the moderation queue). The Blog Admin tile SHALL be shown only to a user holding `manage-blog`; the Comments tile only to a user who may moderate comments. The hub page SHALL be reachable by any user who may moderate comments.
+The system SHALL provide a Blog hub page at `/admin/blog` that shows, as navigation tiles and in this order, Blog Admin (opening the configured Canvas path as a full page load) and Comments (opening the moderation queue). The Blog Admin tile SHALL be shown only to a user holding `manage-blog`; the Comments tile only to a user who may moderate comments. The hub page SHALL be reachable by any user who may moderate comments. The configured Canvas path SHALL NOT be `/admin/blog`, so Canvas never shadows the hub.
 
 #### Scenario: Blog administrator
 
@@ -42,7 +42,7 @@ The system SHALL provide a Blog hub page at `/admin/blog` that shows, as navigat
 #### Scenario: Blog Admin opens outside the admin app
 
 - **WHEN** the user activates the Blog Admin tile
-- **THEN** the browser performs a full page load of `/canvas`
+- **THEN** the browser performs a full page load of the configured Canvas path
 
 #### Scenario: No blog permission
 

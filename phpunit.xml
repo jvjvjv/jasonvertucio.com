@@ -24,6 +24,7 @@
     <server name="QUEUE_CONNECTION" value="sync"/>
     <server name="SESSION_DRIVER" value="array"/>
     <server name="DB_DATABASE" value="wink"/>
+    <server name="CANVAS_PATH" value="admin/blog/canvas"/>
   </php>
   <source>
     <include>

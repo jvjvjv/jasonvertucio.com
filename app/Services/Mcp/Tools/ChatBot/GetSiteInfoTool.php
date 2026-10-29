@@ -56,7 +56,7 @@ class GetSiteInfoTool extends Tool
         }
 
         // Only content already rendered on the public homepage. `links` is
-        // navigation — it includes /admin, /canvas, /profile and /logout — and
+        // navigation — it includes /admin, the Canvas path, /profile and /logout — and
         // is deliberately absent.
         //
         // This list previously also asked for `skills` and `social`, neither of

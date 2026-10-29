@@ -60,7 +60,7 @@ class AdminHubsTest extends TestCase
     {
         $hrefs = $this->blockHrefs('/admin', $this->userWith(...self::EVERY_ADMIN_PERMISSION));
 
-        foreach (['/admin/resume/applications', '/admin/resume/metrics', '/admin/resume', '/admin/cover-letters', '/canvas', '/admin/comments'] as $moved) {
+        foreach (['/admin/resume/applications', '/admin/resume/metrics', '/admin/resume', '/admin/cover-letters', '/admin/blog/canvas', '/admin/comments'] as $moved) {
             $this->assertNotContains($moved, $hrefs);
         }
     }
@@ -102,10 +102,24 @@ class AdminHubsTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('blog/Hub', false)
-                ->where('navBlocks.0.href', '/canvas')
+                ->where('navBlocks.0.href', '/admin/blog/canvas')
                 ->where('navBlocks.0.external', true)
                 ->where('navBlocks.1.href', '/admin/comments')
                 ->has('navBlocks', 2));
+    }
+
+    public function test_the_blog_admin_tile_follows_the_configured_canvas_path(): void
+    {
+        $user = $this->userWith('manage-blog');
+
+        foreach (['journal/admin', '/journal/admin/'] as $path) {
+            config(['canvas.path' => $path]);
+
+            $this->assertSame(
+                '/journal/admin',
+                app(AdminNavigationService::class)->getNavBlocksForRoute('/admin/blog', $user)[0]['href']
+            );
+        }
     }
 
     public function test_the_blog_hub_shows_only_comments_to_a_moderator(): void

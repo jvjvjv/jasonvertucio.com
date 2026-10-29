@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\CanvasPath;
 
 class AdminNavigationService
 {
@@ -13,7 +14,7 @@ class AdminNavigationService
     {
         if ($this->config === null) {
             $this->config = json_decode(
-                file_get_contents(resource_path('js/admin/navigation.json')),
+                CanvasPath::fill(file_get_contents(resource_path('js/admin/navigation.json'))),
                 true
             );
         }

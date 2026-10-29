@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\AdminNavigationService;
+use App\Support\CanvasPath;
 use App\Support\VoiceProps;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -41,7 +42,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $config = json_decode(file_get_contents(resource_path('config/config.json')), true);
+        $config = json_decode(CanvasPath::fill(file_get_contents(resource_path('config/config.json'))), true);
 
         return [
             ...parent::share($request),

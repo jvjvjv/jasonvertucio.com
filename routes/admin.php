@@ -50,7 +50,7 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRe
 // AppServiceProvider: manage-comments or manage-blog) rather than the
 // resume/admin permission above, since it is blog work.
 //
-// These deliberately live under /admin, not /canvas: Canvas registers
+// These deliberately live under /admin, not the Canvas path: Canvas registers
 // Route::get('/{view?}')->where('view', '(.*)') from its own service provider,
 // which is booted before routes/web.php is loaded, so every path under the
 // canvas prefix is swallowed by its SPA view controller.

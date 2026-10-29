@@ -9,8 +9,8 @@
         "can": "create-users"
       },
       {
-        "href": "/canvas",
-        "label": "Canvas",
+        "href": "{canvas.path}",
+        "label": "Blog Admin",
         "hover": "Manage the Canvas Blog",
         "can": "manage-blog"
       },

@@ -16,7 +16,7 @@ document.addEventListener('keydown', function(e) {
                 window.location.href = '/admin';
                 break;
             case 'B':
-                window.location.href = '/canvas';
+                window.location.href = document.body.dataset.canvasPath;
                 break;
         }
     }

@@ -209,7 +209,7 @@
             "navigationItems": [
                 {
                     "can": "manage-blog",
-                    "href": "/canvas",
+                    "href": "{canvas.path}",
                     "icon": "Feed",
                     "label": "Blog Admin",
                     "description": "Manage blog, write posts.",

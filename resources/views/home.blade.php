@@ -32,7 +32,7 @@
         <style>.fonts-loading { opacity: 1 !important; }</style>
     </noscript>
 </head>
-<body id="page-top" class="fonts-loading font-body text-dark bg-gray-50">
+<body id="page-top" class="fonts-loading font-body text-dark bg-gray-50" data-canvas-path="{{ \App\Support\CanvasPath::href() }}">
 
     <button
         type="button"

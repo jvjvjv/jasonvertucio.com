@@ -113,6 +113,6 @@ class PublicMcpRosterBoundaryTest extends TestCase
 
         $this->assertArrayNotHasKey('links', $content);
         $this->assertStringNotContainsString('/admin', json_encode($content));
-        $this->assertStringNotContainsString('/canvas', json_encode($content));
+        $this->assertStringNotContainsString(config('canvas.path'), json_encode($content));
     }
 }

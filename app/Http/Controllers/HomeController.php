@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\ResumeDataServiceContract;
+use App\Support\CanvasPath;
 use Canvas\Models\Post;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,7 @@ class HomeController extends Controller
     {
 
         $path = resource_path().'/config/config.json';
-        $config = json_decode(file_get_contents($path), true);
+        $config = json_decode(CanvasPath::fill(file_get_contents($path)), true);
         $latest_post = Post::published()->orderBy('published_at', 'DESC')->first();
         $resumeData = $this->resumeData->getDisplayData();
 
