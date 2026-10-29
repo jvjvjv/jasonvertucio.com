@@ -10,6 +10,7 @@
         .keystone-info-row {
             display: flex;
             justify-content: space-between;
+            gap: 1rem;
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--authkit-border, #e5e7eb);
         }
@@ -25,6 +26,8 @@
 
         .keystone-info-value {
             color: var(--authkit-text, #1f2937);
+            text-align: right;
+            overflow-wrap: anywhere;
         }
     </style>
 

@@ -42,7 +42,6 @@ Route::prefix('legal')->name('legal.')->group(function () {
 Route::get('/ai', [AiPageController::class, 'show'])->name('ai');
 
 require base_path('routes/auth.php');
-require base_path('routes/passkeys.php');
 require base_path('routes/admin.php');
 require base_path('routes/admin-resume.php');
 require base_path('routes/admin-employment.php');

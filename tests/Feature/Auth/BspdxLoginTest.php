@@ -11,6 +11,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class BspdxLoginTest extends TestCase
@@ -67,7 +68,7 @@ class BspdxLoginTest extends TestCase
         ]);
     }
 
-    private function returnFromBspdx(string $state, string $code = 'auth-code'): \Illuminate\Testing\TestResponse
+    private function returnFromBspdx(string $state, string $code = 'auth-code'): TestResponse
     {
         return $this->get(route('auth.bspdx.callback', ['state' => $state, 'code' => $code]));
     }
@@ -126,6 +127,7 @@ class BspdxLoginTest extends TestCase
 
         $this->assertAuthenticatedAs($identity->user);
         $this->assertSame($newEmail, $identity->user->fresh()->email);
+        $this->assertNull($identity->user->fresh()->email_verified_at);
         $this->assertSame(1, FederatedIdentity::where('subject', $identity->subject)->count());
     }
 
@@ -266,12 +268,14 @@ class BspdxLoginTest extends TestCase
 
             $this->get(route('auth.bspdx.redirect'))->assertNotFound();
             $this->get(route('auth.bspdx.callback'))->assertNotFound();
-            $this->get(route('login'))->assertOk()->assertDontSee('Sign in with bspdx.com');
+            $this->get(route('login'))->assertOk()
+                ->assertDontSee('Continue to bspdx.com')
+                ->assertSee('Signing in is turned off right now.');
 
             config(['services.bspdx.enabled' => true, 'services.bspdx.client_secret' => 'secret-xyz', 'services.bspdx.base_url' => self::BASE]);
         }
 
-        $this->get(route('login'))->assertOk()->assertSee('Sign in with bspdx.com');
+        $this->get(route('login'))->assertOk()->assertSee('Continue to bspdx.com');
     }
 
     public function test_sign_in_attempts_are_throttled_per_address(): void

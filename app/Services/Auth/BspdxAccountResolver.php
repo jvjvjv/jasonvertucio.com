@@ -75,7 +75,8 @@ class BspdxAccountResolver
             return $user;
         }
 
-        $user->forceFill(['email' => $identity->email])->save();
+        // A new address is not one this site ever saw verified.
+        $user->forceFill(['email' => $identity->email, 'email_verified_at' => null])->save();
 
         return $user;
     }

@@ -18,7 +18,7 @@ class ListUsersCommand extends Command
         $format = $this->option('format');
 
         // Query users
-        $query = User::with('roles')->orderBy('email');
+        $query = User::with(['roles', 'federatedIdentities'])->orderBy('email');
 
         if ($roleFilter) {
             // Validate role exists
@@ -49,8 +49,7 @@ class ListUsersCommand extends Command
                     'email' => $user->email,
                     'roles' => $user->getRoleNames(),
                     'email_verified' => ! is_null($user->email_verified_at),
-                    '2fa_enabled' => $user->hasTwoFactorEnabled(),
-                    'passkeys' => $user->hasPasskeysRegistered(),
+                    'bspdx_linked' => $user->bspdxIdentity() !== null,
                 ];
             }), JSON_PRETTY_PRINT));
 
@@ -59,7 +58,7 @@ class ListUsersCommand extends Command
 
         // Table format
         $this->table(
-            ['ID', 'Name', 'Email', 'Roles', 'Verified', '2FA', 'Passkeys'],
+            ['ID', 'Name', 'Email', 'Roles', 'Verified', 'bspdx.com'],
             $users->map(function ($user) {
                 return [
                     $user->id,
@@ -67,8 +66,7 @@ class ListUsersCommand extends Command
                     $user->email,
                     $user->getRoleNames()->join(', ') ?: '<none>',
                     $user->email_verified_at ? '✓' : '✗',
-                    $user->hasTwoFactorEnabled() ? '✓' : '✗',
-                    $user->hasPasskeysRegistered() ? '✓' : '✗',
+                    $user->bspdxIdentity() ? '✓' : '✗',
                 ];
             })
         );

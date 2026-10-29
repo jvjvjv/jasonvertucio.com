@@ -16,6 +16,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // No seeders configured for production
-        // To create users, use: php artisan user:create <email> <name>
+        // Users are created by signing in with bspdx.com; link existing ones with user:link-bspdx
     }
 }

@@ -21,31 +21,31 @@
 
 ## 4. Phase B — login page redesign (cutover)
 
-- [ ] 4.1 Rewrite `resources/views/auth/login.blade.php` as a single "Sign in with bspdx.com" control plus the generic error area: no email or password fields, no method-discovery JS, no TOTP or passkey scripts; keep the named route `login` (`GET /login`) so guest redirects and existing tests still resolve; verify guest redirect from an `auth` route lands on it and it renders with and without a flashed error
-- [ ] 4.2 Remove `POST /login/check-email` and `LoginMethodsController`; verify the route no longer exists
+- [x] 4.1 Rewrite `resources/views/auth/login.blade.php` as a single "Sign in with bspdx.com" control plus the generic error area: no email or password fields, no method-discovery JS, no TOTP or passkey scripts; keep the named route `login` (`GET /login`) so guest redirects and existing tests still resolve; verify guest redirect from an `auth` route lands on it and it renders with and without a flashed error
+- [x] 4.2 Remove `POST /login/check-email` and `LoginMethodsController`; verify the route no longer exists
 
 ## 5. Phase B — profile page redesign
 
-- [ ] 5.1 Remove the auth-preferences, two-factor setup and passkey-management components from `resources/views/profile/*` and the `updateAuthPreferences` action/route; add a read-only "bspdx.com account" section (linked email, linked date, link to manage the account at bspdx.com); move the remaining profile routes from `routes/passkeys.php` to `routes/web.php`; verify the profile page renders for a linked user and the tool-visibility preference still saves (`ProfileToolVisibilityTest`)
+- [x] 5.1 Remove the auth-preferences, two-factor setup and passkey-management components from `resources/views/profile/*` and the `updateAuthPreferences` action/route; add a read-only "bspdx.com account" section (linked email, linked date, link to manage the account at bspdx.com); move the remaining profile routes from `routes/passkeys.php` to `routes/auth.php` (loaded by `routes/web.php`); verify the profile page renders for a linked user and the tool-visibility preference still saves (`ProfileToolVisibilityTest`)
 
 ## 6. Phase B — remove local credentials
 
-- [ ] 6.1 Empty `config/fortify.php` `features`, call `Fortify::ignoreRoutes()`, and register `POST /logout` explicitly to Fortify's `AuthenticatedSessionController@destroy` under `web` + `auth`; verify `session-logout` tests (`tests/Feature/Auth/LogoutTest.php`) still pass and `POST /login`, `/register`, `/forgot-password`, `/reset-password`, `/user/password`, `/user/confirm-password`, `/two-factor-challenge`, `/user/two-factor-*` return 404/405
-- [ ] 6.2 Remove `routes/passkeys.php`, `PasskeyController`, `PasskeyService`, `PasswordlessLoginController`, `ConfirmPasswordController`, `ThrottlesAuthentication` (if now unused), the 2FA challenge view and the vendor passkey views; remove the Fortify 2FA challenge wiring from `FortifyServiceProvider`; verify passkey and TOTP sign-in endpoints no longer exist
-- [ ] 6.3 Remove `User` auth-preference helpers (`hasTwoFactorEnabled`, `hasPasskeysRegistered`, `canUsePasswordlessLogin`, `getAvailableAuthMethods`, `hasValidAuthConfiguration`) and update `user:list`/`user:info` output that used them; remove `TwoFactorAuthenticatable`/`InteractsWithPasskeys` only if 1.3 is approved; verify `php artisan user:list` and `user:info` run
-- [ ] 6.4 Remove `ChangeUserPasswordCommand` and `CreateUserCommand`; check `MakeUserCommand` and remove it if it only creates password users; verify `php artisan list user` shows `user:link-bspdx` and no password commands
-- [ ] 6.5 Remove the security-downgrade audit: `UserSecurityMethodRemoved`, `LogSecurityAuditEntry`, `AlertUserOfSecurityDowngrade`, `DetectTwoFactorSecurityDowngrade`, `SecurityMethodRemovedMail`, `SecurityMethodKind` and their `AppServiceProvider` registrations; keep the `security_audit_log_entries` table and model; verify `php artisan event:list` shows none of them
-- [ ] 6.6 Do not drop any column or table (`password`, `two_factor_*`, `allow_*`, `require_password`, passkeys); verify no Phase B migration touches them
+- [x] 6.1 Empty `config/fortify.php` `features`, call `Fortify::ignoreRoutes()`, and register `POST /logout` explicitly to Fortify's `AuthenticatedSessionController@destroy` under `web` + `auth`; verify `session-logout` tests (`tests/Feature/Auth/LogoutTest.php`) still pass and `POST /login`, `/register`, `/forgot-password`, `/reset-password`, `/user/password`, `/user/confirm-password`, `/two-factor-challenge`, `/user/two-factor-*` return 404/405
+- [x] 6.2 Remove `routes/passkeys.php`, `PasskeyController`, `PasskeyService`, `PasswordlessLoginController`, `ConfirmPasswordController`, `ThrottlesAuthentication` (if now unused), the 2FA challenge view and the vendor passkey views; remove the Fortify 2FA challenge wiring from `FortifyServiceProvider`; verify passkey and TOTP sign-in endpoints no longer exist
+- [x] 6.3 Remove `User` auth-preference helpers (`hasTwoFactorEnabled`, `hasPasskeysRegistered`, `canUsePasswordlessLogin`, `getAvailableAuthMethods`, `hasValidAuthConfiguration`) and update `user:list`/`user:info` output that used them; remove `TwoFactorAuthenticatable`/`InteractsWithPasskeys` only if 1.3 is approved; verify `php artisan user:list` and `user:info` run
+- [x] 6.4 Remove `ChangeUserPasswordCommand` and `CreateUserCommand`; check `MakeUserCommand` and remove it if it only creates password users; verify `php artisan list user` shows `user:link-bspdx` and no password commands
+- [x] 6.5 Remove the security-downgrade audit: `UserSecurityMethodRemoved`, `LogSecurityAuditEntry`, `AlertUserOfSecurityDowngrade`, `DetectTwoFactorSecurityDowngrade`, `SecurityMethodRemovedMail`, `SecurityMethodKind` and their `AppServiceProvider` registrations, and the `SecurityAuditLogEntry` model/factory (its cast needs the removed enum); keep the `security_audit_log` table and rows; verify `php artisan event:list` shows none of them
+- [x] 6.6 Do not drop any column or table (`password`, `two_factor_*`, `allow_*`, `require_password`, passkeys); verify no Phase B migration touches them
 
 ## 7. Tests
 
-- [ ] 7.1 Build a fake provider with `Http::fake` (token and userinfo endpoints) and cover the flow failures from 3.2 and the success path
-- [ ] 7.2 Feature tests for account resolution: new identity, returning identity with email change (no collision and collision), unlinked identity with an existing local email refused, missing email refused, new user has no roles
-- [ ] 7.3 Feature tests that password, passkey and authenticator-code sign-in no longer authenticate, and that the login and profile pages match the spec
-- [ ] 7.4 List the test files that cover removed features (`AlertUserOfSecurityDowngradeTest`, `DetectTwoFactorSecurityDowngradeTest`, `LogSecurityAuditEntryTest`, `PasskeyRemovalNonBlockingTest`, `PasskeyServiceDowngradeTest`, `SecurityMethodRemovalEndToEndTest`, `Unit/Events/UserSecurityMethodRemovedTest`, and any others found) and get the developer's approval before deleting them; verify only approved files are removed
-- [ ] 7.5 Run `vendor/bin/phpunit --filter 'Auth|Login|Federated|Profile|Logout|User'` and confirm passing
+- [x] 7.1 Build a fake provider with `Http::fake` (token and userinfo endpoints) and cover the flow failures from 3.2 and the success path
+- [x] 7.2 Feature tests for account resolution: new identity, returning identity with email change (no collision and collision), unlinked identity with an existing local email refused, missing email refused, new user has no roles
+- [x] 7.3 Feature tests that password, passkey and authenticator-code sign-in no longer authenticate, and that the login and profile pages match the spec
+- [x] 7.4 List the test files that cover removed features (`AlertUserOfSecurityDowngradeTest`, `DetectTwoFactorSecurityDowngradeTest`, `LogSecurityAuditEntryTest`, `PasskeyRemovalNonBlockingTest`, `PasskeyServiceDowngradeTest`, `SecurityMethodRemovalEndToEndTest`, `Unit/Events/UserSecurityMethodRemovedTest`, and any others found) and get the developer's approval before deleting them; verify only approved files are removed
+- [x] 7.5 Run `vendor/bin/phpunit --filter 'Auth|Login|Federated|Profile|Logout|User'` and confirm passing
 
 ## 8. Documentation and rollout
 
-- [ ] 8.1 Rewrite `.claude/context/auth.md` for bspdx.com-only sign-in (flow, `federated_identities`, `user:link-bspdx`, removed methods, `CANVAS_GUARD` must stay `web`, accepted risks); update `CLAUDE.md` (architecture list, auth bullets, user commands, Security Features logout note)
-- [ ] 8.2 Write the developer-owned rollout checklist from design.md Migration Plan into this change (bspdx.com prerequisites done, Phase A deployed and tested, existing users linked with `user:link-bspdx` in each environment, owner sign-in confirmed through bspdx.com, then Phase B); do not deploy either phase as part of this change
+- [x] 8.1 Rewrite `.claude/context/auth.md` for bspdx.com-only sign-in (flow, `federated_identities`, `user:link-bspdx`, removed methods, `CANVAS_GUARD` must stay `web`, accepted risks); update `CLAUDE.md` (architecture list, auth bullets, user commands, Security Features logout note)
+- [x] 8.2 Write the developer-owned rollout checklist from design.md Migration Plan into this change (bspdx.com prerequisites done, Phase A deployed and tested, existing users linked with `user:link-bspdx` in each environment, owner sign-in confirmed through bspdx.com, then Phase B); do not deploy either phase as part of this change

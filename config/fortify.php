@@ -114,10 +114,7 @@ return [
     |
     */
 
-    'limiters' => [
-        'login' => 'login',
-        'two-factor' => 'two-factor',
-    ],
+    'limiters' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -130,7 +127,7 @@ return [
     |
     */
 
-    'views' => true,
+    'views' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -143,17 +140,9 @@ return [
     |
     */
 
-    'features' => [
-        Features::registration(),
-        Features::resetPasswords(),
-        // Features::emailVerification(),
-        Features::updateProfileInformation(),
-        Features::updatePasswords(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ]),
-    ],
+    // bspdx.com is the only way to sign in, so no Fortify feature is enabled
+    // and its routes are ignored (FortifyServiceProvider). Fortify remains
+    // only for its logout controller, registered in routes/auth.php.
+    'features' => [],
 
 ];

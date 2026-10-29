@@ -4,13 +4,9 @@ namespace App\Providers;
 
 use App\Contracts\ResumeDataServiceContract;
 use App\Events\MediaPlaybackMilestoneReached;
-use App\Events\UserSecurityMethodRemoved;
-use App\Listeners\AlertUserOfSecurityDowngrade;
-use App\Listeners\Auth\DetectTwoFactorSecurityDowngrade;
 use App\Listeners\FlushBlogFeedCache;
 use App\Listeners\FlushPublicMcpBlogCache;
 use App\Listeners\InvalidateCurrentlyWatchingCache;
-use App\Listeners\LogSecurityAuditEntry;
 use App\Listeners\LogSocialPostStub;
 use App\Listeners\RecordMcpClientIdentity;
 use App\Listeners\RecordRecentlyFinishedMedia;
@@ -40,7 +36,6 @@ use Illuminate\Support\ServiceProvider;
 use Jvjvjv\CodeTalker\CodeTalkerServiceProvider;
 use Jvjvjv\CodeTalker\Services\Conversation\CodeTalkerConversationStore;
 use Laravel\Ai\Contracts\ConversationStore;
-use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Laravel\Mcp\Events\SessionInitialized;
 
 class AppServiceProvider extends ServiceProvider
@@ -152,11 +147,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(MediaPlaybackMilestoneReached::class, RecordRecentlyFinishedMedia::class);
         Event::listen(MediaPlaybackMilestoneReached::class, InvalidateCurrentlyWatchingCache::class);
         Event::listen(MediaPlaybackMilestoneReached::class, LogSocialPostStub::class);
-
-        Event::listen(TwoFactorAuthenticationDisabled::class, DetectTwoFactorSecurityDowngrade::class);
-
-        Event::listen(UserSecurityMethodRemoved::class, LogSecurityAuditEntry::class);
-        Event::listen(UserSecurityMethodRemoved::class, AlertUserOfSecurityDowngrade::class);
 
         // Force HTTPS in local development when using local-ssl-proxy
         if (app()->environment('dev') && request()->getHost() === 'localhost') {

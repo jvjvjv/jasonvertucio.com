@@ -9,14 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
-use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 
-class User extends Authenticatable implements HasPasskeys
+class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasKeystone, HasUuids, InteractsWithPasskeys, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasKeystone, HasUuids, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -25,9 +22,6 @@ class User extends Authenticatable implements HasPasskeys
      */
     protected $fillable = [
         'name', 'email', 'password',
-        'allow_passkey_login',
-        'allow_totp_login',
-        'require_password',
         'show_tool_payloads',
         'username',
         'summary',
@@ -40,6 +34,9 @@ class User extends Authenticatable implements HasPasskeys
 
     /**
      * The attributes that should be hidden for arrays.
+     *
+     * The two-factor columns are no longer used (bspdx.com owns MFA) but still
+     * hold legacy secrets until a cleanup migration drops them.
      *
      * @var array
      */
@@ -57,10 +54,6 @@ class User extends Authenticatable implements HasPasskeys
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'two_factor_confirmed_at' => 'datetime',
-        'allow_passkey_login' => 'boolean',
-        'allow_totp_login' => 'boolean',
-        'require_password' => 'boolean',
         'show_tool_payloads' => 'boolean',
         'dark_mode' => 'boolean',
         'digest' => 'boolean',
@@ -133,63 +126,5 @@ class User extends Authenticatable implements HasPasskeys
     public function getDefaultLocaleAttribute(): string
     {
         return config('app.locale');
-    }
-
-    /**
-     * Determine if the user has enabled two-factor authentication.
-     */
-    public function hasTwoFactorEnabled(): bool
-    {
-        return ! is_null($this->two_factor_secret) &&
-               ! is_null($this->two_factor_confirmed_at);
-    }
-
-    /**
-     * Determine if the user has registered any passkeys.
-     */
-    public function hasPasskeysRegistered(): bool
-    {
-        return $this->passkeys()->exists();
-    }
-
-    /**
-     * Check if user can use passwordless login.
-     */
-    public function canUsePasswordlessLogin(): bool
-    {
-        return ($this->allow_passkey_login && $this->hasPasskeysRegistered()) ||
-               ($this->allow_totp_login && $this->hasTwoFactorEnabled());
-    }
-
-    /**
-     * Get available authentication methods for this user.
-     */
-    public function getAvailableAuthMethods(): array
-    {
-        $methods = [];
-
-        if ($this->require_password) {
-            $methods[] = 'password';
-        }
-
-        if ($this->allow_passkey_login && $this->hasPasskeysRegistered()) {
-            $methods[] = 'passkey';
-        }
-
-        if ($this->allow_totp_login && $this->hasTwoFactorEnabled()) {
-            $methods[] = 'totp';
-        }
-
-        return $methods;
-    }
-
-    /**
-     * Validate that at least one auth method is enabled.
-     */
-    public function hasValidAuthConfiguration(): bool
-    {
-        return $this->require_password ||
-               ($this->allow_passkey_login && $this->hasPasskeysRegistered()) ||
-               ($this->allow_totp_login && $this->hasTwoFactorEnabled());
     }
 }

@@ -73,8 +73,8 @@ docker compose exec app php artisan migrate
 # Seed initial data
 docker compose exec app php artisan db:seed
 
-# Create a CMS admin user (interactive mode recommended)
-docker compose exec app php artisan user:make --admin
+# Sign in once with bspdx.com to create your user, then grant it a role
+docker compose exec app php artisan user:add-role you@example.com admin
 ```
 
 ### Available Services
@@ -150,12 +150,13 @@ If you prefer to run the application locally without Docker:
 
 6. **Create a CMS admin user**
 
-    ```bash
-    # Interactive mode (recommended)
-    php artisan user:make --admin
+    Users are created by signing in with bspdx.com (set the `BSPDX_*` variables in `.env`). Sign in once, then grant the new user a role, or link an existing account to its bspdx.com identity:
 
-    # Or use command-line arguments
-    php artisan user:create admin@example.com "Admin User" password123 --role=admin
+    ```bash
+    php artisan user:add-role you@example.com admin
+
+    # Link an account that predates bspdx.com sign-in
+    php artisan user:link-bspdx you@example.com <bspdx-user-uuid>
     ```
 
 7. **Start the development environment**
@@ -172,12 +173,10 @@ If you prefer to run the application locally without Docker:
 
 | Command            | Description                       | Example                                                        |
 | ------------------ | --------------------------------- | -------------------------------------------------------------- |
-| `user:make`        | Interactively create a new user   | `php artisan user:make --admin`                                |
-| `user:create`      | Create user via CLI arguments     | `php artisan user:create email name [password] [--role=admin]` |
 | `user:list`        | List all users with roles         | `php artisan user:list`                                        |
 | `user:list-roles`  | Show system roles or user's roles | `php artisan user:list-roles <email>`                          |
 | `user:info`        | Display detailed user information | `php artisan user:info <email>`                                |
-| `user:password`    | Change a user's password          | `php artisan user:password <email> [new-password]`             |
+| `user:link-bspdx`  | Link a user to a bspdx.com identity | `php artisan user:link-bspdx <email> <bspdx-user-uuid>`      |
 | `user:add-role`    | Assign a role to a user           | `php artisan user:add-role <email> <role>`                     |
 | `user:remove-role` | Remove a role from a user         | `php artisan user:remove-role <email> <role>`                  |
 | `user:sync-roles`  | Replace all roles on a user       | `php artisan user:sync-roles <email> admin editor`             |

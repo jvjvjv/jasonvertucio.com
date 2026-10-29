@@ -17,7 +17,7 @@ class ShowUserCommand extends Command
         $email = $this->argument('email');
 
         try {
-            $user = User::with(['roles.permissions', 'passkeys'])
+            $user = User::with(['roles.permissions', 'federatedIdentities'])
                 ->where('email', $email)
                 ->firstOrFail();
         } catch (ModelNotFoundException $e) {
@@ -62,17 +62,10 @@ class ShowUserCommand extends Command
             $this->line($directPermissions->pluck('name')->join(', '));
         }
 
-        // Authentication methods
-        $this->info("\n=== Authentication ===");
-        $this->line('Password: Yes');
-        $this->line('2FA Enabled: '.($user->hasTwoFactorEnabled() ? 'Yes' : 'No'));
-        if (method_exists($user, 'requires2FA')) {
-            $this->line('2FA Required: '.($user->requires2FA() ? 'Yes (by role)' : 'No'));
-        }
-        $this->line('Passkeys Registered: '.($user->hasPasskeysRegistered() ? "Yes ({$user->passkeys->count()})" : 'No'));
-        if (method_exists($user, 'requiresPasskey')) {
-            $this->line('Passkey Required: '.($user->requiresPasskey() ? 'Yes (by role)' : 'No'));
-        }
+        // Sign-in
+        $this->info("\n=== Sign-in ===");
+        $identity = $user->bspdxIdentity();
+        $this->line('bspdx.com: '.($identity ? "Linked ({$identity->subject}, since {$identity->created_at->format('Y-m-d')})" : 'Not linked'));
 
         // Special status
         $this->info("\n=== Special Status ===");
