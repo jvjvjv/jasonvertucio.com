@@ -5,6 +5,7 @@ namespace App\Models;
 use BSPDX\Keystone\Traits\HasKeystone;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -65,6 +66,24 @@ class User extends Authenticatable implements HasPasskeys
         'digest' => 'boolean',
         'role' => 'integer',
     ];
+
+    /**
+     * The external sign-in identities linked to this user.
+     *
+     * @return HasMany<FederatedIdentity, $this>
+     */
+    public function federatedIdentities(): HasMany
+    {
+        return $this->hasMany(FederatedIdentity::class);
+    }
+
+    /**
+     * The linked bspdx.com identity, if any.
+     */
+    public function bspdxIdentity(): ?FederatedIdentity
+    {
+        return $this->federatedIdentities->firstWhere('provider', FederatedIdentity::PROVIDER_BSPDX);
+    }
 
     /**
      * Get the names of the roles assigned to the user.

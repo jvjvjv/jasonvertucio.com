@@ -26,7 +26,7 @@ The site owns its whole login stack (Fortify password, passkeys, passwordless TO
 - New: federated login controller, `federated_identities` table + `FederatedIdentity` model (user id, provider, subject, email at link), `user:link-bspdx` command, `services.bspdx` config, `/auth/bspdx/redirect` and `/auth/bspdx/callback` routes.
 - Removed or rewritten: `resources/views/auth/login.blade.php`, `resources/views/profile/*` security components, `routes/passkeys.php`, `PasskeyController`, `PasskeyService`, `PasswordlessLoginController`, `LoginMethodsController`, `ConfirmPasswordController`, Fortify features and routes (logout is kept), the `UserSecurityMethodRemoved` event and its listeners and mail, `User` auth-preference helpers, `ChangeUserPasswordCommand`, `CreateUserCommand`.
 - Data: password, 2FA, passkey and auth-preference columns/tables are left in place (unused) for a later cleanup migration; no data is dropped in this change.
-- Dependencies: an OAuth 2.0 client package (custom Socialite provider or `league/oauth2-client`) needs approval to install; uninstalling `spatie/laravel-passkeys` also needs approval.
+- Dependencies: no new package (the OAuth flow uses Laravel's `Http` client); `spatie/laravel-passkeys` is uninstalled.
 - Tests covering removed features are deleted only with the developer's approval (project rule).
 - Docs: `.claude/context/auth.md`, `CLAUDE.md` (auth bullets, user commands).
 - Operational: if bspdx.com is down, nobody can sign in. Existing sessions and Sanctum API tokens are unaffected by the cutover.

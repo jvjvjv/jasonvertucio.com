@@ -38,4 +38,19 @@ return [
         'webhook_secret' => env('JELLYFIN_WEBHOOK_SECRET'),
     ],
 
+    /*
+    | Sign-in through bspdx.com's OAuth 2.0 (Passport) server. The authorize,
+    | token and userinfo addresses are derived from base_url, which must be
+    | HTTPS. `scopes` is space-separated; bspdx.com defines `userinfo`.
+    */
+    'bspdx' => [
+        'enabled' => (bool) env('BSPDX_LOGIN_ENABLED', false),
+        'base_url' => env('BSPDX_BASE_URL', 'https://bspdx.com'),
+        'client_id' => env('BSPDX_CLIENT_ID'),
+        'client_secret' => env('BSPDX_CLIENT_SECRET'),
+        'redirect' => env('BSPDX_REDIRECT_URI'),
+        'scopes' => env('BSPDX_SCOPES', ''),
+        'timeout' => (int) env('BSPDX_TIMEOUT', 10),
+    ],
+
 ];

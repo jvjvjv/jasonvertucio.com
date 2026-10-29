@@ -1,23 +1,23 @@
 ## 1. Prerequisites and decisions
 
 - [ ] 1.1 Hand `bspdx-com-instructions.md` to the developer for the bspdx.com agent; verify the developer has relayed back: client id (secret via a secure channel, never committed), registered callback URLs, the scope name, and confirmation that MFA enforcement is live — record the non-secret answers in design.md Open Questions
-- [ ] 1.2 Get approval for the OAuth 2.0 client dependency (custom Socialite provider vs `league/oauth2-client` `GenericProvider`) before installing; verify `composer.json` changes only after approval
-- [ ] 1.3 Get approval to uninstall `spatie/laravel-passkeys` (Phase B); if not approved, leave the package installed with no reachable routes and record that in design.md
+- [x] 1.2 Get approval for the OAuth 2.0 client dependency (custom Socialite provider vs `league/oauth2-client` `GenericProvider`) before installing; verify `composer.json` changes only after approval
+- [x] 1.3 Get approval to uninstall `spatie/laravel-passkeys` (Phase B); if not approved, leave the package installed with no reachable routes and record that in design.md
 
 ## 2. Phase A — data and linking (additive, deploy first)
 
-- [ ] 2.1 Create the `federated_identities` migration (`foreignUuid('user_id')` → `users.id` cascade on delete, `provider`, `subject`, `email_at_link`, timestamps, unique `provider`+`subject`, unique `user_id`+`provider`) and `FederatedIdentity` model + factory; run it with `--path` against both `jasonvertucio` and `wink` and verify the table in both
-- [ ] 2.2 Add `User::federatedIdentities()`; verify with a model test that deleting a user removes its identities
-- [ ] 2.3 Add `php artisan user:link-bspdx {email} {subject}` that links an existing user and refuses when the user or subject is already linked or the user does not exist; verify each case with a feature test
+- [x] 2.1 Create the `federated_identities` migration (`foreignUuid('user_id')` → `users.id` cascade on delete, `provider`, `subject`, `email_at_link`, timestamps, unique `provider`+`subject`, unique `user_id`+`provider`) and `FederatedIdentity` model + factory; run it with `--path` against both `jasonvertucio` and `wink` and verify the table in both
+- [x] 2.2 Add `User::federatedIdentities()`; verify with a model test that deleting a user removes its identities
+- [x] 2.3 Add `php artisan user:link-bspdx {email} {subject}` that links an existing user and refuses when the user or subject is already linked or the user does not exist; verify each case with a feature test
 
 ## 3. Phase A — federated flow
 
-- [ ] 3.1 Add `services.bspdx` config (`enabled`, `base_url`, `client_id`, `client_secret`, `redirect`, `scopes`, timeout) backed by `env()`, with authorize/token/userinfo paths derived from `base_url`, and a "configured" check that also requires `base_url` to be `https://`; verify `php artisan config:show services.bspdx` shows `enabled=false` by default
-- [ ] 3.2 Implement redirect + callback: PKCE (S256) and `state` in the session, code exchange at `/oauth/token`, then a server-to-server `GET /api/oauth/userinfo` with the returned access token (not stored), both calls with `withoutRedirecting()` and short timeouts; verify each failure (state mismatch, denied consent, rejected code/verifier, userinfo error, userinfo missing `id` or `email`, redirect response, timeout) ends at `/login` with a generic error and no session
-- [ ] 3.3 Implement account resolution per design.md (subject match with email sync when no collision → refuse when the email belongs to any local user → create user with no roles, random unusable password, display name rule, no `Registered` event); verify every scenario in `specs/federated-login/spec.md`
-- [ ] 3.4 Establish the session with `Auth::login` (no remember-me) and session regeneration, redirect to the intended URL; verify a new user cannot reach admin pages
-- [ ] 3.5 Add a `federated-login` rate limiter keyed on the Cloudflare-aware client address and apply it to `GET /auth/bspdx/redirect` and `GET /auth/bspdx/callback`; verify throttling
-- [ ] 3.6 Show a "Sign in with bspdx.com" control on the existing login page only when `services.bspdx.enabled` and the config check passes; verify both states
+- [x] 3.1 Add `services.bspdx` config (`enabled`, `base_url`, `client_id`, `client_secret`, `redirect`, `scopes`, timeout) backed by `env()`, with authorize/token/userinfo paths derived from `base_url`, and a "configured" check that also requires `base_url` to be `https://`; verify `php artisan config:show services.bspdx` shows `enabled=false` by default
+- [x] 3.2 Implement redirect + callback: PKCE (S256) and `state` in the session, code exchange at `/oauth/token`, then a server-to-server `GET /api/oauth/userinfo` with the returned access token (not stored), both calls with `withoutRedirecting()` and short timeouts; verify each failure (state mismatch, denied consent, rejected code/verifier, userinfo error, userinfo missing `id` or `email`, redirect response, timeout) ends at `/login` with a generic error and no session
+- [x] 3.3 Implement account resolution per design.md (subject match with email sync when no collision → refuse when the email belongs to any local user → create user with no roles, random unusable password, display name rule, no `Registered` event); verify every scenario in `specs/federated-login/spec.md`
+- [x] 3.4 Establish the session with `Auth::login` (no remember-me) and session regeneration, redirect to the intended URL; verify a new user cannot reach admin pages
+- [x] 3.5 Add a `federated-login` rate limiter keyed on the Cloudflare-aware client address and apply it to `GET /auth/bspdx/redirect` and `GET /auth/bspdx/callback`; verify throttling
+- [x] 3.6 Show a "Sign in with bspdx.com" control on the existing login page only when `services.bspdx.enabled` and the config check passes; verify both states
 
 ## 4. Phase B — login page redesign (cutover)
 

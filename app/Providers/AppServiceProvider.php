@@ -76,6 +76,9 @@ class AppServiceProvider extends ServiceProvider
                 ->by($request->header('CF-Connecting-IP') ?? $request->ip());
         });
 
+        RateLimiter::for('federated-login', fn (Request $request) => Limit::perMinute(20)
+            ->by('federated-login:'.($request->header('CF-Connecting-IP') ?? $request->ip())));
+
         RateLimiter::for('posts-ingest', fn (Request $request) => Limit::perMinute((int) config('posts-ingest.rate_limit_per_minute'))
             ->by($request->header('CF-Connecting-IP') ?? $request->ip()));
 

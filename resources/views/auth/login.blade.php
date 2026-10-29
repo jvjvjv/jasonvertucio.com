@@ -23,6 +23,20 @@
                     </div>
                 @endif
 
+                @if ($bspdxAvailable ?? false)
+                    <a
+                        href="{{ route('auth.bspdx.redirect') }}"
+                        class="w-full block text-center bg-secondary text-white py-3 rounded-lg font-medium hover:bg-secondary/90 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+                    >
+                        Sign in with bspdx.com
+                    </a>
+                    <div class="my-6 flex items-center gap-3 text-sm text-gray-500" aria-hidden="true">
+                        <span class="flex-1 border-t border-gray-200"></span>
+                        or
+                        <span class="flex-1 border-t border-gray-200"></span>
+                    </div>
+                @endif
+
                 <!-- Step 1: Email Entry -->
                 <div id="step-email">
                     <div class="mb-6">
