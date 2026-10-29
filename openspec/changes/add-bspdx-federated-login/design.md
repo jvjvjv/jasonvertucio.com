@@ -1,59 +1,83 @@
 ## Context
 
-Current auth (see `.claude/context/auth.md`): Fortify drives password login, password reset, registration and 2FA management; Spatie Passkeys and a custom `PasswordlessLoginController` provide passkey and TOTP-only sign-in; `User::getAvailableAuthMethods()` reports `password`, `passkey`, `totp` per user and `LoginMethodsController` drives the login page. Users have a `char(36)` UUID `id`, a unique `email`, a `password` column, and Keystone roles via `HasKeystone`. Sessions are standard web sessions; logout is `POST /logout` (spec `session-logout`). `bspdx/keystone` is RBAC only and provides no authentication.
+Current auth (see `.claude/context/auth.md`): Fortify drives password login, password reset, registration, password change and 2FA management (with `confirmPassword => true`, so 2FA routes sit behind `password.confirm`). Spatie Passkeys (`routes/passkeys.php`, `PasskeyController`, `PasskeyService`) and `PasswordlessLoginController` provide passkey and TOTP-only sign-in. The login page is a two-step flow: `LoginMethodsController::check` (`POST /login/check-email`) reports per-user methods from `User::getAvailableAuthMethods()` and drives the JS in `login.blade.php`. The profile page (`ProfileController`, `resources/views/profile/*`) manages auth preferences, 2FA and passkeys. Removing the last passkey or 2FA method raises `UserSecurityMethodRemoved`, handled by `LogSecurityAuditEntry` and `AlertUserOfSecurityDowngrade` (spec `security-method-removal-audit`). Logout is `POST /logout` via Fortify (spec `session-logout`). Canvas authenticates through the host `web` guard (`CANVAS_GUARD` default `web`, spec `canvas-v7-blog-platform-integration`). Users have a `char(36)` UUID `id`, a unique `email` (collation `utf8mb4_unicode_ci`), a NOT NULL `name` and `password`. Sanctum tokens back the MCP endpoint.
 
-Provider facts observed: `https://bspdx.com/.well-known/openid-configuration` returns 404, and the homepage content ("The Bootstrap Paradox…") describes no identity service. The user chose OIDC / OAuth 2.0, auto-create of users, and replacing password login. Unknown until the provider exists: issuer URL, endpoints, scopes, claims, whether `email_verified` is asserted.
+Provider facts (verified in the bspdx.com repo, `~/Code/@bspdx/bspdx.com`): Laravel Passport v13 OAuth 2.0 server, standard `/oauth/authorize` and `/oauth/token`, custom authorize view, admin UI at `/sso-clients` that creates authorization-code clients with HTTPS redirect URIs. Not OIDC: no ID token, JWKS or discovery. Identity comes from `GET /api/oauth/userinfo` (`auth:api`), returning `{ id, email, email_verified, name }`; `id` is the user's UUID and `name` is currently the email. Access tokens live 15 days, refresh tokens 30. No Passport scopes are defined, so any token grants full `auth:api` access. Fortify on bspdx.com has registration and email verification off, TOTP 2FA available but optional per user. Users carry a `tenant_id` and Passport serves other clients.
+
+Decisions made by the developer: bspdx.com is the only sign-in method (no fallback); no local second factor — bspdx.com enforces all MFA; no automatic linking between sites; every bspdx.com user may get a local account; `email_verified` quality is bspdx.com's concern; deprovisioning gaps, rollback lockout and silent re-login after logout are accepted; required bspdx.com changes are specified for another agent rather than made here.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Authorization-code + PKCE login against bspdx.com producing a normal session.
-- Auto-create users on first login, link by verified email when a local user already exists.
-- Remove password sign-in and password registration.
+- Authorization-code + PKCE login against bspdx.com producing a normal session, as the only way to sign in.
+- Auto-create unlinked identities; link existing local users only by explicit developer action.
+- Remove every local credential path and the UI and code that served it.
 
 **Non-Goals:**
-- Building the OIDC provider on bspdx.com (prerequisite, separate project).
-- Mapping IdP groups/claims to Keystone roles (explicitly not chosen; new users have no roles).
-- Single logout / back-channel logout, refresh-token use, or calling bspdx.com APIs after login.
-- Changing passkey or TOTP behavior, or `session-logout`.
+- Making changes in the bspdx.com repo. Required changes are written as instructions for another agent (`bspdx-com-instructions.md`).
+- OpenID Connect, role mapping from bspdx.com claims, tenant filtering, single logout, refresh-token use, revoking bspdx.com tokens.
+- Dropping legacy auth columns/tables (`password` stays NOT NULL with a random hash; 2FA, passkey and preference data are left for a later cleanup change).
+- Changing `session-logout` behavior or Sanctum/MCP token behavior.
 
 ## Decisions
 
-**Protocol and client.** OIDC authorization-code with PKCE and `state`/`nonce`, confidential client. Use discovery from the configured issuer (cached) so endpoints are not hard-coded. Validate the ID token (signature via JWKS, `iss`, `aud`, `exp`, `nonce`) rather than trusting the userinfo response alone. Library: `laravel/socialite` with a generic OIDC driver is the leading option but is a new dependency — **needs approval before install**; alternative is a small purpose-built client on `league/oauth2-client`. Decision deferred to apply with your approval.
+**Protocol and client.** OAuth 2.0 authorization-code grant with PKCE (S256) and `state`, confidential client. Endpoints derive from a configured `base_url`: `/oauth/authorize`, `/oauth/token`, `/api/oauth/userinfo`. Request the `userinfo` scope once bspdx.com defines it. After the code exchange, call userinfo server-to-server with the access token just received and take the identity only from that response. Trust rests on TLS to a fixed base URL and on the token coming from this site's own exchange (bound by `state` and the PKCE verifier), never from the browser. The access token is used once and not stored. Library: custom Socialite provider or `league/oauth2-client` `GenericProvider`; needs approval before install.
 
-**Identity table.** New `federated_identities` (`id`, `user_id` UUID FK, `provider` string, `subject` string, `email_at_link` string, timestamps) with a unique key on (`provider`, `subject`). Login matches on subject first. Alternative: add `bspdx_sub` to `users` — rejected; a table allows more providers later and keeps `users` untouched.
+**Outbound HTTP hardening.** `base_url` must be `https://` (config validation refuses otherwise). Token and userinfo calls use `withoutRedirecting()`, a short connect/read timeout, and treat any non-2xx or non-JSON response as failure.
 
-**Account resolution order on callback.** (1) identity row exists → log in that user. (2) else, if the ID token's `email_verified` is true and a local user has that email → link and log in. (3) else create a user (name from claims, email, random unusable password, no roles), link, log in. If `email_verified` is not true, an existing-email match is refused rather than linked, so an unverified claim can never take over an account. The email-based link is the account-takeover-sensitive step and is tested explicitly.
+**Identity claims.** Subject = userinfo `id` (string). `email` is required; a response without `id` or `email` is refused. `email_verified` is not used for any decision (no email-based linking exists). Display name: userinfo `name` unless missing or equal to the email, in which case the email's local part.
 
-**New users have no roles.** Auto-created users get no Keystone roles; an admin grants them. Login alone never confers `manage-*` or admin access.
+**Identity table.** `federated_identities`: `id`, `foreignUuid('user_id')` → `users.id` cascade on delete, `provider` string, `subject` string, `email_at_link` string, timestamps; unique (`provider`, `subject`) and unique (`user_id`, `provider`) — one bspdx.com identity per local user. `User::federatedIdentities()` relation. `user:delete` removes the user's identities via the cascade.
 
-**What "replace password login" removes.** Remove the password form and Fortify's password authentication, and disable `Features::registration()` and password reset for new flows. Keep passkey and passwordless-TOTP sign-in for users who already enabled them (assumption — the request names password login only). This is the break-glass path if bspdx.com is unavailable. `getAvailableAuthMethods()` stops reporting `password`; `require_password` becomes unused and is left in place for a later cleanup migration.
+**Account resolution on callback.**
+1. Identity row for (`bspdx`, subject) exists → log in that user. If the userinfo email differs from the user's email and no other local user holds it, update the local email (and `email_at_link` is left as history); if another user holds it, keep the old email and log a warning.
+2. Else, if any local user has the userinfo email (case-insensitive) → refuse. Show a generic "an account with this email already exists here; contact the site owner" message, log the subject and email. No link, no new user.
+3. Else create a user (name per above, email, random unusable password hash, no roles), create the identity row, log in. Do not fire `Registered`.
 
-**Safe rollout.** Gate the change behind a config flag (`services.bspdx.enabled`) so the federated button and the removal of password login switch together and can be reverted by config. Do not remove password code paths in the same commit that enables the flag by default; verify a federated login against a real or stub provider first.
+**Explicit linking.** `php artisan user:link-bspdx {email} {subject}` links an existing local user to a bspdx.com subject (the UUID shown in bspdx.com's admin), refusing if either side is already linked. This is the only way an existing account — including the owner's admin account — gets attached. Run by the developer in each environment before cutover.
 
-**Session.** After validation, `Auth::login($user)` with session regeneration, then redirect to the intended URL. 2FA challenges do not apply to federated sessions (the IdP is responsible for the second factor).
+**New users have no roles.** Login alone never confers `manage-*` or admin access.
 
-**Failure handling.** Denied consent, state/nonce mismatch, invalid token, unreachable provider, or a missing email claim end at the login page with a generic error and no session; details go to the log only.
+**Removing local credentials.** `config/fortify.php` features become empty (no registration, reset, password update, profile update or 2FA). Call `Fortify::ignoreRoutes()` and register `POST /logout` explicitly to Fortify's `AuthenticatedSessionController@destroy` under `web` + `auth`, so `session-logout` still holds and `POST /login`, `/register`, `/forgot-password`, `/reset-password`, `/user/password`, `/user/confirm-password`, `/two-factor-challenge` and `/user/two-factor-*` no longer exist. Remove `routes/passkeys.php` (its profile routes move to `web.php`), the passkey/TOTP/login-method/confirm-password controllers, `PasskeyService`, the 2FA challenge view, `User` auth-preference helpers (`getAvailableAuthMethods`, `canUsePasswordlessLogin`, `hasValidAuthConfiguration`, …), `ChangeUserPasswordCommand` and `CreateUserCommand`. `MakeUserCommand` is checked at apply: removed if it only creates password users. Uninstalling `spatie/laravel-passkeys` and removing `TwoFactorAuthenticatable`/`InteractsWithPasskeys` traits waits for approval of the package removal; until then the traits may stay but no route reaches them.
+
+**Retiring the downgrade audit.** `UserSecurityMethodRemoved`, `LogSecurityAuditEntry`, `AlertUserOfSecurityDowngrade`, `DetectTwoFactorSecurityDowngrade`, `SecurityMethodRemovedMail` and `SecurityMethodKind` are removed with their registrations. The `security_audit_log_entries` table and its rows are kept.
+
+**Login page.** `/login` renders one "Sign in with bspdx.com" control (a link to `/auth/bspdx/redirect`) plus the generic error area; no email field, no JS method discovery. `POST /login/check-email` is removed, which also removes its user-enumeration behavior. Guests hitting an `auth` route still redirect to `/login`.
+
+**Profile page.** Drops auth preferences, 2FA setup and passkey management. Shows the linked bspdx.com identity (email, linked date) and a link to manage the account at bspdx.com. Tool-visibility preference stays.
+
+**Session.** `Auth::login($user)` with session regeneration, redirect to the intended URL. Remember-me is not offered.
+
+**Throttling.** A `federated-login` rate limiter keyed on the Cloudflare-aware client address (the existing `login` limiter keys on an email input the callback does not have), applied to both routes.
+
+**Rollout in two deploys from one change.**
+- *Phase A (additive):* migration, model, `user:link-bspdx`, config, redirect/callback routes, login button shown only when `services.bspdx.enabled` and config complete. Password login untouched. Used to test against bspdx.com and to link existing users.
+- *Phase B (cutover):* removal of all local credential paths, new login and profile pages. Deployed only after bspdx.com prerequisites are done and every existing user who needs access is linked. After Phase B the flag only hides the button when config is incomplete; there is no path back to local login short of a revert.
+
+**Failure handling.** Denied consent, `state` mismatch, failed code exchange (including PKCE rejection), userinfo failure or malformed body, unreachable provider, missing email, or an email collision end at `/login` with a generic error and no session; details go to the log only.
 
 ## Risks / Trade-offs
 
-- **[Risk] Provider does not exist yet.** Nothing here can be exercised end to end until bspdx.com serves OIDC. → Mitigation: develop against a fake provider in tests (stubbed discovery/JWKS/token endpoints); list provider requirements in the spec; keep the feature flag off until it exists.
-- **[Risk] Lockout.** Replacing passwords makes bspdx.com availability and account ownership a single point of failure for the admin area. → Mitigation: keep passkey/TOTP sign-in; before enabling, confirm the owner account has a working passkey or TOTP; flag defaults to off.
-- **[Risk] Email-based linking can be abused** if the IdP lets users assert unverified emails. → Mitigation: link only on `email_verified: true` and a unique email; otherwise refuse.
-- **[Risk] Open sign-up.** Auto-create means anyone with a bspdx.com account gets a local user (comment-capable, no roles). → Accepted by choice; mitigated by no roles, existing comment moderation, and the provider's own account policy.
-- **[Trade-off] Removing password reset/registration** deletes working code paths; existing password-only users must have a bspdx.com account with the same verified email or they lose access. → Pre-flight list of users with `require_password` and no passkey/TOTP before enabling.
+- **[Risk] Total dependence on bspdx.com.** If it is down or the owner's bspdx.com account is lost, nobody can sign in, including the admin. → Accepted by decision. Existing sessions continue; Sanctum tokens keep working for MCP.
+- **[Risk] Security now equals bspdx.com's.** No local second factor; account takeover at bspdx.com (e.g. via its password reset) is takeover here. → bspdx.com must enforce MFA for all users (instructions §3). Cutover waits on it.
+- **[Risk] No signed identity assertion.** → TLS to a fixed HTTPS base URL, no redirects followed, token only from this site's exchange, `state` + PKCE.
+- **[Risk] Unscoped 15-day tokens on bspdx.com.** → bspdx.com adds a `userinfo` scope (instructions §2); this site discards the token immediately.
+- **[Accepted] Deprovisioning.** A user disabled on bspdx.com keeps any live local session (default lifetime 120 minutes) and any Sanctum token until revoked here.
+- **[Accepted] Silent re-login.** Passport skips consent when a valid token exists, so logging out here and clicking sign-in may log straight back in.
+- **[Accepted] Rollback.** Reverting Phase B restores password login only for users who still know a password; auto-created users cannot sign in until it is redeployed.
+- **[Accepted] Open sign-up across bspdx.com tenants.** Every bspdx.com user can get a local account with no roles.
+- **[Risk] Email collisions.** A bspdx.com user whose email belongs to an unlinked local user is refused until the developer links them. → Pre-flight list of local users; link the ones who should keep their account.
 
 ## Migration Plan
 
-1. Land code and migration with `services.bspdx.enabled=false`; password login unchanged.
-2. Stand up the bspdx.com OIDC provider and register this site as a client (out of repo).
-3. Pre-flight: list password-only users and confirm each has a matching verified email at bspdx.com; confirm the owner has a passkey or TOTP.
-4. Enable the flag in a non-production environment, test the full flow, then enable in production (developer-owned deploy).
-5. Rollback: set the flag off to restore password login; the identity table can remain.
+1. bspdx.com prerequisites (another agent, `bspdx-com-instructions.md`): client registered, `userinfo` scope, MFA enforced for all users. Developer relays client id/secret.
+2. Deploy Phase A with `services.bspdx.enabled=false`. Set credentials; enable in non-production and test the full flow.
+3. In each environment, link existing users who need access: `php artisan user:link-bspdx {email} {subject}`. Confirm the owner's admin account is linked and can sign in through bspdx.com.
+4. Deploy Phase B (developer-owned), with `services.bspdx.enabled=true`.
+5. Later, separate change: cleanup migration for legacy auth columns/tables and package removal if not done here.
 
 ## Open Questions
 
-- Issuer URL, client credentials, and which claims bspdx.com will release (`email`, `email_verified`, `name`, a stable `sub`).
-- Confirm passkeys and passwordless TOTP should remain (assumed yes).
-- Dependency choice: Socialite OIDC driver vs. `league/oauth2-client`.
-- Should password-only users with no bspdx.com match be given a grace period or a one-time recovery path?
+- Client id/secret and the registered callback URLs (production and local dev) for this site's Passport client.
+- Dependency choice: custom Socialite provider vs `league/oauth2-client` `GenericProvider`; approval to uninstall `spatie/laravel-passkeys`.
+- Whether `MakeUserCommand` should be kept in any form.

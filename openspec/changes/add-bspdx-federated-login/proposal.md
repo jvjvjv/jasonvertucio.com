@@ -1,28 +1,32 @@
 ## Why
 
-The site owns its whole login stack (Fortify password, passkeys, passwordless TOTP) and keeps a separate account for every person. https://bspdx.com is the owner's own identity domain and the home of the `bspdx/keystone` RBAC package. Using it as the identity provider gives one sign-in across bspdx properties and removes passwords as a credential this site has to store, reset and defend.
+The site owns its whole login stack (Fortify password, passkeys, passwordless TOTP, local 2FA) and keeps a separate credential for every person. https://bspdx.com is the owner's own identity domain, the home of the `bspdx/keystone` RBAC package, and already runs a Laravel Passport OAuth 2.0 authorization server used for SSO by other apps (e.g. Invoice Ninja). Making bspdx.com the **only** way to sign in gives one identity across bspdx properties, moves every credential and every MFA decision to one place, and lets this site stop storing, resetting and defending passwords, passkeys and TOTP secrets.
 
 ## What Changes
 
-- Add "Sign in with bspdx.com": an OpenID Connect / OAuth 2.0 authorization-code flow with PKCE against bspdx.com, ending in a normal Laravel web session.
-- A first-time federated login **creates a user automatically** (no roles; an admin grants Keystone roles). If a user with the same verified email already exists, that user is linked instead of duplicated.
-- Store the link between a bspdx.com subject and a local user, so later logins match on the stable subject and not on a changeable email.
-- **BREAKING:** password sign-in is replaced. The email/password login form and `POST /login` password authentication are removed or disabled, as is self-service registration with a password. Existing passkey and passwordless-TOTP sign-in for users who enabled them are kept as non-federated fallbacks (assumption, see design).
-- Configuration for the provider (issuer, client id, secret, redirect URI, scopes) lives in `config/services.php` and `.env`; secrets are never read via `env()` outside config.
-- bspdx.com is **not currently an OIDC provider** — `/.well-known/openid-configuration` returns 404 and the homepage describes no identity service. This change specifies what this site expects of the provider; standing the provider up on bspdx.com is a prerequisite outside this repo.
+- Add "Sign in with bspdx.com": an OAuth 2.0 authorization-code flow with PKCE and `state` against bspdx.com's Passport server, reading the identity from its userinfo endpoint, ending in a normal Laravel web session.
+- A first sign-in by a bspdx.com identity that is not linked here **creates a local user automatically** with no roles. Every bspdx.com user may get a local account.
+- **No automatic linking between sites.** A bspdx.com identity is never attached to an existing local user by matching email. Existing local users (including the owner) are linked explicitly by the developer with an artisan command before cutover. An unlinked identity whose email already belongs to a local user is refused.
+- **BREAKING — bspdx.com becomes the only sign-in method.** Removed: password login (`POST /login`), password registration, password reset, password change, passkey login and management, passwordless TOTP login, local two-factor enrollment/challenge, the login-method email check, and the `user:create` / `user:password` commands. MFA is entirely bspdx.com's responsibility.
+- The security-downgrade audit (alerts when the last passkey or 2FA method is removed) is retired with the methods it watched.
+- The login page becomes a single "Sign in with bspdx.com" control; the profile page drops its security sections and shows the linked bspdx.com identity.
+- Outbound calls to bspdx.com are HTTPS-only, refuse redirects, and time out quickly.
+- Prerequisite work on bspdx.com (client registration, a `userinfo` scope, MFA enforcement for all users) is done by another agent from `bspdx-com-instructions.md` in this change, coordinated by the developer. This repo does not modify bspdx.com.
 
 ## Capabilities
 
 ### New Capabilities
-- `federated-login`: signing in through bspdx.com (flow, token validation, account creation and linking, session creation, failure handling) and the removal of password sign-in in its favor.
+- `federated-login`: signing in through bspdx.com (flow, code exchange and userinfo retrieval, account creation, explicit linking, session creation, failure handling) as the sole sign-in method.
 
 ### Modified Capabilities
-(none — no existing main spec covers login; `session-logout` is unaffected.)
+- `security-method-removal-audit`: retired. Its requirements are removed because passkeys and local two-factor no longer exist on this site.
 
 ## Impact
 
-- New: federated login controller, a `federated_identities` table + model (user id, provider, subject, last login), provider config in `config/services.php`, a login-page button and callback routes.
-- `routes/web.php`, `resources/views/auth/login.blade.php`, `app/Providers/FortifyServiceProvider.php`, `config/fortify.php` (registration and password features), `LoginMethodsController` and `User::getAvailableAuthMethods()` (the `password` method).
-- Dependency: a generic OIDC client is needed; `laravel/socialite` is not installed. Adding a package requires your approval at apply time (project rule).
-- Docs: `.claude/context/auth.md` and `CLAUDE.md` auth bullets.
-- Operational: if bspdx.com is down, only passkey/TOTP users can still sign in (see design Risks).
+- New: federated login controller, `federated_identities` table + `FederatedIdentity` model (user id, provider, subject, email at link), `user:link-bspdx` command, `services.bspdx` config, `/auth/bspdx/redirect` and `/auth/bspdx/callback` routes.
+- Removed or rewritten: `resources/views/auth/login.blade.php`, `resources/views/profile/*` security components, `routes/passkeys.php`, `PasskeyController`, `PasskeyService`, `PasswordlessLoginController`, `LoginMethodsController`, `ConfirmPasswordController`, Fortify features and routes (logout is kept), the `UserSecurityMethodRemoved` event and its listeners and mail, `User` auth-preference helpers, `ChangeUserPasswordCommand`, `CreateUserCommand`.
+- Data: password, 2FA, passkey and auth-preference columns/tables are left in place (unused) for a later cleanup migration; no data is dropped in this change.
+- Dependencies: an OAuth 2.0 client package (custom Socialite provider or `league/oauth2-client`) needs approval to install; uninstalling `spatie/laravel-passkeys` also needs approval.
+- Tests covering removed features are deleted only with the developer's approval (project rule).
+- Docs: `.claude/context/auth.md`, `CLAUDE.md` (auth bullets, user commands).
+- Operational: if bspdx.com is down, nobody can sign in. Existing sessions and Sanctum API tokens are unaffected by the cutover.
