@@ -16,9 +16,11 @@ use App\Listeners\RecordMcpClientIdentity;
 use App\Listeners\RecordRecentlyFinishedMedia;
 use App\Models\AiChatBot;
 use App\Models\Comment;
+use App\Models\IpBan;
 use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Observers\CommentObserver;
+use App\Observers\IpBanObserver;
 use App\Services\Mcp\PublicMcpCache;
 use App\Services\Mcp\TargetedResumeToolRegistry;
 use App\Services\TargetedResumeService;
@@ -59,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Comment::observe(CommentObserver::class);
+        IpBan::observe(IpBanObserver::class);
 
         // The one definition of "may moderate comments". `moderate-comments`
         // is an ability, not a permission: Keystone's Gate::before answers

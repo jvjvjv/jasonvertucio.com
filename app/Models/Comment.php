@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\CommentMarkedAsSpam;
 use Canvas\Models\Post;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -158,6 +159,8 @@ class Comment extends Model
             'is_spam' => true,
             'approved_at' => null,
         ]);
+
+        CommentMarkedAsSpam::dispatch($this);
     }
 
     /**

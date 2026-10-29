@@ -65,4 +65,7 @@ Route::middleware(['auth', 'can:moderate-comments', HandleInertiaRequests::class
         Route::post('/comments/{comment}/spam', [CommentModerationController::class, 'markSpam'])->name('comments.spam');
         Route::post('/comments/{comment}/not-spam', [CommentModerationController::class, 'markNotSpam'])->name('comments.not-spam');
         Route::delete('/comments/{comment}', [CommentModerationController::class, 'destroy'])->name('comments.destroy');
+        Route::post('/comments/{comment}/ban-ip', [CommentModerationController::class, 'banIp'])
+            ->middleware('can:manage-blog')
+            ->name('comments.ban-ip');
     });

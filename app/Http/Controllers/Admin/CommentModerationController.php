@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Enums\IpBanSource;
 use App\Models\Comment;
+use App\Models\IpBan;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -59,6 +61,31 @@ class CommentModerationController extends Controller
         $comment->markAsNotSpam();
 
         return back()->with('success', 'Comment restored.');
+    }
+
+    /**
+     * Ban the address a comment was posted from.
+     */
+    public function banIp(Comment $comment): RedirectResponse
+    {
+        if (blank($comment->ip_address)) {
+            return back()->with('error', 'This comment has no recorded IP address to ban.');
+        }
+
+        $ipBan = IpBan::firstOrCreate(
+            ['ip' => $comment->ip_address],
+            [
+                'source' => IpBanSource::Admin,
+                'banned_method' => 'ADMIN',
+                'banned_url' => 'ADMIN',
+                'banned_body' => "Banned by a moderator from comment #{$comment->id}",
+            ],
+        );
+
+        return back()->with(
+            'success',
+            $ipBan->wasRecentlyCreated ? "Banned {$comment->ip_address}." : "{$comment->ip_address} is already banned.",
+        );
     }
 
     /**

@@ -128,6 +128,17 @@ export default function Index({ comments }: IndexProps) {
         });
     };
 
+    const banIp = (id: number, ip: string) => {
+        confirm(
+            `Ban ${ip}? Every request from this address will be refused.`,
+            () => {
+                router.post(`/admin/comments/${id}/ban-ip`, undefined, {
+                    preserveScroll: true,
+                });
+            },
+        );
+    };
+
     const deleteComment = (id: number) => {
         confirm(
             "Delete this comment? Replies to it stay in place. This cannot be undone.",
@@ -182,6 +193,17 @@ export default function Index({ comments }: IndexProps) {
                                 }}
                             >
                                 Mark spam
+                            </Button>
+                        )}
+                        {comment.ip_address && (
+                            <Button
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                    banIp(comment.id, comment.ip_address ?? "");
+                                }}
+                            >
+                                Ban IP
                             </Button>
                         )}
                         <Button
