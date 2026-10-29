@@ -10,6 +10,7 @@ use App\Models\IpBan;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -84,6 +85,30 @@ class IpBanEventTest extends TestCase
         IpBan::create(['ip' => self::IP, 'source' => IpBanSource::Admin]);
 
         Log::shouldHaveReceived('notice')->once()->with('IP banned', \Mockery::on(fn (array $c) => $c['ip'] === self::IP));
+    }
+
+    public function test_creating_or_deleting_a_ban_clears_the_enforcement_cache(): void
+    {
+        Cache::put('banned_ip_list', [], 300);
+
+        $ban = IpBan::create(['ip' => self::IP]);
+        $this->assertFalse(Cache::has('banned_ip_list'));
+
+        Cache::put('banned_ip_list', [self::IP], 300);
+        $ban->delete();
+        $this->assertFalse(Cache::has('banned_ip_list'));
+    }
+
+    public function test_a_moderator_ban_is_enforced_on_the_next_request(): void
+    {
+        $comment = Comment::factory()->create(['ip_address' => self::IP]);
+        Cache::put('banned_ip_list', [], 300);
+
+        $this->actingAs($this->userWith('manage-blog'))
+            ->post(route('admin.comments.ban-ip', $comment));
+
+        $this->assertNotContains(self::IP, Cache::get('banned_ip_list', []));
+        $this->assertFalse(Cache::has('banned_ip_list'));
     }
 
     public function test_the_honeypot_still_bans_and_now_fires_the_event(): void

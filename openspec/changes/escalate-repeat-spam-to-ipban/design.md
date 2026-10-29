@@ -53,7 +53,7 @@ An `enabled` toggle is included (not required by the proposal's prose but implie
 - Make `banned_method`, `banned_url`, `banned_body` nullable.
 - `EscalateRepeatSpamToIpBan` creates its row with `banned_method`/`banned_url` set to a fixed marker (e.g. `'ESCALATION'`) and `banned_body` set to a short human-readable reason (e.g. `"Repeat spam: {count} spam comments in {window}"`), rather than leaving them null, so the existing admin-facing ban list (if any renders these columns) still shows something meaningful rather than blank cells. Using nullable+populated (vs. leaving them empty) was chosen over adding a new `source`/`reason` column pair, to avoid widening the table's shape for a single new producer — revisit if a third ban producer needs structured metadata.
 
-**Cache staleness is accepted, not fixed.** `IpMiddleware`'s 300-second `banned_ip_list` cache means an escalated ban can take up to 5 minutes to start blocking requests. This is existing, pre-dating behavior for every ban producer, not something this change needs to fix; noted here so it isn't mistaken for a bug during review.
+**Cache staleness (superseded):** `IpBanObserver` (see `unify-ip-ban-triggers`) now forgets `banned_ip_list` on ban create/delete, so this no longer applies. Original note: `IpMiddleware`'s 300-second `banned_ip_list` cache means an escalated ban can take up to 5 minutes to start blocking requests. This is existing, pre-dating behavior for every ban producer, not something this change needs to fix; noted here so it isn't mistaken for a bug during review.
 
 ## Risks / Trade-offs
 

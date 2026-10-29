@@ -14,7 +14,7 @@ The codebase already has one precedent for "one model, one lifecycle hook, one d
 **Non-Goals:**
 - Building the actual Slack/webhook integration - `SendIpBanAlert` only stubs the hook (e.g. a method left as a no-op with a `// TODO` or a config-gated early return) and only reliably implements the structured log line.
 - Building `escalate-repeat-spam-to-ipban` itself - this design only guarantees that whenever *that* change lands and calls `IpBan::create()`/`firstOrCreate()`, it gets `IpBanned` for free.
-- Changing `IpMiddleware`'s read path or the `banned_ip_list` cache invalidation strategy - out of scope, no observed behavior change needed there.
+- Changing `IpMiddleware`'s read path. (Amended after review: `IpBanObserver` now forgets `banned_ip_list` on `created`/`deleted` so every producer takes effect on the next request; `WordpressController`'s ad-hoc rebuild was removed.)
 - Rate-limiting or deduplicating alerts - `firstOrCreate` already prevents duplicate rows (and thus duplicate events) for an IP banned twice via the same producer's own idempotency check; cross-producer deduplication (e.g. honeypot and manual ban racing on the same IP) is not addressed here.
 
 ## Decisions
