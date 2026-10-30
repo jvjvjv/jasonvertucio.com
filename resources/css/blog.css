@@ -69,6 +69,11 @@
             margin: 0 auto;
         }
 
+        pre {
+            @apply overflow-x-scroll border border-primary p-2;
+            box-shadow: inset 0 0 8px var(--color-primary);
+        }
+
         .canvas-post-body-image {
             @apply my-2 w-full;
 
