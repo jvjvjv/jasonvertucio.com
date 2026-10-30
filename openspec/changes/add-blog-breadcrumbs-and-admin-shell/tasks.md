@@ -29,7 +29,7 @@
 ## 5. Review gate
 
 - [x] 5.1 Screenshot the Dashboard, Employment hub and Applications list at 1280 and 360 pixels, critique them against the design plan, the project's no gradient and no box shadow rules and the existing identity, fix what falls short, and verify by re-taking the screenshots
-- [ ] 5.2 Build in the main checkout so `jasonvertucio.local` shows the work, send the developer the screenshots with `SendUserFile`, then **stop and wait for the developer's reaction**. This task is complete only when the developer has approved the look and any changes they asked for are made
+- [x] 5.2 Build in the main checkout so `jasonvertucio.local` shows the work, send the developer the screenshots with `SendUserFile`, then **stop and wait for the developer's reaction**. This task is complete only when the developer has approved the look and any changes they asked for are made
 
 - [x] 5.3 Update `tests/Feature/AdminHubsTest.php` for the new dashboard and navigation order and add Site Settings hub tests (tile order, each permission alone, 403, guest redirect), and verify the new assertions fail
 - [x] 5.4 Reorder `navigation.json`, add the Site Settings entry, `view-site-settings` ability, route, `AdminController` action and `site-settings/Hub.tsx`, point the three pages' back links at the hub, simplify `buildNavAreas()`, and verify `AdminHubsTest`, `CommentModerationTest` and `RolePermissionControllerTest` pass
@@ -39,25 +39,25 @@
 
 ## 6. Remaining shared components and theme coverage
 
-- [ ] 6.1 Finish `DataTable`, `Pagination`, `EmptyTableRow`, `StatusChip` and `ConfirmDialog` behind their current props, and verify with `npx tsc --noEmit` and the design reference once 7.2 exists
-- [ ] 6.2 Add theme overrides for the MUI components the pages rely on (Button, TextField, Select, Card, Table, Chip, Dialog, Menu, Tabs, Alert, Tooltip, date pickers), with visible focus throughout, and verify each one on the design reference
-- [ ] 6.3 Screenshot the broader page set (AI system form, Resume Editor, Metrics charts, Comments, Roles dialog, Cover Letter Preview, a date picker and an application's Discussion page) and fix regressions in the theme first, and verify by re-taking the screenshots at 1280 and 360 pixels
+- [x] 6.1 Finish `DataTable`, `Pagination`, `EmptyTableRow`, `StatusChip` and `ConfirmDialog` behind their current props, and verify with `npx tsc --noEmit` and the design reference once 7.2 exists
+- [x] 6.2 Add theme overrides for the MUI components the pages rely on (Button, TextField, Select, Card, Table, Chip, Dialog, Menu, Tabs, Alert, Tooltip, date pickers), with visible focus throughout, and verify each one on the design reference
+- [x] 6.3 Screenshot the broader page set (AI system form, Resume Editor, Metrics charts, Comments, Roles dialog, Cover Letter Preview, a date picker and an application's Discussion page) and fix regressions in the theme first, and verify by re-taking the screenshots at 1280 and 360 pixels
 
 ## 7. Design reference
 
-- [ ] 7.1 Write `tests/Feature/Admin/DesignReferenceTest.php` for the permitted user, 403, anonymous redirect, not-linked (no dashboard tile or `adminNav` entry) and no server records in the page's props, and verify the tests fail
-- [ ] 7.2 Add `AdminController::designReference`, the route inside the `/admin` group with `can:edit-settings`, and `resources/js/admin/pages/DesignReference.tsx` showing tokens and component states from sample data held in the page file, and verify the 7.1 tests pass and the page renders in the browser
-- [ ] 7.3 Add a test to `tests/Feature/AdminHubsTest.php` pinning that the design reference does not change the dashboard's tiles, keep the existing app-bar order tests unchanged, and verify the file passes
+- [x] 7.1 Write `tests/Feature/Admin/DesignReferenceTest.php` for the permitted user, 403, anonymous redirect, not-linked (no dashboard tile or `adminNav` entry) and no server records in the page's props, and verify the tests fail
+- [x] 7.2 Add `AdminController::designReference`, the route inside the `/admin` group with `can:edit-settings`, and `resources/js/admin/pages/DesignReference.tsx` showing tokens and component states from sample data held in the page file, and verify the 7.1 tests pass and the page renders in the browser
+- [x] 7.3 Add a test to `tests/Feature/AdminHubsTest.php` pinning that the design reference does not change the dashboard's tiles, keep the existing app-bar order tests unchanged, and verify the file passes
 
 ## 8. Guardrails and documentation
 
-- [ ] 8.1 Add ESLint `no-restricted-syntax` rules scoped to `resources/js/admin/**` for hex colours, gradients and a `boxShadow` key, exempting `theme/tokens.ts` and `utils/markdownSx.ts`, and verify by adding a temporary violation that errors, removing it, and getting a clean `npm run lint`
-- [ ] 8.2 Write `.claude/context/admin-design.md` (where each decision lives, the identity rule, the screenshot routine, how to restyle a page later) and update the `CLAUDE.md` topic and Blade component tables, and verify the files reflect the final code. Both files are gitignored, so they stay out of commits
+- [x] 8.1 Add ESLint `no-restricted-syntax` rules scoped to `resources/js/admin/**` for hex colours, gradients and a `boxShadow` key, exempting `theme/tokens.ts` and `utils/markdownSx.ts`, and verify by adding a temporary violation that errors, removing it, and getting a clean `npm run lint`
+- [x] 8.2 Write `.claude/context/admin-design.md` (where each decision lives, the identity rule, the screenshot routine, how to restyle a page later) and update the `CLAUDE.md` topic and Blade component tables, and verify the files reflect the final code. Both files are gitignored, so they stay out of commits
 
 ## 9. Final verification
 
-- [ ] 9.1 Compare chat screenshots with the 1.3 baseline, and verify the chat looks unchanged
-- [ ] 9.2 Check flash messages, log out on both screen widths, back links, `aria-current`, keyboard focus, reduced motion and 360-pixel overflow in the browser, and verify each `admin-shell` scenario not covered by a test
+- [x] 9.1 Compare chat screenshots with the 1.3 baseline, and verify the chat looks unchanged
+- [x] 9.2 Check flash messages, log out on both screen widths, back links, `aria-current`, keyboard focus, reduced motion and 360-pixel overflow in the browser, and verify each `admin-shell` scenario not covered by a test
 - [ ] 9.3 Run `vendor/bin/phpunit` filtered to `BreadcrumbsTest`, `PostVisibilityTest`, `DesignReferenceTest`, `AdminHubsTest` and `CommentModerationTest`, plus `npx tsc --noEmit`, `npm run lint`, `npm run build` and `openspec validate add-blog-breadcrumbs-and-admin-shell --strict`, and verify all pass. Then ask the developer whether to run the full test suite
 - [ ] 9.4 Run the `openspec-verifier` and `laravel-reviewer` agents over the branch, and fix confirmed findings, and verify by re-running the affected checks
 - [ ] 9.5 Send the developer final screenshots and wait for approval before archiving or merging to `develop`. Production deployment is developer-owned: pull, `composer install`, `npm ci`, `npm run build`, `php artisan optimize:clear`

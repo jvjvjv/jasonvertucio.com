@@ -1,16 +1,26 @@
 import { border, color, radius, typeScale } from "./tokens";
 
 import type { Components, Theme } from "@mui/material/styles";
+import type {} from "@mui/x-date-pickers/themeAugmentation";
 
 const focusRing = {
     outline: border.focus,
     outlineOffset: 2,
 };
 
+/** For rows in a list, whose ring would otherwise be clipped by the list. */
+const insetFocusRing = {
+    "&.Mui-focusVisible": { outlineOffset: -2 },
+};
+
+const floatingSurface = {
+    border: border.hairline,
+    borderRadius: radius.surface,
+};
+
 /**
  * MUI's defaults, restyled, so that every admin page picks up the same look
- * without being edited. Borders do the work of shadows here: the project
- * doesn't use box shadows or gradients.
+ * without being edited.
  */
 export const components: Components<Theme> = {
     MuiCssBaseline: {
@@ -36,9 +46,6 @@ export const components: Components<Theme> = {
         },
     },
     MuiButton: {
-        defaultProps: {
-            disableElevation: true,
-        },
         styleOverrides: {
             root: {
                 textTransform: "none",
@@ -55,18 +62,107 @@ export const components: Components<Theme> = {
             },
         },
     },
-    MuiPaper: {
+    MuiCard: {
         styleOverrides: {
-            root: {
-                boxShadow: "none",
+            root: floatingSurface,
+        },
+    },
+    MuiPopover: {
+        styleOverrides: {
+            paper: floatingSurface,
+        },
+    },
+    MuiAutocomplete: {
+        styleOverrides: {
+            paper: floatingSurface,
+        },
+    },
+    MuiPickerPopper: {
+        styleOverrides: {
+            paper: floatingSurface,
+        },
+    },
+    MuiDialog: {
+        styleOverrides: {
+            paper: floatingSurface,
+        },
+    },
+    MuiDialogActions: {
+        styleOverrides: {
+            root: ({ theme }) => ({
+                padding: theme.spacing(1, 3, 2),
+            }),
+        },
+    },
+    MuiMenuItem: {
+        styleOverrides: {
+            root: insetFocusRing,
+        },
+    },
+    MuiListItemButton: {
+        styleOverrides: {
+            root: insetFocusRing,
+        },
+    },
+    MuiTabs: {
+        styleOverrides: {
+            indicator: {
+                backgroundColor: color.orange,
             },
         },
     },
-    MuiCard: {
+    MuiTab: {
+        styleOverrides: {
+            root: {
+                ...insetFocusRing,
+                textTransform: "none",
+                fontWeight: 600,
+                "&.Mui-selected": {
+                    color: color.ink,
+                },
+            },
+        },
+    },
+    MuiFab: {
+        styleOverrides: {
+            root: {
+                textTransform: "none",
+                fontWeight: 600,
+            },
+        },
+    },
+    MuiToggleButton: {
+        styleOverrides: {
+            root: {
+                textTransform: "none",
+            },
+        },
+    },
+    MuiAccordion: {
         styleOverrides: {
             root: {
                 border: border.hairline,
-                borderRadius: radius.surface,
+                "&::before": {
+                    display: "none",
+                },
+            },
+        },
+    },
+    MuiAlert: {
+        styleOverrides: {
+            root: {
+                borderRadius: radius.control,
+            },
+        },
+    },
+    MuiTooltip: {
+        styleOverrides: {
+            tooltip: {
+                backgroundColor: color.ink,
+                fontSize: typeScale.caption,
+            },
+            arrow: {
+                color: color.ink,
             },
         },
     },

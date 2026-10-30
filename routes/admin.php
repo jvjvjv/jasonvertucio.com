@@ -44,6 +44,11 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRe
 
         // Site settings (navigation links)
         Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
+
+        // Tokens and shared components on sample data, for design review. Linked from nowhere.
+        Route::get('/design-reference', [AdminController::class, 'designReference'])
+            ->middleware('can:edit-settings')
+            ->name('design-reference');
     });
 
 // Site Settings hub - gated on the `view-site-settings` gate (defined in

@@ -38,7 +38,7 @@ export default function ConfirmDialog({
                     <DialogContentText>{message}</DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button type="button" onClick={onCancel}>
+                    <Button type="button" color="inherit" onClick={onCancel}>
                         Cancel
                     </Button>
                     <Button

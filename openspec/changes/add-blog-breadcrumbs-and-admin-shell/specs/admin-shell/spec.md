@@ -155,4 +155,4 @@ The system SHALL provide a design reference page at `/admin/design-reference` th
 #### Scenario: Sample data only
 
 - **WHEN** the page is opened
-- **THEN** it receives no application, resume, user or conversation records from the server
+- **THEN** it receives no data from the server beyond what every admin page receives

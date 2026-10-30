@@ -54,6 +54,14 @@ class AdminHubsTest extends TestCase
         ], $this->blockHrefs('/admin', $user));
     }
 
+    public function test_the_design_reference_is_not_a_dashboard_tile(): void
+    {
+        $this->assertNotContains(
+            '/admin/design-reference',
+            $this->blockHrefs('/admin', $this->userWith(...self::EVERY_ADMIN_PERMISSION))
+        );
+    }
+
     public function test_the_dashboard_no_longer_links_to_the_grouped_pages(): void
     {
         $hrefs = $this->blockHrefs('/admin', $this->userWith(...self::EVERY_ADMIN_PERMISSION));

@@ -1,4 +1,4 @@
-import { createTheme } from "@mui/material/styles";
+import { createTheme, type Shadows } from "@mui/material/styles";
 
 import { components } from "./components";
 import { color, font, radius, spacingUnit, typeScale } from "./tokens";
@@ -11,6 +11,9 @@ const heading = {
 
 export const theme = createTheme({
     spacing: spacingUnit,
+    // The project doesn't use box shadows, so no elevation casts one. Borders
+    // separate surfaces instead.
+    shadows: Array<string>(25).fill("none") as Shadows,
     shape: {
         borderRadius: radius.control,
     },

@@ -117,6 +117,30 @@ export default [
         }
     ),
 
+    // The admin's look comes from theme/tokens.ts. markdownSx.ts is shared with
+    // the chat bundle, which keeps its own look.
+    {
+        files: ['resources/js/admin/**/*.{ts,tsx}'],
+        ignores: ['resources/js/admin/theme/tokens.ts', 'resources/js/admin/utils/markdownSx.ts'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'Literal[value=/(^|[\\s(])#[0-9a-fA-F]{3,8}\\b/], TemplateElement[value.raw=/(^|[\\s(])#[0-9a-fA-F]{3,8}\\b/]',
+                    message: 'Use a colour from theme/tokens.ts or a palette name, not a hard-coded hex colour.',
+                },
+                {
+                    selector: 'Literal[value=/(linear|radial|conic)-gradient/], TemplateElement[value.raw=/(linear|radial|conic)-gradient/]',
+                    message: 'The project does not use gradients.',
+                },
+                {
+                    selector: "Property[key.name='boxShadow']",
+                    message: 'The project does not use box shadows. Use a border from theme/tokens.ts.',
+                },
+            ],
+        },
+    },
+
     // React hooks plugin configuration
     {
         plugins: {
