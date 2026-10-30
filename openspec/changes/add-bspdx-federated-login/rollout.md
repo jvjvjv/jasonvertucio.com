@@ -9,17 +9,18 @@ The change lands as two deployable points on `feature/add-bspdx-federated-login`
 
 ## 1. bspdx.com prerequisites
 
-- [ ] The bspdx.com agent has finished `bspdx-com-instructions.md` §2–§5 and reported back (§6).
-- [ ] Client id and secret received; the secret arrived by a secure channel.
-- [ ] MFA enforcement is live on bspdx.com for every user.
-- [ ] The `userinfo` scope exists and is required on `/api/oauth/userinfo`.
+- [x] The bspdx.com agent has finished `bspdx-com-instructions.md` §2–§5 and reported back (§6) — 2026-10-30.
+- [x] Client id received: `01a18ce4-7bd7-7166-892e-c9f562fb695f`.
+- [ ] Client secret received by a secure channel (never committed, never pasted into chat).
+- [x] MFA enforcement is live on bspdx.com for every user.
+- [x] The `userinfo` scope exists and is required on `/api/oauth/userinfo`.
 
 ## 2. Deploy Phase A
 
 - [ ] Deploy the Phase A commit with `BSPDX_LOGIN_ENABLED=false`.
 - [ ] `php artisan migrate` (creates `federated_identities`).
 - [ ] Set `BSPDX_BASE_URL`, `BSPDX_CLIENT_ID`, `BSPDX_CLIENT_SECRET`, `BSPDX_SCOPES=userinfo` (and `BSPDX_REDIRECT_URI` only if the callback URL differs from `APP_URL/auth/bspdx/callback`); `php artisan optimize:clear`.
-- [ ] In a non-production environment, set `BSPDX_LOGIN_ENABLED=true` and sign in end to end with a test bspdx.com account.
+- [ ] In a non-production environment, set `BSPDX_LOGIN_ENABLED=true` and sign in end to end with a test bspdx.com account. Expect bspdx.com's consent screen on the first sign-in only.
 
 ## 3. Link existing accounts (each environment)
 
@@ -43,4 +44,4 @@ Reverting Phase B restores password login only for accounts that still know a pa
 ## Later
 
 - Cleanup migration for legacy auth columns, the `passkeys` table and `security_audit_log`.
-- Update the Privacy Policy and Terms of Service, which still describe passwords, TOTP and passkeys stored on this site.
+- The Privacy Policy and Terms of Service updates ship with Phase B; set their "Last updated" date to the Phase B deploy date if it differs.

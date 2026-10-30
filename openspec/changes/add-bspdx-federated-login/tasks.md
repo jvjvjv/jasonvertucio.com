@@ -1,6 +1,6 @@
 ## 1. Prerequisites and decisions
 
-- [ ] 1.1 Hand `bspdx-com-instructions.md` to the developer for the bspdx.com agent; verify the developer has relayed back: client id (secret via a secure channel, never committed), registered callback URLs, the scope name, and confirmation that MFA enforcement is live — record the non-secret answers in design.md Open Questions
+- [x] 1.1 Hand `bspdx-com-instructions.md` to the developer for the bspdx.com agent; verify the developer has relayed back: client id (secret via a secure channel, never committed), registered callback URLs, the scope name, and confirmation that MFA enforcement is live — record the non-secret answers in design.md Open Questions
 - [x] 1.2 Get approval for the OAuth 2.0 client dependency (custom Socialite provider vs `league/oauth2-client` `GenericProvider`) before installing; verify `composer.json` changes only after approval
 - [x] 1.3 Get approval to uninstall `spatie/laravel-passkeys` (Phase B); if not approved, leave the package installed with no reachable routes and record that in design.md
 

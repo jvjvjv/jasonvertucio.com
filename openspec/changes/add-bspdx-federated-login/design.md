@@ -61,7 +61,7 @@ Decisions made by the developer: bspdx.com is the only sign-in method (no fallba
 - **[Risk] Total dependence on bspdx.com.** If it is down or the owner's bspdx.com account is lost, nobody can sign in, including the admin. → Accepted by decision. Existing sessions continue; Sanctum tokens keep working for MCP.
 - **[Risk] Security now equals bspdx.com's.** No local second factor; account takeover at bspdx.com (e.g. via its password reset) is takeover here. → bspdx.com must enforce MFA for all users (instructions §3). Cutover waits on it.
 - **[Risk] No signed identity assertion.** → TLS to a fixed HTTPS base URL, no redirects followed, token only from this site's exchange, `state` + PKCE.
-- **[Risk] Unscoped 15-day tokens on bspdx.com.** → bspdx.com adds a `userinfo` scope (instructions §2); this site discards the token immediately.
+- **[Risk] Unscoped 15-day tokens on bspdx.com.** → Resolved: bspdx.com defines a `userinfo` scope and this site requests only that; the token is discarded immediately.
 - **[Accepted] Deprovisioning.** A user disabled on bspdx.com keeps any live local session (default lifetime 120 minutes) and any Sanctum token until revoked here.
 - **[Accepted] Silent re-login.** Passport skips consent when a valid token exists, so logging out here and clicking sign-in may log straight back in.
 - **[Accepted] Rollback.** Reverting Phase B restores password login only for users who still know a password; auto-created users cannot sign in until it is redeployed.
@@ -78,5 +78,11 @@ Decisions made by the developer: bspdx.com is the only sign-in method (no fallba
 
 ## Open Questions
 
-- Client id/secret and the registered callback URLs (production and local dev) for this site's Passport client.
-- Whether `MakeUserCommand` should be kept in any form.
+Resolved from the bspdx.com agent's report (2026-10-30):
+
+- **Client.** Client id `01a18ce4-7bd7-7166-892e-c9f562fb695f`; the secret is delivered separately by a secure channel and is never committed. Registered callbacks: `https://jasonvertucio.com/auth/bspdx/callback` and `https://localhost:8000/auth/bspdx/callback` (local `APP_URL` is `https://localhost:8000`, so `BSPDX_REDIRECT_URI` can stay empty in both).
+- **Scope.** `userinfo`, now the config default. A token without it gets 403 from userinfo; an unknown scope comes back as `error=invalid_scope` on the callback, which ends at `/login` with the generic error.
+- **MFA.** Live. Every bspdx.com account must have authenticator-app 2FA confirmed before `/oauth/authorize` issues a code; password sign-ins always pass the 2FA challenge. Deviation accepted: a passkey sign-in with device PIN or biometric (now required) skips the TOTP code, since it is itself multi-factor.
+- **Userinfo and PKCE.** Shape (`id`, `email`, `email_verified`, `name`) and S256 PKCE behavior match this design and are pinned by tests on bspdx.com.
+- **Consent.** Shown on the first sign-in, then skipped while the user holds an unexpired token for this client (15 days today), even though this site discards it. This is the mechanism behind the accepted silent re-login.
+- `MakeUserCommand` was removed at apply (it only created password users).

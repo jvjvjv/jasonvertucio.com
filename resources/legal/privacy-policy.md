@@ -1,7 +1,7 @@
 # Privacy Policy
 
 **Effective date:** September 8, 2026  
-**Last updated:** September 8, 2026
+**Last updated:** October 29, 2026
 
 ## 1. Who we are
 
@@ -29,7 +29,7 @@ who receives it, how long we keep it, and what rights you have. It covers:
 - the blog and its comment system;
 - the resume viewer, share-code access, and document downloads;
 - the AI chat assistants available on the Site;
-- user accounts and their authentication methods.
+- user accounts, which you sign in to with a bspdx.com account.
 
 It does not cover third-party websites we link to, which have their own
 policies.
@@ -40,11 +40,10 @@ policies.
 
 | What | Where it comes from | Notes |
 | --- | --- | --- |
-| Name | Comment form; account profile | Required to post a comment. Stored with the comment permanently so the comment survives even if an account is later deleted. |
-| Email address | Comment form; account registration; contact | Optional for comments. Required for an account. Comment email addresses are never displayed publicly. |
+| Name | Comment form; your bspdx.com account | Required to post a comment. Stored with the comment permanently so the comment survives even if an account is later deleted. |
+| Email address | Comment form; your bspdx.com account; contact | Optional for comments. Required for an account, and kept in step with your bspdx.com account each time you sign in. Comment email addresses are never displayed publicly. |
 | Comment content | Comment form | Published publicly on the Site, together with your name. |
-| Account credentials | Registration and account settings | Passwords are stored only as a salted hash. We also store two-factor (TOTP) secrets, two-factor recovery codes, and public-key credentials for passkeys. We never store a passkey private key — it never leaves your device. |
-| Authentication preferences | Account settings | For example, whether passwordless sign-in is enabled for your account. |
+| bspdx.com account identifier | Signing in with bspdx.com | See section 3.4. |
 | Chat messages | AI chat assistants | The full content of what you type, and the assistant's replies. See section 6. |
 | Resume share code | Resume access form | The six-character code you were given, recorded with each view and download. |
 
@@ -76,6 +75,25 @@ spam and abuse, and it is what would feed a decision to block an address.
   owner's own** media playback, sent to the Site by the owner's private media
   server. It collects nothing about you.
 
+### 3.4 Signing in with bspdx.com
+
+You sign in to the Site with an account on **bspdx.com**, which we also
+operate. The Site has no passwords, passkeys, or two-factor codes of its own:
+you enter those on bspdx.com, and bspdx.com's own privacy policy covers what
+it holds.
+
+When you sign in, bspdx.com tells the Site your bspdx.com account identifier,
+your email address, whether that address is verified there, and your name. We
+store the account identifier to recognise you on later sign-ins, and the
+email address and name on your account here. The first time you sign in, this
+creates your account on the Site. We never receive your bspdx.com password or
+two-factor details.
+
+Accounts created before the Site moved to bspdx.com sign-in may still hold a
+password hash, two-factor (TOTP) secret and recovery codes, or passkey public
+keys from the earlier sign-in system. They are no longer used to sign anyone
+in, and they will be deleted (see section 8.2).
+
 ## 4. Why we use your data, and our legal bases
 
 Under GDPR Article 6, we rely on the following bases.
@@ -86,7 +104,7 @@ Under GDPR Article 6, we rely on the following bases.
 | Publishing your comment and its thread position | Name, comment content, timestamps | **Legitimate interests** — running a blog with public discussion, at your own initiative. |
 | Notifying the site owner that a comment was posted | Name, email, comment content | **Legitimate interests** — moderating our own site. |
 | Detecting spam and abuse; rate limiting; blocking addresses | IP, user-agent, submission timing, comment content | **Legitimate interests** — protecting the Site and its users from abuse. |
-| Creating and securing your account; signing you in | Email, password hash, TOTP secret, passkey credentials | **Performance of a contract** (Art. 6(1)(b)) and **legitimate interests** in account security. |
+| Creating and securing your account; signing you in | Email, name, bspdx.com account identifier | **Performance of a contract** (Art. 6(1)(b)) and **legitimate interests** in account security. |
 | Providing the resume viewer and download, and enforcing share codes | Share code, IP, user-agent, account ID, version accessed | **Legitimate interests** — controlling access to a document shared selectively, and knowing whether a code has been passed around. |
 | Operating the AI chat assistants | Chat messages and replies, conversation identifiers | **Legitimate interests** in providing the feature, and, where you volunteer information beyond what the feature needs, your **consent** (Art. 6(1)(a)) implied by your choice to type it. |
 | Measuring Site traffic | Analytics identifiers, pages viewed, approximate location | **Consent** (Art. 6(1)(a)) where consent is required in your jurisdiction; otherwise legitimate interests in understanding audience size. |
@@ -108,7 +126,6 @@ core functionality:
 | --- | --- | --- |
 | Session cookie | Keeps you signed in and preserves form state between requests. | Browser session, or up to the configured session lifetime. |
 | `XSRF-TOKEN` | Cross-site request forgery protection on forms. | Same as the session. |
-| "Remember me" cookie | Only set if you choose to stay signed in. | Up to five years, or until you sign out. |
 
 ### 5.2 Analytics
 
@@ -176,6 +193,7 @@ We do not sell your personal data. We disclose it only as follows.
 | jsDelivr | IP, user-agent | Independent controller |
 | Anthropic, OpenAI, Google | AI chat conversation content, as applicable to the assistant used | Processor / independent controller under their own terms |
 | Our outbound email provider | Recipient address and message content for notification emails | Processor |
+| bspdx.com (operated by us) | Nothing beyond your visit: your browser goes to bspdx.com to sign in, and bspdx.com sends the Site the details in section 3.4 | Same controller |
 
 We may also disclose personal data where we are legally required to, where it
 is necessary to establish, exercise, or defend legal claims, or where it is
@@ -204,7 +222,8 @@ it holds one. You may request further detail at info@bspdx.com.
 | Published comments and their metadata | For as long as the associated post remains published, or until you ask us to delete them. |
 | Comments marked as spam | Retained while they remain useful for abuse detection, then deleted. |
 | Account records | For the life of the account. Deleted within 30 days of your closure request, except where retention is legally required. |
-| Authentication credentials (password hash, TOTP secret, passkeys) | Deleted with the account, or immediately when you remove the individual method. |
+| bspdx.com account link | For the life of the account. Deleted with the account. |
+| Credentials from the earlier sign-in system (password hash, TOTP secret, passkeys) | Unused. Deleted in a scheduled cleanup, and in any case with the account. |
 | Resume view and download records | Up to 24 months from the event, then deleted or aggregated into non-identifying counts. |
 | Share codes | Until revoked or expired, plus the retention period of the access records referencing them. |
 | AI chat conversations | Until deleted by us as part of routine housekeeping, or on your request. |
@@ -313,8 +332,8 @@ General's office can receive a complaint.
 ## 11. Security
 
 We protect the Site with, among other measures: HTTPS transport encryption;
-salted password hashing; optional TOTP two-factor authentication; WebAuthn
-passkey authentication with private keys that never leave your device;
+sign-in delegated to bspdx.com, which requires multi-factor authentication for
+every account, so the Site stores no passwords for new accounts;
 cross-site request forgery protection on every form; rate limiting on comment
 submission; and automated blocking of addresses that probe for known
 vulnerabilities.

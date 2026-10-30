@@ -49,7 +49,7 @@ return [
         'client_id' => env('BSPDX_CLIENT_ID'),
         'client_secret' => env('BSPDX_CLIENT_SECRET'),
         'redirect' => env('BSPDX_REDIRECT_URI'),
-        'scopes' => env('BSPDX_SCOPES', ''),
+        'scopes' => env('BSPDX_SCOPES', 'userinfo'),
         'timeout' => (int) env('BSPDX_TIMEOUT', 10),
     ],
 
