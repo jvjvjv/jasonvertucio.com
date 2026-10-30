@@ -46,6 +46,16 @@ Route::middleware(['auth', 'can:manage-unauthenticated-viewers', HandleInertiaRe
         Route::get('/site-settings', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
     });
 
+// Site Settings hub - gated on the `view-site-settings` gate (defined in
+// AppServiceProvider: edit-settings or view-roles) rather than the permission
+// above, since the roles page it links to doesn't require that permission.
+Route::middleware(['auth', 'can:view-site-settings', HandleInertiaRequests::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/settings', [AdminController::class, 'settingsHub'])->name('settings.index');
+    });
+
 // Comment moderation - gated on the `moderate-comments` gate (defined in
 // AppServiceProvider: manage-comments or manage-blog) rather than the
 // resume/admin permission above, since it is blog work.

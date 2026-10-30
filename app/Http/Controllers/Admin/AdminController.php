@@ -29,6 +29,13 @@ class AdminController extends BaseAdminController
         ]);
     }
 
+    public function settingsHub(Request $request): InertiaResponse
+    {
+        return Inertia::render('site-settings/Hub', [
+            'navBlocks' => $this->navBlocksFor('/admin/settings', $request),
+        ]);
+    }
+
     public function blogHub(Request $request): InertiaResponse
     {
         return Inertia::render('blog/Hub', [

@@ -25,8 +25,8 @@ export default function MailPreviewIndex({ mailables }: MailPreviewIndexProps) {
             <Head title="Mail Preview" />
             <PageHeader
                 title="Mail Preview"
-                backHref="/admin"
-                backLabel="Back to Admin"
+                backHref="/admin/settings"
+                backLabel="Back to Site Settings"
             />
 
             {mailables.length === 0 ? (

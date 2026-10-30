@@ -26,27 +26,14 @@ export function linkComponent(external?: boolean) {
 }
 
 /**
- * The dashboard's tiles are the navigation's areas, in tile order. Its tiles
- * include areas with no pages of their own, such as Mail Preview, which appear
- * nowhere else in `adminNav`.
+ * Each entry is an area, with its children as its pages. The dashboard's
+ * children are the other areas again, so it has no pages of its own.
  */
 export function buildNavAreas(adminNav: AppBarItem[]): NavArea[] {
-    const dashboard = adminNav.find((item) => item.href === DASHBOARD_HREF);
-    const others = adminNav.filter((item) => item !== dashboard);
-    const tiles = dashboard?.children ?? [];
-    const tileHrefs = new Set(tiles.map((tile) => tile.href));
-
-    return [
-        ...(dashboard ? [{ ...dashboard, pages: [] }] : []),
-        ...tiles.map((tile) => ({
-            ...tile,
-            pages:
-                others.find((item) => item.href === tile.href)?.children ?? [],
-        })),
-        ...others
-            .filter((item) => !tileHrefs.has(item.href))
-            .map((item) => ({ ...item, pages: item.children })),
-    ];
+    return adminNav.map((item) => ({
+        ...item,
+        pages: item.href === DASHBOARD_HREF ? [] : item.children,
+    }));
 }
 
 function matches(path: string, href: string): boolean {

@@ -42,17 +42,15 @@ class AdminHubsTest extends TestCase
         return array_column(app(AdminNavigationService::class)->getNavBlocksForRoute($route, $user), 'href');
     }
 
-    public function test_the_dashboard_opens_with_employment_and_closes_with_blog(): void
+    public function test_the_dashboard_lists_blog_employment_ai_tools_and_site_settings(): void
     {
         $user = $this->userWith(...self::EVERY_ADMIN_PERMISSION);
 
         $this->assertSame([
-            '/admin/employment',
-            '/admin/mail-preview',
-            '/admin/ai',
-            '/admin/roles-permissions',
-            '/admin/site-settings',
             '/admin/blog',
+            '/admin/employment',
+            '/admin/ai',
+            '/admin/settings',
         ], $this->blockHrefs('/admin', $user));
     }
 
@@ -60,7 +58,7 @@ class AdminHubsTest extends TestCase
     {
         $hrefs = $this->blockHrefs('/admin', $this->userWith(...self::EVERY_ADMIN_PERMISSION));
 
-        foreach (['/admin/resume/applications', '/admin/resume/metrics', '/admin/resume', '/admin/cover-letters', '/admin/blog/canvas', '/admin/comments'] as $moved) {
+        foreach (['/admin/resume/applications', '/admin/resume/metrics', '/admin/resume', '/admin/cover-letters', '/admin/blog/canvas', '/admin/comments', '/admin/mail-preview', '/admin/site-settings', '/admin/roles-permissions'] as $moved) {
             $this->assertNotContains($moved, $hrefs);
         }
     }
@@ -147,7 +145,74 @@ class AdminHubsTest extends TestCase
         $this->assertContains('/admin/resume', array_column($items[1]['children'], 'href'));
     }
 
-    public function test_the_app_bar_lists_employment_first_after_the_dashboard(): void
+    public function test_the_navigation_lists_the_hubs_in_dashboard_order(): void
+    {
+        $user = $this->userWith(...self::EVERY_ADMIN_PERMISSION);
+
+        $this->assertSame(
+            ['/admin', ...$this->blockHrefs('/admin', $user)],
+            array_column(app(AdminNavigationService::class)->getAppBarItems($user), 'href')
+        );
+    }
+
+    public function test_the_site_settings_hub_lists_its_tiles_in_order(): void
+    {
+        $this->actingAs($this->userWith('edit-settings', 'view-roles'))
+            ->get('/admin/settings')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('site-settings/Hub', false)
+                ->where('navBlocks.0.href', '/admin/mail-preview')
+                ->where('navBlocks.1.href', '/admin/site-settings')
+                ->where('navBlocks.2.href', '/admin/roles-permissions')
+                ->has('navBlocks', 3));
+    }
+
+    public function test_the_site_settings_hub_shows_only_settings_tiles_without_view_roles(): void
+    {
+        $this->actingAs($this->userWith('edit-settings'))
+            ->get('/admin/settings')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('navBlocks.0.href', '/admin/mail-preview')
+                ->where('navBlocks.1.href', '/admin/site-settings')
+                ->has('navBlocks', 2));
+    }
+
+    public function test_the_site_settings_hub_shows_only_roles_without_edit_settings(): void
+    {
+        $this->actingAs($this->userWith('view-roles'))
+            ->get('/admin/settings')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('navBlocks.0.href', '/admin/roles-permissions')
+                ->has('navBlocks', 1));
+    }
+
+    public function test_the_site_settings_hub_refuses_a_user_without_settings_permissions(): void
+    {
+        $this->actingAs($this->userWith('edit-resume'))
+            ->get('/admin/settings')
+            ->assertForbidden();
+    }
+
+    public function test_the_site_settings_hub_redirects_guests_to_login(): void
+    {
+        $this->get('/admin/settings')->assertRedirect('/login');
+    }
+
+    public function test_the_navigation_lists_site_settings_with_its_tiles_as_pages(): void
+    {
+        $items = app(AdminNavigationService::class)->getAppBarItems($this->userWith('edit-settings', 'view-roles'));
+
+        $this->assertSame('/admin/settings', $items[1]['href']);
+        $this->assertSame(
+            ['/admin/mail-preview', '/admin/site-settings', '/admin/roles-permissions'],
+            array_column($items[1]['children'], 'href')
+        );
+    }
+
+    public function test_the_navigation_lists_employment_first_for_a_user_without_blog_access(): void
     {
         $items = app(AdminNavigationService::class)->getAppBarItems($this->userWith('edit-resume'));
 

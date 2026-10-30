@@ -29,7 +29,11 @@
 ## 5. Review gate
 
 - [x] 5.1 Screenshot the Dashboard, Employment hub and Applications list at 1280 and 360 pixels, critique them against the design plan, the project's no gradient and no box shadow rules and the existing identity, fix what falls short, and verify by re-taking the screenshots
-- [ ] 5.2 Build in the main checkout so `jasonvertucio.local` shows the work, send the developer the screenshots with `SendUserFile`, then **stop and wait for the developer's reaction**. This task is complete only when the developer has responded and any changes they asked for are made
+- [ ] 5.2 Build in the main checkout so `jasonvertucio.local` shows the work, send the developer the screenshots with `SendUserFile`, then **stop and wait for the developer's reaction**. This task is complete only when the developer has approved the look and any changes they asked for are made
+
+- [x] 5.3 Update `tests/Feature/AdminHubsTest.php` for the new dashboard and navigation order and add Site Settings hub tests (tile order, each permission alone, 403, guest redirect), and verify the new assertions fail
+- [x] 5.4 Reorder `navigation.json`, add the Site Settings entry, `view-site-settings` ability, route, `AdminController` action and `site-settings/Hub.tsx`, point the three pages' back links at the hub, simplify `buildNavAreas()`, and verify `AdminHubsTest`, `CommentModerationTest` and `RolePermissionControllerTest` pass
+- [x] 5.5 Check the navigation order, current-page marking and permission filtering in the browser as users with full and narrow permissions, then re-take and send the review screenshots, and verify from those screenshots
 
 ## 6. Remaining shared components and theme coverage
 

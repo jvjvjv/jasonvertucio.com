@@ -11,6 +11,7 @@ Blog pages give a reader no sense of where they are or a way back up: a topic li
 **New admin shell and design foundation (MUI stays; same visual identity)**
 
 - A new admin shell replaces the top app bar: a persistent side navigation on wide screens and a menu-button drawer on narrow ones. The current area's pages are listed in the navigation, and the current page is marked.
+- The dashboard and navigation become Blog, Employment, AI Tools and Site Settings. Site Settings is a new hub at `/admin/settings` holding Mail Preview, Site Navigation and Roles & Permissions, which keep their URLs and permissions. Their back links now point to the hub.
 - A single design token source now defines the admin's colour, type, spacing, radius and border values, and the MUI theme is built from it.
 - Shared components (page header, hub tiles, data table, pagination, empty rows, status chips, confirm dialog) and MUI's defaults are redesigned, so the Dashboard, the hubs and every inner page pick up the new look without page edits.
 - A new permission-gated design reference page at `/admin/design-reference` shows the tokens and shared components in their states using sample data. It gives the `/frontend-design` skill and the developer one place to review the design system.
@@ -19,7 +20,7 @@ Blog pages give a reader no sense of where they are or a way back up: a topic li
 
 **Unchanged by this change**
 
-- Admin URLs, permissions, back links, flash messages, log out, the full-screen Discussion and Company Intel session pages, and the Canvas blog editor.
+- Existing admin URLs and permissions, other back links, flash messages, log out, the full-screen Discussion and Company Intel session pages, and the Canvas blog editor.
 - Page-by-page restyling, dark mode and removing MUI. Each is left to later changes.
 
 ## Capabilities
@@ -31,11 +32,11 @@ Blog pages give a reader no sense of where they are or a way back up: a topic li
 
 ### Modified Capabilities
 
-- `admin-hubs`: "App bar lists the Employment hub first" is replaced by "Admin navigation lists the Employment hub first", because the app bar no longer exists. The ordering and permission filtering are unchanged.
+- `admin-hubs`: "App bar lists the Employment hub first" is replaced by "Admin navigation lists the hubs in dashboard order", because the app bar no longer exists. The dashboard's tiles become Blog, Employment, AI Tools and a new Site Settings hub, which groups Mail Preview, Site Navigation and Roles & Permissions.
 
 ## Impact
 
-- **Blade/PHP**: a new `<x-breadcrumbs>` component; `app/Http/Controllers/BlogController.php`; `resources/views/blog/{list,single,topics,tags}.blade.php`; a new route and an `AdminController` action for the design reference.
+- **Blade/PHP**: a new `<x-breadcrumbs>` component; `app/Http/Controllers/BlogController.php`; `resources/views/blog/{list,single,topics,tags}.blade.php`; new routes and `AdminController` actions for the design reference and the Site Settings hub; a `view-site-settings` ability in `AppServiceProvider`; `resources/js/admin/navigation.json`.
 - **Admin frontend**: `resources/js/admin/theme.ts` is replaced by a token and theme module; `resources/js/admin/layouts/` and `resources/js/admin/components/` are rebuilt behind their existing props; `pages/ai/conversations/Show.tsx` loses its one hard-coded colour; a new `DesignReference` page is added.
 - **Chat bundle**: `resources/js/chat/app.tsx` points at a frozen copy of the current theme. `markdownSx.ts` stays as it is because both bundles use it.
 - **Tooling and docs**: `eslint.config.mjs`; a new `.claude/context/admin-design.md`; the `CLAUDE.md` topic table and Blade component table.

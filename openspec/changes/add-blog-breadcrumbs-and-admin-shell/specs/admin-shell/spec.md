@@ -30,12 +30,12 @@ On a wide screen, the admin navigation SHALL stay visible beside the page conten
 
 ### Requirement: Navigation lists every permitted area in dashboard order
 
-The navigation SHALL list the Admin Dashboard first, followed by each area the user may reach, in the Admin Dashboard's tile order. This includes areas with no pages of their own, such as Mail Preview and Site Navigation. An area or page the user lacks permission for SHALL NOT be listed.
+The navigation SHALL list the Admin Dashboard first, followed by each area the user may reach, in the Admin Dashboard's tile order. An area or page the user lacks permission for SHALL NOT be listed.
 
 #### Scenario: A user with every admin permission
 
 - **WHEN** a user holding every admin permission opens any admin page
-- **THEN** the navigation lists Admin Dashboard, Employment, Mail Preview, AI Tools, Roles & Permissions, Site Navigation and Blog, in that order
+- **THEN** the navigation lists Admin Dashboard, Blog, Employment, AI Tools and Site Settings, in that order
 
 #### Scenario: A user with narrow permissions
 
