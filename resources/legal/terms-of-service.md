@@ -1,7 +1,7 @@
 # Terms of Service
 
 **Effective date:** September 8, 2026  
-**Last updated:** September 8, 2026
+**Last updated:** October 29, 2026
 
 ## 1. Agreement to these terms
 
@@ -34,25 +34,29 @@ subject to change or removal at any time:
 - a resume viewer and document download, some parts of which require an
   account or a share code;
 - one or more AI chat assistants;
-- user accounts with passkey, password, and two-factor authentication.
+- user accounts, signed in to with a bspdx.com account.
 
 We may add, change, suspend, or discontinue any part of the Site at any time,
 for any reason, without notice and without liability to you.
 
 ## 4. Accounts and account security
 
-Accounts are created at our discretion; the Site does not offer open public
+You sign in to the Site with an account on bspdx.com, which we also operate.
+Your account on the Site is created the first time you sign in that way.
+bspdx.com accounts are issued at our discretion; there is no open public
 registration. If you have an account:
 
 - You are responsible for everything that happens under it.
-- You must keep your password, passkeys, authenticator device, and two-factor
-  recovery codes secure, and must not share them.
+- You must keep your bspdx.com password, authenticator device, and two-factor
+  recovery codes secure, and must not share them. Anyone who can sign in to
+  your bspdx.com account can sign in to your account here.
 - You must give accurate information and keep it current.
 - You must notify us at **info@bspdx.com** promptly if you suspect unauthorized
   access.
 
 We may suspend or terminate any account at any time, with or without notice,
-including for a violation of these Terms.
+including for a violation of these Terms. If your bspdx.com account is
+suspended or closed, you will no longer be able to sign in to the Site.
 
 ## 5. Acceptable use
 

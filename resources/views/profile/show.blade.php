@@ -22,7 +22,7 @@
         .keystone-profile-section {
             background: var(authkit-bg, #ffffff);
             border-radius: var(authkit-radius, 0.5rem);
-            box-shadow: var(authkit-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1));
+            border: 1px solid #e5e7eb;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
@@ -55,30 +55,9 @@
 
     <h1 class="keystone-profile-title">My Profile</h1>
 
-    @if (session('status'))
+    @if (session('status') === 'tool-visibility-updated')
         <div class="keystone-alert keystone-alert-success">
-            @switch(session('status'))
-                @case('auth-preferences-updated')
-                    Your login preferences have been updated.
-                    @break
-                @case('passkey-registered')
-                    Your passkey has been registered successfully.
-                    @break
-                @case('passkey-deleted')
-                    Your passkey has been deleted.
-                    @break
-                @case('two-factor-enabled')
-                    Two-factor authentication has been enabled.
-                    @break
-                @case('two-factor-disabled')
-                    Two-factor authentication has been disabled.
-                    @break
-                @case('recovery-codes-regenerated')
-                    Your recovery codes have been regenerated.
-                    @break
-                @default
-                    {{ session('status') }}
-            @endswitch
+            Your chat tool settings have been saved.
         </div>
     @endif
 
@@ -104,32 +83,10 @@
     </section>
     @endif
 
-    {{-- Password Change --}}
+    {{-- Sign-in (bspdx.com) --}}
     <section class="keystone-profile-section">
-        <h2>Change Password</h2>
-        @include('profile.components.password-form')
-    </section>
-
-    {{-- Two-Factor Authentication --}}
-    <section class="keystone-profile-section">
-        <h2>Two-Factor Authentication</h2>
-        @include('profile.components.two-factor-management', ['enabled' => $hasTwoFactor])
-    </section>
-
-    {{-- Passkeys --}}
-    <section class="keystone-profile-section">
-        <h2>Passkeys</h2>
-        @include('profile.components.passkey-management', ['passkeys' => $passkeys])
-    </section>
-
-    {{-- Authentication Preferences --}}
-    <section class="keystone-profile-section">
-        <h2>Login Preferences</h2>
-        @include('profile.components.auth-preferences', [
-            'user' => $user,
-            'hasTwoFactor' => $hasTwoFactor,
-            'hasPasskeys' => $hasPasskeys
-        ])
+        <h2>Sign-in</h2>
+        @include('profile.components.bspdx-account', ['identity' => $bspdxIdentity, 'accountUrl' => $bspdxAccountUrl])
     </section>
 
     {{-- Tool Payload Visibility --}}

@@ -34,9 +34,7 @@
     "laravel/framework": "^13.0",
     "laravel/sanctum": "^4.3.3",
     "laravel/tinker": "^3.0",
-    "laravel/ui": "^4.6.2",
     "openai-php/client": "^0.19.2",
-    "spatie/laravel-passkeys": "^1.8.1",
     "symfony/dom-crawler": "^8.0",
     "twilio/sdk": "^6.44.4"
   },
