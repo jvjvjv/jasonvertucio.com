@@ -175,8 +175,8 @@ export default function SiteSettingsEditor({
             <Head title="Navigation | Site Settings" />
             <PageHeader
                 title="Site Settings"
-                backHref="/admin"
-                backLabel="Back to Admin"
+                backHref="/admin/settings"
+                backLabel="Back to Site Settings"
             />
             <Typography
                 variant="body2"

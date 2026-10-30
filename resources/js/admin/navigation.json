@@ -7,18 +7,18 @@
             "can": null,
             "navigationItems": [
                 {
+                    "can": "moderate-comments",
+                    "href": "/admin/blog",
+                    "icon": "Article",
+                    "label": "Blog",
+                    "description": "Write posts and moderate comments"
+                },
+                {
                     "can": "edit-resume",
                     "href": "/admin/employment",
                     "icon": "WorkHistory",
                     "label": "Employment",
                     "description": "Applications, metrics, resumes, cover letters and company intel"
-                },
-                {
-                    "can": "edit-settings",
-                    "href": "/admin/mail-preview",
-                    "icon": "Inbox",
-                    "label": "Mail Preview",
-                    "description": "See how emails might be rendered, right here in the browser!"
                 },
                 {
                     "can": "manage-ai-tools",
@@ -28,25 +28,42 @@
                     "description": "Manage AI systems, job application analysis, and AI cover letter generation"
                 },
                 {
-                    "can": "view-roles",
-                    "href": "/admin/roles-permissions",
-                    "icon": "AdminPanelSettings",
-                    "label": "Roles & Permissions",
-                    "description": "Create and edit roles and permissions, and choose which permissions each role holds"
-                },
+                    "can": "view-site-settings",
+                    "href": "/admin/settings",
+                    "icon": "Settings",
+                    "label": "Site Settings",
+                    "description": "Mail previews, site navigation, and roles and permissions"
+                }
+            ]
+        },
+        {
+            "route": "/admin/blog",
+            "name": "Blog",
+            "appBar": true,
+            "can": "moderate-comments",
+            "navigationItems": [
                 {
-                    "can": "edit-settings",
-                    "href": "/admin/site-settings",
-                    "icon": "PushPin",
-                    "label": "Site Navigation",
-                    "description": "Manage sidebar navigation links and their order"
+                    "can": "manage-blog",
+                    "href": "{canvas.path}",
+                    "icon": "Feed",
+                    "label": "Blog Admin",
+                    "description": "Manage blog, write posts.",
+                    "external": true
                 },
                 {
                     "can": "moderate-comments",
-                    "href": "/admin/blog",
-                    "icon": "Article",
-                    "label": "Blog",
-                    "description": "Write posts and moderate comments"
+                    "href": "/admin/comments",
+                    "icon": "Forum",
+                    "label": "Comments",
+                    "description": "Review blog comments and mark spam"
+                },
+                {
+                    "can": null,
+                    "href": "/blog",
+                    "external": true,
+                    "icon": "Visibility",
+                    "label": "View Blog",
+                    "description": "Read the blog as it appears to visitors"
                 }
             ]
         },
@@ -195,32 +212,31 @@
             ]
         },
         {
-            "route": "/admin/roles-permissions",
-            "name": "Roles & Permissions",
+            "route": "/admin/settings",
+            "name": "Site Settings",
             "appBar": true,
-            "can": "view-roles",
-            "navigationItems": []
-        },
-        {
-            "route": "/admin/blog",
-            "name": "Blog",
-            "appBar": true,
-            "can": "moderate-comments",
+            "can": "view-site-settings",
             "navigationItems": [
                 {
-                    "can": "manage-blog",
-                    "href": "{canvas.path}",
-                    "icon": "Feed",
-                    "label": "Blog Admin",
-                    "description": "Manage blog, write posts.",
-                    "external": true
+                    "can": "edit-settings",
+                    "href": "/admin/mail-preview",
+                    "icon": "Inbox",
+                    "label": "Mail Preview",
+                    "description": "See how emails might be rendered, right here in the browser!"
                 },
                 {
-                    "can": "moderate-comments",
-                    "href": "/admin/comments",
-                    "icon": "Forum",
-                    "label": "Comments",
-                    "description": "Review blog comments and mark spam"
+                    "can": "edit-settings",
+                    "href": "/admin/site-settings",
+                    "icon": "PushPin",
+                    "label": "Site Navigation",
+                    "description": "Manage sidebar navigation links and their order"
+                },
+                {
+                    "can": "view-roles",
+                    "href": "/admin/roles-permissions",
+                    "icon": "AdminPanelSettings",
+                    "label": "Roles & Permissions",
+                    "description": "Create and edit roles and permissions, and choose which permissions each role holds"
                 }
             ]
         }

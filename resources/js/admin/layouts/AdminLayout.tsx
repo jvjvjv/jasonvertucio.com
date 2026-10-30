@@ -1,20 +1,12 @@
 import { usePage } from "@inertiajs/react";
-import MenuIcon from "@mui/icons-material/Menu";
 import Alert from "@mui/material/Alert";
-import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import Menu from "@mui/material/Menu";
 import Snackbar from "@mui/material/Snackbar";
-import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { type ReactNode, useState } from "react";
 
-import DesktopNavItem from "./admin-layout/DesktopNavItem";
-import LogoutForm from "./admin-layout/LogoutForm";
-import MobileNavSection from "./admin-layout/MobileNavSection";
+import AdminNavigation from "./admin-layout/AdminNavigation";
 
 import type { SharedProps } from "@/types";
 import type { ContainerProps } from "@mui/material/Container";
@@ -54,155 +46,88 @@ export default function AdminLayout({
         setPrevFlash(flash);
         setFlashOpen(!!(flash.success ?? flash.error));
     }
-    const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     return (
         <Box
             sx={{
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: { xs: "column", md: "row" },
                 minHeight: "100vh",
             }}
         >
             {showChrome && (
-                <AppBar position="static" sx={{ boxShadow: "none" }}>
-                    <Toolbar
-                        sx={{
-                            maxWidth: "1280px",
-                            width: "100%",
-                            mx: "auto",
-                            px: 2,
-                            gap: 2,
-                        }}
-                    >
-                        <Typography
-                            variant="h6"
-                            component="a"
-                            href="/"
-                            sx={{
-                                mr: "auto",
-                                textDecoration: "none",
-                                color: "white",
-                            }}
-                        >
-                            Jason Vertucio
-                        </Typography>
-
-                        {/* Desktop nav */}
-                        <Box
-                            component="nav"
-                            sx={{
-                                display: { xs: "none", md: "flex" },
-                                flexWrap: "wrap",
-                                justifyContent: "flex-end",
-                                gap: 1,
-                            }}
-                        >
-                            {adminNav.map((item) => (
-                                <DesktopNavItem
-                                    key={item.href}
-                                    item={item}
-                                    currentPath={currentPath}
-                                />
-                            ))}
-                            <LogoutForm variant="bar" />
-                        </Box>
-
-                        {/* Mobile hamburger */}
-                        <IconButton
-                            color="inherit"
-                            aria-label="open navigation menu"
-                            onClick={(e) => {
-                                setMenuAnchor(e.currentTarget);
-                            }}
-                            sx={{ display: { xs: "flex", md: "none" } }}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-                        <Menu
-                            anchorEl={menuAnchor}
-                            open={Boolean(menuAnchor)}
-                            onClose={() => {
-                                setMenuAnchor(null);
-                            }}
-                            slotProps={{ paper: { sx: { minWidth: 240 } } }}
-                        >
-                            {adminNav.map((item, i) => (
-                                <Box key={item.href}>
-                                    {i > 0 && <Divider />}
-                                    <MobileNavSection
-                                        item={item}
-                                        currentPath={currentPath}
-                                        onNavigate={() => {
-                                            setMenuAnchor(null);
-                                        }}
-                                    />
-                                </Box>
-                            ))}
-                            <Divider />
-                            <LogoutForm variant="menu" />
-                        </Menu>
-                    </Toolbar>
-                </AppBar>
+                <AdminNavigation
+                    adminNav={adminNav}
+                    currentPath={currentPath}
+                />
             )}
 
             <Box
-                component="main"
-                sx={{ flexGrow: 1, py: noMargin ? {} : { xs: 2, md: 4 } }}
-            >
-                <Container
-                    maxWidth={maxContainerWidth}
-                    disableGutters={!showChrome}
-                >
-                    {title && (
-                        <Typography
-                            variant="h4"
-                            component="h1"
-                            sx={{ mb: 3, fontWeight: "bold" }}
-                        >
-                            {title}
-                        </Typography>
-                    )}
-                    {children}
-                </Container>
-            </Box>
-
-            <Snackbar
-                open={flashOpen}
-                autoHideDuration={5000}
-                onClose={() => {
-                    setFlashOpen(false);
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flexGrow: 1,
+                    minWidth: 0,
                 }}
-                anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
-                <Alert
+                <Box
+                    component="main"
+                    sx={{ flexGrow: 1, py: noMargin ? {} : { xs: 2, md: 4 } }}
+                >
+                    <Container
+                        maxWidth={maxContainerWidth}
+                        disableGutters={!showChrome}
+                    >
+                        {title && (
+                            <Typography
+                                variant="h4"
+                                component="h1"
+                                sx={{ mb: 3, fontWeight: "bold" }}
+                            >
+                                {title}
+                            </Typography>
+                        )}
+                        {children}
+                    </Container>
+                </Box>
+
+                <Snackbar
+                    open={flashOpen}
+                    autoHideDuration={5000}
                     onClose={() => {
                         setFlashOpen(false);
                     }}
-                    severity={flash.success ? "success" : "error"}
-                    variant="filled"
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
                 >
-                    {flash.success ?? flash.error}
-                </Alert>
-            </Snackbar>
-            {showChrome && (
-                <Box
-                    component="footer"
-                    sx={{
-                        mt: "auto",
-                        py: 1.5,
-                        bgcolor: "secondary.main",
-                        color: "white",
-                    }}
-                >
-                    <Container>
-                        <Typography variant="body2" align="right">
-                            Copyright &copy; {new Date().getFullYear()}, Jason
-                            Vertucio.
-                        </Typography>
-                    </Container>
-                </Box>
-            )}
+                    <Alert
+                        onClose={() => {
+                            setFlashOpen(false);
+                        }}
+                        severity={flash.success ? "success" : "error"}
+                        variant="filled"
+                    >
+                        {flash.success ?? flash.error}
+                    </Alert>
+                </Snackbar>
+                {showChrome && (
+                    <Box
+                        component="footer"
+                        sx={{
+                            mt: "auto",
+                            py: 1,
+                            bgcolor: "secondary.main",
+                            color: "white",
+                        }}
+                    >
+                        <Container>
+                            <Typography variant="body2" align="right">
+                                Copyright &copy; {new Date().getFullYear()},
+                                Jason Vertucio.
+                            </Typography>
+                        </Container>
+                    </Box>
+                )}
+            </Box>
         </Box>
     );
 }

@@ -4,6 +4,8 @@
 
 @section('main')
 
+  <x-breadcrumbs :items="$breadcrumbs" />
+
   @if (sizeof($list) > 0)
   <div class="max-w-7xl mx-auto px-4 my-8">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

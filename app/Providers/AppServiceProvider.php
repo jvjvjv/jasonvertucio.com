@@ -66,6 +66,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('moderate-comments', fn (User $user): bool => $user->hasPermissionTo('manage-comments')
             || $user->hasPermissionTo('manage-blog'));
 
+        // Who may open the Site Settings hub. Also an ability, not a
+        // permission, for the same reason as above.
+        Gate::define('view-site-settings', fn (User $user): bool => $user->hasPermissionTo('edit-settings')
+            || $user->hasPermissionTo('view-roles'));
+
         RateLimiter::for('comments', function (Request $request) {
             return Limit::perMinute(config('comments.rate_limit_per_minute'))
                 ->by($request->header('CF-Connecting-IP') ?? $request->ip());

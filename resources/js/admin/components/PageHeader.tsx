@@ -21,7 +21,7 @@ export default function PageHeader({
     children,
 }: PageHeaderProps) {
     return (
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 3 }}>
             {backHref && (
                 <MuiLink
                     component={InertiaLink}

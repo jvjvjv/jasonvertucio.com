@@ -12,8 +12,8 @@ export interface Job {
     location: string;
     dates: [string, string];
     bullets: string[];
-    salaryStart: Salary;
-    salaryEnd: Salary;
+    salaryStart: Salary | null;
+    salaryEnd: Salary | null;
     isFreelance: boolean;
 }
 

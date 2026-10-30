@@ -22,7 +22,19 @@ export default function Pagination({ links, lastPage }: PaginationProps) {
     }
 
     return (
-        <Box sx={{ display: "flex", justifyContent: "center", gap: 1, py: 2 }}>
+        <Box
+            component="nav"
+            aria-label="Pagination"
+            sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: 1,
+                py: 1.5,
+                borderTop: 1,
+                borderColor: "divider",
+            }}
+        >
             {links.map((link, i) => (
                 <Button
                     key={i}
@@ -31,6 +43,7 @@ export default function Pagination({ links, lastPage }: PaginationProps) {
                     size="small"
                     variant={link.active ? "contained" : "text"}
                     disabled={!link.url}
+                    aria-current={link.active ? "page" : undefined}
                 >
                     {decodePaginationLabel(link.label)}
                 </Button>

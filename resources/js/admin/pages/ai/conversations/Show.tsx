@@ -14,6 +14,7 @@ import PageHeader from "@/admin/components/PageHeader";
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
+import { color } from "@/admin/theme/tokens";
 import ChatMessageBubble, {
     messageOrigin,
 } from "@/components/ChatMessageBubble";
@@ -104,7 +105,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                             message.role === "system"
                                                 ? "action.hover"
                                                 : message.role === "user"
-                                                  ? "#1b587c1a"
+                                                  ? color.blueTint
                                                   : "background.paper",
                                     }}
                                 >

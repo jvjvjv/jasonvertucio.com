@@ -21,7 +21,7 @@ Pages already use theme names rather than literals, so a theme change will reach
 
 - `resources/js/chat/app.tsx` imports `theme` from `admin/theme`, so an admin theme change would also restyle the public chat.
 - Chat bubble components in `resources/js/components/` import `admin/utils/markdownSx`, and they also render inside the admin Discussion page.
-- `adminNav` lists the Dashboard with every dashboard tile as its children. Mail Preview and Site Navigation appear only there, and `isPathActive()` treats `/admin` as active on every admin page.
+- `adminNav` lists the Dashboard with every dashboard tile as its children, and `isPathActive()` treats `/admin` as active on every admin page.
 
 **Constraints.** The project rules forbid gradients and box shadows. A previous whole-site redesign was rejected, so the existing identity wins over any "distinctive point of view" guidance, and the developer sees one page before the design spreads to the rest. There is no JS test runner.
 
@@ -81,10 +81,16 @@ MUI's `cssVariables` mode stays off because nothing here needs runtime theming, 
 
 **8. Navigation is derived in a pure client function, with no server change.** `navHelpers.ts` gains:
 
-- `buildNavAreas(adminNav)`: returns the Dashboard, then its children in tile order, each with its pages looked up from the matching top-level `adminNav` entry.
+- `buildNavAreas(adminNav)`: returns each `adminNav` entry as an area with its children as pages, except the Dashboard, whose children are the areas themselves. `navigation.json` keeps its entries and the dashboard's tiles in the same order, and a test pins that.
 - `currentDestination(path, areas)`: returns the longest matching href, treating `/admin` as an exact match only.
 
 The `adminNav` prop and `getAppBarItems()` keep their shape, so the tests that pin them still pass.
+
+**8a. Site Settings is a hub of its own, at `/admin/settings`.** The developer asked for Blog above Employment and for Mail Preview, Site Navigation and Roles & Permissions under one Site Settings hub, in that order. Every dashboard tile is then a hub with pages, or AI Tools, so no area is left without pages.
+
+- AI Tools stays between Employment and Site Settings. This order wasn't specified, so settings go last as the least-used area.
+- `/admin/site-settings` already means the Site Navigation editor and keeps that URL, so the hub takes `/admin/settings`.
+- Access uses a `view-site-settings` ability (`edit-settings` or `view-roles`), defined like `moderate-comments`, with its route in its own group. The roles page isn't behind `manage-unauthenticated-viewers`, so the hub can't sit in the `/admin` group without locking out a roles-only user.
 
 **9. Shared components are rebuilt behind their current props.** `PageHeader`, `NavGrid`, `DataTable`, `Pagination`, `EmptyTableRow`, `StatusChip` and `ConfirmDialog` keep their signatures. `DesktopNavItem` and `MobileNavSection` are replaced. `LogoutForm` stays, with its `bar` and `menu` variants adapted to the new layout.
 
@@ -136,6 +142,7 @@ md and up                               below md
 - **The new lint rules may flag existing code.** → Known hits are the two `rgba(...)` values in the removed `DesktopNavItem`, which the hex and gradient rules would not match anyway, the `boxShadow` in the replaced `AdminLayout`, and the hex in `conversations/Show.tsx`. The full `npm run lint` run confirms nothing else trips.
 - **The theme copies can drift between chat and admin.** → This is accepted. A later change can restyle chat deliberately.
 - **Sidebar width takes space from wide tables.** → Table containers already scroll horizontally, and the review gate includes a wide list page at 1280 pixels.
+- **A user with `edit-settings` but not `manage-unauthenticated-viewers` can now reach the hub, but its Mail Preview and Site Navigation tiles answer 403.** Those routes keep the `/admin` group's gate, because this change doesn't alter their permissions. → It's accepted. Before this change those pages were linked only from the dashboard, which such a user couldn't open.
 - **Comment-only moderators still see an Admin Dashboard entry that answers 403.** This already happens today, because its entry has `can: null`. → It stays as is, since this change is not about navigation permissions.
 
 ## Migration Plan

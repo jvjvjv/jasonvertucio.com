@@ -181,8 +181,8 @@ export default function Index({ roles, permissions }: IndexProps) {
             <Head title="Roles & Permissions" />
             <PageHeader
                 title="Roles & Permissions"
-                backHref="/admin"
-                backLabel="Back to Admin Dashboard"
+                backHref="/admin/settings"
+                backLabel="Back to Site Settings"
             />
 
             <Box

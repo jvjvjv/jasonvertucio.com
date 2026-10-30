@@ -14,6 +14,7 @@ import PsychologyIcon from "@mui/icons-material/Psychology";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
 import RuleIcon from "@mui/icons-material/Rule";
+import SettingsIcon from "@mui/icons-material/Settings";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import TravelExploreIcon from "@mui/icons-material/TravelExplore";
@@ -40,6 +41,7 @@ const registry: { [key: string]: ReactNode } = {
     PushPin: <PushPinIcon fontSize="large" />,
     RecordVoiceOver: <RecordVoiceOverIcon fontSize="large" />,
     Rule: <RuleIcon fontSize="large" />,
+    Settings: <SettingsIcon fontSize="large" />,
     SmartToy: <SmartToyIcon fontSize="large" />,
     TrackChanges: <TrackChangesIcon fontSize="large" />,
     TravelExplore: <TravelExploreIcon fontSize="large" />,

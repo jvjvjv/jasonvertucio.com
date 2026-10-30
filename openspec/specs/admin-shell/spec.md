@@ -1,8 +1,10 @@
+# admin-shell Specification
+
 ## Purpose
 
 Defines the admin section's navigation shell and the rules that keep its look in one place, so the admin can be redesigned deliberately without changing what any page does.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Navigation fits the screen
 
@@ -30,12 +32,12 @@ On a wide screen, the admin navigation SHALL stay visible beside the page conten
 
 ### Requirement: Navigation lists every permitted area in dashboard order
 
-The navigation SHALL list the Admin Dashboard first, followed by each area the user may reach, in the Admin Dashboard's tile order. This includes areas with no pages of their own, such as Mail Preview and Site Navigation. An area or page the user lacks permission for SHALL NOT be listed.
+The navigation SHALL list the Admin Dashboard first, followed by each area the user may reach, in the Admin Dashboard's tile order. An area or page the user lacks permission for SHALL NOT be listed.
 
 #### Scenario: A user with every admin permission
 
 - **WHEN** a user holding every admin permission opens any admin page
-- **THEN** the navigation lists Admin Dashboard, Employment, Mail Preview, AI Tools, Roles & Permissions, Site Navigation and Blog, in that order
+- **THEN** the navigation lists Admin Dashboard, Blog, Employment, AI Tools and Site Settings, in that order
 
 #### Scenario: A user with narrow permissions
 
@@ -53,7 +55,7 @@ Activating an area SHALL open that area's page. The navigation SHALL list the pa
 
 #### Scenario: A page beneath a page
 
-- **WHEN** the user opens `/admin/resume/applications/5`
+- **WHEN** the user opens `/admin/resume/applications/new`
 - **THEN** Applications is marked as the current page, and Resume Management at `/admin/resume` is not
 
 #### Scenario: A page with only a shorter match
@@ -155,4 +157,4 @@ The system SHALL provide a design reference page at `/admin/design-reference` th
 #### Scenario: Sample data only
 
 - **WHEN** the page is opened
-- **THEN** it receives no application, resume, user or conversation records from the server
+- **THEN** it receives no data from the server beyond what every admin page receives
