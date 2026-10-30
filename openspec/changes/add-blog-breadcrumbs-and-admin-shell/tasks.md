@@ -15,20 +15,20 @@
 
 ## 3. Tokens and chat separation
 
-- [ ] 3.1 Move the current `resources/js/admin/theme.ts` unchanged to `resources/js/chat/theme.ts`, point `chat/app.tsx` at it, and verify with `git diff --stat -M` (a pure rename) and a clean `npm run build`
-- [ ] 3.2 Create `resources/js/admin/theme/tokens.ts`, `components.ts` and `index.ts` from the starting design plan, still exporting `theme` so `admin/app.tsx` is unchanged, with borders in place of shadows and no gradients, and verify with `npx tsc --noEmit` and `npm run build`
-- [ ] 3.3 Replace the hard-coded colour in `pages/ai/conversations/Show.tsx` with a token, and verify `grep` finds no hex colours under `resources/js/admin` outside `theme/tokens.ts` and `utils/markdownSx.ts`
+- [x] 3.1 Move the current `resources/js/admin/theme.ts` unchanged to `resources/js/chat/theme.ts`, point `chat/app.tsx` at it, and verify with `git diff --stat -M` (a pure rename) and a clean `npm run build`
+- [x] 3.2 Create `resources/js/admin/theme/tokens.ts`, `components.ts` and `index.ts` from the starting design plan, still exporting `theme` so `admin/app.tsx` is unchanged, with borders in place of shadows and no gradients, and verify with `npx tsc --noEmit` and `npm run build`
+- [x] 3.3 Replace the hard-coded colour in `pages/ai/conversations/Show.tsx` with a token, and verify `grep` finds no hex colours under `resources/js/admin` outside `theme/tokens.ts` and `utils/markdownSx.ts`
 
 ## 4. New shell
 
-- [ ] 4.1 Add `buildNavAreas()` and `currentDestination()` to `layouts/admin-layout/navHelpers.ts` as pure functions, treating `/admin` as an exact match, and verify by checking the `admin-shell` address scenarios (including `/admin/resume/applications/5` and `/admin/resume/editor`) in the browser in 4.4
-- [ ] 4.2 Build the sidebar and narrow-screen drawer with a labelled menu button, `aria-current` on the current destination, the log out control and no expand state, and verify keyboard use and Escape returning focus to the menu button in the browser
-- [ ] 4.3 Rebuild `AdminLayout` with its exact props and move its flash logic unchanged, delete `DesktopNavItem.tsx` and `MobileNavSection.tsx`, make the drawer respect reduced motion, and verify with `npx tsc --noEmit` that no page file needed editing
-- [ ] 4.4 Rebuild `NavGrid` and `PageHeader` behind their current props, with `DataTable` and `Pagination` following if the Applications list needs them for the review, and verify the Dashboard, the Employment hub, the Applications list and each 4.1 address in the browser as users with full and with narrow permissions
+- [x] 4.1 Add `buildNavAreas()` and `currentDestination()` to `layouts/admin-layout/navHelpers.ts` as pure functions, treating `/admin` as an exact match, and verify by checking the `admin-shell` address scenarios (including `/admin/resume/applications/new` and `/admin/resume/editor`) in the browser in 4.4
+- [x] 4.2 Build the sidebar and narrow-screen drawer with a labelled menu button, `aria-current` on the current destination, the log out control and no expand state, and verify keyboard use and Escape returning focus to the menu button in the browser
+- [x] 4.3 Rebuild `AdminLayout` with its exact props and move its flash logic unchanged, delete `DesktopNavItem.tsx` and `MobileNavSection.tsx`, make the drawer respect reduced motion, and verify with `npx tsc --noEmit` that no page file needed editing
+- [x] 4.4 Rebuild `NavGrid` and `PageHeader` behind their current props, with `DataTable` and `Pagination` following if the Applications list needs them for the review, and verify the Dashboard, the Employment hub, the Applications list and each 4.1 address in the browser as users with full and with narrow permissions
 
 ## 5. Review gate
 
-- [ ] 5.1 Screenshot the Dashboard, Employment hub and Applications list at 1280 and 360 pixels, critique them against the design plan, the project's no gradient and no box shadow rules and the existing identity, fix what falls short, and verify by re-taking the screenshots
+- [x] 5.1 Screenshot the Dashboard, Employment hub and Applications list at 1280 and 360 pixels, critique them against the design plan, the project's no gradient and no box shadow rules and the existing identity, fix what falls short, and verify by re-taking the screenshots
 - [ ] 5.2 Build in the main checkout so `jasonvertucio.local` shows the work, send the developer the screenshots with `SendUserFile`, then **stop and wait for the developer's reaction**. This task is complete only when the developer has responded and any changes they asked for are made
 
 ## 6. Remaining shared components and theme coverage

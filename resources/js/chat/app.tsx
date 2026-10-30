@@ -3,7 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { createRoot } from "react-dom/client";
 
-import { theme } from "../admin/theme";
+import { theme } from "./theme";
 
 import { followNonInertiaResponses } from "@/utils/nonInertiaNavigation";
 
