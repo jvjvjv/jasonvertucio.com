@@ -58,6 +58,6 @@
 
 - [x] 9.1 Compare chat screenshots with the 1.3 baseline, and verify the chat looks unchanged
 - [x] 9.2 Check flash messages, log out on both screen widths, back links, `aria-current`, keyboard focus, reduced motion and 360-pixel overflow in the browser, and verify each `admin-shell` scenario not covered by a test
-- [ ] 9.3 Run `vendor/bin/phpunit` filtered to `BreadcrumbsTest`, `PostVisibilityTest`, `DesignReferenceTest`, `AdminHubsTest` and `CommentModerationTest`, plus `npx tsc --noEmit`, `npm run lint`, `npm run build` and `openspec validate add-blog-breadcrumbs-and-admin-shell --strict`, and verify all pass. Then ask the developer whether to run the full test suite
-- [ ] 9.4 Run the `openspec-verifier` and `laravel-reviewer` agents over the branch, and fix confirmed findings, and verify by re-running the affected checks
+- [x] 9.3 Run `vendor/bin/phpunit` filtered to `BreadcrumbsTest`, `PostVisibilityTest`, `DesignReferenceTest`, `AdminHubsTest` and `CommentModerationTest`, plus `npx tsc --noEmit`, `npm run lint`, `npm run build` and `openspec validate add-blog-breadcrumbs-and-admin-shell --strict`, and verify all pass. Then ask the developer whether to run the full test suite
+- [x] 9.4 Run the `openspec-verifier` and `laravel-reviewer` agents over the branch, and fix confirmed findings, and verify by re-running the affected checks
 - [ ] 9.5 Send the developer final screenshots and wait for approval before archiving or merging to `develop`. Production deployment is developer-owned: pull, `composer install`, `npm ci`, `npm run build`, `php artisan optimize:clear`
