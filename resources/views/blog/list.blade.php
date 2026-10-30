@@ -40,7 +40,7 @@
         <a href="/blog/{{ $list_item['slug'] }}" class="text-primary hover:text-secondary">Read</a>
         @ifcanvasauthenticated
         <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}/stats" class="ml-3 text-primary hover:text-secondary">Stats</a>
-        <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}/edit" class="ml-3 text-primary hover:text-secondary">Edit</a>
+        <a href="/{{ config('canvas.path') }}/posts/{{ $list_item['id'] }}" class="ml-3 text-primary hover:text-secondary">Edit</a>
         @endifcanvasauthenticated
       </div>
     </div>
