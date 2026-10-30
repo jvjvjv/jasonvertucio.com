@@ -56,6 +56,14 @@
                     "icon": "Forum",
                     "label": "Comments",
                     "description": "Review blog comments and mark spam"
+                },
+                {
+                    "can": null,
+                    "href": "/blog",
+                    "external": true,
+                    "icon": "Visibility",
+                    "label": "View Blog",
+                    "description": "Read the blog as it appears to visitors"
                 }
             ]
         },

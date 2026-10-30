@@ -93,7 +93,7 @@ class AdminHubsTest extends TestCase
         $this->get('/admin/employment')->assertRedirect('/login');
     }
 
-    public function test_the_blog_hub_shows_both_tiles_to_a_blog_administrator(): void
+    public function test_the_blog_hub_shows_every_tile_to_a_blog_administrator(): void
     {
         $this->actingAs($this->userWith('manage-blog'))
             ->get('/admin/blog')
@@ -103,7 +103,9 @@ class AdminHubsTest extends TestCase
                 ->where('navBlocks.0.href', '/admin/blog/canvas')
                 ->where('navBlocks.0.external', true)
                 ->where('navBlocks.1.href', '/admin/comments')
-                ->has('navBlocks', 2));
+                ->where('navBlocks.2.href', '/blog')
+                ->where('navBlocks.2.external', true)
+                ->has('navBlocks', 3));
     }
 
     public function test_the_blog_admin_tile_follows_the_configured_canvas_path(): void
@@ -120,14 +122,15 @@ class AdminHubsTest extends TestCase
         }
     }
 
-    public function test_the_blog_hub_shows_only_comments_to_a_moderator(): void
+    public function test_the_blog_hub_shows_comments_and_the_public_blog_to_a_moderator(): void
     {
         $this->actingAs($this->userWith('manage-comments'))
             ->get('/admin/blog')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('navBlocks.0.href', '/admin/comments')
-                ->has('navBlocks', 1));
+                ->where('navBlocks.1.href', '/blog')
+                ->has('navBlocks', 2));
     }
 
     public function test_the_blog_hub_refuses_a_user_without_blog_permissions(): void

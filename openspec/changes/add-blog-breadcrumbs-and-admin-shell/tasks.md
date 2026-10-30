@@ -35,6 +35,8 @@
 - [x] 5.4 Reorder `navigation.json`, add the Site Settings entry, `view-site-settings` ability, route, `AdminController` action and `site-settings/Hub.tsx`, point the three pages' back links at the hub, simplify `buildNavAreas()`, and verify `AdminHubsTest`, `CommentModerationTest` and `RolePermissionControllerTest` pass
 - [x] 5.5 Check the navigation order, current-page marking and permission filtering in the browser as users with full and narrow permissions, then re-take and send the review screenshots, and verify from those screenshots
 
+- [x] 5.6 Add a View Blog tile to the Blog hub, linking to the public blog at `/blog`, update `AdminHubsTest` first and verify it fails then passes, and verify the tile and its sidebar entry in the browser
+
 ## 6. Remaining shared components and theme coverage
 
 - [ ] 6.1 Finish `DataTable`, `Pagination`, `EmptyTableRow`, `StatusChip` and `ConfirmDialog` behind their current props, and verify with `npx tsc --noEmit` and the design reference once 7.2 exists
