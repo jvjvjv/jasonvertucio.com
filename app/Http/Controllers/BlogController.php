@@ -23,6 +23,7 @@ class BlogController extends Controller
                 ['href' => '/blog/topics', 'label' => 'Topics'],
                 ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
+            'breadcrumbs' => $this->breadcrumbs(),
         ]);
     }
 
@@ -35,6 +36,7 @@ class BlogController extends Controller
                 ['href' => '/blog/topics', 'label' => 'Topics'],
                 ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
+            'breadcrumbs' => $this->breadcrumbs(['label' => 'Topics', 'href' => route('topics')]),
         ]);
     }
 
@@ -47,6 +49,7 @@ class BlogController extends Controller
                 ['href' => '/blog/topics', 'label' => 'Topics'],
                 ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
+            'breadcrumbs' => $this->breadcrumbs(['label' => 'Tags', 'href' => route('tags')]),
         ]);
     }
 
@@ -61,6 +64,7 @@ class BlogController extends Controller
                 ['href' => '/blog/topics', 'label' => 'Topics'],
                 ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
+            'breadcrumbs' => $this->breadcrumbs(['label' => 'Topics', 'href' => route('topics')], ['label' => $topic->name]),
         ]);
     }
 
@@ -75,6 +79,7 @@ class BlogController extends Controller
                 ['href' => '/blog/topics', 'label' => 'Topics'],
                 ['href' => '/blog/tags', 'label' => 'Tags'],
             ],
+            'breadcrumbs' => $this->breadcrumbs(['label' => 'Tags', 'href' => route('tags')], ['label' => $tag->name]),
         ]);
     }
 
@@ -127,6 +132,23 @@ class BlogController extends Controller
         return view('blog.single', [
             'post' => $post,
             'isPreview' => $isPreview,
+            'breadcrumbs' => $this->breadcrumbs(['label' => $post->title]),
         ]);
+    }
+
+    /**
+     * The trail from the site root through the blog. The last entry is the
+     * current page, which the breadcrumbs component shows without a link.
+     *
+     * @param  array{label: string, href?: string}  ...$trail
+     * @return list<array{label: string, href?: string}>
+     */
+    private function breadcrumbs(array ...$trail): array
+    {
+        return [
+            ['label' => 'Home', 'href' => route('home')],
+            ['label' => 'Blog', 'href' => route('blog')],
+            ...$trail,
+        ];
     }
 }

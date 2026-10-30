@@ -4,6 +4,8 @@
 
 @section('main')
 
+<x-breadcrumbs :items="$breadcrumbs" />
+
 <div class="max-w-7xl mx-auto px-4">
       @if (! empty($isPreview))
         <p class="bg-accent/20 border border-accent rounded-lg p-3 mb-4 font-bold" role="status">

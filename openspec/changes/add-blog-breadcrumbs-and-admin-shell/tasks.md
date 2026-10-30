@@ -1,17 +1,17 @@
 ## 1. Setup and baselines
 
-- [ ] 1.1 Create `feature/add-blog-breadcrumbs-and-admin-shell` from `develop` without touching the developer's uncommitted edits, and verify `git status` still shows `resources/css/blog.css` and `resources/views/blog/list.blade.php` as modified
-- [ ] 1.2 Confirm `phpunit.xml` points tests at the `wink` database and that the new tests will use `DatabaseTransactions`, and verify by reading the config and recording the host command (`vendor/bin/phpunit --filter=...`)
-- [ ] 1.3 Capture "before" screenshots of a chat page and of the admin Dashboard, Applications list and an application's Discussion page with the Playwright in the npx cache, saved to the session scratchpad, and verify the files exist
+- [x] 1.1 Create `feature/add-blog-breadcrumbs-and-admin-shell` from `develop` without touching the developer's uncommitted edits, and verify `git status` still shows `resources/css/blog.css` and `resources/views/blog/list.blade.php` as modified
+- [x] 1.2 Confirm `phpunit.xml` points tests at the `wink` database and that the new tests will use `DatabaseTransactions`, and verify by reading the config and recording the host command (`vendor/bin/phpunit --filter=...`)
+- [x] 1.3 Capture "before" screenshots of a chat page and of the admin Dashboard, Applications list and an application's Discussion page with the Playwright in the npx cache, saved to the session scratchpad, and verify the files exist
 
 ## 2. Blog breadcrumbs
 
-- [ ] 2.1 Write `tests/Feature/Blog/BreadcrumbsTest.php` (made with `php artisan make:test --phpunit`, using the `PostVisibilityTest` helpers as the pattern) covering every `blog-breadcrumbs` scenario that a response can show: each trail, both short addresses, empty listings, author preview, 404, feed, link versus current-page markup, and an escaped `<script>` title. Verify the new tests fail
-- [ ] 2.2 Add the anonymous `resources/views/components/breadcrumbs.blade.php` component (navigation landmark labelled "Breadcrumb", ordered list, `aria-current="page"` on the last entry, separators hidden from assistive technology, visible focus, wrapping text, no box shadow or gradient), and verify with the markup tests from 2.1 once 2.3 and 2.4 are done
-- [ ] 2.3 Add a private trail helper to `BlogController`, using named routes, and pass `breadcrumbs` from `index`, `topics`, `tags`, `topicList`, `tagList` and `post`, and verify `topicsOrTags()` needs no change by running the short-address tests
-- [ ] 2.4 Render `<x-breadcrumbs>` at the top of `main` in `blog/list`, `blog/topics`, `blog/tags` and `blog/single`, outside the populated/empty branch and preserving the developer's Edit link edit, and verify `tests/Feature/Blog/BreadcrumbsTest.php` and `PostVisibilityTest.php` pass
-- [ ] 2.5 Do a `/frontend-design` pass on the trail within the site's existing look, then screenshot `/blog`, a topic listing and a long-titled post at 1280 and 360 pixels, and verify from the screenshots and `scrollWidth` that the trail wraps with no horizontal scroll
-- [ ] 2.6 Commit the breadcrumb work on its own, staging only the breadcrumb hunks of `list.blade.php`, and verify `git diff` still shows the developer's Edit link and `blog.css` edits as uncommitted
+- [x] 2.1 Write `tests/Feature/Blog/BreadcrumbsTest.php` (made with `php artisan make:test --phpunit`, using the `PostVisibilityTest` helpers as the pattern) covering every `blog-breadcrumbs` scenario that a response can show: each trail, both short addresses, empty listings, author preview, 404, feed, link versus current-page markup, and an escaped `<script>` title. Verify the new tests fail
+- [x] 2.2 Add the anonymous `resources/views/components/breadcrumbs.blade.php` component (navigation landmark labelled "Breadcrumb", ordered list, `aria-current="page"` on the last entry, separators hidden from assistive technology, visible focus, wrapping text, no box shadow or gradient), and verify with the markup tests from 2.1 once 2.3 and 2.4 are done
+- [x] 2.3 Add a private trail helper to `BlogController`, using named routes, and pass `breadcrumbs` from `index`, `topics`, `tags`, `topicList`, `tagList` and `post`, and verify `topicsOrTags()` needs no change by running the short-address tests
+- [x] 2.4 Render `<x-breadcrumbs>` at the top of `main` in `blog/list`, `blog/topics`, `blog/tags` and `blog/single`, outside the populated/empty branch and preserving the developer's Edit link edit, and verify `tests/Feature/Blog/BreadcrumbsTest.php` and `PostVisibilityTest.php` pass
+- [x] 2.5 Do a `/frontend-design` pass on the trail within the site's existing look, then screenshot `/blog`, a topic listing and a long-titled post at 1280 and 360 pixels, and verify from the screenshots and `scrollWidth` that the trail wraps with no horizontal scroll
+- [x] 2.6 Commit the breadcrumb work on its own, staging only the breadcrumb hunks of `list.blade.php`, and verify `git diff` still shows the developer's Edit link and `blog.css` edits as uncommitted
 
 ## 3. Tokens and chat separation
 
