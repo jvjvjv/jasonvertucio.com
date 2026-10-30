@@ -61,44 +61,48 @@ export default function StatusUpdateForm({
                         onSubmit();
                     }}
                 >
-                    <FormControl size="small" fullWidth sx={{ mb: 1 }}>
-                        <InputLabel id="next-status-label">Status</InputLabel>
-                        <Select
-                            labelId="next-status-label"
-                            label="Status"
-                            value={selectedNextStatus}
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <FormControl size="small" fullWidth sx={{ mb: 1 }}>
+                            <InputLabel id="next-status-label">
+                                Status
+                            </InputLabel>
+                            <Select
+                                labelId="next-status-label"
+                                label="Status"
+                                value={selectedNextStatus}
+                                onChange={(e) => {
+                                    onSelectedNextStatusChange(e.target.value);
+                                }}
+                            >
+                                {allowedNextStatuses.map((status) => (
+                                    <MenuItem key={status} value={status}>
+                                        {status.charAt(0).toUpperCase() +
+                                            status.slice(1)}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label={
+                                selectedNextStatus === "interviewing"
+                                    ? "Scheduled date"
+                                    : "Date (optional)"
+                            }
+                            type="date"
+                            size="small"
+                            fullWidth
+                            value={statusOccurredAt}
                             onChange={(e) => {
-                                onSelectedNextStatusChange(e.target.value);
+                                onStatusOccurredAtChange(e.target.value);
                             }}
-                        >
-                            {allowedNextStatuses.map((status) => (
-                                <MenuItem key={status} value={status}>
-                                    {status.charAt(0).toUpperCase() +
-                                        status.slice(1)}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <TextField
-                        label={
-                            selectedNextStatus === "interviewing"
-                                ? "Scheduled date"
-                                : "Date (optional)"
-                        }
-                        type="date"
-                        size="small"
-                        fullWidth
-                        value={statusOccurredAt}
-                        onChange={(e) => {
-                            onStatusOccurredAtChange(e.target.value);
-                        }}
-                        slotProps={{
-                            inputLabel: {
-                                shrink: true,
-                            },
-                        }}
-                        sx={{ mb: 1 }}
-                    />
+                            slotProps={{
+                                inputLabel: {
+                                    shrink: true,
+                                },
+                            }}
+                            sx={{ mb: 1 }}
+                        />
+                    </Box>
                     <TextField
                         label="Notes (optional)"
                         size="small"

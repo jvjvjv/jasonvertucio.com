@@ -67,12 +67,14 @@ export default function StatusHistoryList({
                             alignItems: "flex-start",
                             justifyContent: "space-between",
                             gap: 1,
+                            paddingY: 1,
                         }}
                     >
                         <Box
                             sx={{
-                                display: "flex",
-                                gap: 1,
+                                display: "grid",
+                                gridTemplateColumns: "130px 1fr",
+                                gap: 2,
                                 alignItems: "flex-start",
                             }}
                         >

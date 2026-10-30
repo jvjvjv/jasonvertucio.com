@@ -12,7 +12,6 @@ import { useState } from "react";
 import ResumeCard from "./ResumeCard";
 import StatusHistoryList from "./StatusHistoryList";
 import StatusUpdateForm from "./StatusUpdateForm";
-import useGhostedAfterDays from "./useGhostedAfterDays";
 
 import type { UseStatusUpdatesResult } from "./useStatusUpdates";
 import type {
@@ -23,9 +22,7 @@ import type {
 } from "@/types";
 import type { SyntheticEvent } from "react";
 
-import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
-import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { ApiError, api, apiErrorMessage } from "@/api";
 import useMarkdownPaste from "@/hooks/useMarkdownPaste";
 
@@ -139,7 +136,6 @@ export default function DetailsForm({
     conversation,
     targetedResume,
     coverLetter,
-    status,
     statusUpdates,
     allowedNextStatuses,
     hasApplied,
@@ -182,7 +178,6 @@ export default function DetailsForm({
     const [errors, setErrors] = useState<FieldErrors>({});
     const [saveError, setSaveError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const ghostedAfterDays = useGhostedAfterDays();
     const [saved, setSaved] = useState(false);
 
     const setField = (field: keyof DetailsFormData, value: string) => {
@@ -239,17 +234,6 @@ export default function DetailsForm({
         }
     };
 
-    const latestStatusUpdate =
-        statusUpdates.length > 0
-            ? statusUpdates[statusUpdates.length - 1]
-            : null;
-
-    const displayStatus = resolveApplicationDisplayStatus(
-        status,
-        latestStatusUpdate?.occurred_at,
-        ghostedAfterDays,
-    );
-
     // `applied` is only ever recorded through Mark Applied, which confirms the
     // resume that was sent; the log form offers every later status.
     const loggableStatuses = allowedNextStatuses.filter(
@@ -257,7 +241,12 @@ export default function DetailsForm({
     );
 
     return (
-        <Card>
+        <Card
+            sx={{
+                maxWidth: "lg",
+                marginX: "auto",
+            }}
+        >
             <CardContent>
                 <Typography variant="h6" gutterBottom>
                     Application Details
@@ -449,7 +438,6 @@ export default function DetailsForm({
                         <Typography variant="subtitle2">
                             Application Status History
                         </Typography>
-                        <StatusChip status={displayStatus} />
                     </Box>
 
                     <StatusHistoryList
