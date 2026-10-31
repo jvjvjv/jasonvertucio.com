@@ -98,7 +98,7 @@ class DatabaseResumeVersionServiceTest extends TestCase
 
     public function test_pdf_exists_for_current_version_reflects_the_conventional_pdf_path(): void
     {
-        $version = ResumeVersion::factory()->create(['is_current' => true]);
+        $version = ResumeVersion::factory()->create(['version' => '9999.8.8', 'is_current' => true]);
 
         $this->assertFalse($this->service->pdfExistsForCurrentVersion());
 
@@ -108,8 +108,10 @@ class DatabaseResumeVersionServiceTest extends TestCase
         }
         file_put_contents($path, 'content');
 
-        $this->assertTrue($this->service->pdfExistsForCurrentVersion());
-
-        unlink($path);
+        try {
+            $this->assertTrue($this->service->pdfExistsForCurrentVersion());
+        } finally {
+            unlink($path);
+        }
     }
 }

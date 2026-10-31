@@ -90,6 +90,7 @@ class AiChatBotConversationServiceTest extends TestCase
     {
         $agent = Mockery::mock(CodeTalkerAgent::class);
         $agent->shouldReceive('messages')->andReturn([]);
+        $agent->shouldReceive('showThinking')->andReturn(false);
         $agent->shouldReceive('stream')->once()->andReturn($response);
         $agent->shouldReceive('append')->never();
 

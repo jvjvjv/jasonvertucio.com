@@ -72,7 +72,9 @@ class PdfFidelityTest extends TestCase
 
     protected function tearDown(): void
     {
-        $this->removeDirectory($this->outputDir);
+        if (isset($this->outputDir)) {
+            $this->removeDirectory($this->outputDir);
+        }
 
         parent::tearDown();
     }

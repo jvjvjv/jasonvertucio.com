@@ -55,6 +55,7 @@ class AiChatBotOverrideTest extends TestCase
 
         $agent = Mockery::mock(CodeTalkerAgent::class);
         $agent->shouldReceive('messages')->andReturn([]);
+        $agent->shouldReceive('showThinking')->andReturn(false);
         $agent->shouldReceive('stream')->once()->andReturn($this->fakeStream());
         $agent->shouldReceive('append')->never();
 

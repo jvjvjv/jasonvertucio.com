@@ -20,6 +20,7 @@ use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\User;
 use App\Services\ApplicationService;
+use App\Services\CompanyIntel\CompanyIntelService;
 use App\Services\TargetedResumeService;
 use App\Support\ApplicationStatusResolver;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -1295,7 +1296,7 @@ class ApplicationServiceTest extends TestCase
         $failing->shouldReceive('startConversation')->once()->andThrow(new RuntimeException('Session could not be started.'));
 
         try {
-            (new ApplicationService($failing))->createForAnalysis(AiSystem::factory()->create(), self::JOB_DESCRIPTION, 'Acme Corp', 'Engineer');
+            (new ApplicationService($failing, app(CompanyIntelService::class)))->createForAnalysis(AiSystem::factory()->create(), self::JOB_DESCRIPTION, 'Acme Corp', 'Engineer');
             $this->fail('The failure was swallowed.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Session could not be started.', $exception->getMessage());
@@ -1314,7 +1315,7 @@ class ApplicationServiceTest extends TestCase
         $failing->shouldReceive('recordResumeDiscardedMessage')->once()->andThrow(new RuntimeException('Note could not be recorded.'));
 
         try {
-            (new ApplicationService($failing))->discardTargetedResume($application);
+            (new ApplicationService($failing, app(CompanyIntelService::class)))->discardTargetedResume($application);
             $this->fail('The failure was swallowed.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Note could not be recorded.', $exception->getMessage());
