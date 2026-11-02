@@ -8,6 +8,7 @@ use App\Services\Auth\BspdxOAuthClient;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -86,6 +87,17 @@ class BspdxLoginTest extends TestCase
         $this->assertSame(strstr($email, '@', true), $user->name);
         $this->assertCount(0, $user->roles);
         $this->assertDatabaseHas('federated_identities', ['user_id' => $user->id, 'provider' => 'bspdx', 'subject' => $subject]);
+    }
+
+    public function test_signing_in_issues_a_remember_me_cookie(): void
+    {
+        $email = 'remembered-'.Str::random(6).'@example.com';
+        $this->fakeProvider(['id' => (string) Str::uuid(), 'email' => $email, 'email_verified' => false, 'name' => $email]);
+
+        $response = $this->returnFromBspdx($this->startFlow());
+
+        $response->assertCookie(Auth::guard()->getRecallerName());
+        $this->assertNotEmpty(User::where('email', $email)->sole()->getRememberToken());
     }
 
     public function test_the_code_exchange_sends_the_pkce_verifier_and_the_token_is_used_for_userinfo(): void

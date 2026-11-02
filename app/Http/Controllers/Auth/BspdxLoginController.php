@@ -80,7 +80,7 @@ class BspdxLoginController extends Controller
             return redirect()->route('login')->withErrors(['bspdx' => $exception->userMessage()]);
         }
 
-        Auth::login($user);
+        Auth::login($user, remember: true);
         $request->session()->regenerate();
 
         return redirect()->intended(config('fortify.home', '/'));
