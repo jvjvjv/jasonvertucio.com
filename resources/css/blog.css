@@ -19,9 +19,12 @@
     }
 
     .blog__body {
-        h1 { @apply text-2xl; }
-        h2 { @apply text-xl; }
-        h3 { @apply text-lg; }
+        @apply font-prose;
+
+        h1 { @apply font-sans text-2xl; }
+        h2 { @apply font-sans text-xl; }
+        h3 { @apply font-sans text-lg; }
+        h4 { @apply font-sans text-lg; }
         code {
             white-space: pre-wrap;
         }
