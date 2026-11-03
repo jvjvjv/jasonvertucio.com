@@ -34,7 +34,15 @@ Canvas v7 posts live in `canvas_posts` (`slug`, `title`, `summary`, `body`, `pub
 
 **Logging.** `McpCallLogger` records the method and tool name from `params.name`, not arguments, so bodies are not stored. The result returned to the caller includes the post id, slug, status and URL.
 
-**Throttle.** Token holders get 120/min and 10,000/day on `/mcp`. A write tool warrants a lower ceiling; add a dedicated per-token limit for `tools/call` of this tool only if the existing limiter can express it cheaply, otherwise note it as a follow-up. Open question below.
+**Throttle.** Token holders get 120/min and 10,000/day on `/mcp`. A write tool warrants a lower ceiling; add a dedicated per-token limit for `tools/call` of this tool only if the existing limiter can express it cheaply, otherwise note it as a follow-up. *Resolved during implementation:* the `mcp` limiter already returns an array of limits and can read the JSON-RPC body, so a `tools/call` of `save-blog-post` adds two more windows, `mcp-server.limits.write` (10/min, 200/day per token, env-overridable), on top of the token tier.
+
+**Publication state on update (resolved during implementation).** `publish` defaults to `draft` only for a new post; on an update an omitted `publish` leaves the publication state as it is. Because unpublishing is a non-goal, `draft` or `schedule` on a post that is already live is refused with an error pointing to the editor, and `now` on a live post keeps its original `published_at`. Edits to a live post apply immediately, as the editor's Update does. A scheduled post may be moved back to draft or rescheduled, since neither takes live content offline.
+
+**Slugs (resolved during implementation).** Canvas's editor derives slugs in JS (`slugify`, `slugForTitle`, `slugFollowsTitle` in `resources/js/lib/posts/form.ts`), not PHP, so those three are ported into `BlogPostWriter` and their result goes through `PostSlug::forSave()` for collision suffixes. As in the editor, a slug that still follows the title is rewritten when the title changes; a hand-set slug is kept.
+
+**Canvas account required (resolved after security review).** Canvas's `Authorize` middleware refuses every editor request from a user without a `canvas_users` row, whatever their app permissions, so the tool requires that row in addition to `manage-blog`. Otherwise a `manage-blog` holder locked out of the editor could still write through MCP. Canvas has no post `create` policy and no publish restriction by role (contributors publish their own posts in the editor), so no further role check is added; updates still go through the `update` gate.
+
+**Placement.** The shared write path is `App\Services\Blog\BlogPostWriter`, not `App\Actions\…`: the project has no `app/Actions` directory, and Canvas's controller is vendor code, so "shared" means mirrored and documented rather than called from both sides.
 
 ## Risks / Trade-offs
 
@@ -51,5 +59,5 @@ Canvas v7 posts live in `canvas_posts` (`slug`, `title`, `summary`, `body`, `pub
 
 ## Open Questions
 
-- Should the write tool have its own stricter throttle, or is the existing token tier acceptable for now?
+- ~~Should the write tool have its own stricter throttle?~~ Yes — see *Throttle* above.
 - Should `body` accept Markdown and convert to HTML server-side, since agents write Markdown more naturally than HTML? (Default for this change: HTML only, matching Canvas.)
