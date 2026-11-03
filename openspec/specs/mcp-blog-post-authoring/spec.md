@@ -2,10 +2,14 @@
 
 Lets an authenticated user who holds blog-management permission create and update blog posts through the MCP endpoint, as drafts or published, without changing what any other caller sees.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: The post-writing tool is offered only to holders of blog-management permission
-The endpoint SHALL advertise a post-writing tool only to a caller whose presented bearer token resolves to a user holding the `manage-blog` permission. For every other caller — anonymous, or a token holder without that permission — the tool SHALL be absent from the tool listing and SHALL be refused if invoked by name.
+The endpoint SHALL advertise a post-writing tool only to a caller whose presented bearer token resolves to a user holding the `manage-blog` permission who also has a blog-editor account (the account the blog editor itself requires). For every other caller — anonymous, a token holder without that permission, or one without a blog-editor account — the tool SHALL be absent from the tool listing and SHALL be refused if invoked by name.
+
+#### Scenario: A permission holder without a blog-editor account does not see the tool
+- **WHEN** a caller with a valid token for a user holding `manage-blog` but no blog-editor account lists tools or invokes the tool by name
+- **THEN** the tool is absent from the listing, the call is refused, and no post is created
 
 #### Scenario: A permitted token holder sees the tool
 - **WHEN** a caller with a valid token for a user holding `manage-blog` lists tools

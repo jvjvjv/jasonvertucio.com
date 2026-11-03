@@ -29,6 +29,13 @@ return [
             'per_day' => (int) env('MCP_TOKEN_PER_DAY', 10000),
         ],
 
+        // Calls to the blog post-writing tool, per token, on top of the token
+        // tier above. Sized for an author saving drafts, not for bulk imports.
+        'write' => [
+            'per_minute' => (int) env('MCP_WRITE_PER_MINUTE', 10),
+            'per_day' => (int) env('MCP_WRITE_PER_DAY', 200),
+        ],
+
     ],
 
     /*

@@ -36,7 +36,7 @@ Personas recall facts across conversations, scoped to the person they are talkin
 
 ## Querying this site
 
-This site runs a Model Context Protocol server. It is read-only, and it needs no credentials.
+This site runs a Model Context Protocol server. It needs no credentials, and everything an anonymous caller can reach is read-only.
 
 - **Endpoint:** `https://jasonvertucio.com/mcp`
 - **Transport:** streamable HTTP — JSON-RPC over `POST`. A `GET` answers `405` by design; that is the transport saying it does not push server-initiated messages, not an error.
@@ -56,5 +56,7 @@ This isn't secrecy; those details are on my resume and I hand it out freely. It'
 ### What a token adds
 
 A bearer token returns everything its owner is permitted to see, contact details included. Tokens are issued on request rather than self-service—get in touch through the site and ask, and say roughly what you are building.
+
+One tool writes: `save-blog-post`, which saves posts to this blog. Only a token whose owner may manage the blog ever sees it, and a new post stays a draft unless it is explicitly published.
 
 A reduced payload should never be mistaken for a complete one, so a mistyped or revoked  token is **rejected outright with a 401**.
