@@ -10,6 +10,7 @@ use App\Listeners\InvalidateCurrentlyWatchingCache;
 use App\Listeners\LogSocialPostStub;
 use App\Listeners\RecordMcpClientIdentity;
 use App\Listeners\RecordRecentlyFinishedMedia;
+use App\Mcp\Tools\SaveBlogPostTool;
 use App\Models\AiChatBot;
 use App\Models\Comment;
 use App\Models\IpBan;
@@ -102,10 +103,19 @@ class AppServiceProvider extends ServiceProvider
             if ($user !== null) {
                 $token = $user->currentAccessToken()?->getKey() ?? $user->getAuthIdentifier();
 
-                return [
+                $limits = [
                     Limit::perMinute(config('mcp-server.limits.token.per_minute'))->by("mcp-token-minute:{$token}"),
                     Limit::perDay(config('mcp-server.limits.token.per_day'))->by("mcp-token-day:{$token}"),
                 ];
+
+                // The one write tool gets a tighter ceiling of its own, on top
+                // of the token's ordinary limits.
+                if ($request->json('method') === 'tools/call' && $request->json('params.name') === SaveBlogPostTool::NAME) {
+                    $limits[] = Limit::perMinute(config('mcp-server.limits.write.per_minute'))->by("mcp-write-minute:{$token}");
+                    $limits[] = Limit::perDay(config('mcp-server.limits.write.per_day'))->by("mcp-write-day:{$token}");
+                }
+
+                return $limits;
             }
 
             $address = $request->header('CF-Connecting-IP') ?? $request->ip();

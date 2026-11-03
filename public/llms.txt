@@ -24,6 +24,10 @@ Tools:
   supports a keyword `search` argument
 - `get-site-info` — site title, selected projects and interests
 
+Everything above is read-only. One further tool, `save-blog-post`, creates and
+updates blog posts; it is listed and callable only for a token whose owner may
+manage the blog, and no other caller sees it.
+
 ## Access levels
 
 Calling anonymously returns the public projection: direct contact details

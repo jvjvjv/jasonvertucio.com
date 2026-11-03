@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Mcp\Tools\PublicRecentBlogPostsTool;
+use App\Mcp\Tools\PublicResumeDataTool;
+use App\Mcp\Tools\PublicSiteInfoTool;
 use App\Models\ResumeVersion;
 use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
@@ -102,6 +105,22 @@ class PublicMcpServerTest extends TestCase
             'get-resume-data',
             'get-site-info',
         ], $names);
+    }
+
+    public function test_the_anonymous_tool_listing_is_exactly_the_read_tools_definitions(): void
+    {
+        $this->initialize();
+
+        // Byte-for-byte what the three read tools describe themselves as: the
+        // permission-gated write tool must leave no trace for anonymous callers.
+        $expected = collect([PublicResumeDataTool::class, PublicRecentBlogPostsTool::class, PublicSiteInfoTool::class])
+            ->map(fn (string $tool): array => app($tool)->toArray())
+            ->all();
+
+        // Decoded as objects so empty `{}` survives the round trip.
+        $listed = json_decode((string) $this->rpc('tools/list')->assertOk()->getContent())->result->tools;
+
+        $this->assertSame(json_encode($expected), json_encode($listed));
     }
 
     public function test_anonymous_client_calls_a_tool_successfully(): void

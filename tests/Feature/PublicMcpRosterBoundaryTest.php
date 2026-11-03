@@ -3,9 +3,15 @@
 namespace Tests\Feature;
 
 use App\Mcp\Servers\PublicServer;
+use App\Mcp\Tools\Concerns\CachesPublicToolResults;
 use App\Mcp\Tools\PublicResumeDataTool;
+use App\Mcp\Tools\SaveBlogPostTool;
+use App\Models\User;
 use App\Services\Mcp\Tools\ChatBot\GetResumeDataTool;
 use App\Services\Mcp\Tools\ChatBot\GetSiteInfoTool;
+use BSPDX\Keystone\Models\KeystonePermission as Permission;
+use Canvas\Enums\Role;
+use Canvas\Models\CanvasUser;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\File;
 use Jvjvjv\CodeTalker\CodeTalkerServiceProvider;
@@ -79,21 +85,72 @@ class PublicMcpRosterBoundaryTest extends TestCase
         $this->assertSame([GetResumeDataTool::class], $matches);
     }
 
-    public function test_the_public_roster_is_exactly_three_read_only_tools(): void
+    /**
+     * @return list<string>
+     */
+    private function rosterNames(): array
     {
         $server = new PublicServer(new FakeTransporter);
 
-        $names = collect($server->createContext()->tools())
+        return collect($server->createContext()->tools())
             ->map(fn ($tool): string => $tool->name())
             ->sort()
             ->values()
             ->all();
+    }
+
+    public function test_the_public_roster_is_exactly_three_read_only_tools(): void
+    {
+        $this->assertSame([
+            'get-recent-blog-posts',
+            'get-resume-data',
+            'get-site-info',
+        ], $this->rosterNames());
+    }
+
+    public function test_a_caller_without_manage_blog_gets_the_same_three_tools(): void
+    {
+        $this->actingAs(User::factory()->create());
 
         $this->assertSame([
             'get-recent-blog-posts',
             'get-resume-data',
             'get-site-info',
-        ], $names);
+        ], $this->rosterNames());
+    }
+
+    public function test_a_manage_blog_caller_gets_the_post_writing_tool_and_no_other_write_tool(): void
+    {
+        Permission::firstOrCreate(['name' => 'manage-blog']);
+        $user = User::factory()->create();
+        $user->givePermissionTo('manage-blog');
+        CanvasUser::query()->create(['user_id' => $user->id, 'role' => Role::Admin, 'username' => 'author-'.$user->id]);
+        $this->actingAs($user);
+
+        $this->assertSame([
+            'get-recent-blog-posts',
+            'get-resume-data',
+            'get-site-info',
+            'save-blog-post',
+        ], $this->rosterNames());
+    }
+
+    public function test_the_post_writing_tool_lives_outside_code_talkers_discovery_tree(): void
+    {
+        $path = realpath((string) (new \ReflectionClass(SaveBlogPostTool::class))->getFileName());
+
+        foreach (array_keys(CodeTalkerServiceProvider::toolDirectories()) as $directory) {
+            $this->assertStringStartsNotWith(
+                realpath($directory).DIRECTORY_SEPARATOR,
+                $path,
+                "The post-writing tool must never be discoverable by chat bots [{$directory}]."
+            );
+        }
+    }
+
+    public function test_the_post_writing_tool_is_never_cached(): void
+    {
+        $this->assertNotContains(CachesPublicToolResults::class, class_uses_recursive(SaveBlogPostTool::class));
     }
 
     public function test_site_info_returns_only_already_public_keys(): void
