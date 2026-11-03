@@ -434,6 +434,91 @@ class ApplicationMetricsTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
+    // Requirement: Ghosted rate availability
+    // ---------------------------------------------------------------------
+
+    public function test_ghost_rate_does_not_apply_to_a_period_starting_on_the_threshold_date(): void
+    {
+        Application::factory()->applied(Carbon::parse('2001-06-10 09:00:00'))->create();
+
+        $metrics = $this->metrics->build(Carbon::parse('2001-06-01'), Carbon::parse('2001-07-01'));
+
+        $this->assertFalse($metrics['ghostRateApplicable']);
+        $this->assertNull($metrics['kpis']['ghostRate']);
+        $this->assertSame(1, $metrics['kpis']['totalApplied']);
+        $this->assertSame(0.0, $metrics['kpis']['responseRate']);
+    }
+
+    public function test_ghost_rate_does_not_apply_to_a_period_starting_after_the_threshold_date(): void
+    {
+        Application::factory()->applied(Carbon::parse('2001-06-20 09:00:00'))->create();
+
+        $metrics = $this->metrics->build(Carbon::parse('2001-06-15'));
+
+        $this->assertFalse($metrics['ghostRateApplicable']);
+        $this->assertNull($metrics['kpis']['ghostRate']);
+    }
+
+    public function test_ghost_rate_applies_to_a_period_starting_a_day_before_the_threshold_date(): void
+    {
+        Application::factory()->applied(Carbon::parse('2001-05-31 13:00:00'))->create();
+        Application::factory()->applied(Carbon::parse('2001-06-20 09:00:00'))->create();
+
+        $metrics = $this->metrics->build(Carbon::parse('2001-05-31'), Carbon::parse('2001-07-01'));
+
+        $this->assertTrue($metrics['ghostRateApplicable']);
+        $this->assertSame(50.0, $metrics['kpis']['ghostRate']);
+    }
+
+    public function test_ghost_rate_applies_to_a_period_with_no_start_date(): void
+    {
+        Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+
+        $this->assertTrue($this->metrics->build()['ghostRateApplicable']);
+
+        $upToToday = $this->metrics->build(null, Carbon::parse('2001-07-01'));
+
+        $this->assertTrue($upToToday['ghostRateApplicable']);
+        $this->assertSame(100.0, $upToToday['kpis']['ghostRate']);
+    }
+
+    public function test_ghost_rate_availability_follows_the_configured_threshold(): void
+    {
+        $lastThirtyDays = [Carbon::parse('2001-06-01'), Carbon::parse('2001-07-01')];
+        $lastNinetyDays = [Carbon::parse('2001-04-02'), Carbon::parse('2001-07-01')];
+
+        config()->set('resume.ghosted_after_days', 60);
+
+        $this->assertFalse($this->metrics->build(...$lastThirtyDays)['ghostRateApplicable']);
+        $this->assertTrue($this->metrics->build(...$lastNinetyDays)['ghostRateApplicable']);
+
+        config()->set('resume.ghosted_after_days', 14);
+
+        $this->assertTrue($this->metrics->build(...$lastThirtyDays)['ghostRateApplicable']);
+    }
+
+    public function test_ghost_rate_applies_to_an_older_period_with_no_applications(): void
+    {
+        $metrics = $this->metrics->build(Carbon::parse('1990-01-01'), Carbon::parse('1990-12-31'));
+
+        $this->assertTrue($metrics['ghostRateApplicable']);
+        $this->assertNull($metrics['kpis']['ghostRate']);
+    }
+
+    public function test_an_application_on_the_first_day_past_the_threshold_still_shows_as_ghosted(): void
+    {
+        $silent = Application::factory()->applied(Carbon::parse('2001-06-01 09:00:00'))->create();
+
+        $metrics = $this->metrics->build(Carbon::parse('2001-06-01'), Carbon::parse('2001-07-01'));
+
+        $this->assertFalse($metrics['ghostRateApplicable']);
+        $this->assertNull($metrics['kpis']['ghostRate']);
+        $this->assertSame(['ghosted' => 1], $this->outcomeCounts($metrics));
+        $this->assertSame($silent->id, $metrics['timeline'][0]['id']);
+        $this->assertSame('ghosted', $metrics['timeline'][0]['outcome']);
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 

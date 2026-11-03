@@ -14,6 +14,7 @@ const METRICS_URL = "/admin/resume/metrics";
 /** Every prop the selected period changes, for the partial reload. */
 const PERIOD_PROPS = [
     "filter",
+    "ghostRateApplicable",
     "kpis",
     "funnel",
     "outcomes",

@@ -290,6 +290,7 @@ class ApplicationMetricsHttpTest extends TestCase
                 ->component('resume/metrics/Index', false)
                 ->where('filter', ['range' => 'custom', 'from' => '1990-01-01', 'to' => '1990-12-31'])
                 ->where('ghostedAfterDays', 30)
+                ->where('ghostRateApplicable', true)
                 ->where('kpis', ['totalApplied' => 0, 'responseRate' => null, 'interviewRate' => null, 'offerRate' => null, 'ghostRate' => null])
                 ->where('funnel', fn ($funnel): bool => collect($funnel)->pluck('count', 'stage')->all() === ['applied' => 0, 'interviewing' => 0, 'interviewed' => 0, 'offered' => 0, 'accepted' => 0])
                 ->where('outcomes', [])
@@ -351,6 +352,42 @@ class ApplicationMetricsHttpTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
+    // Requirement: Ghosted rate availability
+    // ---------------------------------------------------------------------
+
+    /**
+     * @return array<string, array{0: array<string, string>, 1: bool}>
+     */
+    public static function ghostRateAvailabilityProvider(): array
+    {
+        return [
+            'last 30 days' => [['range' => '30d'], false],
+            'last 90 days' => [['range' => '90d'], true],
+            'this year' => [['range' => 'ytd'], true],
+            'all time' => [[], true],
+            'custom from on the threshold date' => [['from' => '2001-06-01'], false],
+            'custom from after the threshold date' => [['from' => '2001-06-20', 'to' => '2001-06-30'], false],
+            'custom from a day before the threshold date' => [['from' => '2001-05-31', 'to' => '2001-07-01'], true],
+            'custom to only' => [['to' => '2001-07-01'], true],
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $query
+     */
+    #[DataProvider('ghostRateAvailabilityProvider')]
+    public function test_ghost_rate_availability(array $query, bool $applicable): void
+    {
+        $this->applied('2001-06-25 09:00:00');
+
+        $metrics = $this->metrics($query);
+
+        $this->assertSame($applicable, $metrics['ghostRateApplicable']);
+        $this->assertSame($applicable, $metrics['kpis']['ghostRate'] !== null);
+        $this->assertNotNull($metrics['kpis']['responseRate']);
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 
@@ -381,7 +418,7 @@ class ApplicationMetricsHttpTest extends TestCase
                 return $page;
             });
 
-        return array_intersect_key($props, array_flip(['ghostedAfterDays', 'kpis', 'funnel', 'outcomes', 'overTime', 'cycleTimes', 'timeline', 'filter']));
+        return array_intersect_key($props, array_flip(['ghostedAfterDays', 'ghostRateApplicable', 'kpis', 'funnel', 'outcomes', 'overTime', 'cycleTimes', 'timeline', 'filter']));
     }
 
     private function applied(string $occurredAt): Application

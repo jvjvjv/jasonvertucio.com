@@ -33,10 +33,12 @@ class ApplicationMetricsService
      * days and inclusive; either may be left open. The period is applied
      * before any section is computed, so every section agrees on which
      * applications it covers. "Ghosted" is still judged against the real
-     * present, not the end of the period.
+     * present, not the end of the period, and the ghost rate is withheld for
+     * a period too recent for anything in it to have gone ghosted.
      *
      * @return array{
      *     ghostedAfterDays: int,
+     *     ghostRateApplicable: bool,
      *     kpis: array<string, mixed>,
      *     funnel: array<int, array{stage: string, label: string, count: int}>,
      *     outcomes: array<int, array{outcome: string, label: string, count: int}>,
@@ -50,16 +52,30 @@ class ApplicationMetricsService
         $ghostedAfterDays = (int) config('resume.ghosted_after_days');
 
         $applications = $this->appliedWithin($this->appliedApplications(), $from, $to);
+        $ghostRateApplicable = $this->ghostRateApplicable($from, $ghostedAfterDays);
 
         return [
             'ghostedAfterDays' => $ghostedAfterDays,
-            'kpis' => $this->kpis($applications, $ghostedAfterDays),
+            'ghostRateApplicable' => $ghostRateApplicable,
+            'kpis' => $this->kpis($applications, $ghostedAfterDays, $ghostRateApplicable),
             'funnel' => $this->funnel($applications),
             'outcomes' => $this->outcomes($applications, $ghostedAfterDays),
             'overTime' => $this->overTime($applications),
             'cycleTimes' => $this->cycleTimes($applications),
             'timeline' => $this->timeline($applications, $ghostedAfterDays),
         ];
+    }
+
+    /**
+     * Whether a period starting at `$from` can hold applications that have
+     * gone ghosted. Judged by whole days, as periods are: one starting on or
+     * after the threshold date is too recent, even though an application from
+     * the morning of that first day may already be past the cutoff.
+     */
+    private function ghostRateApplicable(?CarbonInterface $from, int $ghostedAfterDays): bool
+    {
+        return $from === null
+            || $from->copy()->startOfDay()->lessThan(Carbon::today()->subDays($ghostedAfterDays));
     }
 
     /**
@@ -173,7 +189,7 @@ class ApplicationMetricsService
      * @param  Collection<int, Application>  $applications
      * @return array<string, mixed>
      */
-    private function kpis(Collection $applications, int $ghostedAfterDays): array
+    private function kpis(Collection $applications, int $ghostedAfterDays, bool $ghostRateApplicable): array
     {
         $total = $applications->count();
 
@@ -198,7 +214,7 @@ class ApplicationMetricsService
             'responseRate' => $this->rate($responded, $total),
             'interviewRate' => $this->rate($interviewed, $total),
             'offerRate' => $this->rate($offered, $total),
-            'ghostRate' => $this->rate($ghosted, $total),
+            'ghostRate' => $ghostRateApplicable ? $this->rate($ghosted, $total) : null,
         ];
     }
 
