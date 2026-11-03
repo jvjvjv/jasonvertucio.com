@@ -47,6 +47,8 @@ interface OverTimeRow {
 
 interface MetricsProps {
     ghostedAfterDays: number;
+    /** False when the period starts too recently for anything in it to have gone ghosted. */
+    ghostRateApplicable: boolean;
     kpis: {
         totalApplied: number;
         responseRate: number | null;
@@ -72,16 +74,48 @@ const TIMELINE_ACCORDION_SLOT_PROPS = {
     transition: { unmountOnExit: true },
 } as const;
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({
+    label,
+    value,
+    disabledReason,
+}: {
+    label: string;
+    value: string;
+    /** Greys the card out and says why the figure is not shown. */
+    disabledReason?: string;
+}) {
+    const disabled = disabledReason !== undefined;
+
     return (
-        <Card variant="outlined" sx={{ flex: "1 1 160px", minWidth: 160 }}>
+        <Card
+            variant="outlined"
+            aria-disabled={disabled || undefined}
+            sx={{ flex: "1 1 160px", minWidth: 160 }}
+        >
             <CardContent>
-                <Typography variant="h4" component="div" fontWeight="bold">
+                <Typography
+                    variant="h4"
+                    component="div"
+                    fontWeight="bold"
+                    color={disabled ? "text.disabled" : undefined}
+                >
                     {value}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                    variant="body2"
+                    color={disabled ? "text.disabled" : "text.secondary"}
+                >
                     {label}
                 </Typography>
+                {disabled ? (
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mt: 0.5 }}
+                    >
+                        {disabledReason}
+                    </Typography>
+                ) : null}
             </CardContent>
         </Card>
     );
@@ -113,6 +147,7 @@ const days = (value: number | null) =>
 
 export default function Index({
     ghostedAfterDays,
+    ghostRateApplicable,
     kpis,
     funnel,
     outcomes,
@@ -161,6 +196,11 @@ export default function Index({
                 <StatCard
                     label={`Ghosted (>${ghostedAfterDays}d)`}
                     value={percent(kpis.ghostRate)}
+                    disabledReason={
+                        ghostRateApplicable
+                            ? undefined
+                            : "Too recent to measure"
+                    }
                 />
             </Box>
 
