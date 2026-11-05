@@ -66,7 +66,7 @@ class AdminHubsTest extends TestCase
     {
         $hrefs = $this->blockHrefs('/admin', $this->userWith(...self::EVERY_ADMIN_PERMISSION));
 
-        foreach (['/admin/resume/applications', '/admin/resume/metrics', '/admin/resume', '/admin/cover-letters', '/admin/blog/canvas', '/admin/comments', '/admin/mail-preview', '/admin/site-settings', '/admin/roles-permissions'] as $moved) {
+        foreach (['/admin/employment/applications', '/admin/employment/metrics', '/admin/resume', '/admin/cover-letters', '/admin/blog/canvas', '/admin/comments', '/admin/mail-preview', '/admin/site-settings', '/admin/roles-permissions'] as $moved) {
             $this->assertNotContains($moved, $hrefs);
         }
     }
@@ -80,8 +80,8 @@ class AdminHubsTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('employment/Hub', false)
-                ->where('navBlocks.0.href', '/admin/resume/applications')
-                ->where('navBlocks.1.href', '/admin/resume/metrics')
+                ->where('navBlocks.0.href', '/admin/employment/applications')
+                ->where('navBlocks.1.href', '/admin/employment/metrics')
                 ->where('navBlocks.2.href', '/admin/resume')
                 ->where('navBlocks.3.href', '/admin/cover-letters')
                 ->where('navBlocks.4.href', '/admin/employment/company-intel')
@@ -230,8 +230,8 @@ class AdminHubsTest extends TestCase
         $this->assertSame('/admin', $items[0]['href']);
         $this->assertSame('/admin/employment', $items[1]['href']);
         $this->assertSame([
-            '/admin/resume/applications',
-            '/admin/resume/metrics',
+            '/admin/employment/applications',
+            '/admin/employment/metrics',
             '/admin/resume',
             '/admin/cover-letters',
             '/admin/employment/company-intel',

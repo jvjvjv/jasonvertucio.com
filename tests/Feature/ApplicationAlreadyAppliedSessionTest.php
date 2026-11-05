@@ -49,7 +49,7 @@ class ApplicationAlreadyAppliedSessionTest extends TestCase
         $system = AiSystem::factory()->targetedResume()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => 'Ship features.',
                 'job_title' => 'Staff Engineer',
@@ -69,7 +69,7 @@ class ApplicationAlreadyAppliedSessionTest extends TestCase
     public function test_i_applied_without_a_system_attaches_no_session(): void
     {
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => 'Ship features.',
             ])
@@ -83,7 +83,7 @@ class ApplicationAlreadyAppliedSessionTest extends TestCase
         $application = Application::factory()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
             ->assertOk();
 
         $this->assertStringStartsWith('Please begin the analysis on the following job description', $this->firstUserMessage($application->fresh()));
@@ -94,7 +94,7 @@ class ApplicationAlreadyAppliedSessionTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
             ->assertOk();
 
         $this->assertStringStartsWith(TargetedResumeService::ALREADY_APPLIED_MESSAGE, $this->firstUserMessage($application->fresh()));

@@ -45,7 +45,7 @@ const TAB_FINDINGS = 0;
 const TAB_CHAT = 1;
 
 /** The applications chat's model checks; they need the same permission. */
-const MODEL_API = "/api/admin/resume/applications/ai-systems";
+const MODEL_API = "/api/admin/employment/applications/ai-systems";
 
 interface ShowProps {
     intel: RoleIntel;
@@ -301,7 +301,7 @@ export default function Show({
                                 icon={<WorkOutlineIcon />}
                                 label="Application"
                                 title="Open the application"
-                                href={`/admin/resume/applications/${application.id}`}
+                                href={`/admin/employment/applications/${application.id}`}
                             />
                         ) : null}
                     </Box>

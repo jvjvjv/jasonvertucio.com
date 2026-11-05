@@ -9,7 +9,7 @@ import type { SharedProps } from "@/types";
 
 import { formatCalendarDate } from "@/utils/date";
 
-const METRICS_URL = "/admin/resume/metrics";
+const METRICS_URL = "/admin/employment/metrics";
 
 /** Every prop the selected period changes, for the partial reload. */
 const PERIOD_PROPS = [

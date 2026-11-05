@@ -51,7 +51,7 @@ export default function Create({
     };
 
     const applicationUrl = application
-        ? `/admin/resume/applications/${application.id}`
+        ? `/admin/employment/applications/${application.id}`
         : null;
     const cancelHref = applicationUrl ?? "/admin/cover-letters";
 

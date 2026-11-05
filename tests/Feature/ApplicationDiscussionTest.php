@@ -84,10 +84,10 @@ class ApplicationDiscussionTest extends TestCase
         $this->message($conversation, 'user', 'I edited it by hand.', ['origin' => 'manual_edit']);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Show', false)
+                ->component('employment/applications/Show', false)
                 ->where('application.id', $application->id)
                 ->where('conversation.id', $conversation->id)
                 ->where('conversation.status', 'active')
@@ -128,7 +128,7 @@ class ApplicationDiscussionTest extends TestCase
 
         foreach ([[$pending, true], [$answered, false], [$notPending, false]] as [$application, $expected]) {
             $this->actingAs($this->admin)
-                ->get(route('admin.resume.applications.show', $application))
+                ->get(route('admin.employment.applications.show', $application))
                 ->assertOk()
                 ->assertInertia(fn (Assert $page) => $page->where('shouldAutoStart', $expected));
         }
@@ -154,10 +154,10 @@ class ApplicationDiscussionTest extends TestCase
         $letter = $this->coverLetter($application);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Show', false)
+                ->component('employment/applications/Show', false)
                 ->where('conversation', null)
                 ->where('messages', [])
                 ->where('shouldAutoStart', false)
@@ -190,7 +190,7 @@ class ApplicationDiscussionTest extends TestCase
         $application->conversation->delete();
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('conversation', null)
@@ -206,7 +206,7 @@ class ApplicationDiscussionTest extends TestCase
         $targetedResume = $application->targetedResume;
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('targetedResume', [
@@ -227,7 +227,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->withConversation()->create(['resume_version_id' => $version->id]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('targetedResume', null)
@@ -243,13 +243,13 @@ class ApplicationDiscussionTest extends TestCase
         $this->coverLetter(Application::factory()->create());
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page->where('coverLetter', null));
 
         $letter = $this->coverLetter($application);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page->where('coverLetter', [
                 'id' => $letter->id,
                 'company_name' => $application->company_name,
@@ -278,7 +278,7 @@ class ApplicationDiscussionTest extends TestCase
         $applications = Application::withTrashed()->count();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => $system->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => $system->id])
             ->assertOk();
 
         $application->refresh();
@@ -286,7 +286,7 @@ class ApplicationDiscussionTest extends TestCase
         $response->assertExactJson([
             'success' => true,
             'conversation_id' => $application->ai_conversation_id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
 
         $this->assertSame($applications, Application::withTrashed()->count());
@@ -302,7 +302,7 @@ class ApplicationDiscussionTest extends TestCase
         $this->assertSame(['step' => 'analysis', 'auto_start_pending' => true], $conversation->context);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('conversation.id', $conversation->id)
                 ->where('shouldAutoStart', true)
@@ -322,7 +322,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application))
+            ->postJson(route('admin.employment.applications.analysis', $application))
             ->assertOk()
             ->assertJsonPath('success', true);
 
@@ -334,7 +334,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application))
+            ->postJson(route('admin.employment.applications.analysis', $application))
             ->assertStatus(422)
             ->assertJsonStructure(['message']);
 
@@ -346,7 +346,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => 999999999])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => 999999999])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['ai_system_id']);
 
@@ -362,7 +362,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => $resumeSystem->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => $resumeSystem->id])
             ->assertStatus(422)
             ->assertExactJson([
                 'error' => AnalysisSystemGuard::SEPARATE_MODELS_MESSAGE,
@@ -379,7 +379,7 @@ class ApplicationDiscussionTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => AiSystem::factory()->targetedResume()->create()->id])
             ->assertStatus(409)
             ->assertJsonStructure(['message']);
 
@@ -397,7 +397,7 @@ class ApplicationDiscussionTest extends TestCase
         $history = $this->historySnapshot($application);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => $system->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => $system->id])
             ->assertOk()
             ->assertJsonPath('success', true);
 
@@ -412,7 +412,7 @@ class ApplicationDiscussionTest extends TestCase
         $this->assertSame($history, $this->historySnapshot($application));
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('conversation.id', $application->ai_conversation_id)
                 ->where('shouldAutoStart', true)
@@ -420,7 +420,7 @@ class ApplicationDiscussionTest extends TestCase
             );
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => $system->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => $system->id])
             ->assertStatus(409);
     }
 
@@ -434,9 +434,9 @@ class ApplicationDiscussionTest extends TestCase
     public static function sessionEndpointProvider(): array
     {
         return [
-            'chat' => ['admin.resume.applications.chat', ['message' => 'Hello']],
-            'finalize' => ['admin.resume.applications.finalize', ['tailored_content' => self::FIRST_RESUME]],
-            'finalize cover letter' => ['admin.resume.applications.finalize-cover-letter', ['cover_letter_content' => self::FIRST_LETTER]],
+            'chat' => ['admin.employment.applications.chat', ['message' => 'Hello']],
+            'finalize' => ['admin.employment.applications.finalize', ['tailored_content' => self::FIRST_RESUME]],
+            'finalize cover letter' => ['admin.employment.applications.finalize-cover-letter', ['cover_letter_content' => self::FIRST_LETTER]],
         ];
     }
 
@@ -482,7 +482,7 @@ class ApplicationDiscussionTest extends TestCase
         $messages = AiConversationMessage::query()->where('ai_conversation_id', $application->ai_conversation_id)->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.chat', $application), ['message' => ['not', 'text']])
+            ->postJson(route('admin.employment.applications.chat', $application), ['message' => ['not', 'text']])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['message']);
 
@@ -499,7 +499,7 @@ class ApplicationDiscussionTest extends TestCase
         $documents = TargetedResume::query()->count();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), [
+            ->postJson(route('admin.employment.applications.finalize', $application), [
                 'tailored_content' => self::FIRST_RESUME,
                 'fit_score' => 83,
             ])
@@ -526,7 +526,7 @@ class ApplicationDiscussionTest extends TestCase
         $this->assertSame($application->resume_version_id, $targetedResume->resume_version_id);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('application.status', 'draft')
                 ->where('targetedResume.id', $targetedResume->id)
@@ -535,7 +535,7 @@ class ApplicationDiscussionTest extends TestCase
             );
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['uses_targeted_resume' => 'yes', 'search' => $application->company_name]))
+            ->get(route('admin.employment.applications.index', ['uses_targeted_resume' => 'yes', 'search' => $application->company_name]))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('applications', fn ($rows): bool => collect($rows)->firstWhere('id', $application->id)['targeted_resume_id'] === $targetedResume->id
                     && collect($rows)->firstWhere('id', $application->id)['status'] === 'draft')
@@ -547,7 +547,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->withConversation()->create(['fit_score' => 40]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
             ->assertOk();
 
         $this->assertSame(40, $application->fresh()->fit_score);
@@ -558,12 +558,12 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->withConversation()->create();
 
         $first = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
             ->assertOk()
             ->json('targeted_resume_id');
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), ['occurred_at' => '2026-04-20'])
+            ->postJson(route('admin.employment.applications.apply', $application), ['occurred_at' => '2026-04-20'])
             ->assertOk()
             ->assertJsonPath('status', 'applied');
 
@@ -571,7 +571,7 @@ class ApplicationDiscussionTest extends TestCase
         $history = $this->historySnapshot($application);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => self::SECOND_RESUME])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => self::SECOND_RESUME])
             ->assertOk()
             ->assertJsonPath('targeted_resume_id', $first);
 
@@ -594,7 +594,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->passed()->withConversation()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
             ->assertOk();
 
         $this->assertSame(ApplicationStatus::Passed, $application->fresh()->status);
@@ -628,7 +628,7 @@ class ApplicationDiscussionTest extends TestCase
         $documents = TargetedResume::query()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), $payload)
+            ->postJson(route('admin.employment.applications.finalize', $application), $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors([$errorKey]);
 
@@ -649,7 +649,7 @@ class ApplicationDiscussionTest extends TestCase
         $this->assertNull($application->targeted_resume_id);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
             ->assertOk();
 
         $letter = $application->coverLetters()->sole();
@@ -670,7 +670,7 @@ class ApplicationDiscussionTest extends TestCase
         $this->assertSame(ApplicationStatus::Draft, $application->fresh()->status);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('coverLetter.id', $letter->id)
                 ->where('targetedResume', null)
@@ -684,12 +684,12 @@ class ApplicationDiscussionTest extends TestCase
         $letters = CoverLetter::query()->count();
 
         $first = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
             ->assertOk()
             ->json('cover_letter_id');
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::SECOND_LETTER])
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::SECOND_LETTER])
             ->assertOk()
             ->assertJsonPath('cover_letter_id', $first);
 
@@ -705,12 +705,12 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->withConversation()->create();
 
         $letterId = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
             ->assertOk()
             ->json('cover_letter_id');
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => self::FIRST_RESUME])
             ->assertOk();
 
         $this->assertSame($application->id, CoverLetter::query()->findOrFail($letterId)->application_id);
@@ -741,7 +741,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->withConversation()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), $payload)
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors(['cover_letter_content']);
 
@@ -757,7 +757,7 @@ class ApplicationDiscussionTest extends TestCase
         $application = Application::factory()->withConversation()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), ['cover_letter_content' => self::FIRST_LETTER])
             ->assertStatus(422)
             ->assertExactJson(['success' => false, 'message' => 'Renderer unavailable.']);
     }

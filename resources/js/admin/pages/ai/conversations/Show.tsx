@@ -225,7 +225,7 @@ export default function Show({ conversation, messages, memories }: ShowProps) {
                                     </Typography>
                                     <Button
                                         component={InertiaLink}
-                                        href={`/admin/resume/applications/${conversation.application_id}`}
+                                        href={`/admin/employment/applications/${conversation.application_id}`}
                                         size="small"
                                         sx={{ mt: 1 }}
                                     >

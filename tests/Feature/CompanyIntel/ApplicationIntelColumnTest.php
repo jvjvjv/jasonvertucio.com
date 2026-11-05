@@ -36,7 +36,7 @@ class ApplicationIntelColumnTest extends TestCase
         $rows = null;
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index'))
+            ->get(route('admin.employment.applications.index'))
             ->assertOk()
             ->assertInertia(function (Assert $page) use (&$rows): void {
                 $rows = $page->toArray()['props']['applications'];
@@ -80,7 +80,7 @@ class ApplicationIntelColumnTest extends TestCase
         $intel = RoleIntel::factory()->create();
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $intel->application_id))
+            ->get(route('admin.employment.applications.show', $intel->application_id))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('roleIntel', ['id' => $intel->id, 'status' => 'ready']));

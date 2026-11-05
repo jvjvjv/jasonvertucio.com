@@ -52,14 +52,15 @@ export default function BeginAnalysisPanel({
 
         try {
             const data = await api.post<BeginAnalysisResponse>(
-                `/api/admin/resume/applications/${applicationId}/analysis`,
+                `/api/admin/employment/applications/${applicationId}/analysis`,
                 { ai_system_id: aiSystemId === "" ? null : aiSystemId },
             );
 
             // The session now exists; visiting the Discussion page afresh
             // mounts the chat, which starts the analysis itself.
             router.visit(
-                data.redirect ?? `/admin/resume/applications/${applicationId}`,
+                data.redirect ??
+                    `/admin/employment/applications/${applicationId}`,
             );
         } catch (err) {
             setError(

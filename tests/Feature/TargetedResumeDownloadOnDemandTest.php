@@ -48,7 +48,7 @@ class TargetedResumeDownloadOnDemandTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->post(route('admin.resume.targeted.regenerate', $targetedResume));
 
-        $response->assertRedirect(route('admin.resume.applications.show', $application));
+        $response->assertRedirect(route('admin.employment.applications.show', $application));
 
         $this->assertFileDoesNotExist($docxPath);
         $this->assertFileDoesNotExist($pdfPath);

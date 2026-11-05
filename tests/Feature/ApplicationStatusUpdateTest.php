@@ -34,7 +34,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->withTargetedResume()->withConversation()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'applied',
                 'notes' => null,
                 'occurred_at' => null,
@@ -57,7 +57,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->withTargetedResume()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'applied',
             ])
             ->assertOk();
@@ -75,7 +75,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $scheduledDate = '2026-06-12';
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'interviewing',
                 'occurred_at' => $scheduledDate,
                 'notes' => 'Round 1 with hiring manager',
@@ -100,7 +100,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->applied(Carbon::parse('2026-06-01'))->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'interviewing',
                 'occurred_at' => '2026-06-12',
                 'notes' => 'Round 1',
@@ -108,14 +108,14 @@ class ApplicationStatusUpdateTest extends TestCase
             ->assertOk();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'interviewed',
                 'occurred_at' => '2026-06-12',
             ])
             ->assertOk();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'interviewing',
                 'occurred_at' => '2026-06-19',
                 'notes' => 'Round 2',
@@ -131,7 +131,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'rejected',
                 'notes' => 'Position filled internally.',
             ]);
@@ -148,7 +148,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->create(['status' => ApplicationStatus::Rejected]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'applied',
             ]);
 
@@ -169,7 +169,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $targetedResumeCount = TargetedResume::query()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'applied',
             ])
             ->assertOk()
@@ -191,7 +191,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->passed()->create(['resume_version_id' => $original->id]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), [
+            ->postJson(route('admin.employment.applications.apply', $application), [
                 'resume_version_id' => $chosen->id,
                 'occurred_at' => '2026-07-04',
             ]);
@@ -216,7 +216,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $ignored = ResumeVersion::factory()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application))
+            ->postJson(route('admin.employment.applications.apply', $application))
             ->assertOk()
             ->assertJsonPath('status', 'applied');
 
@@ -232,7 +232,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->create(['status' => ApplicationStatus::Hired]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application))
+            ->postJson(route('admin.employment.applications.apply', $application))
             ->assertStatus(422)
             ->assertJsonStructure(['message']);
     }
@@ -242,7 +242,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'dancing',
             ])
             ->assertStatus(422)
@@ -255,7 +255,7 @@ class ApplicationStatusUpdateTest extends TestCase
 
         foreach (['draft', 'passed'] as $status) {
             $this->actingAs($this->admin)
-                ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+                ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                     'status' => $status,
                 ])
                 ->assertStatus(422)
@@ -271,11 +271,11 @@ class ApplicationStatusUpdateTest extends TestCase
         $applied = Application::factory()->applied()->create();
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['status' => ['rejected']]));
+            ->get(route('admin.employment.applications.index', ['status' => ['rejected']]));
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => collect($applications)->pluck('id')->contains($rejected->id)
                 && ! collect($applications)->pluck('id')->contains($applied->id)
             )
@@ -287,7 +287,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'interviewing',
             ]);
 
@@ -303,7 +303,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->applied(now()->subDays(5))->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                 'status' => 'interviewing',
             ]);
 
@@ -326,7 +326,7 @@ class ApplicationStatusUpdateTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->putJson("/api/admin/resume/applications/{$application->id}/status-updates/{$statusUpdate->id}", [
+            ->putJson("/api/admin/employment/applications/{$application->id}/status-updates/{$statusUpdate->id}", [
                 'notes' => 'Updated note',
                 'occurred_at' => '2026-06-12',
             ]);
@@ -348,7 +348,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $statusUpdate = $application->statusUpdates()->first();
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.status-updates.update', [$application, $statusUpdate]), [
+            ->putJson(route('admin.employment.applications.status-updates.update', [$application, $statusUpdate]), [
                 'notes' => 'No date',
             ])
             ->assertStatus(422)
@@ -372,7 +372,7 @@ class ApplicationStatusUpdateTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->deleteJson("/api/admin/resume/applications/{$application->id}/status-updates/{$latestStatusUpdate->id}");
+            ->deleteJson("/api/admin/employment/applications/{$application->id}/status-updates/{$latestStatusUpdate->id}");
 
         $response->assertOk();
         $response->assertJsonPath('success', true);
@@ -391,7 +391,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $statusUpdate = $application->statusUpdates()->first();
 
         $this->actingAs($this->admin)
-            ->deleteJson(route('admin.resume.applications.status-updates.destroy', [$application, $statusUpdate]))
+            ->deleteJson(route('admin.employment.applications.status-updates.destroy', [$application, $statusUpdate]))
             ->assertOk()
             ->assertJsonPath('status', 'draft')
             ->assertJsonPath('status_updates', [])
@@ -409,7 +409,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $originalNotes = $statusUpdate->notes;
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.status-updates.update', [$other, $statusUpdate]), [
+            ->putJson(route('admin.employment.applications.status-updates.update', [$other, $statusUpdate]), [
                 'notes' => 'Hijacked',
                 'occurred_at' => '2020-01-01',
             ])
@@ -417,7 +417,7 @@ class ApplicationStatusUpdateTest extends TestCase
             ->assertJsonStructure(['message']);
 
         $this->actingAs($this->admin)
-            ->deleteJson(route('admin.resume.applications.status-updates.destroy', [$other, $statusUpdate]))
+            ->deleteJson(route('admin.employment.applications.status-updates.destroy', [$other, $statusUpdate]))
             ->assertNotFound();
 
         $statusUpdate->refresh();
@@ -433,7 +433,7 @@ class ApplicationStatusUpdateTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.pass', $application))
+            ->postJson(route('admin.employment.applications.pass', $application))
             ->assertStatus(409)
             ->assertJsonStructure(['message']);
 

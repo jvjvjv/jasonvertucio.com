@@ -56,12 +56,12 @@ class ApplicationPermissionTest extends TestCase
     public static function pageProvider(): array
     {
         return [
-            'applications list' => ['admin.resume.applications.index', []],
-            'new session page' => ['admin.resume.applications.create', []],
-            'discussion page' => ['admin.resume.applications.show', ['application']],
+            'applications list' => ['admin.employment.applications.index', []],
+            'new session page' => ['admin.employment.applications.create', []],
+            'discussion page' => ['admin.employment.applications.show', ['application']],
             'targeted resumes list' => ['admin.resume.targeted.index', []],
             'edit targeted resume page' => ['admin.resume.targeted.edit', ['targetedResume']],
-            'application metrics' => ['admin.resume.metrics', []],
+            'application metrics' => ['admin.employment.metrics', []],
             'targeted resume download' => ['admin.resume.targeted.download', ['targetedResume', 'format']],
         ];
     }
@@ -75,18 +75,18 @@ class ApplicationPermissionTest extends TestCase
     public static function endpointProvider(): array
     {
         return [
-            'store' => ['post', 'admin.resume.applications.store', [], ['intent' => 'applied', 'job_description' => 'Build things.', 'company_name' => 'Permzq Intruder Co']],
-            'update' => ['put', 'admin.resume.applications.update', ['application'], ['company_name' => 'Permzq Intruder Co']],
-            'analysis' => ['post', 'admin.resume.applications.analysis', ['application'], []],
-            'apply' => ['post', 'admin.resume.applications.apply', ['application'], []],
-            'pass' => ['post', 'admin.resume.applications.pass', ['application'], []],
-            'chat' => ['post', 'admin.resume.applications.chat', ['application'], ['message' => 'Hello']],
-            'finalize' => ['post', 'admin.resume.applications.finalize', ['application'], ['tailored_content' => '# Summary']],
-            'finalize cover letter' => ['post', 'admin.resume.applications.finalize-cover-letter', ['application'], ['cover_letter_content' => 'Dear team']],
-            'status update store' => ['post', 'admin.resume.applications.status-updates.store', ['application'], ['status' => 'interviewing']],
-            'status update update' => ['put', 'admin.resume.applications.status-updates.update', ['application', 'statusUpdate'], ['notes' => 'Hijacked', 'occurred_at' => '2020-01-01']],
-            'status update destroy' => ['delete', 'admin.resume.applications.status-updates.destroy', ['application', 'statusUpdate'], []],
-            'application destroy' => ['delete', 'admin.resume.applications.destroy', ['application'], []],
+            'store' => ['post', 'admin.employment.applications.store', [], ['intent' => 'applied', 'job_description' => 'Build things.', 'company_name' => 'Permzq Intruder Co']],
+            'update' => ['put', 'admin.employment.applications.update', ['application'], ['company_name' => 'Permzq Intruder Co']],
+            'analysis' => ['post', 'admin.employment.applications.analysis', ['application'], []],
+            'apply' => ['post', 'admin.employment.applications.apply', ['application'], []],
+            'pass' => ['post', 'admin.employment.applications.pass', ['application'], []],
+            'chat' => ['post', 'admin.employment.applications.chat', ['application'], ['message' => 'Hello']],
+            'finalize' => ['post', 'admin.employment.applications.finalize', ['application'], ['tailored_content' => '# Summary']],
+            'finalize cover letter' => ['post', 'admin.employment.applications.finalize-cover-letter', ['application'], ['cover_letter_content' => 'Dear team']],
+            'status update store' => ['post', 'admin.employment.applications.status-updates.store', ['application'], ['status' => 'interviewing']],
+            'status update update' => ['put', 'admin.employment.applications.status-updates.update', ['application', 'statusUpdate'], ['notes' => 'Hijacked', 'occurred_at' => '2020-01-01']],
+            'status update destroy' => ['delete', 'admin.employment.applications.status-updates.destroy', ['application', 'statusUpdate'], []],
+            'application destroy' => ['delete', 'admin.employment.applications.destroy', ['application'], []],
             'targeted resume discard' => ['delete', 'admin.resume.targeted.destroy', ['targetedResume'], []],
             'targeted resume update markdown' => ['put', 'admin.resume.targeted-resume.update-markdown', ['targetedResume'], ['markdown' => '# Summary\nHijacked']],
             'targeted resume regenerate' => ['post', 'admin.resume.targeted.regenerate', ['targetedResume'], []],
@@ -184,14 +184,14 @@ class ApplicationPermissionTest extends TestCase
     {
         $user = $this->userWithout();
 
-        $this->actingAs($user)->get(route('admin.resume.applications.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.employment.applications.index'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.resume.targeted.index'))->assertForbidden();
 
         $user->givePermissionTo('edit-resume');
 
-        $this->actingAs($user->fresh())->get(route('admin.resume.applications.index'))->assertOk();
-        $this->actingAs($user->fresh())->get(route('admin.resume.applications.create'))->assertOk();
-        $this->actingAs($user->fresh())->get(route('admin.resume.applications.show', $this->application))->assertOk();
+        $this->actingAs($user->fresh())->get(route('admin.employment.applications.index'))->assertOk();
+        $this->actingAs($user->fresh())->get(route('admin.employment.applications.create'))->assertOk();
+        $this->actingAs($user->fresh())->get(route('admin.employment.applications.show', $this->application))->assertOk();
         $this->actingAs($user->fresh())->get(route('admin.resume.targeted.index'))->assertOk();
         $this->actingAs($user->fresh())->get(route('admin.resume.targeted.edit', $this->targetedResumeId))->assertOk();
     }
@@ -204,14 +204,14 @@ class ApplicationPermissionTest extends TestCase
      */
     public function test_an_unknown_application_is_not_found_before_the_permission_is_checked(): void
     {
-        $this->get('/admin/resume/applications/999999999')->assertRedirect(route('login'));
-        $this->postJson('/api/admin/resume/applications/999999999/pass')->assertUnauthorized();
+        $this->get('/admin/employment/applications/999999999')->assertRedirect(route('login'));
+        $this->postJson('/api/admin/employment/applications/999999999/pass')->assertUnauthorized();
 
         $this->actingAs($this->userWithout());
 
-        $this->get(route('admin.resume.applications.show', $this->application))->assertForbidden();
-        $this->get('/admin/resume/applications/999999999')->assertNotFound();
-        $this->postJson('/api/admin/resume/applications/999999999/pass')->assertNotFound();
+        $this->get(route('admin.employment.applications.show', $this->application))->assertForbidden();
+        $this->get('/admin/employment/applications/999999999')->assertNotFound();
+        $this->postJson('/api/admin/employment/applications/999999999/pass')->assertNotFound();
     }
 
     // ---------------------------------------------------------------------

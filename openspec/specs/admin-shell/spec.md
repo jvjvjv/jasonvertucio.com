@@ -55,8 +55,8 @@ Activating an area SHALL open that area's page. The navigation SHALL list the pa
 
 #### Scenario: A page beneath a page
 
-- **WHEN** the user opens `/admin/resume/applications/new`
-- **THEN** Applications is marked as the current page, and Resume Management at `/admin/resume` is not
+- **WHEN** the user opens `/admin/employment/applications/new`
+- **THEN** Applications is marked as the current page, and the Employment hub at `/admin/employment` is not
 
 #### Scenario: A page with only a shorter match
 

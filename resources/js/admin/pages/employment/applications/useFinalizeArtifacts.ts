@@ -61,7 +61,7 @@ export default function useFinalizeArtifacts({
         setFinalizeError(null);
         try {
             await api.post(
-                `/api/admin/resume/applications/${applicationId}/finalize`,
+                `/api/admin/employment/applications/${applicationId}/finalize`,
                 {
                     tailored_content: latestResumeData.rawContent,
                     fit_score: latestResumeData.fitScore,
@@ -93,7 +93,7 @@ export default function useFinalizeArtifacts({
         setFinalizeCoverLetterError(null);
         try {
             await api.post(
-                `/api/admin/resume/applications/${applicationId}/finalize-cover-letter`,
+                `/api/admin/employment/applications/${applicationId}/finalize-cover-letter`,
                 { cover_letter_content: latestCoverLetterContent },
             );
             router.reload({ only: ["coverLetter", "conversation"] });

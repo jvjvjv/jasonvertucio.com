@@ -46,8 +46,8 @@ function matches(path: string, href: string): boolean {
 
 /**
  * The one destination whose address most specifically matches the path, so
- * `/admin/resume/applications/new` is Applications, not Resume Management at
- * `/admin/resume`.
+ * `/admin/employment/applications/new` is Applications, not the Employment
+ * hub at `/admin/employment`.
  */
 export function currentDestination(
     path: string,

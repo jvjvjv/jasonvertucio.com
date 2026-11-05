@@ -52,8 +52,8 @@ import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 import { formatCalendarDate } from "@/utils/date";
 
-const LIST_URL = "/admin/resume/applications";
-const NEW_SESSION_URL = "/admin/resume/applications/new";
+const LIST_URL = "/admin/employment/applications";
+const NEW_SESSION_URL = "/admin/employment/applications/new";
 const COLUMN_COUNT = 9;
 const EM_DASH = "—";
 
@@ -384,7 +384,9 @@ export default function Index({
             const passApplication = async () => {
                 setActionError(null);
                 try {
-                    await api.post(`/api/admin/resume/applications/${id}/pass`);
+                    await api.post(
+                        `/api/admin/employment/applications/${id}/pass`,
+                    );
                     router.reload({ only: ["applications"] });
                 } catch (error) {
                     setActionError(

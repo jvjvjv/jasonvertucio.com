@@ -56,7 +56,7 @@ class ApplicationSessionController extends Controller
         return response()->json([
             'success' => true,
             'conversation_id' => $application->ai_conversation_id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
     }
 

@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 
+import type { LatestTailoredResumeData } from "@/admin/pages/resume/targeted/tailoredResumeParser";
+import type { ChatMessage } from "@/components/ChatInterface";
+import type { TargetedResume } from "@/types";
+
 import {
     getLatestCoverLetterContent,
     getLatestTailoredResumeData,
     hasNewerResume as computeHasNewerResume,
-} from "../targeted/tailoredResumeParser";
-
-import type { LatestTailoredResumeData } from "../targeted/tailoredResumeParser";
-import type { ChatMessage } from "@/components/ChatInterface";
-import type { TargetedResume } from "@/types";
+} from "@/admin/pages/resume/targeted/tailoredResumeParser";
 
 export interface LatestGeneratedArtifacts {
     latestResumeData: LatestTailoredResumeData | null;

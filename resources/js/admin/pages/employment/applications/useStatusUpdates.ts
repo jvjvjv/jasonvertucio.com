@@ -103,7 +103,7 @@ export default function useStatusUpdates(
     );
     const [showStatusUpdateForm, setShowStatusUpdateForm] = useState(false);
 
-    const baseUrl = `/api/admin/resume/applications/${applicationId}`;
+    const baseUrl = `/api/admin/employment/applications/${applicationId}`;
 
     const status = override?.status ?? application.status;
     const statusUpdates = override?.statusUpdates ?? application.status_updates;

@@ -22,7 +22,7 @@ import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
 
 const LIST_URL = "/admin/resume/targeted-resumes";
-const NEW_SESSION_URL = "/admin/resume/applications/new";
+const NEW_SESSION_URL = "/admin/employment/applications/new";
 const EM_DASH = "—";
 
 interface TargetedResumeRow {
@@ -45,7 +45,7 @@ interface IndexProps {
 }
 
 function applicationUrl(row: TargetedResumeRow): string {
-    return `/admin/resume/applications/${row.application_id}`;
+    return `/admin/employment/applications/${row.application_id}`;
 }
 
 const columns: ColumnDef<TargetedResumeRow>[] = [

@@ -18,7 +18,7 @@ class ResumeMetricsController extends BaseAdminController
     {
         $period = $request->period();
 
-        return Inertia::render('resume/metrics/Index', [
+        return Inertia::render('employment/metrics/Index', [
             ...$metrics->build($period['from'], $period['to']),
             'filter' => $request->filter(),
         ]);

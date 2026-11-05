@@ -88,13 +88,13 @@ class AiConversationStatusTest extends TestCase
         ]);
         $application = Application::factory()->create(['ai_conversation_id' => $conversation->id]);
 
-        $response = $this->postJson(route('admin.resume.applications.pass', $application));
+        $response = $this->postJson(route('admin.employment.applications.pass', $application));
 
         $response->assertOk();
         $response->assertExactJson([
             'success' => true,
             'status' => 'passed',
-            'redirect' => route('admin.resume.applications.index'),
+            'redirect' => route('admin.employment.applications.index'),
         ]);
         $this->assertEquals(ApplicationStatus::Passed, $application->fresh()->status);
         $this->assertEquals(AiConversationStatus::Pass, $conversation->fresh()->status);

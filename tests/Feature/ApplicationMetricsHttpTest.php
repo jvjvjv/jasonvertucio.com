@@ -250,25 +250,25 @@ class ApplicationMetricsHttpTest extends TestCase
         $this->applied('2001-03-10 09:00:00');
 
         $visit = $this->actingAs($this->admin)
-            ->from(route('admin.resume.metrics'))
-            ->get(route('admin.resume.metrics', $query));
+            ->from(route('admin.employment.metrics'))
+            ->get(route('admin.employment.metrics', $query));
 
-        $visit->assertRedirect(route('admin.resume.metrics'))->assertSessionHasErrors([$errorKey]);
+        $visit->assertRedirect(route('admin.employment.metrics'))->assertSessionHasErrors([$errorKey]);
         $this->assertStringNotContainsString('totalApplied', (string) $visit->getContent());
 
         $inertia = $this->actingAs($this->admin)
-            ->from(route('admin.resume.metrics'))
-            ->get(route('admin.resume.metrics', $query), [
+            ->from(route('admin.employment.metrics'))
+            ->get(route('admin.employment.metrics', $query), [
                 'X-Inertia' => 'true',
                 'X-Inertia-Version' => (string) app(HandleInertiaRequests::class)->version(Request::create('/')),
                 'X-Requested-With' => 'XMLHttpRequest',
             ]);
 
-        $inertia->assertRedirect(route('admin.resume.metrics'))->assertSessionHasErrors([$errorKey]);
+        $inertia->assertRedirect(route('admin.employment.metrics'))->assertSessionHasErrors([$errorKey]);
         $this->assertStringNotContainsString('totalApplied', (string) $inertia->getContent());
 
         $json = $this->actingAs($this->admin)
-            ->getJson(route('admin.resume.metrics', $query))
+            ->getJson(route('admin.employment.metrics', $query))
             ->assertStatus(422)
             ->assertJsonValidationErrors([$errorKey])
             ->assertJsonMissingPath('kpis')
@@ -284,10 +284,10 @@ class ApplicationMetricsHttpTest extends TestCase
         $this->applied('2001-03-10 09:00:00');
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.metrics', ['from' => '1990-01-01', 'to' => '1990-12-31']))
+            ->get(route('admin.employment.metrics', ['from' => '1990-01-01', 'to' => '1990-12-31']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/metrics/Index', false)
+                ->component('employment/metrics/Index', false)
                 ->where('filter', ['range' => 'custom', 'from' => '1990-01-01', 'to' => '1990-12-31'])
                 ->where('ghostedAfterDays', 30)
                 ->where('ghostRateApplicable', true)
@@ -303,7 +303,7 @@ class ApplicationMetricsHttpTest extends TestCase
     public function test_reload_keeps_the_period(): void
     {
         $this->applied('2001-03-10 09:00:00');
-        $url = route('admin.resume.metrics', ['from' => '2001-03-01', 'to' => '2001-03-31']);
+        $url = route('admin.employment.metrics', ['from' => '2001-03-01', 'to' => '2001-03-31']);
 
         $first = $this->metricsAt($url);
         $second = $this->metricsAt($url);
@@ -311,7 +311,7 @@ class ApplicationMetricsHttpTest extends TestCase
         $this->assertSame(['range' => 'custom', 'from' => '2001-03-01', 'to' => '2001-03-31'], $first['filter']);
         $this->assertEquals($first, $second);
 
-        $preset = route('admin.resume.metrics', ['range' => '90d']);
+        $preset = route('admin.employment.metrics', ['range' => '90d']);
 
         $this->assertSame('90d', $this->metricsAt($preset)['filter']['range']);
         $this->assertEquals($this->metricsAt($preset), $this->metricsAt($preset));
@@ -399,7 +399,7 @@ class ApplicationMetricsHttpTest extends TestCase
      */
     private function metrics(array $query = []): array
     {
-        return $this->metricsAt(route('admin.resume.metrics', $query));
+        return $this->metricsAt(route('admin.employment.metrics', $query));
     }
 
     /**
@@ -413,7 +413,7 @@ class ApplicationMetricsHttpTest extends TestCase
             ->get($url)
             ->assertOk()
             ->assertInertia(function (Assert $page) use (&$props): Assert {
-                $props = $page->component('resume/metrics/Index', false)->toArray()['props'];
+                $props = $page->component('employment/metrics/Index', false)->toArray()['props'];
 
                 return $page;
             });

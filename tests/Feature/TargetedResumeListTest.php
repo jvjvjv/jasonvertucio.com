@@ -90,8 +90,8 @@ class TargetedResumeListTest extends TestCase
         $deleted = Application::factory()->withTargetedResume()->create(['company_name' => self::MARKER.' Deleted Co']);
 
         $this->actingAs($this->admin)
-            ->delete(route('admin.resume.applications.destroy', $deleted))
-            ->assertRedirect(route('admin.resume.applications.index'));
+            ->delete(route('admin.employment.applications.destroy', $deleted))
+            ->assertRedirect(route('admin.employment.applications.index'));
 
         $this->assertSame([$kept->targeted_resume_id], $this->listedIds());
         $this->assertNotNull(TargetedResume::query()->find($deleted->targeted_resume_id));
@@ -182,10 +182,10 @@ class TargetedResumeListTest extends TestCase
         $this->assertSame($application->id, $applicationId);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $applicationId))
+            ->get(route('admin.employment.applications.show', $applicationId))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Show', false)
+                ->component('employment/applications/Show', false)
                 ->where('application.id', $application->id)
                 ->where('targetedResume.id', $application->targeted_resume_id)
             );
@@ -260,7 +260,7 @@ class TargetedResumeListTest extends TestCase
                 ->where('filters', ['search' => ''])
             );
 
-        $this->actingAs($this->admin)->get(route('admin.resume.applications.create'))->assertOk();
+        $this->actingAs($this->admin)->get(route('admin.employment.applications.create'))->assertOk();
     }
 
     // ---------------------------------------------------------------------
@@ -331,7 +331,7 @@ class TargetedResumeListTest extends TestCase
         ]);
 
         $targetedResumeId = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), [
+            ->postJson(route('admin.employment.applications.finalize', $application), [
                 'tailored_content' => "Title: Staff Platform Engineer\n\n# Summary\nTailored in chat",
             ])
             ->assertOk()
@@ -358,7 +358,7 @@ class TargetedResumeListTest extends TestCase
                 ])
             );
 
-        $this->actingAs($this->admin)->get(route('admin.resume.applications.show', $application->id))->assertOk();
+        $this->actingAs($this->admin)->get(route('admin.employment.applications.show', $application->id))->assertOk();
     }
 
     public function test_editor_falls_back_to_the_stored_content_when_there_is_no_markdown_key(): void
@@ -377,11 +377,11 @@ class TargetedResumeListTest extends TestCase
         $application = Application::factory()->withConversation()->create(['company_name' => self::MARKER.' Unfinalized Co']);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page->where('targetedResume', null));
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => self::MARKER.' Unfinalized']))
+            ->get(route('admin.employment.applications.index', ['search' => self::MARKER.' Unfinalized']))
             ->assertInertia(fn (Assert $page) => $page
                 ->has('applications', 1)
                 ->where('applications.0.id', $application->id)
@@ -397,7 +397,7 @@ class TargetedResumeListTest extends TestCase
 
         $cardResumeId = null;
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(function (Assert $page) use (&$cardResumeId): Assert {
                 $cardResumeId = $page->toArray()['props']['targetedResume']['id'];
 
@@ -418,7 +418,7 @@ class TargetedResumeListTest extends TestCase
         $application = Application::factory()->withTargetedResume()->create(['company_name' => self::MARKER.' Listed Co']);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => self::MARKER]))
+            ->get(route('admin.employment.applications.index', ['search' => self::MARKER]))
             ->assertInertia(fn (Assert $page) => $page
                 ->has('applications', 1)
                 ->where('applications.0.targeted_resume_id', $application->targeted_resume_id)
@@ -463,7 +463,7 @@ class TargetedResumeListTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('admin.resume.targeted.destroy', $targetedResumeId))
-            ->assertRedirect(route('admin.resume.applications.show', $application))
+            ->assertRedirect(route('admin.employment.applications.show', $application))
             ->assertSessionHas('success', 'Targeted resume discarded.');
 
         $this->assertDatabaseMissing('targeted_resumes', ['id' => $targetedResumeId]);
@@ -482,7 +482,7 @@ class TargetedResumeListTest extends TestCase
         $this->assertSame([], $this->listedIds());
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => self::MARKER]))
+            ->get(route('admin.employment.applications.index', ['search' => self::MARKER]))
             ->assertInertia(fn (Assert $page) => $page
                 ->has('applications', 1)
                 ->where('applications.0.targeted_resume_id', null)
@@ -500,7 +500,7 @@ class TargetedResumeListTest extends TestCase
         $this->assertSame(0, AiLlmMessage::query()->where('ai_conversation_id', $conversationId)->count());
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('targetedResume', null)
@@ -519,7 +519,7 @@ class TargetedResumeListTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('admin.resume.targeted.destroy', $targetedResumeId))
-            ->assertRedirect(route('admin.resume.applications.show', $application));
+            ->assertRedirect(route('admin.employment.applications.show', $application));
 
         $this->assertDatabaseMissing('targeted_resumes', ['id' => $targetedResumeId]);
         $this->assertSame($messages, AiConversationMessage::query()->count());
@@ -602,7 +602,7 @@ class TargetedResumeListTest extends TestCase
                 ->assertInertia(fn (Assert $page) => $page->where('targetedResume.can_discard', $expected));
 
             $this->actingAs($this->admin)
-                ->get(route('admin.resume.applications.show', $application))
+                ->get(route('admin.employment.applications.show', $application))
                 ->assertInertia(fn (Assert $page) => $page->where('application.has_applied', ! $expected));
         }
     }
@@ -613,7 +613,7 @@ class TargetedResumeListTest extends TestCase
         $entry = $application->statusUpdates()->sole();
 
         $this->actingAs($this->admin)
-            ->deleteJson(route('admin.resume.applications.status-updates.destroy', [$application, $entry]))
+            ->deleteJson(route('admin.employment.applications.status-updates.destroy', [$application, $entry]))
             ->assertOk()
             ->assertJsonPath('status', 'draft');
 
@@ -623,7 +623,7 @@ class TargetedResumeListTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('admin.resume.targeted.destroy', $application->targeted_resume_id))
-            ->assertRedirect(route('admin.resume.applications.show', $application));
+            ->assertRedirect(route('admin.employment.applications.show', $application));
 
         $this->assertNull($application->fresh()->targeted_resume_id);
     }
@@ -635,10 +635,10 @@ class TargetedResumeListTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('admin.resume.targeted.destroy', $discardedId))
-            ->assertRedirect(route('admin.resume.applications.show', $application));
+            ->assertRedirect(route('admin.employment.applications.show', $application));
 
         $newId = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), [
+            ->postJson(route('admin.employment.applications.finalize', $application), [
                 'tailored_content' => "Title: Rebuilt Engineer\n\n# Summary\nRebuilt",
             ])
             ->assertOk()

@@ -201,7 +201,7 @@ export default function DetailsForm({
 
         try {
             await api.put(
-                `/api/admin/resume/applications/${application.id}`,
+                `/api/admin/employment/applications/${application.id}`,
                 payload,
             );
             setSaved(true);

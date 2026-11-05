@@ -72,7 +72,7 @@ class TargetedResumeSystemsTest extends TestCase
         AiSystemFeatureDefault::create(['ai_system_id' => $plain->id, 'feature' => 'company-intel']);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.create'))
+            ->get(route('admin.employment.applications.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('systems', fn ($systems): bool => collect($systems)->pluck('id')->all() === [$eligible->id]));
     }
@@ -83,7 +83,7 @@ class TargetedResumeSystemsTest extends TestCase
         $applications = Application::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'analyze',
                 'ai_system_id' => $plain->id,
                 'job_description' => 'Build ineligible things.',
@@ -100,7 +100,7 @@ class TargetedResumeSystemsTest extends TestCase
         $applications = Application::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'ai_system_id' => $plain->id,
                 'job_description' => 'Applied with an ineligible system.',
@@ -117,7 +117,7 @@ class TargetedResumeSystemsTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), [
+            ->postJson(route('admin.employment.applications.analysis', $application), [
                 'ai_system_id' => AiSystem::factory()->create(['system_prompt_id' => null])->id,
             ])
             ->assertStatus(422)

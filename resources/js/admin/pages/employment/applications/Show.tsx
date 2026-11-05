@@ -128,7 +128,7 @@ export default function Show({
         setActionError(null);
         try {
             const data = await api.post<{ redirect?: string }>(
-                `/api/admin/resume/applications/${application.id}/pass`,
+                `/api/admin/employment/applications/${application.id}/pass`,
             );
             if (data.redirect) {
                 router.visit(data.redirect);
@@ -238,7 +238,7 @@ export default function Show({
                 >
                     <IconButton
                         component={InertiaLink}
-                        href="/admin/resume/applications"
+                        href="/admin/employment/applications"
                         aria-label="Back to Applications"
                         size="small"
                         sx={{ ml: 0.5 }}
