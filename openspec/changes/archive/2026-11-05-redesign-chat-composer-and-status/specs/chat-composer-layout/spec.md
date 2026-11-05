@@ -6,26 +6,41 @@ How the chat message composer is laid out: its controls never cover the text bei
 
 ### Requirement: Composer controls never overlap the message text
 
-The composer SHALL place its controls (Microphone, Send, Stop, Refresh) and its status readout in a toolbar row below the text area, inside the same bordered surface. No control or status text SHALL be drawn over the text area at any draft length, scroll position or focus state.
+The composer SHALL be one bordered surface holding a text column and, to its right behind a hairline, an action margin with its controls (Microphone, Send, Stop, Refresh). The text SHALL wrap at the text column's edge, and the margin's controls SHALL stay at the bottom of the row as the text grows. The status rail SHALL run along the surface's top edge and the status words SHALL be shown in a caption line beneath the surface. No control or status text SHALL be drawn over the text column at any draft length, scroll position or focus state.
 
 #### Scenario: Long draft scrolls clear of the buttons
 
 - **WHEN** a focused composer holds more text than its height cap and the user scrolls the text to its last line
-- **THEN** every line of text is fully visible inside the text area and none of it is behind Microphone, Send or Stop
+- **THEN** every line of text is fully visible inside the text column and none of it is behind Microphone, Send or Stop
 
 #### Scenario: Caret at the end of a long line
 
 - **WHEN** the user types a single line long enough to wrap, with the caret at the end of the last line
-- **THEN** the text wraps at the text area's right edge and the caret is not behind any control
+- **THEN** the text wraps at the text column's edge, before the action margin, and the caret is not behind any control
+
+#### Scenario: Buttons stay at the bottom of a tall draft
+
+- **WHEN** the focused composer has grown to several lines
+- **THEN** Microphone and Send are aligned to the bottom of the action margin
+
+#### Scenario: Collapsed composer is one line
+
+- **WHEN** the composer is not focused
+- **THEN** it is one line of text tall, with the rail above and the action margin beside it
 
 #### Scenario: Dictation state does not overlay the text
 
 - **WHEN** a voice user is recording and the composer already holds text
-- **THEN** the recording time is shown in the toolbar row and none of the draft is covered by it
+- **THEN** the recording time is shown in the caption line beneath the composer and none of the draft is covered by it
 
 ### Requirement: Composer takes its own space below the transcript
 
-The chat card SHALL lay out the transcript and the composer as a column within a fixed overall height, with the composer in normal flow beneath the transcript. As the composer grows, the transcript SHALL become shorter; the composer SHALL NOT be drawn over any part of the transcript.
+The chat card SHALL lay out the transcript and the composer as a column whose height fills the viewport below the page's own chrome, with the composer in normal flow beneath the transcript. As the composer grows, the transcript SHALL become shorter; the composer SHALL NOT be drawn over any part of the transcript.
+
+#### Scenario: Card reaches the bottom of the window
+
+- **WHEN** a chat page loads with any amount of page chrome above the chat card
+- **THEN** the card's bottom edge meets the bottom of the window and the page itself does not scroll
 
 #### Scenario: Growing draft shortens the transcript
 
@@ -40,11 +55,11 @@ The chat card SHALL lay out the transcript and the composer as a column within a
 #### Scenario: Slots above and below the composer stay in the column
 
 - **WHEN** a chat surface passes `beforeSend` and `afterSend` content (as the public chat does for the visitor form and the persona note)
-- **THEN** that content is shown above and below the composer surface, inside the card's column, and does not cover the transcript
+- **THEN** the `beforeSend` content is shown above the composer surface and the `afterSend` content below its caption line, inside the card's column, and neither covers the transcript
 
 ### Requirement: Transcript stays pinned to its newest message while the composer resizes
 
-When the transcript is scrolled to its newest message, it SHALL remain scrolled to its newest message as the composer grows or shrinks. When the user has scrolled up to read earlier messages, resizing the composer SHALL NOT move their reading position to the end.
+When the transcript is scrolled to its newest message, it SHALL remain scrolled to its newest message as the composer grows or shrinks, including when the caption line wraps. When the user has scrolled up to read earlier messages, resizing the composer SHALL NOT move their reading position to the end.
 
 #### Scenario: At the bottom while typing
 
@@ -72,7 +87,7 @@ The focused composer SHALL grow to at most eight lines on screens at or above th
 
 ### Requirement: Stop takes Send's place while a reply streams
 
-While a reply is streaming, the composer SHALL show a Stop control in the position Send occupies, and activating it or pressing Esc SHALL stop the reply. When the reply ends, Send SHALL return in the same position.
+While a reply is streaming, the composer SHALL show a Stop control in the position Send occupies in the action margin, and activating it or pressing Esc SHALL stop the reply. When the reply ends, Send SHALL return in the same position.
 
 #### Scenario: Stopping a reply
 
