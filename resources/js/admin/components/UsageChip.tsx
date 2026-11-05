@@ -3,18 +3,42 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import type { ConversationUsage } from "@/types";
-import type { ChipProps } from "@mui/material/Chip";
 
 interface UsageChipProps {
     usage?: ConversationUsage | null;
 }
 
+const compactNumber = new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+});
+
 function formatTokens(value: number | null | undefined): string {
     return value != null ? value.toLocaleString() : "—";
 }
 
+function totalTokens(
+    usage: ConversationUsage | null | undefined,
+): number | null {
+    if (usage == null) {
+        return null;
+    }
+
+    if (usage.total_tokens != null) {
+        return usage.total_tokens;
+    }
+
+    if (usage.input_tokens != null || usage.output_tokens != null) {
+        return (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0);
+    }
+
+    return null;
+}
+
 export default function UsageChip({ usage }: UsageChipProps) {
-    if (usage?.cost_usd == null) {
+    const total = totalTokens(usage);
+
+    if (usage == null || total == null) {
         return (
             <Typography variant="caption" color="text.secondary">
                 —
@@ -22,25 +46,9 @@ export default function UsageChip({ usage }: UsageChipProps) {
         );
     }
 
-    const chipColor: ChipProps["color"] =
-        usage.cost_usd <= 0.1
-            ? "success"
-            : usage.cost_usd <= 0.35
-              ? "primary"
-              : usage.cost_usd <= 0.5
-                ? "info"
-                : usage.cost_usd <= 0.75
-                  ? "default"
-                  : usage.cost_usd <= 0.99
-                    ? "warning"
-                    : "error";
-    const chipVariant: ChipProps["variant"] =
-        usage.cost_usd <= 0.75 ? "outlined" : "filled";
-
     const tooltip = [
         `Input tokens: ${formatTokens(usage.input_tokens)}`,
         `Output tokens: ${formatTokens(usage.output_tokens)}`,
-        `Cost: $${usage.cost_usd.toFixed(4)}`,
     ].join("\n");
 
     return (
@@ -50,10 +58,9 @@ export default function UsageChip({ usage }: UsageChipProps) {
             placement="left"
         >
             <Chip
-                label={`$${usage.cost_usd.toFixed(2)}`}
+                label={compactNumber.format(total)}
                 size="small"
-                color={chipColor}
-                variant={chipVariant}
+                variant="outlined"
                 sx={{
                     display: "inline-flex",
                     fontWeight: 600,

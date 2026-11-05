@@ -37,6 +37,11 @@ class AiConversationControllerTest extends TestCase
             'feature' => $bot->featureKey(),
             'title' => 'Conversation about contact form',
             'visitor_name' => 'Taylor',
+            'usage_input_tokens' => 10000,
+            'usage_output_tokens' => 2400,
+            'usage_total_tokens' => 12400,
+            'usage_cost_usd' => 0.42,
+            'usage_synced_at' => now(),
         ]);
 
         AiConversationMessage::query()->create([
@@ -54,6 +59,13 @@ class AiConversationControllerTest extends TestCase
             ->where('conversations.data.0.title', 'Conversation about contact form')
             ->where('conversations.data.0.visitor_name', 'Taylor')
             ->where('conversations.data.0.ai_chat_bot_name', 'Public Intake')
+            ->has('conversations.data.0.usage', fn (Assert $usage) => $usage
+                ->where('input_tokens', 10000)
+                ->where('output_tokens', 2400)
+                ->where('total_tokens', 12400)
+                ->has('synced_at')
+                ->missing('cost_usd')
+            )
         );
     }
 
@@ -63,6 +75,11 @@ class AiConversationControllerTest extends TestCase
         $conversation = AiConversation::factory()->create([
             'title' => 'Memory review',
             'feature' => 'persona:memory-review',
+            'usage_input_tokens' => 10000,
+            'usage_output_tokens' => 2400,
+            'usage_total_tokens' => 12400,
+            'usage_cost_usd' => 0.42,
+            'usage_synced_at' => now(),
         ]);
 
         AiConversationMessage::query()->create([
@@ -86,6 +103,13 @@ class AiConversationControllerTest extends TestCase
             ->where('conversation.title', 'Memory review')
             ->where('messages.0.content', 'A saved response.')
             ->where('memories.0.key', 'prefers-concise-tone')
+            ->has('conversation.usage', fn (Assert $usage) => $usage
+                ->where('input_tokens', 10000)
+                ->where('output_tokens', 2400)
+                ->where('total_tokens', 12400)
+                ->has('synced_at')
+                ->missing('cost_usd')
+            )
         );
     }
 

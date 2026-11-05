@@ -10,36 +10,27 @@ interface HistoryItem {
     is_current: boolean;
     is_stale: boolean;
     updated_at: string;
-    cost_usd: number | null;
 }
 
 interface Bot {
     required_permission: string | null;
     require_visitor_identity: boolean;
-    total_cost_usd: number;
 }
 
 interface ChatHistoryPanelProps {
     bot: Bot;
     history: HistoryItem[];
-    formatCost: (_value: number | null | undefined) => string;
     onSwitch: (_handle: string) => void;
 }
 
 export default function ChatHistoryPanel({
     bot,
     history,
-    formatCost,
     onSwitch,
 }: ChatHistoryPanelProps) {
     return (
         <Stack spacing={2}>
-            <ChatHistoryListCard
-                history={history}
-                totalCostUsd={bot.total_cost_usd}
-                formatCost={formatCost}
-                onSwitch={onSwitch}
-            />
+            <ChatHistoryListCard history={history} onSwitch={onSwitch} />
             <BotAccessCard bot={bot} />
             <PromptNotesCard />
         </Stack>

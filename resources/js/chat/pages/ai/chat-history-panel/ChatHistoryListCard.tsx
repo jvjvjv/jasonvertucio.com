@@ -1,4 +1,3 @@
-import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import List from "@mui/material/List";
@@ -13,20 +12,15 @@ interface HistoryItem {
     is_current: boolean;
     is_stale: boolean;
     updated_at: string;
-    cost_usd: number | null;
 }
 
 interface ChatHistoryListCardProps {
     history: HistoryItem[];
-    totalCostUsd: number;
-    formatCost: (value: number | null | undefined) => string;
     onSwitch: (handle: string) => void;
 }
 
 export default function ChatHistoryListCard({
     history,
-    totalCostUsd,
-    formatCost,
     onSwitch,
 }: ChatHistoryListCardProps) {
     return (
@@ -52,30 +46,12 @@ export default function ChatHistoryListCard({
                     </Typography>
                 </Stack>
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 1.5,
-                        px: 1,
-                    }}
-                >
-                    <Typography variant="body2" color="text.secondary">
-                        Overall Persona Cost
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {formatCost(totalCostUsd)}
-                    </Typography>
-                </Box>
-
                 {history.length > 0 ? (
                     <List disablePadding>
                         {history.map((item) => (
                             <ChatHistoryListItem
                                 key={item.handle}
                                 item={item}
-                                formatCost={formatCost}
                                 onSwitch={onSwitch}
                             />
                         ))}

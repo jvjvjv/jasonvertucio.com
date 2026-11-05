@@ -60,6 +60,23 @@ class HostChatBotPagePayloadTest extends TestCase
         );
     }
 
+    public function test_chat_page_bot_carries_no_total_cost(): void
+    {
+        $bot = AiChatBot::factory()->create([
+            'required_permission' => null,
+            'access_path' => AiChatBot::ACCESS_PATH_CHAT,
+        ]);
+
+        $response = $this->get(route('chat-bots.chat.show', $bot));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('ai/ChatBot', false)
+            ->has('bot.name')
+            ->missing('bot.total_cost_usd')
+        );
+    }
+
     public function test_previous_href_preserves_a_same_host_referer(): void
     {
         $bot = AiChatBot::factory()->create([

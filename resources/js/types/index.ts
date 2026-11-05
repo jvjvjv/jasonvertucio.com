@@ -298,6 +298,8 @@ export interface ApplicationListItem {
     latest_status_update: { status: string; occurred_at: string } | null;
     /** Already humanised by the server ("3 days ago"). */
     last_activity_at: string | null;
+    /** The same moment as an ISO 8601 timestamp, for the exact-time tooltip. */
+    last_activity_at_iso: string | null;
     /**
      * The application's own intel (`scope: "role"`), or else another
      * application's intel at the same company (`scope: "company"`).
@@ -327,7 +329,6 @@ export interface ConversationUsage {
     input_tokens: number | null;
     output_tokens: number | null;
     total_tokens: number | null;
-    cost_usd: number | null;
     synced_at?: string | null;
 }
 

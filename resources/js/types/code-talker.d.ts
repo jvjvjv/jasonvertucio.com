@@ -58,7 +58,6 @@ export interface ChatHistoryEntry {
     is_stale: boolean;
     /** Human-readable, e.g. '3 hours ago'. */
     updated_at: string;
-    cost_usd: number | null;
 }
 
 export interface ChatBotSummary {
@@ -66,8 +65,6 @@ export interface ChatBotSummary {
     description: string | null;
     /** Whether anonymous visitors are asked for a name and email. */
     require_visitor_identity: boolean;
-    /** Lifetime spend across every conversation with this bot. */
-    total_cost_usd: number;
 }
 
 /** Props for the component configured as `inertia.components.chat_bot`. */

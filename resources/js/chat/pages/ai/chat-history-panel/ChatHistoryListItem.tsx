@@ -11,18 +11,15 @@ interface HistoryItem {
     is_current: boolean;
     is_stale: boolean;
     updated_at: string;
-    cost_usd: number | null;
 }
 
 interface ChatHistoryListItemProps {
     item: HistoryItem;
-    formatCost: (value: number | null | undefined) => string;
     onSwitch: (handle: string) => void;
 }
 
 export default function ChatHistoryListItem({
     item,
-    formatCost,
     onSwitch,
 }: ChatHistoryListItemProps) {
     return (
@@ -53,7 +50,6 @@ export default function ChatHistoryListItem({
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                justifyContent: "space-between",
                                 mt: 0.5,
                             }}
                         >
@@ -67,16 +63,6 @@ export default function ChatHistoryListItem({
                                 }}
                             >
                                 {item.updated_at}
-                            </Typography>
-                            <Typography
-                                component="span"
-                                sx={{
-                                    fontSize: "0.72rem",
-                                    color: "text.secondary",
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Cost: {formatCost(item.cost_usd)}
                             </Typography>
                         </Box>
                     }

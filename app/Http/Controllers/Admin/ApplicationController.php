@@ -330,9 +330,10 @@ class ApplicationController extends Controller
      *     targeted_resume_id: ?int,
      *     has_conversation: bool,
      *     messages_count: ?int,
-     *     usage: ?array{input_tokens: ?int, output_tokens: ?int, total_tokens: ?int, cost_usd: ?float, synced_at: ?string},
+     *     usage: ?array{input_tokens: ?int, output_tokens: ?int, total_tokens: ?int, synced_at: ?string},
      *     latest_status_update: ?array{status: string, occurred_at: ?string},
-     *     last_activity_at: ?string
+     *     last_activity_at: ?string,
+     *     last_activity_at_iso: ?string
      * }
      */
     /**
@@ -401,6 +402,7 @@ class ApplicationController extends Controller
     {
         $conversation = $application->conversation;
         $latestStatusUpdate = $application->latestStatusUpdate;
+        $lastActivityAt = $this->lastActivityAt($application);
 
         return [
             'id' => $application->id,
@@ -418,7 +420,8 @@ class ApplicationController extends Controller
                 'status' => $latestStatusUpdate->status->value,
                 'occurred_at' => $latestStatusUpdate->occurred_at?->toDateString(),
             ] : null,
-            'last_activity_at' => $this->lastActivityAt($application)?->diffForHumans(),
+            'last_activity_at' => $lastActivityAt?->diffForHumans(),
+            'last_activity_at_iso' => $lastActivityAt?->toIso8601String(),
             'intel' => $this->intelCell($application, $companyIntel),
         ];
     }

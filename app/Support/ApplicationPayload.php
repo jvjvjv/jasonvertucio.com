@@ -70,9 +70,9 @@ class ApplicationPayload
     }
 
     /**
-     * An AI session's token usage and cost.
+     * An AI session's token usage.
      *
-     * @return array{input_tokens: ?int, output_tokens: ?int, total_tokens: ?int, cost_usd: ?float, synced_at: ?string}
+     * @return array{input_tokens: ?int, output_tokens: ?int, total_tokens: ?int, synced_at: ?string}
      */
     public function usage(AiConversation $conversation): array
     {
@@ -80,7 +80,6 @@ class ApplicationPayload
             'input_tokens' => $conversation->usage_input_tokens,
             'output_tokens' => $conversation->usage_output_tokens,
             'total_tokens' => $conversation->usage_total_tokens,
-            'cost_usd' => $conversation->usage_cost_usd !== null ? (float) $conversation->usage_cost_usd : null,
             'synced_at' => $conversation->usage_synced_at?->toIso8601String(),
         ];
     }
