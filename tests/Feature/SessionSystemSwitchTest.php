@@ -153,7 +153,7 @@ class SessionSystemSwitchTest extends TestCase
         $application = $this->applicationOn($current, str_repeat('a', 400));
 
         $response = $this->actingAs($this->admin)
-            ->getJson(route('admin.resume.applications.system-switch.show', $application))
+            ->getJson(route('admin.employment.applications.system-switch.show', $application))
             ->assertOk()
             ->assertJsonPath('current.id', $current->id);
 
@@ -185,7 +185,7 @@ class SessionSystemSwitchTest extends TestCase
         $application = $this->applicationOn($from);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.system-switch.update', $application), ['ai_system_id' => $to->id])
+            ->postJson(route('admin.employment.applications.system-switch.update', $application), ['ai_system_id' => $to->id])
             ->assertOk()
             ->assertJson(['success' => true]);
 
@@ -208,7 +208,7 @@ class SessionSystemSwitchTest extends TestCase
         $application = $this->applicationOn($from, $prompt);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.system-switch.update', $application), ['ai_system_id' => $to->id])
+            ->postJson(route('admin.employment.applications.system-switch.update', $application), ['ai_system_id' => $to->id])
             ->assertOk();
 
         $captured = [];
@@ -225,7 +225,7 @@ class SessionSystemSwitchTest extends TestCase
         $application = $this->applicationOn($from);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.system-switch.update', $application), [
+            ->postJson(route('admin.employment.applications.system-switch.update', $application), [
                 'ai_system_id' => AiSystem::factory()->create(['system_prompt_id' => null])->id,
             ])
             ->assertStatus(422)
@@ -241,7 +241,7 @@ class SessionSystemSwitchTest extends TestCase
         $application = $this->applicationOn($from);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.system-switch.update', $application), ['ai_system_id' => $from->id])
+            ->postJson(route('admin.employment.applications.system-switch.update', $application), ['ai_system_id' => $from->id])
             ->assertStatus(422);
 
         $this->assertCount(0, $this->notes($application->ai_conversation_id));
@@ -257,7 +257,7 @@ class SessionSystemSwitchTest extends TestCase
 
         try {
             $this->actingAs($this->admin)
-                ->postJson(route('admin.resume.applications.system-switch.update', $application), ['ai_system_id' => $to->id])
+                ->postJson(route('admin.employment.applications.system-switch.update', $application), ['ai_system_id' => $to->id])
                 ->assertStatus(409)
                 ->assertJsonPath('message', 'A reply is still being written. Wait for it to finish, then switch.');
         } finally {
@@ -275,7 +275,7 @@ class SessionSystemSwitchTest extends TestCase
         $this->captureTurn($captured);
 
         $this->actingAs($this->admin)
-            ->post(route('admin.resume.applications.chat', $application), ['message' => 'One more thing.'])
+            ->post(route('admin.employment.applications.chat', $application), ['message' => 'One more thing.'])
             ->assertOk()
             ->streamedContent();
 
@@ -290,11 +290,11 @@ class SessionSystemSwitchTest extends TestCase
         $application = Application::factory()->create();
 
         $this->actingAs($this->admin)
-            ->getJson(route('admin.resume.applications.system-switch.show', $application))
+            ->getJson(route('admin.employment.applications.system-switch.show', $application))
             ->assertStatus(409);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.system-switch.update', $application), [
+            ->postJson(route('admin.employment.applications.system-switch.update', $application), [
                 'ai_system_id' => AiSystem::factory()->targetedResume()->create()->id,
             ])
             ->assertStatus(409);
@@ -308,8 +308,8 @@ class SessionSystemSwitchTest extends TestCase
         $intel = $this->intelOn($this->intelSystem());
         $outsider = User::factory()->create();
 
-        $this->actingAs($outsider)->getJson(route('admin.resume.applications.system-switch.show', $application))->assertForbidden();
-        $this->actingAs($outsider)->postJson(route('admin.resume.applications.system-switch.update', $application), ['ai_system_id' => $to->id])->assertForbidden();
+        $this->actingAs($outsider)->getJson(route('admin.employment.applications.system-switch.show', $application))->assertForbidden();
+        $this->actingAs($outsider)->postJson(route('admin.employment.applications.system-switch.update', $application), ['ai_system_id' => $to->id])->assertForbidden();
         $this->actingAs($outsider)->getJson(route('admin.employment.company-intel.system-switch.show', $intel))->assertForbidden();
         $this->actingAs($outsider)->postJson(route('admin.employment.company-intel.system-switch.update', $intel), ['ai_system_id' => $to->id])->assertForbidden();
 
@@ -322,17 +322,17 @@ class SessionSystemSwitchTest extends TestCase
         $application = $this->applicationOn($only);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page->where('conversation.can_switch', false));
 
         AiSystem::factory()->targetedResume()->create();
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page->where('conversation.can_switch', true));
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', Application::factory()->create()))
+            ->get(route('admin.employment.applications.show', Application::factory()->create()))
             ->assertInertia(fn (Assert $page) => $page->where('conversation', null));
     }
 

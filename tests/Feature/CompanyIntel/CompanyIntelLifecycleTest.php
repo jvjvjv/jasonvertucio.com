@@ -274,7 +274,7 @@ class CompanyIntelLifecycleTest extends TestCase
         ResumeVersion::query()->update(['is_current' => false]);
         ResumeVersion::factory()->create(['is_current' => true]);
 
-        $response = $this->postJson(route('admin.resume.applications.store'), [
+        $response = $this->postJson(route('admin.employment.applications.store'), [
             'intent' => 'applied',
             'job_description' => 'Build things.',
             'company_name' => 'Intel Applied Co',
@@ -291,7 +291,7 @@ class CompanyIntelLifecycleTest extends TestCase
         $this->app->instance(CompanyIntelSystems::class, $systems);
         $application = $this->application();
 
-        $this->postJson(route('admin.resume.applications.apply', $application), [])
+        $this->postJson(route('admin.employment.applications.apply', $application), [])
             ->assertSuccessful();
 
         $this->assertSame(ApplicationStatus::Applied, $application->fresh()->status);

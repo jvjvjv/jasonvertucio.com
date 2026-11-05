@@ -148,8 +148,8 @@ class ApplicationAccessHardeningTest extends TestCase
         });
 
         foreach ([
-            ['admin.resume.applications.finalize', ['tailored_content' => '# Summary']],
-            ['admin.resume.applications.finalize-cover-letter', ['cover_letter_content' => 'Dear team,']],
+            ['admin.employment.applications.finalize', ['tailored_content' => '# Summary']],
+            ['admin.employment.applications.finalize-cover-letter', ['cover_letter_content' => 'Dear team,']],
         ] as [$route, $payload]) {
             $response = $this->actingAs($this->resumeEditor)->postJson(route($route, $application), $payload);
 
@@ -169,7 +169,7 @@ class ApplicationAccessHardeningTest extends TestCase
         });
 
         $this->actingAs($this->resumeEditor)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => '# Summary'])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => '# Summary'])
             ->assertStatus(422)
             ->assertExactJson(['success' => false, 'message' => 'Could not read a resume from that content.']);
     }

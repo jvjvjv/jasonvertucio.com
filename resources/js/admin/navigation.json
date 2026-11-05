@@ -75,14 +75,14 @@
             "navigationItems": [
                 {
                     "can": "edit-resume",
-                    "href": "/admin/resume/applications",
+                    "href": "/admin/employment/applications",
                     "icon": "WorkOutline",
                     "label": "Applications",
                     "description": "Track every job you consider or apply to, with or without a tailored resume"
                 },
                 {
                     "can": "edit-resume",
-                    "href": "/admin/resume/metrics",
+                    "href": "/admin/employment/metrics",
                     "icon": "Insights",
                     "label": "Application Metrics",
                     "description": "Track applications, outcomes, and pipeline timelines"

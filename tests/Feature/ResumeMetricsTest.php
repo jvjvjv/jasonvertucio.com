@@ -139,10 +139,10 @@ class ResumeMetricsTest extends TestCase
         $this->application([[ApplicationStatus::Applied, 5]]);
 
         $this->actingAs($admin)
-            ->get(route('admin.resume.metrics'))
+            ->get(route('admin.employment.metrics'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/metrics/Index', false)
+                ->component('employment/metrics/Index', false)
                 ->has('timeline', 1)
                 ->where('kpis.totalApplied', 1)
             );
@@ -160,7 +160,7 @@ class ResumeMetricsTest extends TestCase
     public function test_metrics_page_defaults_to_all_time(): void
     {
         $this->actingAs($this->metricsAdmin())
-            ->get(route('admin.resume.metrics'))
+            ->get(route('admin.employment.metrics'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filter', ['range' => 'all', 'from' => null, 'to' => null])
@@ -193,7 +193,7 @@ class ResumeMetricsTest extends TestCase
 
         foreach ($expected as $range => $period) {
             $this->actingAs($admin)
-                ->get(route('admin.resume.metrics', ['range' => $range]))
+                ->get(route('admin.employment.metrics', ['range' => $range]))
                 ->assertOk()
                 ->assertInertia(fn (Assert $page) => $page
                     ->where('filter', ['range' => $range, 'from' => $period['from'], 'to' => $period['to']])
@@ -213,7 +213,7 @@ class ResumeMetricsTest extends TestCase
         $admin = $this->metricsAdmin();
 
         $this->actingAs($admin)
-            ->get(route('admin.resume.metrics', ['range' => '30d', 'from' => '2026-06-01', 'to' => '2026-06-30']))
+            ->get(route('admin.employment.metrics', ['range' => '30d', 'from' => '2026-06-01', 'to' => '2026-06-30']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filter', ['range' => 'custom', 'from' => '2026-06-01', 'to' => '2026-06-30'])
@@ -221,7 +221,7 @@ class ResumeMetricsTest extends TestCase
             );
 
         $this->actingAs($admin)
-            ->get(route('admin.resume.metrics', ['from' => '2026-08-01']))
+            ->get(route('admin.employment.metrics', ['from' => '2026-08-01']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filter', ['range' => 'custom', 'from' => '2026-08-01', 'to' => null])
@@ -229,7 +229,7 @@ class ResumeMetricsTest extends TestCase
             );
 
         $this->actingAs($admin)
-            ->get(route('admin.resume.metrics', ['to' => '2026-06-30']))
+            ->get(route('admin.employment.metrics', ['to' => '2026-06-30']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filter', ['range' => 'custom', 'from' => null, 'to' => '2026-06-30'])
@@ -249,13 +249,13 @@ class ResumeMetricsTest extends TestCase
 
         foreach ($invalid as $field => $query) {
             $this->actingAs($admin)
-                ->from(route('admin.resume.metrics'))
-                ->get(route('admin.resume.metrics', $query))
-                ->assertRedirect(route('admin.resume.metrics'))
+                ->from(route('admin.employment.metrics'))
+                ->get(route('admin.employment.metrics', $query))
+                ->assertRedirect(route('admin.employment.metrics'))
                 ->assertSessionHasErrors([$field]);
 
             $this->actingAs($admin)
-                ->getJson(route('admin.resume.metrics', $query))
+                ->getJson(route('admin.employment.metrics', $query))
                 ->assertStatus(422)
                 ->assertJsonValidationErrors([$field]);
         }

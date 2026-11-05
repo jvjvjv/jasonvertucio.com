@@ -86,7 +86,7 @@ class ApplicationFormRequestTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => 'Build things.',
                 'company_name' => 'Formzq Co',
@@ -109,7 +109,7 @@ class ApplicationFormRequestTest extends TestCase
         $limit = str_repeat('a', 191);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => 'Build things.',
                 'job_title' => $limit,
@@ -131,7 +131,7 @@ class ApplicationFormRequestTest extends TestCase
         $limit = str_repeat('a', 191);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), [
+            ->putJson(route('admin.employment.applications.update', $application), [
                 'company_name' => $limit,
                 'job_title' => $limit,
                 'location' => $limit,
@@ -193,7 +193,7 @@ class ApplicationFormRequestTest extends TestCase
         $title = $application->conversation->title;
 
         $response = $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), ['company_name' => 'Changed Company', ...$payload])
+            ->putJson(route('admin.employment.applications.update', $application), ['company_name' => 'Changed Company', ...$payload])
             ->assertStatus(422)
             ->assertJsonValidationErrors([$errorKey]);
 
@@ -226,7 +226,7 @@ class ApplicationFormRequestTest extends TestCase
         $application = Application::factory()->create(['fit_score' => 40]);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), ['fit_score' => $fitScore])
+            ->putJson(route('admin.employment.applications.update', $application), ['fit_score' => $fitScore])
             ->assertOk();
 
         $this->assertSame($fitScore, $application->fresh()->fit_score);
@@ -239,7 +239,7 @@ class ApplicationFormRequestTest extends TestCase
         $other = ResumeVersion::factory()->create();
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), [
+            ->putJson(route('admin.employment.applications.update', $application), [
                 'status' => 'hired',
                 'resume_version_id' => $other->id,
                 'targeted_resume_id' => 12345,
@@ -285,7 +285,7 @@ class ApplicationFormRequestTest extends TestCase
         $versionId = $application->resume_version_id;
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), $payload)
+            ->postJson(route('admin.employment.applications.apply', $application), $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors([$errorKey]);
 
@@ -325,7 +325,7 @@ class ApplicationFormRequestTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), $payload)
+            ->postJson(route('admin.employment.applications.analysis', $application), $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors(['ai_system_id']);
 
@@ -374,7 +374,7 @@ class ApplicationFormRequestTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.status-updates.store', $application), $payload)
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors([$errorKey]);
 
@@ -394,7 +394,7 @@ class ApplicationFormRequestTest extends TestCase
             $application = Application::factory()->applied()->create();
 
             $this->actingAs($this->admin)
-                ->postJson(route('admin.resume.applications.status-updates.store', $application), [
+                ->postJson(route('admin.employment.applications.status-updates.store', $application), [
                     'status' => $status->value,
                     'notes' => $notes,
                     'occurred_at' => '2026-06-12',
@@ -441,7 +441,7 @@ class ApplicationFormRequestTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.status-updates.update', [$application, $entry]), $payload)
+            ->putJson(route('admin.employment.applications.status-updates.update', [$application, $entry]), $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors([$errorKey]);
 
@@ -461,7 +461,7 @@ class ApplicationFormRequestTest extends TestCase
         $entry = $application->statusUpdates()->sole();
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.status-updates.update', [$application, $entry]), [
+            ->putJson(route('admin.employment.applications.status-updates.update', [$application, $entry]), [
                 'status' => 'hired',
                 'notes' => 'Edited',
                 'occurred_at' => '2026-06-12',
@@ -478,7 +478,7 @@ class ApplicationFormRequestTest extends TestCase
     public function test_status_update_routes_are_not_found_for_an_unknown_entry(): void
     {
         $application = Application::factory()->applied()->create();
-        $base = "/api/admin/resume/applications/{$application->id}/status-updates";
+        $base = "/api/admin/employment/applications/{$application->id}/status-updates";
 
         $this->actingAs($this->admin)->putJson("{$base}/999999999", ['occurred_at' => '2026-06-12'])->assertNotFound();
         $this->actingAs($this->admin)->deleteJson("{$base}/999999999")->assertNotFound();

@@ -73,10 +73,10 @@ class ApplicationCreateTest extends TestCase
         AiSystemFeatureDefault::create(['ai_system_id' => $inactive->id, 'feature' => 'chat']);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.create'))
+            ->get(route('admin.employment.applications.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Create', false)
+                ->component('employment/applications/Create', false)
                 ->where('currentResumeVersionId', $current->id)
                 ->where('defaultSystemId', $resumeSystem->id)
                 ->where('coverLetterDefaultId', $resumeSystem->id)
@@ -104,7 +104,7 @@ class ApplicationCreateTest extends TestCase
         $applications = Application::withTrashed()->count();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'analyze',
                 'ai_system_id' => $system->id,
                 'job_description' => self::JOB_DESCRIPTION,
@@ -120,7 +120,7 @@ class ApplicationCreateTest extends TestCase
 
         $response->assertExactJson([
             'application_id' => $application->id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
 
         $this->assertSame(ApplicationStatus::Draft, $application->status);
@@ -142,7 +142,7 @@ class ApplicationCreateTest extends TestCase
             ->get($response->json('redirect'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Show', false)
+                ->component('employment/applications/Show', false)
                 ->where('application.id', $application->id)
                 ->where('application.status', 'draft')
                 ->where('conversation.id', $conversation->id)
@@ -158,7 +158,7 @@ class ApplicationCreateTest extends TestCase
         $other = ResumeVersion::factory()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'analyze',
                 'ai_system_id' => AiSystem::factory()->targetedResume()->create()->id,
                 'job_description' => self::JOB_DESCRIPTION,
@@ -183,7 +183,7 @@ class ApplicationCreateTest extends TestCase
         $documents = TargetedResume::query()->count();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => self::JOB_DESCRIPTION,
                 'job_title' => 'Staff Engineer',
@@ -196,7 +196,7 @@ class ApplicationCreateTest extends TestCase
 
         $response->assertExactJson([
             'application_id' => $application->id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
 
         $this->assertSame($current->id, $application->resume_version_id);
@@ -216,7 +216,7 @@ class ApplicationCreateTest extends TestCase
             ->get($response->json('redirect'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Show', false)
+                ->component('employment/applications/Show', false)
                 ->where('application.id', $application->id)
                 ->where('application.status', 'applied')
                 ->where('application.resume_version', ['id' => $current->id, 'version' => $current->version])
@@ -231,7 +231,7 @@ class ApplicationCreateTest extends TestCase
         $this->separateFeatureDefaults();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => self::JOB_DESCRIPTION,
             ])
@@ -270,7 +270,7 @@ class ApplicationCreateTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => $intent,
                 'ai_system_id' => AiSystem::factory()->create()->id,
                 'job_title' => 'Staff Engineer',
@@ -318,7 +318,7 @@ class ApplicationCreateTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'job_description' => self::JOB_DESCRIPTION,
                 'company_name' => 'Createzq Invalid Co',
                 ...$payload,
@@ -338,7 +338,7 @@ class ApplicationCreateTest extends TestCase
         $conversations = AiConversation::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'analyze',
                 'ai_system_id' => $resumeSystem->id,
                 'job_description' => self::JOB_DESCRIPTION,
@@ -357,7 +357,7 @@ class ApplicationCreateTest extends TestCase
         $applications = Application::withTrashed()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'analyze',
                 'ai_system_id' => AiSystem::factory()->create()->id,
                 'job_description' => self::JOB_DESCRIPTION,
@@ -380,7 +380,7 @@ class ApplicationCreateTest extends TestCase
         $sent = ResumeVersion::factory()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), ['resume_version_id' => $sent->id])
+            ->postJson(route('admin.employment.applications.apply', $application), ['resume_version_id' => $sent->id])
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('status', 'applied')
@@ -396,7 +396,7 @@ class ApplicationCreateTest extends TestCase
         $this->assertNotNull(TargetedResume::query()->find($targetedResumeId));
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('targetedResume.id', $targetedResumeId)
                 ->where('application.has_applied', true)
@@ -411,7 +411,7 @@ class ApplicationCreateTest extends TestCase
         $documents = TargetedResume::query()->count();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), ['resume_version_id' => $chosen->id])
+            ->postJson(route('admin.employment.applications.apply', $application), ['resume_version_id' => $chosen->id])
             ->assertOk()
             ->assertJsonPath('status', 'applied')
             ->assertJsonCount(1, 'status_updates');
@@ -426,7 +426,7 @@ class ApplicationCreateTest extends TestCase
         $this->assertSame('2026-05-04 14:30:00', $application->statusUpdates()->sole()->occurred_at->toDateTimeString());
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('targetedResume', null)
                 ->where('application.resume_version', ['id' => $chosen->id, 'version' => $chosen->version])
@@ -440,10 +440,10 @@ class ApplicationCreateTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('admin.resume.targeted.destroy', $application->targeted_resume_id))
-            ->assertRedirect(route('admin.resume.applications.show', $application));
+            ->assertRedirect(route('admin.employment.applications.show', $application));
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), ['resume_version_id' => $chosen->id])
+            ->postJson(route('admin.employment.applications.apply', $application), ['resume_version_id' => $chosen->id])
             ->assertOk()
             ->assertJsonPath('status', 'applied');
 
@@ -458,7 +458,7 @@ class ApplicationCreateTest extends TestCase
         $application = Application::factory()->passed()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.apply', $application), ['resume_version_id' => $application->resume_version_id])
+            ->postJson(route('admin.employment.applications.apply', $application), ['resume_version_id' => $application->resume_version_id])
             ->assertOk()
             ->assertJsonPath('status', 'applied')
             ->assertJsonCount(1, 'status_updates')
@@ -476,12 +476,12 @@ class ApplicationCreateTest extends TestCase
         $application = Application::factory()->withConversation()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.pass', $application))
+            ->postJson(route('admin.employment.applications.pass', $application))
             ->assertOk()
             ->assertExactJson([
                 'success' => true,
                 'status' => 'passed',
-                'redirect' => route('admin.resume.applications.index'),
+                'redirect' => route('admin.employment.applications.index'),
             ]);
 
         $this->assertSame(ApplicationStatus::Passed, $application->fresh()->status);
@@ -494,7 +494,7 @@ class ApplicationCreateTest extends TestCase
         $application = Application::factory()->create();
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.pass', $application))
+            ->postJson(route('admin.employment.applications.pass', $application))
             ->assertOk()
             ->assertJsonPath('status', 'passed');
 
@@ -517,7 +517,7 @@ class ApplicationCreateTest extends TestCase
         $application = Application::factory()->applied()->create(['status' => $status]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.pass', $application))
+            ->postJson(route('admin.employment.applications.pass', $application))
             ->assertStatus(409)
             ->assertJsonStructure(['message']);
 
@@ -541,7 +541,7 @@ class ApplicationCreateTest extends TestCase
         $document = TargetedResume::query()->findOrFail($application->targeted_resume_id);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), [
+            ->putJson(route('admin.employment.applications.update', $application), [
                 'company_name' => 'New Company',
                 'job_title' => 'New Position',
                 'location' => 'New City',
@@ -574,7 +574,7 @@ class ApplicationCreateTest extends TestCase
         }
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('application.company_name', 'New Company')
                 ->where('application.position', 'New Position')
@@ -597,7 +597,7 @@ class ApplicationCreateTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), [
+            ->putJson(route('admin.employment.applications.update', $application), [
                 'location' => null,
                 'fit_score' => null,
                 'fit_summary' => null,
@@ -626,7 +626,7 @@ class ApplicationCreateTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), ['company_name' => 'Only This Changed'])
+            ->putJson(route('admin.employment.applications.update', $application), ['company_name' => 'Only This Changed'])
             ->assertOk();
 
         $application->refresh();
@@ -644,7 +644,7 @@ class ApplicationCreateTest extends TestCase
         $application = Application::factory()->create(['company_name' => 'Kept Company', 'position' => 'Kept Position']);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), ['company_name' => null, 'job_title' => ''])
+            ->putJson(route('admin.employment.applications.update', $application), ['company_name' => null, 'job_title' => ''])
             ->assertOk();
 
         $this->assertSame('Kept Company', $application->fresh()->company_name);
@@ -666,15 +666,15 @@ class ApplicationCreateTest extends TestCase
         $this->assertSame(1, ApplicationStatusUpdate::query()->whereBetween('occurred_at', ['2001-03-01', '2001-04-01'])->count());
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.metrics', $period))
+            ->get(route('admin.employment.metrics', $period))
             ->assertInertia(fn (Assert $page) => $page->where('kpis.totalApplied', 1)->has('timeline', 1));
         $this->actingAs($this->admin)
             ->get(route('admin.resume.targeted.index', ['search' => 'Deletezq']))
             ->assertInertia(fn (Assert $page) => $page->has('targetedResumes', 1));
 
         $this->actingAs($this->admin)
-            ->delete(route('admin.resume.applications.destroy', $application))
-            ->assertRedirect(route('admin.resume.applications.index'))
+            ->delete(route('admin.employment.applications.destroy', $application))
+            ->assertRedirect(route('admin.employment.applications.index'))
             ->assertSessionHas('success');
 
         $this->assertSoftDeleted('applications', ['id' => $application->id]);
@@ -684,16 +684,16 @@ class ApplicationCreateTest extends TestCase
         $this->assertNotNull(TargetedResume::query()->find($application->targeted_resume_id));
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'Deletezq']))
+            ->get(route('admin.employment.applications.index', ['search' => 'Deletezq']))
             ->assertInertia(fn (Assert $page) => $page->where('applications', []));
         $this->actingAs($this->admin)
             ->get(route('admin.resume.targeted.index', ['search' => 'Deletezq']))
             ->assertInertia(fn (Assert $page) => $page->where('targetedResumes', []));
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.metrics', $period))
+            ->get(route('admin.employment.metrics', $period))
             ->assertInertia(fn (Assert $page) => $page->where('kpis.totalApplied', 0)->where('timeline', []));
 
-        $this->actingAs($this->admin)->get(route('admin.resume.applications.show', $application))->assertNotFound();
+        $this->actingAs($this->admin)->get(route('admin.employment.applications.show', $application))->assertNotFound();
         $this->actingAs($this->admin)->get(route('admin.resume.targeted.edit', $application->targeted_resume_id))->assertNotFound();
     }
 
@@ -702,20 +702,20 @@ class ApplicationCreateTest extends TestCase
         $application = Application::factory()->withConversation()->create();
         $application->delete();
 
-        $this->actingAs($this->admin)->putJson(route('admin.resume.applications.update', $application), ['company_name' => 'X'])->assertNotFound();
-        $this->actingAs($this->admin)->postJson(route('admin.resume.applications.apply', $application))->assertNotFound();
-        $this->actingAs($this->admin)->postJson(route('admin.resume.applications.pass', $application))->assertNotFound();
-        $this->actingAs($this->admin)->postJson(route('admin.resume.applications.analysis', $application))->assertNotFound();
-        $this->actingAs($this->admin)->postJson(route('admin.resume.applications.status-updates.store', $application), ['status' => 'applied'])->assertNotFound();
-        $this->actingAs($this->admin)->delete(route('admin.resume.applications.destroy', $application))->assertNotFound();
+        $this->actingAs($this->admin)->putJson(route('admin.employment.applications.update', $application), ['company_name' => 'X'])->assertNotFound();
+        $this->actingAs($this->admin)->postJson(route('admin.employment.applications.apply', $application))->assertNotFound();
+        $this->actingAs($this->admin)->postJson(route('admin.employment.applications.pass', $application))->assertNotFound();
+        $this->actingAs($this->admin)->postJson(route('admin.employment.applications.analysis', $application))->assertNotFound();
+        $this->actingAs($this->admin)->postJson(route('admin.employment.applications.status-updates.store', $application), ['status' => 'applied'])->assertNotFound();
+        $this->actingAs($this->admin)->delete(route('admin.employment.applications.destroy', $application))->assertNotFound();
 
         $this->assertSame(ApplicationStatus::Draft, Application::withTrashed()->findOrFail($application->id)->status);
     }
 
     public function test_deleting_an_unknown_application_is_not_found(): void
     {
-        $this->actingAs($this->admin)->delete('/admin/resume/applications/999999999')->assertNotFound();
-        $this->actingAs($this->admin)->get('/admin/resume/applications/999999999')->assertNotFound();
+        $this->actingAs($this->admin)->delete('/admin/employment/applications/999999999')->assertNotFound();
+        $this->actingAs($this->admin)->get('/admin/employment/applications/999999999')->assertNotFound();
     }
 
     // ---------------------------------------------------------------------

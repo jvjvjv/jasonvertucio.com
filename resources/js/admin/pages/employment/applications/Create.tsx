@@ -21,7 +21,7 @@ import AdminLayout from "@/admin/layouts/AdminLayout";
 import { api, apiErrorMessage, networkErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
 
-const APPLICATIONS_API = "/api/admin/resume/applications";
+const APPLICATIONS_API = "/api/admin/employment/applications";
 
 interface ParseJobResponse {
     message?: string;
@@ -322,7 +322,7 @@ export default function Create({
             <Head title="New Session | Applications" />
             <PageHeader
                 title="New Session"
-                backHref="/admin/resume/applications"
+                backHref="/admin/employment/applications"
                 backLabel="Back to Applications"
             />
 

@@ -28,7 +28,7 @@ interface EditProps {
 export default function Edit({ targetedResume, application }: EditProps) {
     const { dialogProps, confirm } = useConfirmDialog();
 
-    const applicationUrl = `/admin/resume/applications/${application.id}`;
+    const applicationUrl = `/admin/employment/applications/${application.id}`;
     const downloadBase = `/admin/resume/targeted-resume/${targetedResume.id}/download`;
     const heading = `${application.company_name} — ${application.position}`;
 

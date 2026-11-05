@@ -342,7 +342,7 @@ class AiSystemVoiceRoleTest extends TestCase
             ->featureDefaults()->create(['feature' => 'voice:dictation']);
 
         $this->actingAs($this->admin('edit-resume'))
-            ->get(route('admin.resume.applications.create'))
+            ->get(route('admin.employment.applications.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('systems', fn ($systems): bool => collect($systems)->pluck('id')->contains($chat->id)

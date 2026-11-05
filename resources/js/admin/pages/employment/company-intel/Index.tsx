@@ -76,7 +76,7 @@ export default function Index({ intel }: IndexProps) {
                                     colSpan={COLUMN_COUNT}
                                     message="No intel yet. Intel starts when you mark an application applied, or from an application's Intel button."
                                     actionLabel="Go to Applications"
-                                    actionHref="/admin/resume/applications"
+                                    actionHref="/admin/employment/applications"
                                 />
                             ) : (
                                 intel.map((row) => {
@@ -106,7 +106,7 @@ export default function Index({ intel }: IndexProps) {
                                             <TableCell>
                                                 <Link
                                                     component={InertiaLink}
-                                                    href={`/admin/resume/applications/${row.application.id}`}
+                                                    href={`/admin/employment/applications/${row.application.id}`}
                                                     underline="hover"
                                                     color="inherit"
                                                 >

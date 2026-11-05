@@ -44,7 +44,7 @@ interface ChatPanelProps {
     onMessagesChange: (messages: ChatMessage[]) => void;
 }
 
-const APPLICATIONS_API = "/api/admin/resume/applications";
+const APPLICATIONS_API = "/api/admin/employment/applications";
 
 /**
  * A turn can change the application (fit, status), the resume, the cover

@@ -80,7 +80,7 @@ class ApplicationController extends Controller
         $companyIntel = $this->companyIntelByName($applications);
         $applications = $applications->map(fn (Application $application): array => $this->listRow($application, $companyIntel));
 
-        return Inertia::render('resume/applications/Index', [
+        return Inertia::render('employment/applications/Index', [
             'applications' => $applications,
             'allStatuses' => array_map(
                 fn (ApplicationStatus $status): array => ['value' => $status->value, 'label' => ucfirst($status->value)],
@@ -100,7 +100,7 @@ class ApplicationController extends Controller
      */
     public function create(): InertiaResponse
     {
-        return Inertia::render('resume/applications/Create', [
+        return Inertia::render('employment/applications/Create', [
             'systems' => $this->payload->selectableSystems(),
             'defaultSystemId' => AiSystem::defaultForFeature('targeted-resume')?->id,
             'coverLetterDefaultId' => AiSystem::defaultForFeature('cover-letter')?->id,
@@ -145,7 +145,7 @@ class ApplicationController extends Controller
 
         return response()->json([
             'application_id' => $application->id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
     }
 
@@ -172,7 +172,7 @@ class ApplicationController extends Controller
             && $messages->where('role', 'assistant')->isEmpty()
             && (bool) data_get($conversation->context, 'auto_start_pending', false);
 
-        return Inertia::render('resume/applications/Show', [
+        return Inertia::render('employment/applications/Show', [
             'application' => [
                 'id' => $application->id,
                 'status' => $application->status->value,
@@ -261,7 +261,7 @@ class ApplicationController extends Controller
         return response()->json([
             'success' => true,
             'status' => $application->status->value,
-            'redirect' => route('admin.resume.applications.index'),
+            'redirect' => route('admin.employment.applications.index'),
         ]);
     }
 
@@ -272,7 +272,7 @@ class ApplicationController extends Controller
     {
         $this->applicationService->delete($application);
 
-        return redirect()->route('admin.resume.applications.index')
+        return redirect()->route('admin.employment.applications.index')
             ->with('success', 'Application deleted.');
     }
 

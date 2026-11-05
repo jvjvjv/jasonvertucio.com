@@ -72,7 +72,7 @@ class ApplicationListTest extends TestCase
         $jobDescription = 'Build and maintain Laravel applications.';
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'analyze',
                 'ai_system_id' => $system->id,
                 'job_title' => $jobTitle,
@@ -82,7 +82,7 @@ class ApplicationListTest extends TestCase
         $response->assertOk();
 
         $application = Application::query()->findOrFail($response->json('application_id'));
-        $response->assertJsonPath('redirect', route('admin.resume.applications.show', $application));
+        $response->assertJsonPath('redirect', route('admin.employment.applications.show', $application));
 
         $this->assertSame(ApplicationStatus::Draft, $application->status);
         $this->assertSame($jobTitle, $application->position);
@@ -108,11 +108,11 @@ class ApplicationListTest extends TestCase
         $created = [$draft, $passed, $applied, $withResume];
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index'));
+            ->get(route('admin.employment.applications.index'));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('filters.statuses', [])
             ->where('filters.uses_targeted_resume', 'any')
             ->where('filters.search', '')
@@ -129,13 +129,13 @@ class ApplicationListTest extends TestCase
         $created = [$draft, $passed, $applied];
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', [
+            ->get(route('admin.employment.applications.index', [
                 'status' => array_column(ApplicationStatus::cases(), 'value'),
             ]));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => collect($this->listedIds($applications, $created))->sort()->values()->all() === $this->sortedIds($created))
         );
     }
@@ -147,7 +147,7 @@ class ApplicationListTest extends TestCase
         $created = [$withoutResume, $withResume];
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['uses_targeted_resume' => 'yes']))
+            ->get(route('admin.employment.applications.index', ['uses_targeted_resume' => 'yes']))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filters.uses_targeted_resume', 'yes')
                 ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$withResume->id]
@@ -155,7 +155,7 @@ class ApplicationListTest extends TestCase
             );
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['uses_targeted_resume' => 'no']))
+            ->get(route('admin.employment.applications.index', ['uses_targeted_resume' => 'no']))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filters.uses_targeted_resume', 'no')
                 ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$withoutResume->id]
@@ -163,7 +163,7 @@ class ApplicationListTest extends TestCase
             );
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['status' => ['finalized'], 'uses_targeted_resume' => 'sometimes']))
+            ->get(route('admin.employment.applications.index', ['status' => ['finalized'], 'uses_targeted_resume' => 'sometimes']))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('filters.statuses', [])
                 ->where('filters.uses_targeted_resume', 'any')
@@ -180,12 +180,12 @@ class ApplicationListTest extends TestCase
         $created = [$draft, $applied];
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['status' => ['applied']]));
+            ->get(route('admin.employment.applications.index', ['status' => ['applied']]));
 
         $response->assertStatus(200);
         $response->assertInertia(
             fn (Assert $page) => $page
-                ->component('resume/applications/Index', false)
+                ->component('employment/applications/Index', false)
                 ->where('filters.statuses', ['applied'])
                 ->where('applications', function ($applications) use ($created, $applied) {
                     $row = collect($applications)->firstWhere('id', $applied->id);
@@ -214,7 +214,7 @@ class ApplicationListTest extends TestCase
         $conversation->update(['title' => 'Original Title']);
 
         $response = $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), [
+            ->putJson(route('admin.employment.applications.update', $application), [
                 'title' => 'Updated Title',
                 'company_name' => 'New Company',
                 'job_title' => 'New Title',
@@ -243,7 +243,7 @@ class ApplicationListTest extends TestCase
         $application = Application::factory()->create(['fit_score' => 40]);
 
         $this->actingAs($this->admin)
-            ->putJson(route('admin.resume.applications.update', $application), ['fit_score' => 101])
+            ->putJson(route('admin.employment.applications.update', $application), ['fit_score' => 101])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['fit_score']);
 
@@ -257,11 +257,11 @@ class ApplicationListTest extends TestCase
         $created = [$draft, $passed];
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['status' => 'passed']));
+            ->get(route('admin.employment.applications.index', ['status' => 'passed']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('filters.statuses', ['passed'])
             ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$passed->id])
         );
@@ -278,11 +278,11 @@ class ApplicationListTest extends TestCase
         $created = [$draft, $interviewing];
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['status' => ['draft']]));
+            ->get(route('admin.employment.applications.index', ['status' => ['draft']]));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$draft->id])
         );
     }
@@ -295,11 +295,11 @@ class ApplicationListTest extends TestCase
         $created = [$draft, $applied, $passed];
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['status' => ['draft', 'applied']]));
+            ->get(route('admin.employment.applications.index', ['status' => ['draft', 'applied']]));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => collect($this->listedIds($applications, $created))->sort()->values()->all() === $this->sortedIds([$draft, $applied]))
         );
     }
@@ -310,11 +310,11 @@ class ApplicationListTest extends TestCase
         Application::factory()->create(['company_name' => 'Other Inc', 'position' => 'Engineer']);
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'Zyxwv']));
+            ->get(route('admin.employment.applications.index', ['search' => 'Zyxwv']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('filters.search', 'Zyxwv')
             ->where('applications', fn ($applications) => collect($applications)->pluck('id')->all() === [$match->id]
                 && collect($applications)->first()['company_name'] === 'Acme Zyxwv Corp')
@@ -327,11 +327,11 @@ class ApplicationListTest extends TestCase
         Application::factory()->create(['company_name' => 'Acme', 'position' => 'Junior Designer']);
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'Qwertzu']));
+            ->get(route('admin.employment.applications.index', ['search' => 'Qwertzu']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => collect($applications)->pluck('id')->all() === [$match->id]
                 && collect($applications)->first()['position'] === 'Senior Qwertzu Developer')
         );
@@ -354,11 +354,11 @@ class ApplicationListTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'blockchainzq']));
+            ->get(route('admin.employment.applications.index', ['search' => 'blockchainzq']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', function ($applications) use ($match) {
                 $row = collect($applications)->first();
 
@@ -380,11 +380,11 @@ class ApplicationListTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'secret system prompt keywordzq']));
+            ->get(route('admin.employment.applications.index', ['search' => 'secret system prompt keywordzq']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', [])
         );
     }
@@ -394,11 +394,11 @@ class ApplicationListTest extends TestCase
         Application::factory()->create();
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'nonexistentxyz']));
+            ->get(route('admin.employment.applications.index', ['search' => 'nonexistentxyz']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', [])
         );
     }
@@ -409,14 +409,14 @@ class ApplicationListTest extends TestCase
         Application::factory()->passed()->create(['company_name' => 'TargetCozq Pass']);
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', [
+            ->get(route('admin.employment.applications.index', [
                 'status' => ['draft'],
                 'search' => 'TargetCozq',
             ]));
 
         $response->assertStatus(200);
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('resume/applications/Index', false)
+            ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => collect($applications)->pluck('id')->all() === [$draftMatch->id])
         );
     }
@@ -430,7 +430,7 @@ class ApplicationListTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'NoSessionCozq']))
+            ->get(route('admin.employment.applications.index', ['search' => 'NoSessionCozq']))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('applications.0.id', $application->id)
                 ->where('applications.0.has_conversation', false)
@@ -461,7 +461,7 @@ class ApplicationListTest extends TestCase
         AiConversationMessage::query()->whereKey($message->id)->update(['created_at' => now()->subHour()]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'Orderzq']))
+            ->get(route('admin.employment.applications.index', ['search' => 'Orderzq']))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('applications', fn ($applications) => collect($applications)->pluck('id')->all() === [$chatty->id, $quiet->id, $stale->id])
             );
@@ -472,18 +472,18 @@ class ApplicationListTest extends TestCase
         $application = Application::factory()->create(['company_name' => 'DeletedCozq']);
 
         $this->actingAs($this->admin)
-            ->delete(route('admin.resume.applications.destroy', $application))
-            ->assertRedirect(route('admin.resume.applications.index'))
+            ->delete(route('admin.employment.applications.destroy', $application))
+            ->assertRedirect(route('admin.employment.applications.index'))
             ->assertSessionHas('success');
 
         $this->assertSoftDeleted($application);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.index', ['search' => 'DeletedCozq']))
+            ->get(route('admin.employment.applications.index', ['search' => 'DeletedCozq']))
             ->assertInertia(fn (Assert $page) => $page->where('applications', []));
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertNotFound();
     }
 
@@ -497,7 +497,7 @@ class ApplicationListTest extends TestCase
         // We can't fully test the SSE stream, but the status change happens
         // before streaming starts.
         $this->actingAs($this->admin)
-            ->post(route('admin.resume.applications.chat', $application), [
+            ->post(route('admin.employment.applications.chat', $application), [
                 'message' => 'Continuing the conversation',
             ]);
 
@@ -511,7 +511,7 @@ class ApplicationListTest extends TestCase
         $conversation = $this->sessionFor($application);
 
         $this->actingAs($this->admin)
-            ->post(route('admin.resume.applications.chat', $application), [
+            ->post(route('admin.employment.applications.chat', $application), [
                 'message' => 'Hello',
             ]);
 
@@ -523,16 +523,16 @@ class ApplicationListTest extends TestCase
         $application = Application::factory()->create();
 
         $this->actingAs($this->admin)
-            ->post(route('admin.resume.applications.chat', $application), ['message' => 'Hello'])
+            ->post(route('admin.employment.applications.chat', $application), ['message' => 'Hello'])
             ->assertStatus(409)
             ->assertJsonStructure(['message']);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize', $application), ['tailored_content' => '# Summary'])
+            ->postJson(route('admin.employment.applications.finalize', $application), ['tailored_content' => '# Summary'])
             ->assertStatus(409);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.finalize-cover-letter', $application), ['cover_letter_content' => 'Dear team'])
+            ->postJson(route('admin.employment.applications.finalize-cover-letter', $application), ['cover_letter_content' => 'Dear team'])
             ->assertStatus(409);
 
         $this->assertNull($application->fresh()->targeted_resume_id);
@@ -547,17 +547,17 @@ class ApplicationListTest extends TestCase
         $this->actingAs($this->admin)
             ->get('/admin/resume/targeted-builder')
             ->assertStatus(301)
-            ->assertRedirect(route('admin.resume.applications.index'));
+            ->assertRedirect(route('admin.employment.applications.index'));
 
         $this->actingAs($this->admin)
             ->get('/admin/resume/targeted-builder/new')
             ->assertStatus(301)
-            ->assertRedirect(route('admin.resume.applications.create'));
+            ->assertRedirect(route('admin.employment.applications.create'));
 
         $this->actingAs($this->admin)
             ->get("/admin/resume/targeted-builder/{$conversation->id}")
             ->assertStatus(301)
-            ->assertRedirect(route('admin.resume.applications.show', $application));
+            ->assertRedirect(route('admin.employment.applications.show', $application));
 
         $this->actingAs($this->admin)
             ->get("/admin/resume/targeted-builder/{$orphan->id}")

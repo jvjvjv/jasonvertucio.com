@@ -58,41 +58,42 @@ Route::middleware(['auth', 'can:edit-resume'])
         Route::put('/targeted-resume/{targetedResume}', [TargetedResumeController::class, 'updateMarkdown'])
             ->whereNumber('targetedResume')
             ->name('admin.resume.targeted-resume.update-markdown');
+    });
 
-        // {application} is numeric-only so the literal segments (ai-systems,
-        // parse-url, parser) can never be taken for one.
-        Route::prefix('applications')
-            ->name('admin.resume.applications.')
+// Applications JSON. {application} is numeric-only so the literal segments
+// (ai-systems, parse-url, parser) can never be taken for one.
+Route::middleware(['auth', 'can:edit-resume'])
+    ->prefix('api/admin/employment/applications')
+    ->name('admin.employment.applications.')
+    ->group(function () {
+        Route::get('/ai-systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
+        Route::post('/ai-systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
+        Route::post('/parse-url', [JobUrlParseController::class, 'parse'])->name('parse-url');
+        Route::post('/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse'])->name('parser.reparse');
+
+        Route::post('/', [ApplicationController::class, 'store'])->name('store');
+
+        Route::prefix('{application}')
+            ->whereNumber('application')
             ->group(function () {
-                Route::get('/ai-systems/{aiSystem}/model-status', [AiSystemController::class, 'modelStatus']);
-                Route::post('/ai-systems/{aiSystem}/model-warmup', [AiSystemController::class, 'modelWarmup']);
-                Route::post('/parse-url', [JobUrlParseController::class, 'parse'])->name('parse-url');
-                Route::post('/parser/{parser}/reparse', [JobUrlParseController::class, 'reparse'])->name('parser.reparse');
+                Route::put('/', [ApplicationController::class, 'update'])->name('update');
+                Route::post('/apply', [ApplicationController::class, 'apply'])->name('apply');
+                Route::post('/pass', [ApplicationController::class, 'pass'])->name('pass');
 
-                Route::post('/', [ApplicationController::class, 'store'])->name('store');
+                Route::post('/analysis', [ApplicationSessionController::class, 'analysis'])->name('analysis');
+                Route::post('/chat', [ApplicationSessionController::class, 'chat'])->name('chat');
+                Route::post('/finalize', [ApplicationSessionController::class, 'finalize'])->name('finalize');
+                Route::post('/finalize-cover-letter', [ApplicationSessionController::class, 'finalizeCoverLetter'])->name('finalize-cover-letter');
+                Route::get('/system-switch', [SessionSystemSwitchController::class, 'applicationOptions'])->name('system-switch.show');
+                Route::post('/system-switch', [SessionSystemSwitchController::class, 'switchApplication'])->name('system-switch.update');
 
-                Route::prefix('{application}')
-                    ->whereNumber('application')
-                    ->group(function () {
-                        Route::put('/', [ApplicationController::class, 'update'])->name('update');
-                        Route::post('/apply', [ApplicationController::class, 'apply'])->name('apply');
-                        Route::post('/pass', [ApplicationController::class, 'pass'])->name('pass');
-
-                        Route::post('/analysis', [ApplicationSessionController::class, 'analysis'])->name('analysis');
-                        Route::post('/chat', [ApplicationSessionController::class, 'chat'])->name('chat');
-                        Route::post('/finalize', [ApplicationSessionController::class, 'finalize'])->name('finalize');
-                        Route::post('/finalize-cover-letter', [ApplicationSessionController::class, 'finalizeCoverLetter'])->name('finalize-cover-letter');
-                        Route::get('/system-switch', [SessionSystemSwitchController::class, 'applicationOptions'])->name('system-switch.show');
-                        Route::post('/system-switch', [SessionSystemSwitchController::class, 'switchApplication'])->name('system-switch.update');
-
-                        Route::post('/status-updates', [ApplicationStatusUpdateController::class, 'store'])->name('status-updates.store');
-                        Route::put('/status-updates/{statusUpdate}', [ApplicationStatusUpdateController::class, 'update'])
-                            ->whereNumber('statusUpdate')
-                            ->name('status-updates.update');
-                        Route::delete('/status-updates/{statusUpdate}', [ApplicationStatusUpdateController::class, 'destroy'])
-                            ->whereNumber('statusUpdate')
-                            ->name('status-updates.destroy');
-                    });
+                Route::post('/status-updates', [ApplicationStatusUpdateController::class, 'store'])->name('status-updates.store');
+                Route::put('/status-updates/{statusUpdate}', [ApplicationStatusUpdateController::class, 'update'])
+                    ->whereNumber('statusUpdate')
+                    ->name('status-updates.update');
+                Route::delete('/status-updates/{statusUpdate}', [ApplicationStatusUpdateController::class, 'destroy'])
+                    ->whereNumber('statusUpdate')
+                    ->name('status-updates.destroy');
             });
     });
 

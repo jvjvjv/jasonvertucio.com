@@ -40,10 +40,10 @@ class ApplicationHttpSmokeTest extends TestCase
         $current = ResumeVersion::factory()->create(['is_current' => true]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.create'))
+            ->get(route('admin.employment.applications.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Create', false)
+                ->component('employment/applications/Create', false)
                 ->has('systems')
                 ->has('defaultSystemId')
                 ->has('coverLetterDefaultId')
@@ -57,7 +57,7 @@ class ApplicationHttpSmokeTest extends TestCase
         $version = ResumeVersion::factory()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), [
+            ->postJson(route('admin.employment.applications.store'), [
                 'intent' => 'applied',
                 'job_description' => 'Role details',
                 'company_name' => 'Applied Co',
@@ -73,7 +73,7 @@ class ApplicationHttpSmokeTest extends TestCase
 
         $response->assertExactJson([
             'application_id' => $application->id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
         $this->assertSame(ApplicationStatus::Applied, $application->status);
         $this->assertNull($application->ai_conversation_id);
@@ -85,17 +85,17 @@ class ApplicationHttpSmokeTest extends TestCase
     public function test_store_validates_its_input(): void
     {
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), ['intent' => 'analyze'])
+            ->postJson(route('admin.employment.applications.store'), ['intent' => 'analyze'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['job_description', 'ai_system_id']);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), ['intent' => 'maybe', 'job_description' => 'x'])
+            ->postJson(route('admin.employment.applications.store'), ['intent' => 'maybe', 'job_description' => 'x'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['intent']);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.store'), ['intent' => 'applied', 'job_description' => 'x', 'resume_version_id' => 999999999])
+            ->postJson(route('admin.employment.applications.store'), ['intent' => 'applied', 'job_description' => 'x', 'resume_version_id' => 999999999])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['resume_version_id']);
     }
@@ -105,10 +105,10 @@ class ApplicationHttpSmokeTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('resume/applications/Show', false)
+                ->component('employment/applications/Show', false)
                 ->where('application.id', $application->id)
                 ->where('application.status', 'applied')
                 ->where('application.has_applied', true)
@@ -146,7 +146,7 @@ class ApplicationHttpSmokeTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.resume.applications.show', $application))
+            ->get(route('admin.employment.applications.show', $application))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('application.has_applied', false)
@@ -169,7 +169,7 @@ class ApplicationHttpSmokeTest extends TestCase
         $application = Application::factory()->applied()->create();
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => $system->id]);
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => $system->id]);
 
         $response->assertOk();
 
@@ -178,14 +178,14 @@ class ApplicationHttpSmokeTest extends TestCase
         $response->assertExactJson([
             'success' => true,
             'conversation_id' => $application->ai_conversation_id,
-            'redirect' => route('admin.resume.applications.show', $application),
+            'redirect' => route('admin.employment.applications.show', $application),
         ]);
         $this->assertNotNull($application->ai_conversation_id);
         $this->assertSame(ApplicationStatus::Applied, $application->status);
         $this->assertSame(1, $application->statusUpdates()->count());
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.resume.applications.analysis', $application), ['ai_system_id' => $system->id])
+            ->postJson(route('admin.employment.applications.analysis', $application), ['ai_system_id' => $system->id])
             ->assertStatus(409)
             ->assertJsonStructure(['message']);
     }
@@ -243,7 +243,7 @@ class ApplicationHttpSmokeTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('admin.resume.targeted.destroy', $targetedResumeId))
-            ->assertRedirect(route('admin.resume.applications.show', $draft))
+            ->assertRedirect(route('admin.employment.applications.show', $draft))
             ->assertSessionHas('success');
 
         $this->assertNull($draft->fresh()->targeted_resume_id);
@@ -272,10 +272,10 @@ class ApplicationHttpSmokeTest extends TestCase
         $application = Application::factory()->create();
         $stranger = User::factory()->create();
 
-        $this->get(route('admin.resume.applications.index'))->assertRedirect(route('login'));
+        $this->get(route('admin.employment.applications.index'))->assertRedirect(route('login'));
 
-        $this->actingAs($stranger)->get(route('admin.resume.applications.index'))->assertForbidden();
+        $this->actingAs($stranger)->get(route('admin.employment.applications.index'))->assertForbidden();
         $this->actingAs($stranger)->get(route('admin.resume.targeted.index'))->assertForbidden();
-        $this->actingAs($stranger)->postJson(route('admin.resume.applications.pass', $application))->assertForbidden();
+        $this->actingAs($stranger)->postJson(route('admin.employment.applications.pass', $application))->assertForbidden();
     }
 }
