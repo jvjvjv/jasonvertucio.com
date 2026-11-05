@@ -14,7 +14,7 @@ use Jvjvjv\CodeTalker\Services\ChatBot\ChatBotPresenter;
  *
  * Host-owned reimplementation of the package's removed (0.11.0)
  * `Jvjvjv\CodeTalker\Services\ChatBot\ChatBotPagePayload`, built on the
- * package's still-available `ChatBotPresenter` for the transcript/cost queries.
+ * package's still-available `ChatBotPresenter` for the transcript queries.
  */
 class HostChatBotPagePayload
 {
@@ -44,7 +44,6 @@ class HostChatBotPagePayload
                 'name' => $aiChatBot->name,
                 'description' => $aiChatBot->description,
                 'require_visitor_identity' => $aiChatBot->require_visitor_identity,
-                'total_cost_usd' => $this->presenter->totalCostUsd($aiChatBot),
                 'required_permission' => $aiChatBot->required_permission,
             ],
             'messages' => $this->transcriptWithToolPanels($conversation),

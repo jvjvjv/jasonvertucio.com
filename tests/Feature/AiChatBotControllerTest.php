@@ -7,6 +7,7 @@ use App\Models\User;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiMcpServer;
 use Jvjvjv\CodeTalker\Models\AiMcpServerTool;
 use Jvjvjv\CodeTalker\Models\AiSystem;
@@ -55,6 +56,55 @@ class AiChatBotControllerTest extends TestCase
             ->where('bots.0.name', 'Portfolio Guide')
             ->where('bots.0.slug', $bot->slug)
             ->where('bots.0.access_path', 'chat')
+        );
+    }
+
+    public function test_index_sums_a_personas_token_usage_without_cost(): void
+    {
+        $user = $this->authenticatedUser();
+        $bot = AiChatBot::factory()->create(['name' => 'Usage Guide']);
+
+        foreach ([[600, 400, 1000, 0.01], [2000, 1000, 3000, 0.05]] as [$input, $output, $total, $cost]) {
+            AiConversation::factory()->create([
+                'ai_persona_id' => $bot->id,
+                'feature' => $bot->featureKey(),
+                'usage_input_tokens' => $input,
+                'usage_output_tokens' => $output,
+                'usage_total_tokens' => $total,
+                'usage_cost_usd' => $cost,
+                'usage_synced_at' => now(),
+            ]);
+        }
+
+        $response = $this->actingAs($user)->get(route('admin.ai.bots.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('bots', function ($bots) use ($bot): bool {
+                $usage = collect($bots)->firstWhere('id', $bot->id)['usage'];
+
+                return $usage['input_tokens'] === 2600
+                    && $usage['output_tokens'] === 1400
+                    && $usage['total_tokens'] === 4000
+                    && ! array_key_exists('cost_usd', $usage);
+            })
+        );
+    }
+
+    public function test_index_gives_a_persona_without_synced_usage_null_usage(): void
+    {
+        $user = $this->authenticatedUser();
+        $bot = AiChatBot::factory()->create(['name' => 'Unsynced Guide']);
+        AiConversation::factory()->create([
+            'ai_persona_id' => $bot->id,
+            'feature' => $bot->featureKey(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('admin.ai.bots.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('bots', fn ($bots): bool => collect($bots)->firstWhere('id', $bot->id)['usage'] === null)
         );
     }
 

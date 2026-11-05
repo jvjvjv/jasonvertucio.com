@@ -442,6 +442,46 @@ class ApplicationListTest extends TestCase
             );
     }
 
+    public function test_an_application_with_a_session_lists_token_usage_without_cost(): void
+    {
+        $application = Application::factory()->create(['company_name' => 'UsageCozq']);
+        $this->sessionFor($application)->update([
+            'usage_input_tokens' => 10000,
+            'usage_output_tokens' => 2400,
+            'usage_total_tokens' => 12400,
+            'usage_cost_usd' => 0.42,
+            'usage_synced_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index', ['search' => 'UsageCozq']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('applications.0.id', $application->id)
+                ->has('applications.0.usage', fn (Assert $usage) => $usage
+                    ->where('input_tokens', 10000)
+                    ->where('output_tokens', 2400)
+                    ->where('total_tokens', 12400)
+                    ->has('synced_at')
+                    ->missing('cost_usd')
+                )
+            );
+    }
+
+    public function test_a_row_carries_its_last_activity_as_a_timestamp_and_a_humanised_label(): void
+    {
+        $application = Application::factory()->create(['company_name' => 'ActivityCozq']);
+        $updatedAt = now()->subDays(2)->startOfSecond();
+        Application::query()->whereKey($application->id)->update(['updated_at' => $updatedAt]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index', ['search' => 'ActivityCozq']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('applications.0.id', $application->id)
+                ->where('applications.0.last_activity_at', '2 days ago')
+                ->where('applications.0.last_activity_at_iso', $updatedAt->toIso8601String())
+            );
+    }
+
     public function test_most_recently_active_application_is_listed_first(): void
     {
         $stale = Application::factory()->create(['company_name' => 'Orderzq Stale']);

@@ -15,7 +15,6 @@ import type { ChatBotPageProps, ChatBotSummary } from "@/types/code-talker";
 import BotHeaderCard from "@/chat/components/BotHeaderCard";
 import ChatInterface from "@/components/ChatInterface";
 import useChatUrlSync from "@/hooks/useChatUrlSync";
-import { formatCost } from "@/utils/currency";
 
 /**
  * The package's page contract plus this app's own additions.
@@ -167,7 +166,6 @@ export default function ChatBot({
                     <ChatHistoryPanel
                         bot={bot}
                         history={history}
-                        formatCost={formatCost}
                         onSwitch={handleSwitch}
                     />
                 )}

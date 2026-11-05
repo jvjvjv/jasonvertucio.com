@@ -50,7 +50,7 @@ import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus
 import { api, apiErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-import { formatCalendarDate } from "@/utils/date";
+import { formatCalendarDate, getLocaleDateTime } from "@/utils/date";
 
 const LIST_URL = "/admin/employment/applications";
 const NEW_SESSION_URL = "/admin/employment/applications/new";
@@ -119,7 +119,7 @@ interface ApplicationRowProps {
  */
 function IntelCell({ intel }: { intel: ApplicationListItem["intel"] }) {
     if (intel === null) {
-        return EM_DASH;
+        return null;
     }
 
     const isCompanyOnly = intel.scope === "company";
@@ -182,20 +182,32 @@ const ApplicationRow = memo(function ApplicationRow({
     return (
         <TableRow hover>
             <TableCell>
-                <Link
-                    component={InertiaLink}
-                    href={showUrl}
-                    underline="hover"
-                    color="inherit"
-                >
-                    <Typography
-                        variant="body2"
-                        fontWeight={600}
-                        color="primary"
+                <Box display={"flex"} gap={1} alignItems={"center"}>
+                    <Link
+                        component={InertiaLink}
+                        href={showUrl}
+                        underline="hover"
+                        color="inherit"
                     >
-                        {application.company_name}
-                    </Typography>
-                </Link>
+                        <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="primary"
+                        >
+                            {application.company_name}
+                        </Typography>
+                    </Link>
+                    <StatusChip
+                        status={displayStatus}
+                        size={"small"}
+                        tip={
+                            latestOccurredAt
+                                ? formatCalendarDate(latestOccurredAt)
+                                : undefined
+                        }
+                    />
+                </Box>
+
                 {application.position ? (
                     <Typography variant="caption" color="text.secondary">
                         {application.position}
@@ -229,23 +241,18 @@ const ApplicationRow = memo(function ApplicationRow({
                     <UsageChip usage={application.usage} />
                 ) : null}
             </TableCell>
-            <TableCell align="center">
-                <IntelCell intel={application.intel} />
-            </TableCell>
             <TableCell>
-                <StatusChip
-                    status={displayStatus}
-                    tip={
-                        latestOccurredAt
-                            ? formatCalendarDate(latestOccurredAt)
-                            : undefined
+                <Tooltip
+                    title={
+                        getLocaleDateTime(application.last_activity_at_iso) ??
+                        ""
                     }
-                />
-            </TableCell>
-            <TableCell>
-                <Typography variant="caption">
-                    {application.last_activity_at ?? "-"}
-                </Typography>
+                    arrow
+                >
+                    <Typography variant="caption">
+                        {application.last_activity_at ?? "-"}
+                    </Typography>
+                </Tooltip>
             </TableCell>
             <TableCell align="right">
                 <Box
@@ -287,7 +294,9 @@ const ApplicationRow = memo(function ApplicationRow({
                                 <PersonSearchOutlinedIcon fontSize="small" />
                             )}
                         </IconButton>
-                    ) : null}
+                    ) : (
+                        <IntelCell intel={application.intel} />
+                    )}
                     <IconButton
                         component={InertiaLink}
                         href={showUrl}
@@ -502,13 +511,11 @@ export default function Index({
                     <Table size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell>Company / Job</TableCell>
+                                <TableCell>Company / Role</TableCell>
                                 <TableCell align="center">Resume</TableCell>
                                 <TableCell>Base Version</TableCell>
                                 <TableCell>Fit Score</TableCell>
-                                <TableCell>AI Usage</TableCell>
-                                <TableCell align="center">Intel</TableCell>
-                                <TableCell>Status</TableCell>
+                                <TableCell>Tokens</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>

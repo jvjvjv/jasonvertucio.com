@@ -44,7 +44,7 @@ class AiChatBotController extends Controller
             ->withCount('conversations')
             ->withSum('conversations', 'usage_input_tokens')
             ->withSum('conversations', 'usage_output_tokens')
-            ->withSum('conversations', 'usage_cost_usd')
+            ->withSum('conversations', 'usage_total_tokens')
             ->when($aiSystemId, fn ($q) => $q->where('ai_system_id', $aiSystemId))
             ->orderBy('name')
             ->get()
@@ -62,13 +62,7 @@ class AiChatBotController extends Controller
                 'conversations_count' => $bot->conversations_count,
                 '_id' => $bot->aiSystemId,
                 'tools_enabled' => $bot->tools_enabled,
-                'usage' => $bot->conversations_sum_usage_cost_usd !== null ? [
-                    'input_tokens' => (int) ($bot->conversations_sum_usage_input_tokens ?? 0),
-                    'output_tokens' => (int) ($bot->conversations_sum_usage_output_tokens ?? 0),
-                    'total_tokens' => null,
-                    'cost_usd' => (float) $bot->conversations_sum_usage_cost_usd,
-                    'synced_at' => null,
-                ] : null,
+                'usage' => $this->usageFor($bot),
             ]);
 
         return Inertia::render('ai/bots/Index', [
@@ -76,6 +70,30 @@ class AiChatBotController extends Controller
             'filters' => ['ai_system_id' => $aiSystemId],
             'navBlocks' => $this->navBlocksFor('/admin/ai/personas', $request),
         ]);
+    }
+
+    /**
+     * A persona's token usage summed across its conversations, or null when
+     * none of them has synced usage.
+     *
+     * @return ?array{input_tokens: int, output_tokens: int, total_tokens: ?int, synced_at: null}
+     */
+    private function usageFor(AiChatBot $bot): ?array
+    {
+        $inputTokens = $bot->conversations_sum_usage_input_tokens;
+        $outputTokens = $bot->conversations_sum_usage_output_tokens;
+        $totalTokens = $bot->conversations_sum_usage_total_tokens;
+
+        if ($inputTokens === null && $outputTokens === null && $totalTokens === null) {
+            return null;
+        }
+
+        return [
+            'input_tokens' => (int) ($inputTokens ?? 0),
+            'output_tokens' => (int) ($outputTokens ?? 0),
+            'total_tokens' => $totalTokens !== null ? (int) $totalTokens : null,
+            'synced_at' => null,
+        ];
     }
 
     /**

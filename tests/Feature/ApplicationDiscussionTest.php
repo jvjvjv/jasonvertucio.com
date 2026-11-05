@@ -96,7 +96,8 @@ class ApplicationDiscussionTest extends TestCase
                 ->where('conversation.ai_system_id', $system->id)
                 ->where('conversation.ai_system_name', 'Discusszq System')
                 ->has('conversation.usage', fn (Assert $usage) => $usage
-                    ->hasAll(['input_tokens', 'output_tokens', 'total_tokens', 'cost_usd', 'synced_at'])
+                    ->hasAll(['input_tokens', 'output_tokens', 'total_tokens', 'synced_at'])
+                    ->missing('cost_usd')
                 )
                 ->has('messages', 3)
                 ->where('messages.0.role', 'user')

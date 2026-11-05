@@ -35,9 +35,7 @@ export function getRelativeSentLabel(
 }
 
 /** Full localized date+time for a chat message timestamp (used in a tooltip). */
-export function getLocaleDateTime(
-    sentAt: string | null | undefined,
-): string | null {
+export function getLocaleDateTime(sentAt?: string | null): string | null {
     if (!sentAt) return null;
     const d = new Date(sentAt);
     if (Number.isNaN(d.getTime())) return null;
