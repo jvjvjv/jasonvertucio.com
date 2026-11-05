@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import LinearProgress from "@mui/material/LinearProgress";
 
 import { markdownSx } from "../../admin/utils/markdownSx";
 import ReasoningPanel from "../ReasoningPanel";
@@ -72,16 +71,6 @@ export default function BlockContent({
             })}
             {sentAt ? (
                 <SentAtLabel sentAt={sentAt} color="text.secondary" />
-            ) : null}
-            {isStreaming ? (
-                <Box
-                    sx={{ mt: 1.5 }}
-                    role="status"
-                    aria-live="polite"
-                    aria-label="Assistant response is still streaming"
-                >
-                    <LinearProgress />
-                </Box>
             ) : null}
         </>
     );

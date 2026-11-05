@@ -120,7 +120,6 @@ export default function ChatBot({
                                 <Typography
                                     variant="caption"
                                     sx={{
-                                        mr: 2,
                                         alignSelf: "center",
                                         fontStyle: "italic",
                                         flexGrow: 1,

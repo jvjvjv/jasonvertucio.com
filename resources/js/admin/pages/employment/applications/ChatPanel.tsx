@@ -126,7 +126,6 @@ export default memo(function ChatPanel({
             isAuthenticated={isAuthenticated}
             sessionExpiresAt={sessionExpiresAt}
             shouldAutoStart={shouldAutoStart}
-            messagePadding={140}
             slots={{
                 header: (
                     <Container>

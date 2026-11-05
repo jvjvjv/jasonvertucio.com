@@ -78,7 +78,9 @@ export default function useModelStatus(
             if (!mounted || status?.state !== "not_loaded") return;
 
             setIsWarmingModel(true);
-            setLoadingMessage("Loading model. This can take a little while...");
+            setLoadingMessage(
+                "Waking the model. The first reply can take a minute.",
+            );
 
             try {
                 const wp = await api.post<{ status?: ModelStatus }>(warmupUrl);

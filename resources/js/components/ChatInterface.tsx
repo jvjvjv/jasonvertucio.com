@@ -1,6 +1,5 @@
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import {
@@ -18,12 +17,12 @@ import type { ChatStreamEvent } from "@/types/code-talker";
 import type { ReactNode, KeyboardEvent } from "react";
 
 import { api } from "@/api";
+import { resolveChatStatus } from "@/components/chat-interface/chatStatus";
 import ChatVirtualList, {
     hasUnansweredTrailingMessage,
 } from "@/components/chat-interface/ChatVirtualList";
-import SessionExpiryBanner from "@/components/chat-interface/SessionExpiryBanner";
+import useCardTop from "@/components/chat-interface/useCardTop";
 import ChatInputArea from "@/components/ChatInputArea";
-import ModelStatusDisplay from "@/components/ModelStatusDisplay";
 import useChatStream from "@/hooks/useChatStream";
 import useModelStatus from "@/hooks/useModelStatus";
 import useSessionExpiry from "@/hooks/useSessionExpiry";
@@ -129,7 +128,7 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             isAuthenticated,
             sessionExpiresAt,
             shouldAutoStart = false,
-            messagePadding = 40,
+            messagePadding = 16,
             autoStartMessage,
             extraPayload,
             slots,
@@ -196,6 +195,61 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
         });
 
         const virtuosoRef = useRef<VirtuosoHandle>(null);
+        const scrollerRef = useRef<HTMLElement | null>(null);
+        const isAtBottomRef = useRef(true);
+        const dockRef = useRef<HTMLDivElement>(null);
+        const cardRef = useRef<HTMLDivElement>(null);
+        // The card fills the viewport from wherever the page's own chrome
+        // leaves it; until that is measured, a typical chrome height stands in.
+        const cardTop = useCardTop(cardRef);
+
+        // Virtuoso's `followOutput` reacts to new items, not to its viewport
+        // shrinking, so a growing composer would push the newest message
+        // below the fold. When the dock changes height and the list was
+        // showing its end, keep it there; a reader scrolled up keeps their
+        // place.
+        useEffect(() => {
+            const dock = dockRef.current;
+            if (!dock) {
+                return;
+            }
+
+            let previousHeight = dock.getBoundingClientRect().height;
+            const observer = new ResizeObserver(() => {
+                const height = dock.getBoundingClientRect().height;
+                const growth = height - previousHeight;
+                previousHeight = height;
+
+                if (growth === 0) {
+                    return;
+                }
+
+                // Virtuoso may already have judged the shrunken viewport "not
+                // at the bottom", so also accept a list whose only distance
+                // from the end is what the dock just took.
+                const scroller = scrollerRef.current;
+                const distanceFromEnd = scroller
+                    ? scroller.scrollHeight -
+                      scroller.scrollTop -
+                      scroller.clientHeight
+                    : Infinity;
+                const wasAtBottom =
+                    isAtBottomRef.current ||
+                    distanceFromEnd <= Math.max(growth, 0) + 8;
+
+                if (wasAtBottom) {
+                    virtuosoRef.current?.scrollTo({
+                        top: Number.MAX_SAFE_INTEGER,
+                    });
+                }
+            });
+
+            observer.observe(dock);
+
+            return () => {
+                observer.disconnect();
+            };
+        }, []);
 
         // Capture the initial last index so Virtuoso starts scrolled to the bottom.
         // Add 1 when aboveMessages is present because it occupies virtual index 0,
@@ -224,59 +278,77 @@ export default forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
             }
         };
 
+        const chatStatus = resolveChatStatus({
+            isExpired,
+            error,
+            isStreaming,
+            loadingMessage,
+            streamingBlocks,
+            streamingToolPanels,
+            modelStatus,
+            isCheckingModelStatus,
+            isWarmingModel,
+            isAuthenticated,
+        });
+
         return (
             <>
                 {slots?.header ?? null}
-                <Card>
-                    <CardContent sx={{ p: 0, m: 0 }}>
-                        <ChatVirtualList
-                            ref={virtuosoRef}
-                            messages={messages}
-                            isStreaming={isStreaming}
-                            streamingBlocks={streamingBlocks}
-                            streamingToolPanels={streamingToolPanels}
-                            isAuthenticated={isAuthenticated}
-                            isMobile={isMobile}
-                            initialTopMostItemIndex={initialTopMostItemIndex}
-                            aboveMessagesSlot={slots?.aboveMessages}
-                            padding={messagePadding}
-                        />
+                <Card
+                    ref={cardRef}
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        height: `calc(100dvh - ${cardTop ?? (isMobile ? 300 : 320)}px)`,
+                        minHeight: isMobile ? 200 : 300,
+                    }}
+                >
+                    <ChatVirtualList
+                        ref={virtuosoRef}
+                        messages={messages}
+                        isStreaming={isStreaming}
+                        streamingBlocks={streamingBlocks}
+                        streamingToolPanels={streamingToolPanels}
+                        isAuthenticated={isAuthenticated}
+                        initialTopMostItemIndex={initialTopMostItemIndex}
+                        aboveMessagesSlot={slots?.aboveMessages}
+                        padding={messagePadding}
+                        onAtBottomChange={(atBottom) => {
+                            isAtBottomRef.current = atBottom;
+                        }}
+                        scrollerRef={(element) => {
+                            scrollerRef.current =
+                                element instanceof HTMLElement ? element : null;
+                        }}
+                    />
 
+                    <Box ref={dockRef} sx={{ flex: "none" }}>
                         {slots?.aboveInput}
 
-                        <Divider />
-
-                        <ModelStatusDisplay
-                            isCheckingModelStatus={isCheckingModelStatus}
-                            isWarmingModel={isWarmingModel}
-                            loadingMessage={loadingMessage}
-                            modelStatus={modelStatus}
-                            error={error}
-                        />
-
-                        {isExpired ? <SessionExpiryBanner /> : null}
-
-                        <ChatInputArea
-                            messageText={messageText}
-                            onChange={setMessageText}
-                            onKeyDown={handleKeyDown}
-                            onSubmit={() => void sendMessage()}
-                            disabled={
-                                isStreaming ||
-                                isCheckingModelStatus ||
-                                isWarmingModel ||
-                                modelStatus?.state === "unavailable" ||
-                                isExpired
-                            }
-                            isStreaming={isStreaming}
-                            onStop={stopStreaming}
-                            voice={voice}
-                            slots={{
-                                beforeSend: slots?.beforeSend,
-                                afterSend: slots?.afterSend,
-                            }}
-                        />
-                    </CardContent>
+                        <Box sx={{ borderTop: 1, borderColor: "divider" }}>
+                            <ChatInputArea
+                                messageText={messageText}
+                                onChange={setMessageText}
+                                onKeyDown={handleKeyDown}
+                                onSubmit={() => void sendMessage()}
+                                disabled={
+                                    isStreaming ||
+                                    isCheckingModelStatus ||
+                                    isWarmingModel ||
+                                    modelStatus?.state === "unavailable" ||
+                                    isExpired
+                                }
+                                isStreaming={isStreaming}
+                                onStop={stopStreaming}
+                                voice={voice}
+                                status={chatStatus}
+                                slots={{
+                                    beforeSend: slots?.beforeSend,
+                                    afterSend: slots?.afterSend,
+                                }}
+                            />
+                        </Box>
+                    </Box>
                 </Card>
             </>
         );
