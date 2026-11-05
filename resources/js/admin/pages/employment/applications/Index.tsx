@@ -1,30 +1,20 @@
-import { Head, Link as InertiaLink, router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import BackHandOutlinedIcon from "@mui/icons-material/BackHandOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditNoteIcon from "@mui/icons-material/EditNote";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import PersonSearchOutlinedIcon from "@mui/icons-material/PersonSearchOutlined";
-import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import Alert from "@mui/material/Alert";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CircularProgress from "@mui/material/CircularProgress";
-import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
-import { memo, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
+import ApplicationRow from "./ApplicationRow";
 import FiltersDialog, { countActiveFilters } from "./FiltersDialog";
 
 import type {
@@ -40,22 +30,16 @@ import ConfirmDialog from "@/admin/components/ConfirmDialog";
 import DebouncedSearchField from "@/admin/components/DebouncedSearchField";
 import EmptyTableRow from "@/admin/components/EmptyTableRow";
 import PageHeader from "@/admin/components/PageHeader";
-import StatusChip from "@/admin/components/StatusChip";
-import UsageChip from "@/admin/components/UsageChip";
 import AdminLayout from "@/admin/layouts/AdminLayout";
 import IntelSystemDialog from "@/admin/pages/employment/company-intel/IntelSystemDialog";
-import { INTEL_PAGES } from "@/admin/pages/employment/company-intel/types";
 import useBeginIntel from "@/admin/pages/employment/company-intel/useBeginIntel";
-import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { api, apiErrorMessage } from "@/api";
 import ResponsiveButton from "@/components/ResponsiveButton";
 import useConfirmDialog from "@/hooks/useConfirmDialog";
-import { formatCalendarDate, getLocaleDateTime } from "@/utils/date";
 
 const LIST_URL = "/admin/employment/applications";
 const NEW_SESSION_URL = "/admin/employment/applications/new";
 const COLUMN_COUNT = 9;
-const EM_DASH = "—";
 
 interface IndexFilters {
     statuses: string[];
@@ -102,227 +86,6 @@ function visitWithFilters(filters: IndexFilters, onSuccess?: () => void): void {
         onSuccess,
     });
 }
-
-interface ApplicationRowProps {
-    application: ApplicationListItem;
-    ghostedAfterDays: number;
-    onPass: (id: number) => void;
-    onDelete: (application: ApplicationListItem) => void;
-    onBeginIntel: (id: number) => void;
-    /** Only the row whose intel is starting re-renders. */
-    isStartingIntel: boolean;
-}
-
-/**
- * Links to the application's intel, or to intel already gathered on the same
- * company for another application. A spinner stands in while research runs.
- */
-function IntelCell({ intel }: { intel: ApplicationListItem["intel"] }) {
-    if (intel === null) {
-        return null;
-    }
-
-    const isCompanyOnly = intel.scope === "company";
-    const label = isCompanyOnly
-        ? `Intel on ${intel.company_name ?? "this company"} from another application`
-        : intel.status === "failed"
-          ? "Intel failed — open to retry"
-          : intel.status === "ready"
-            ? "Open intel"
-            : "Researching — open intel";
-
-    return (
-        <Tooltip title={label} arrow>
-            <IconButton
-                component={InertiaLink}
-                href={`${INTEL_PAGES}/${intel.id}`}
-                size="small"
-                color={
-                    intel.status === "failed"
-                        ? "error"
-                        : isCompanyOnly
-                          ? "default"
-                          : "primary"
-                }
-                aria-label={label}
-            >
-                {intel.status === "queued" || intel.status === "running" ? (
-                    <CircularProgress size={16} color="inherit" />
-                ) : (
-                    <TravelExploreIcon
-                        fontSize="small"
-                        sx={isCompanyOnly ? { opacity: 0.6 } : undefined}
-                    />
-                )}
-            </IconButton>
-        </Tooltip>
-    );
-}
-
-/**
- * One row of the list. Memoized, with stable callbacks from the page, so
- * opening a dialog or reporting an error does not re-render every row.
- */
-const ApplicationRow = memo(function ApplicationRow({
-    application,
-    ghostedAfterDays,
-    onPass,
-    onDelete,
-    onBeginIntel,
-    isStartingIntel,
-}: ApplicationRowProps) {
-    const showUrl = `${LIST_URL}/${application.id}`;
-    const latestOccurredAt = application.latest_status_update?.occurred_at;
-    const displayStatus = resolveApplicationDisplayStatus(
-        application.status,
-        latestOccurredAt,
-        ghostedAfterDays,
-    );
-
-    return (
-        <TableRow hover>
-            <TableCell>
-                <Box display={"flex"} gap={1} alignItems={"center"}>
-                    <Link
-                        component={InertiaLink}
-                        href={showUrl}
-                        underline="hover"
-                        color="inherit"
-                    >
-                        <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color="primary"
-                        >
-                            {application.company_name}
-                        </Typography>
-                    </Link>
-                    <StatusChip
-                        status={displayStatus}
-                        size={"small"}
-                        tip={
-                            latestOccurredAt
-                                ? formatCalendarDate(latestOccurredAt)
-                                : undefined
-                        }
-                    />
-                </Box>
-
-                {application.position ? (
-                    <Typography variant="caption" color="text.secondary">
-                        {application.position}
-                    </Typography>
-                ) : null}
-            </TableCell>
-            <TableCell align="center">
-                {application.targeted_resume_id !== null ? (
-                    <IconButton
-                        component={InertiaLink}
-                        href={`/admin/resume/targeted-resumes/${application.targeted_resume_id}/edit`}
-                        size="small"
-                        color="primary"
-                        title="Edit targeted resume"
-                        aria-label="Edit targeted resume"
-                    >
-                        <EditNoteIcon fontSize="small" />
-                    </IconButton>
-                ) : (
-                    EM_DASH
-                )}
-            </TableCell>
-            <TableCell>{application.resume_version ?? EM_DASH}</TableCell>
-            <TableCell>
-                {application.fit_score !== null
-                    ? `${application.fit_score}%`
-                    : EM_DASH}
-            </TableCell>
-            <TableCell>
-                {application.usage ? (
-                    <UsageChip usage={application.usage} />
-                ) : null}
-            </TableCell>
-            <TableCell>
-                <Tooltip
-                    title={
-                        getLocaleDateTime(application.last_activity_at_iso) ??
-                        ""
-                    }
-                    arrow
-                >
-                    <Typography variant="caption">
-                        {application.last_activity_at ?? "-"}
-                    </Typography>
-                </Tooltip>
-            </TableCell>
-            <TableCell align="right">
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 1,
-                    }}
-                >
-                    {/* Conditional actions first, so Open and Delete keep
-                        their places on every row. */}
-                    {application.status === "draft" ? (
-                        <IconButton
-                            size="small"
-                            color="warning"
-                            title="Pass"
-                            aria-label="Pass"
-                            onClick={() => {
-                                onPass(application.id);
-                            }}
-                        >
-                            <BackHandOutlinedIcon fontSize="small" />
-                        </IconButton>
-                    ) : null}
-                    {application.intel?.scope !== "role" ? (
-                        <IconButton
-                            size="small"
-                            color="primary"
-                            title="Begin intel"
-                            aria-label="Begin intel"
-                            disabled={isStartingIntel}
-                            onClick={() => {
-                                onBeginIntel(application.id);
-                            }}
-                        >
-                            {isStartingIntel ? (
-                                <CircularProgress size={16} color="inherit" />
-                            ) : (
-                                <PersonSearchOutlinedIcon fontSize="small" />
-                            )}
-                        </IconButton>
-                    ) : (
-                        <IntelCell intel={application.intel} />
-                    )}
-                    <IconButton
-                        component={InertiaLink}
-                        href={showUrl}
-                        size="small"
-                        color="primary"
-                        title="Open"
-                        aria-label="Open"
-                    >
-                        <AutoFixHighOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        color="error"
-                        title="Delete"
-                        aria-label="Delete"
-                        onClick={() => {
-                            onDelete(application);
-                        }}
-                    >
-                        <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                </Box>
-            </TableCell>
-        </TableRow>
-    );
-});
 
 export default function Index({
     applications,
@@ -512,9 +275,8 @@ export default function Index({
                         <TableHead>
                             <TableRow>
                                 <TableCell>Company / Role</TableCell>
-                                <TableCell align="center">Resume</TableCell>
-                                <TableCell>Base Version</TableCell>
                                 <TableCell>Fit Score</TableCell>
+                                <TableCell>Resume</TableCell>
                                 <TableCell>Tokens</TableCell>
                                 <TableCell>Updated</TableCell>
                                 <TableCell align="right">Actions</TableCell>

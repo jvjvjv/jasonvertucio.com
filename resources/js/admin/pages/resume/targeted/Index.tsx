@@ -175,19 +175,18 @@ export default function Index({ targetedResumes, filters }: IndexProps) {
                 >
                     <ChatIcon fontSize="small" />
                 </IconButton>
-                {row.can_discard ? (
-                    <IconButton
-                        size="small"
-                        color="error"
-                        title="Discard targeted resume"
-                        aria-label="Discard targeted resume"
-                        onClick={() => {
-                            handleDiscard(row);
-                        }}
-                    >
-                        <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                ) : null}
+                <IconButton
+                    size="small"
+                    color="error"
+                    title="Discard targeted resume"
+                    aria-label="Discard targeted resume"
+                    disabled={!row.can_discard}
+                    onClick={() => {
+                        handleDiscard(row);
+                    }}
+                >
+                    <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
             </Box>
         );
     };
