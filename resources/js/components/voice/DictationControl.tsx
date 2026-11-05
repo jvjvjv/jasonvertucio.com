@@ -4,17 +4,23 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
+import type { ChatStatus } from "@/components/chat-interface/chatStatus";
 import type { UseVoiceResult } from "@/hooks/useVoice";
 
+import { MARGIN_FOCUS_SX } from "@/components/chat-interface/composerStyles";
 import useDictation from "@/hooks/useDictation";
 
 interface DictationControlProps {
     voice: UseVoiceResult;
     /** Inserts the transcript at the composer's cursor; never sends. */
     onTranscript: (text: string) => void;
+    /**
+     * Reports recording, transcribing and the last problem so the composer can
+     * show them in its status caption; `null` when there is nothing to say.
+     */
+    onStatusChange?: (status: ChatStatus | null) => void;
 }
 
 function formatElapsed(seconds: number): string {
@@ -24,13 +30,14 @@ function formatElapsed(seconds: number): string {
 }
 
 /**
- * The composer's microphone: the button sits left of Send, and the state
- * line (recording time, transcribing, or the last problem) sits in the empty
- * bottom-left corner of the message box.
+ * The composer's microphone, rendered in its action margin left of Send. Its
+ * state (recording time, transcribing, or the last problem) is reported up
+ * through `onStatusChange` and shown in the composer's status caption.
  */
 export default function DictationControl({
     voice,
     onTranscript,
+    onStatusChange,
 }: DictationControlProps) {
     const { state, elapsedSeconds, message, start, stop, cancel } =
         useDictation({
@@ -71,87 +78,76 @@ export default function DictationControl({
           ? voice.dictationReason
           : label;
 
-    const statusLine = isRecording ? (
-        <>
-            <Box
-                component="span"
-                aria-hidden="true"
-                sx={{
-                    display: "inline-block",
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    bgcolor: "error.main",
-                    mr: 0.75,
-                    verticalAlign: "middle",
-                }}
-            />
-            Recording {formatElapsed(elapsedSeconds)} of{" "}
-            {formatElapsed(voice.config.maxRecordingSeconds)} · Esc to cancel
-        </>
-    ) : isTranscribing ? (
-        "Transcribing…"
-    ) : (
-        message
+    const recordingText = `Recording ${formatElapsed(elapsedSeconds)} of ${formatElapsed(voice.config.maxRecordingSeconds)}. Esc cancels.`;
+
+    const onStatusChangeRef = useRef(onStatusChange);
+    useEffect(() => {
+        onStatusChangeRef.current = onStatusChange;
+    });
+
+    useEffect(() => {
+        onStatusChangeRef.current?.(
+            isRecording
+                ? {
+                      kind: "recording",
+                      tone: "working",
+                      text: recordingText,
+                      moving: true,
+                  }
+                : isTranscribing
+                  ? {
+                        kind: "transcribing",
+                        tone: "working",
+                        text: "Transcribing the recording.",
+                        moving: true,
+                    }
+                  : message
+                    ? {
+                          kind: "dictation-problem",
+                          tone: "error",
+                          text: message,
+                          moving: false,
+                      }
+                    : null,
+        );
+    }, [isRecording, isTranscribing, message, recordingText]);
+
+    useEffect(
+        () => () => {
+            onStatusChangeRef.current?.(null);
+        },
+        [],
     );
 
     return (
-        <>
-            {statusLine ? (
-                <Typography
-                    variant="caption"
-                    role="status"
-                    color={
-                        message && state === "idle" ? "error" : "text.secondary"
-                    }
-                    sx={{
-                        position: "absolute",
-                        bottom: 14,
-                        left: 14,
-                        right: 100,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        pointerEvents: "none",
-                    }}
-                >
-                    {statusLine}
-                </Typography>
-            ) : null}
-            <Tooltip title={tooltip ?? ""} placement="top" arrow>
-                <Box
-                    component="span"
-                    sx={{ position: "absolute", bottom: 8, right: 52 }}
-                >
-                    {isTranscribing ? (
-                        <Box
-                            sx={{
-                                width: 40,
-                                height: 40,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <CircularProgress
-                                size={20}
-                                aria-label="Transcribing"
-                            />
-                        </Box>
-                    ) : (
-                        <IconButton
-                            type="button"
-                            color={isRecording ? "error" : "default"}
-                            aria-label={label}
-                            aria-pressed={isRecording}
-                            disabled={disabled}
-                            onClick={isRecording ? stop : start}
-                        >
-                            {isRecording ? <StopIcon /> : <MicIcon />}
-                        </IconButton>
-                    )}
-                </Box>
-            </Tooltip>
-        </>
+        <Tooltip title={tooltip ?? ""} placement="top" arrow>
+            <Box component="span" sx={{ display: "inline-flex" }}>
+                {isTranscribing ? (
+                    <Box
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <CircularProgress size={20} aria-label="Transcribing" />
+                    </Box>
+                ) : (
+                    <IconButton
+                        type="button"
+                        color={isRecording ? "error" : "default"}
+                        aria-label={label}
+                        aria-pressed={isRecording}
+                        disabled={disabled}
+                        onClick={isRecording ? stop : start}
+                        sx={{ width: 36, height: 36, ...MARGIN_FOCUS_SX }}
+                    >
+                        {isRecording ? <StopIcon /> : <MicIcon />}
+                    </IconButton>
+                )}
+            </Box>
+        </Tooltip>
     );
 }

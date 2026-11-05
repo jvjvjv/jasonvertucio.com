@@ -60,10 +60,13 @@ interface ChatVirtualListProps {
     streamingBlocks: MessageBlock[];
     streamingToolPanels: ToolPanel[];
     isAuthenticated: boolean;
-    isMobile: boolean;
     initialTopMostItemIndex: number;
     aboveMessagesSlot?: ReactNode;
     padding: number;
+    /** Reports whether the newest message is in view, as Virtuoso judges it. */
+    onAtBottomChange?: (atBottom: boolean) => void;
+    /** Receives the scrolling element, for measuring how far it is from the end. */
+    scrollerRef?: (element: HTMLElement | Window | null) => void;
 }
 
 interface ListContext {
@@ -83,10 +86,11 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
             streamingBlocks,
             streamingToolPanels,
             isAuthenticated,
-            isMobile,
             initialTopMostItemIndex,
             aboveMessagesSlot,
             padding,
+            onAtBottomChange,
+            scrollerRef,
         },
         ref,
     ) {
@@ -111,19 +115,21 @@ export default forwardRef<VirtuosoHandle, ChatVirtualListProps>(
             virtualItems.push({ _kind: "no-reply" });
         }
 
-        const chromeHeight = isMobile ? 300 : 320;
-        const virtuosoHeight = `calc(100dvh - ${chromeHeight}px)`;
-        const virtuosoMinHeight = isMobile ? 200 : 300;
-
         return (
             <Virtuoso<VirtualItem, ListContext>
                 ref={ref}
+                // Fills whatever the chat card's column leaves after the
+                // composer, so a growing draft shortens the list instead of
+                // covering it.
                 style={{
-                    height: virtuosoHeight,
-                    minHeight: virtuosoMinHeight,
+                    flex: "1 1 0",
+                    minHeight: 0,
+                    height: "100%",
                     margin: "0 auto",
                     width: "100%",
                 }}
+                atBottomStateChange={onAtBottomChange}
+                scrollerRef={scrollerRef}
                 data={virtualItems}
                 followOutput="smooth"
                 initialTopMostItemIndex={initialTopMostItemIndex}

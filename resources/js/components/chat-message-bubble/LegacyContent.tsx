@@ -1,7 +1,6 @@
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import { useState } from "react";
 
@@ -107,16 +106,6 @@ export default function LegacyContent({
                             : "text.primary"
                     }
                 />
-                {isStreaming ? (
-                    <Box
-                        sx={{ mt: 1.5 }}
-                        role="status"
-                        aria-live="polite"
-                        aria-label="Assistant response is still streaming"
-                    >
-                        <LinearProgress />
-                    </Box>
-                ) : null}
             </Box>
         </>
     );
