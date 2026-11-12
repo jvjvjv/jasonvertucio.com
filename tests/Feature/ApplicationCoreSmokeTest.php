@@ -23,6 +23,7 @@ use App\Services\Mcp\Tools\TargetedResume\UpdateFitAssessmentTool;
 use App\Services\Mcp\Tools\TargetedResume\UpdateStatusTool;
 use App\Services\TargetedResumeService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\JsonSchema\JsonSchemaTypeFactory;
 use Illuminate\Support\Carbon;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Models\AiConversation as BaseAiConversation;
@@ -365,6 +366,32 @@ class ApplicationCoreSmokeTest extends TestCase
         $this->assertSame('2026-06-12', $status['occurred_at']);
         $this->assertSame(ApplicationStatus::Applied, $application->fresh()->status);
         $this->assertSame('2026-06-12 12:00:00', $application->latestStatusUpdate->occurred_at->toDateTimeString());
+    }
+
+    public function test_update_status_tool_records_a_withdrawal(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo('save-resume');
+        $application = Application::factory()->applied(Carbon::parse('2026-06-01 12:00:00'))->create([
+            'ai_conversation_id' => BaseAiConversation::factory()->create(['user_id' => $user->id])->id,
+        ]);
+        $context = ToolContext::forConversation(BaseAiConversation::query()->findOrFail($application->ai_conversation_id));
+        $tool = app()->makeWith(UpdateStatusTool::class, ['context' => $context]);
+
+        $this->assertContains('withdrawn', $tool->schema(new JsonSchemaTypeFactory)['status']->toArray()['enum']);
+
+        $status = ToolResultConverter::toArray($tool->handle(new Request([
+            'status' => 'withdrawn',
+            'occurred_at' => '2026-06-20',
+            'notes' => 'Took another offer.',
+        ])));
+
+        $this->assertTrue($status['success']);
+        $this->assertSame('withdrawn', $status['status']);
+        $application = $application->fresh();
+        $this->assertSame(ApplicationStatus::Withdrawn, $application->status);
+        $this->assertSame(ApplicationStatus::Withdrawn, $application->latestStatusUpdate->status);
+        $this->assertSame('Took another offer.', $application->latestStatusUpdate->notes);
     }
 
     public function test_metrics_filter_by_applied_date_inclusive_of_both_ends(): void

@@ -13,6 +13,7 @@ enum ApplicationStatus: string
     case Accepted = 'accepted';
     case Hired = 'hired';
     case Rejected = 'rejected';
+    case Withdrawn = 'withdrawn';
 
     /**
      * The statuses an application moves through once it has been applied to —
@@ -36,7 +37,7 @@ enum ApplicationStatus: string
     public function isTerminal(): bool
     {
         return match ($this) {
-            self::Accepted, self::Hired, self::Rejected => true,
+            self::Accepted, self::Hired, self::Rejected, self::Withdrawn => true,
             default => false,
         };
     }
@@ -48,10 +49,10 @@ enum ApplicationStatus: string
     {
         return match ($this) {
             self::Draft, self::Passed => [self::Applied],
-            self::Applied => [self::Interviewing, self::Offered, self::Rejected],
-            self::Interviewing => [self::Interviewed, self::Rejected],
-            self::Interviewed => [self::Interviewing, self::Offered, self::Rejected],
-            self::Offered => [self::Accepted, self::Hired, self::Rejected],
+            self::Applied => [self::Interviewing, self::Offered, self::Rejected, self::Withdrawn],
+            self::Interviewing => [self::Interviewed, self::Rejected, self::Withdrawn],
+            self::Interviewed => [self::Interviewing, self::Offered, self::Rejected, self::Withdrawn],
+            self::Offered => [self::Accepted, self::Hired, self::Rejected, self::Withdrawn],
             default => [],
         };
     }

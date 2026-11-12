@@ -522,6 +522,83 @@ class ApplicationMetricsTest extends TestCase
     // Helpers
     // ---------------------------------------------------------------------
 
+    // ---------------------------------------------------------------------
+    // Requirement: Withdrawn applications in metrics
+    // ---------------------------------------------------------------------
+
+    public function test_withdrawn_application_has_its_own_outcome(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Withdrawn, '2001-03-05 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(['withdrawn' => 1], $this->outcomeCounts($metrics));
+        $this->assertSame([['outcome' => 'withdrawn', 'label' => 'Withdrawn', 'count' => 1]], $metrics['outcomes']);
+        $this->assertSame(0.0, $metrics['kpis']['ghostRate']);
+    }
+
+    public function test_withdrawn_application_stays_in_the_totals_and_denominators(): void
+    {
+        $withdrawn = Application::factory()->applied(Carbon::parse('2001-06-01 09:00:00'))->create();
+        $this->entry($withdrawn, ApplicationStatus::Withdrawn, '2001-06-05 09:00:00');
+        $interviewing = Application::factory()->applied(Carbon::parse('2001-06-10 09:00:00'))->create();
+        $this->entry($interviewing, ApplicationStatus::Interviewing, '2001-06-20 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(
+            ['totalApplied' => 2, 'responseRate' => 50.0, 'interviewRate' => 50.0, 'offerRate' => 0.0, 'ghostRate' => 0.0],
+            $metrics['kpis'],
+        );
+        $this->assertSame(['in_progress' => 1, 'withdrawn' => 1], $this->outcomeCounts($metrics));
+    }
+
+    public function test_withdrawing_is_not_a_response(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Withdrawn, '2001-03-05 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(0.0, $metrics['kpis']['responseRate']);
+        $this->assertNull($metrics['cycleTimes']['toFirstResponse']);
+        $this->assertNull($metrics['cycleTimes']['toRejection']);
+    }
+
+    public function test_withdrawn_after_interviewing_keeps_the_stage_it_reached(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Interviewing, '2001-03-08 09:00:00');
+        $this->entry($application, ApplicationStatus::Withdrawn, '2001-03-12 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(100.0, $metrics['kpis']['responseRate']);
+        $this->assertSame(100.0, $metrics['kpis']['interviewRate']);
+        $this->assertSame(
+            ['applied' => 1, 'interviewing' => 1, 'interviewed' => 0, 'offered' => 0, 'accepted' => 0],
+            $this->funnelCounts($metrics),
+        );
+        $this->assertSame(['withdrawn' => 1], $this->outcomeCounts($metrics));
+        $this->assertSame(7.0, $metrics['cycleTimes']['toFirstResponse']);
+    }
+
+    public function test_withdrawn_application_on_the_timeline_ends_at_the_withdrawal(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Withdrawn, '2001-03-05 09:00:00');
+
+        $row = $this->year2001()['timeline'][0];
+        $withdrawnAt = Carbon::parse('2001-03-05 09:00:00')->toIso8601String();
+
+        $this->assertSame($application->id, $row['id']);
+        $this->assertSame('withdrawn', $row['outcome']);
+        $this->assertSame(['applied', 'withdrawn'], array_column($row['segments'], 'status'));
+        $this->assertSame($withdrawnAt, $row['segments'][0]['to']);
+        $this->assertSame(['status' => 'withdrawn', 'from' => $withdrawnAt, 'to' => $withdrawnAt], $row['segments'][1]);
+    }
+
     /**
      * @return array<string, mixed>
      */

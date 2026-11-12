@@ -14,8 +14,8 @@ class ApplicationMetricsService
 {
     /**
      * Progressive pipeline stages in funnel order. Each maps to a rank used to
-     * determine how far an application advanced. "rejected" is an off-ramp and
-     * has no rank.
+     * determine how far an application advanced. "rejected" and "withdrawn"
+     * are off-ramps and have no rank.
      *
      * @var array<string, int>
      */
@@ -159,8 +159,9 @@ class ApplicationMetricsService
     }
 
     /**
-     * The bucketed outcome for the donut: accepted, rejected, ghosted, or
-     * in_progress.
+     * The bucketed outcome for the donut: accepted, rejected, withdrawn,
+     * ghosted, or in_progress. The employer's decision outranks a withdrawal
+     * should a history ever hold both.
      */
     private function outcome(Application $application, int $ghostedAfterDays): string
     {
@@ -172,6 +173,10 @@ class ApplicationMetricsService
 
         if (in_array('rejected', $statuses, true)) {
             return 'rejected';
+        }
+
+        if (in_array('withdrawn', $statuses, true)) {
+            return 'withdrawn';
         }
 
         $latest = $application->statusUpdates->last();
@@ -251,6 +256,7 @@ class ApplicationMetricsService
             'accepted' => 'Accepted',
             'in_progress' => 'In progress',
             'rejected' => 'Rejected',
+            'withdrawn' => 'Withdrawn',
             'ghosted' => 'Ghosted',
         ];
 
@@ -307,7 +313,7 @@ class ApplicationMetricsService
             }
 
             $firstResponse = $application->statusUpdates
-                ->first(fn (ApplicationStatusUpdate $u) => $u->status->value !== 'applied');
+                ->first(fn (ApplicationStatusUpdate $u) => ! in_array($u->status->value, ['applied', 'withdrawn'], true));
 
             if ($firstResponse !== null) {
                 $toResponse[] = $appliedAt->diffInDays($firstResponse->occurred_at);
