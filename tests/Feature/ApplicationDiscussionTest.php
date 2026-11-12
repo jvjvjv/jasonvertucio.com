@@ -172,7 +172,7 @@ class ApplicationDiscussionTest extends TestCase
                 ->where('application.fit_score', 72)
                 ->where('application.fit_summary', 'Good fit.')
                 ->where('application.has_applied', true)
-                ->where('application.allowed_next_statuses', ['interviewed', 'rejected'])
+                ->where('application.allowed_next_statuses', ['interviewed', 'rejected', 'withdrawn'])
                 ->where('application.status_updates', [
                     ['id' => $applied->id, 'status' => 'applied', 'notes' => 'Via referral', 'occurred_at' => Carbon::parse('2026-03-01 09:00:00')->toIso8601String()],
                     ['id' => $interviewing->id, 'status' => 'interviewing', 'notes' => 'Phone screen', 'occurred_at' => Carbon::parse('2026-03-09 15:00:00')->toIso8601String()],
@@ -181,6 +181,36 @@ class ApplicationDiscussionTest extends TestCase
                 ->where('coverLetter.company_name', 'Discusszq Applied Co')
                 ->has('systems')
                 ->has('defaultSystemId')
+            );
+    }
+
+    /**
+     * @return array<string, array{0: ApplicationStatus, 1: array<int, string>}>
+     */
+    public static function withdrawableProvider(): array
+    {
+        return [
+            'draft' => [ApplicationStatus::Draft, ['applied']],
+            'passed' => [ApplicationStatus::Passed, ['applied']],
+            'interviewed' => [ApplicationStatus::Interviewed, ['interviewing', 'offered', 'rejected', 'withdrawn']],
+            'offered' => [ApplicationStatus::Offered, ['accepted', 'hired', 'rejected', 'withdrawn']],
+            'withdrawn' => [ApplicationStatus::Withdrawn, []],
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $expected
+     */
+    #[DataProvider('withdrawableProvider')]
+    public function test_withdrawn_is_offered_only_once_the_application_is_in_the_pipeline(ApplicationStatus $status, array $expected): void
+    {
+        $application = Application::factory()->create(['status' => $status]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.show', $application))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('application.allowed_next_statuses', $expected)
             );
     }
 

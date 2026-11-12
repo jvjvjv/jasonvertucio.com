@@ -143,6 +143,76 @@ class ApplicationStatusUpdateTest extends TestCase
         $this->assertSame(ApplicationStatus::Rejected, $application->fresh()->status);
     }
 
+    public function test_withdrawn_after_applied(): void
+    {
+        $application = Application::factory()->applied()->create();
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
+                'status' => 'withdrawn',
+                'notes' => 'Took another offer.',
+                'occurred_at' => '2026-06-20',
+            ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('status', 'withdrawn');
+        $response->assertJsonPath('allowed_next_statuses', []);
+
+        $this->assertDatabaseHas('application_status_updates', [
+            'application_id' => $application->id,
+            'status' => 'withdrawn',
+            'notes' => 'Took another offer.',
+        ]);
+        $this->assertSame('2026-06-20', $application->statusUpdates()->where('status', 'withdrawn')->first()->occurred_at->toDateString());
+        $this->assertSame(ApplicationStatus::Withdrawn, $application->fresh()->status);
+    }
+
+    public function test_cannot_add_status_update_to_withdrawn_application(): void
+    {
+        $application = Application::factory()->applied()->create();
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), ['status' => 'withdrawn'])
+            ->assertOk();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.employment.applications.status-updates.store', $application), [
+                'status' => 'interviewing',
+            ])
+            ->assertStatus(422)
+            ->assertJsonStructure(['message']);
+
+        $this->assertSame(2, $application->statusUpdates()->count());
+        $this->assertSame(ApplicationStatus::Withdrawn, $application->fresh()->status);
+    }
+
+    public function test_deleting_the_withdrawn_entry_restores_the_previous_status(): void
+    {
+        $application = Application::factory()->create(['status' => ApplicationStatus::Withdrawn]);
+
+        ApplicationStatusUpdate::create([
+            'application_id' => $application->id,
+            'status' => 'applied',
+            'occurred_at' => '2026-06-10 00:00:00',
+        ]);
+        ApplicationStatusUpdate::create([
+            'application_id' => $application->id,
+            'status' => 'interviewing',
+            'occurred_at' => '2026-06-12 00:00:00',
+        ]);
+        $withdrawn = ApplicationStatusUpdate::create([
+            'application_id' => $application->id,
+            'status' => 'withdrawn',
+            'occurred_at' => '2026-06-14 00:00:00',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->deleteJson(route('admin.employment.applications.status-updates.destroy', [$application, $withdrawn]))
+            ->assertOk()
+            ->assertJsonPath('status', 'interviewing');
+
+        $this->assertSame(ApplicationStatus::Interviewing, $application->fresh()->status);
+    }
+
     public function test_cannot_add_status_update_to_terminal_application(): void
     {
         $application = Application::factory()->create(['status' => ApplicationStatus::Rejected]);

@@ -21,9 +21,10 @@ use Laravel\Mcp\Server\Attributes\Name;
 #[Description(
     'Log a job application status update. Call this when the candidate reports a status change, '
     .'e.g. "I applied" → status=applied, "I have an interview on June 12th" → status=interviewing, '
-    .'occurred_at=2026-06-12, "I got rejected" → status=rejected. '
+    .'occurred_at=2026-06-12, "I got rejected" → status=rejected, '
+    .'"I withdrew my application" → status=withdrawn. '
     .'For `interviewing`, occurred_at should be the scheduled interview date. '
-    .'Valid statuses: applied, interviewing, interviewed, offered, accepted, hired, rejected.'
+    .'Valid statuses: applied, interviewing, interviewed, offered, accepted, hired, rejected, withdrawn.'
 )]
 class UpdateStatusTool extends AuthorizedResumeTool
 {

@@ -448,6 +448,19 @@ class ApplicationServiceTest extends TestCase
         $this->assertSame('applied', ApplicationStatusResolver::resolve($onTheThreshold->status->value, $onTheThreshold->latestStatusUpdate->occurred_at));
     }
 
+    public function test_a_withdrawn_application_is_never_displayed_as_ghosted(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+        $threshold = (int) config('resume.ghosted_after_days');
+
+        $application = Application::factory()->applied(now()->subDays($threshold * 3))->create();
+        $this->service()->addStatusUpdate($application, ApplicationStatus::Withdrawn, null, now()->subDays($threshold * 2));
+        $application = $application->fresh();
+
+        $this->assertSame(ApplicationStatus::Withdrawn, $application->status);
+        $this->assertSame('withdrawn', ApplicationStatusResolver::resolve($application->status->value, $application->latestStatusUpdate->occurred_at));
+    }
+
     public function test_ghosted_display_is_judged_by_the_latest_entry_and_only_for_applied(): void
     {
         $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));

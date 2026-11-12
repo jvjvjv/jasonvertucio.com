@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 /**
  * Thrown when a status-history entry is added to an application whose status
- * is terminal (accepted, hired or rejected).
+ * is terminal (accepted, hired, rejected or withdrawn).
  */
 class TerminalApplicationException extends ApplicationException
 {

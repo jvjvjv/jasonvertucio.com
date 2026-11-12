@@ -24,6 +24,8 @@ export function statusChartColor(theme: Theme, status: string): string {
             return theme.palette.info.main;
         case "rejected":
             return theme.palette.error.main;
+        case "withdrawn":
+            return theme.palette.secondary.main;
         case "ghosted":
             return theme.palette.grey[500];
         default:

@@ -25,6 +25,7 @@ export function statusColor(status: string): ChipColor {
             return "info";
         case "pass":
         case "passed":
+        case "withdrawn":
             return "secondary";
         case "rejected":
             return "error";

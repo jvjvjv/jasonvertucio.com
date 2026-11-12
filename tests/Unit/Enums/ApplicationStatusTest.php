@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class ApplicationStatusTest extends TestCase
 {
-    public function test_it_has_exactly_the_nine_statuses_with_their_string_values(): void
+    public function test_it_has_exactly_the_ten_statuses_with_their_string_values(): void
     {
         $this->assertSame(
             [
@@ -21,6 +21,7 @@ class ApplicationStatusTest extends TestCase
                 'Accepted' => 'accepted',
                 'Hired' => 'hired',
                 'Rejected' => 'rejected',
+                'Withdrawn' => 'withdrawn',
             ],
             array_column(ApplicationStatus::cases(), 'value', 'name'),
         );
@@ -47,6 +48,7 @@ class ApplicationStatusTest extends TestCase
             'accepted' => [ApplicationStatus::Accepted, true],
             'hired' => [ApplicationStatus::Hired, true],
             'rejected' => [ApplicationStatus::Rejected, true],
+            'withdrawn' => [ApplicationStatus::Withdrawn, true],
         ];
     }
 
@@ -71,11 +73,12 @@ class ApplicationStatusTest extends TestCase
             'accepted' => [ApplicationStatus::Accepted, true],
             'hired' => [ApplicationStatus::Hired, true],
             'rejected' => [ApplicationStatus::Rejected, true],
+            'withdrawn' => [ApplicationStatus::Withdrawn, true],
         ];
     }
 
     #[DataProvider('terminalProvider')]
-    public function test_is_terminal_is_true_only_for_accepted_hired_and_rejected(ApplicationStatus $status, bool $expected): void
+    public function test_is_terminal_is_true_only_for_accepted_hired_rejected_and_withdrawn(ApplicationStatus $status, bool $expected): void
     {
         $this->assertSame($expected, $status->isTerminal());
     }
@@ -88,13 +91,14 @@ class ApplicationStatusTest extends TestCase
         return [
             'draft' => [ApplicationStatus::Draft, [ApplicationStatus::Applied]],
             'passed' => [ApplicationStatus::Passed, [ApplicationStatus::Applied]],
-            'applied' => [ApplicationStatus::Applied, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected]],
-            'interviewing' => [ApplicationStatus::Interviewing, [ApplicationStatus::Interviewed, ApplicationStatus::Rejected]],
-            'interviewed' => [ApplicationStatus::Interviewed, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected]],
-            'offered' => [ApplicationStatus::Offered, [ApplicationStatus::Accepted, ApplicationStatus::Hired, ApplicationStatus::Rejected]],
+            'applied' => [ApplicationStatus::Applied, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
+            'interviewing' => [ApplicationStatus::Interviewing, [ApplicationStatus::Interviewed, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
+            'interviewed' => [ApplicationStatus::Interviewed, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
+            'offered' => [ApplicationStatus::Offered, [ApplicationStatus::Accepted, ApplicationStatus::Hired, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
             'accepted' => [ApplicationStatus::Accepted, []],
             'hired' => [ApplicationStatus::Hired, []],
             'rejected' => [ApplicationStatus::Rejected, []],
+            'withdrawn' => [ApplicationStatus::Withdrawn, []],
         ];
     }
 
@@ -141,6 +145,7 @@ class ApplicationStatusTest extends TestCase
                 ApplicationStatus::Accepted,
                 ApplicationStatus::Hired,
                 ApplicationStatus::Rejected,
+                ApplicationStatus::Withdrawn,
             ],
             ApplicationStatus::pipeline(),
         );
