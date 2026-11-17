@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\ApplicationStatus;
 use App\Models\AiConversation;
 use App\Models\Application;
+use App\Models\ApplicationContact;
 use App\Models\ApplicationStatusUpdate;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
@@ -74,6 +75,26 @@ class ApplicationFactory extends Factory
                 'resume_version_id' => $attributes['resume_version_id'],
             ]),
         ]);
+    }
+
+    /**
+     * Adds a contact, with the given attributes (an email, say) when given.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function withContact(array $attributes = []): static
+    {
+        return $this->afterCreating(function (Application $application) use ($attributes): void {
+            ApplicationContact::factory()->create([
+                ...$attributes,
+                'application_id' => $application->id,
+            ]);
+        });
+    }
+
+    public function followUpsEnabled(): static
+    {
+        return $this->state(fn (array $attributes): array => ['follow_ups_enabled' => true]);
     }
 
     public function withConversation(): static

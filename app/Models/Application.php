@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\FollowUpStatus;
 use Database\Factories\ApplicationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +47,7 @@ class Application extends Model
         'fit_score',
         'fit_summary',
         'status',
+        'follow_ups_enabled',
     ];
 
     /**
@@ -53,6 +55,7 @@ class Application extends Model
      */
     protected $attributes = [
         'status' => 'draft',
+        'follow_ups_enabled' => false,
     ];
 
     /**
@@ -63,6 +66,7 @@ class Application extends Model
         return [
             'status' => ApplicationStatus::class,
             'fit_score' => 'integer',
+            'follow_ups_enabled' => 'boolean',
         ];
     }
 
@@ -118,6 +122,30 @@ class Application extends Model
     public function latestStatusUpdate(): HasOne
     {
         return $this->hasOne(ApplicationStatusUpdate::class)->latestOfMany('occurred_at');
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(ApplicationContact::class)->orderBy('id');
+    }
+
+    /**
+     * Every follow-up drafted for the application, oldest first.
+     */
+    public function followUps(): HasMany
+    {
+        return $this->hasMany(ApplicationFollowUp::class)->orderBy('id');
+    }
+
+    /**
+     * The draft waiting for review, if any. There is at most one.
+     */
+    public function pendingFollowUp(): HasOne
+    {
+        return $this->hasOne(ApplicationFollowUp::class)->ofMany(
+            ['id' => 'max'],
+            fn ($query) => $query->where('status', FollowUpStatus::Pending->value),
+        );
     }
 
     /**

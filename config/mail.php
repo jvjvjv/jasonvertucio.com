@@ -62,6 +62,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Copied Address
+    |--------------------------------------------------------------------------
+    |
+    | Openly copied on mail that recipients are expected to answer, such as
+    | application follow-ups, so a reply-all reaches a real inbox when the
+    | from address is a no-reply one. Leave empty to copy no one.
+    |
+    */
+
+    'cc' => [
+        'address' => env('MAIL_CC_ADDRESS'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | E-Mail Encryption Protocol
     |--------------------------------------------------------------------------
     |

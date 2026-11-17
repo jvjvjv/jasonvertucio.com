@@ -2,8 +2,12 @@
 
 namespace App\Support;
 
+use App\Enums\FollowUpStatus;
 use App\Models\AiConversation;
 use App\Models\Application;
+use App\Models\ApplicationContact;
+use App\Models\ApplicationFollowUp;
+use App\Services\ApplicationFollowUpService;
 use App\Models\ResumeVersion;
 use App\Services\TargetedResumeSystems;
 use Illuminate\Support\Collection;
@@ -34,6 +38,75 @@ class ApplicationPayload
             'status' => $application->status->value,
             'status_updates' => $this->statusUpdates($application),
             'allowed_next_statuses' => $this->allowedNextStatuses($application),
+        ];
+    }
+
+    /**
+     * An application's contacts and follow-ups, as the Discussion page shows
+     * them and every contact and follow-up endpoint reports them after a
+     * change. Contacts appear here only, behind `edit-resume`.
+     *
+     * @return array{
+     *     success: true,
+     *     follow_ups_enabled: bool,
+     *     contacts: array<int, array{id: int, email: string, name: ?string, role: ?string, notes: ?string}>,
+     *     pending_follow_up: ?array{id: int, status: string, subject: string, body: string, recipients: ?array<int, string>, drafted_at: ?string, sent_at: ?string, discarded_at: ?string, discard_reason: ?string, failure_reason: ?string},
+     *     follow_up_history: array<int, array{id: int, status: string, subject: string, body: string, recipients: ?array<int, string>, drafted_at: ?string, sent_at: ?string, discarded_at: ?string, discard_reason: ?string, failure_reason: ?string}>,
+     *     follow_up_system_configured: bool,
+     *     sent_since_status_change: int,
+     *     max_per_status: int,
+     *     cadence_days: int
+     * }
+     */
+    public function followUpState(Application $application): array
+    {
+        $followUps = app(ApplicationFollowUpService::class);
+        $all = $application->followUps()->get();
+        $pending = $all->last(fn (ApplicationFollowUp $followUp): bool => $followUp->status === FollowUpStatus::Pending);
+
+        return [
+            'success' => true,
+            'follow_ups_enabled' => (bool) $application->follow_ups_enabled,
+            'contacts' => $application->contacts()->get()
+                ->map(fn (ApplicationContact $contact): array => [
+                    'id' => $contact->id,
+                    'email' => $contact->email,
+                    'name' => $contact->name,
+                    'role' => $contact->role,
+                    'notes' => $contact->notes,
+                ])
+                ->values()
+                ->all(),
+            'pending_follow_up' => $pending !== null ? $this->followUp($pending) : null,
+            'follow_up_history' => $all
+                ->filter(fn (ApplicationFollowUp $followUp): bool => in_array($followUp->status, [FollowUpStatus::Sending, FollowUpStatus::Sent, FollowUpStatus::Failed], true))
+                ->sortByDesc(fn (ApplicationFollowUp $followUp): int => ($followUp->sent_at ?? $followUp->updated_at)?->getTimestamp() ?? 0)
+                ->map(fn (ApplicationFollowUp $followUp): array => $this->followUp($followUp))
+                ->values()
+                ->all(),
+            'follow_up_system_configured' => $followUps->system() !== null,
+            'sent_since_status_change' => $followUps->sentSinceStatusChange($application),
+            'max_per_status' => (int) config('resume.follow_ups.max_per_status'),
+            'cadence_days' => (int) config('resume.follow_ups.cadence_days'),
+        ];
+    }
+
+    /**
+     * @return array{id: int, status: string, subject: string, body: string, recipients: ?array<int, string>, drafted_at: ?string, sent_at: ?string, discarded_at: ?string, discard_reason: ?string, failure_reason: ?string}
+     */
+    private function followUp(ApplicationFollowUp $followUp): array
+    {
+        return [
+            'id' => $followUp->id,
+            'status' => $followUp->status->value,
+            'subject' => $followUp->subject,
+            'body' => $followUp->body,
+            'recipients' => $followUp->recipients,
+            'drafted_at' => $followUp->drafted_at?->toIso8601String(),
+            'sent_at' => $followUp->sent_at?->toIso8601String(),
+            'discarded_at' => $followUp->discarded_at?->toIso8601String(),
+            'discard_reason' => $followUp->discard_reason?->value,
+            'failure_reason' => $followUp->failure_reason,
         ];
     }
 

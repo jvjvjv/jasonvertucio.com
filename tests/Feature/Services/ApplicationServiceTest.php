@@ -19,6 +19,7 @@ use App\Models\CoverLetter;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\User;
+use App\Services\ApplicationFollowUpService;
 use App\Services\ApplicationService;
 use App\Services\CompanyIntel\CompanyIntelService;
 use App\Services\TargetedResumeService;
@@ -1372,7 +1373,7 @@ class ApplicationServiceTest extends TestCase
         $failing->shouldReceive('startConversation')->once()->andThrow(new RuntimeException('Session could not be started.'));
 
         try {
-            (new ApplicationService($failing, app(CompanyIntelService::class)))->createForAnalysis(AiSystem::factory()->create(), self::JOB_DESCRIPTION, 'Acme Corp', 'Engineer');
+            (new ApplicationService($failing, app(CompanyIntelService::class), app(ApplicationFollowUpService::class)))->createForAnalysis(AiSystem::factory()->create(), self::JOB_DESCRIPTION, 'Acme Corp', 'Engineer');
             $this->fail('The failure was swallowed.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Session could not be started.', $exception->getMessage());
@@ -1391,7 +1392,7 @@ class ApplicationServiceTest extends TestCase
         $failing->shouldReceive('recordResumeDiscardedMessage')->once()->andThrow(new RuntimeException('Note could not be recorded.'));
 
         try {
-            (new ApplicationService($failing, app(CompanyIntelService::class)))->discardTargetedResume($application);
+            (new ApplicationService($failing, app(CompanyIntelService::class), app(ApplicationFollowUpService::class)))->discardTargetedResume($application);
             $this->fail('The failure was swallowed.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Note could not be recorded.', $exception->getMessage());

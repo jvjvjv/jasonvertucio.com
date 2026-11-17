@@ -550,7 +550,9 @@ class ApplicationCreateTest extends TestCase
                 'fit_summary' => 'New summary',
             ])
             ->assertOk()
-            ->assertExactJson(['success' => true, 'message' => 'Application details updated.']);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Application details updated.')
+            ->assertJsonPath('follow_ups.follow_ups_enabled', false);
 
         $application->refresh();
 

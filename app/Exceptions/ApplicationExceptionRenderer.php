@@ -33,6 +33,11 @@ class ApplicationExceptionRenderer
         NoIntelSystemException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
         SystemNotEligibleException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
         SessionTurnInProgressException::class => Response::HTTP_CONFLICT,
+        ApplicationContactMismatchException::class => Response::HTTP_NOT_FOUND,
+        ApplicationFollowUpMismatchException::class => Response::HTTP_NOT_FOUND,
+        FollowUpNotPendingException::class => Response::HTTP_CONFLICT,
+        FollowUpHasNoRecipientsException::class => Response::HTTP_CONFLICT,
+        FollowUpIncompleteException::class => Response::HTTP_UNPROCESSABLE_ENTITY,
     ];
 
     public function __construct(

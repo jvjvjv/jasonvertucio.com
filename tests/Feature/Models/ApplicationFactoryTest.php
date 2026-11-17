@@ -3,8 +3,11 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\FollowUpDiscardReason;
+use App\Enums\FollowUpStatus;
 use App\Models\AiConversation;
 use App\Models\Application;
+use App\Models\ApplicationFollowUp;
 use App\Models\ApplicationStatusUpdate;
 use App\Models\CoverLetter;
 use App\Models\JobUrl;
@@ -234,6 +237,78 @@ class ApplicationFactoryTest extends TestCase
 
         $this->assertCount(3, $applications);
         $this->assertSame(3, Application::query()->whereKey($applications->pluck('id'))->whereNull('targeted_resume_id')->whereNull('ai_conversation_id')->count());
+    }
+
+    public function test_follow_ups_are_off_by_default_and_the_follow_ups_enabled_state_turns_them_on(): void
+    {
+        $this->assertFalse(Application::factory()->create()->fresh()->follow_ups_enabled);
+        $this->assertTrue(Application::factory()->followUpsEnabled()->create()->fresh()->follow_ups_enabled);
+    }
+
+    public function test_with_contact_state_adds_a_contact_with_a_lower_cased_email(): void
+    {
+        $application = Application::factory()->withContact(['email' => 'Pat@Example.COM', 'name' => 'Pat Lee'])->create();
+
+        $contact = $application->contacts()->sole();
+
+        $this->assertSame('pat@example.com', $contact->email);
+        $this->assertSame('Pat Lee', $contact->name);
+        $this->assertTrue($contact->application->is($application));
+    }
+
+    public function test_with_contact_state_composes_for_several_contacts(): void
+    {
+        $application = Application::factory()->withContact()->withContact()->create();
+
+        $this->assertSame(2, $application->contacts()->count());
+    }
+
+    public function test_follow_up_factory_states_persist_their_status(): void
+    {
+        $application = Application::factory()->create();
+        $sentAt = Carbon::parse('2026-03-01 10:00:00');
+
+        $pending = ApplicationFollowUp::factory()->pending()->create(['application_id' => $application->id])->fresh();
+        $sent = ApplicationFollowUp::factory()->sent($sentAt, ['pat@example.com'])->create(['application_id' => $application->id])->fresh();
+        $failed = ApplicationFollowUp::factory()->failed('Timed out.')->create(['application_id' => $application->id])->fresh();
+        $discarded = ApplicationFollowUp::factory()->discarded(FollowUpDiscardReason::Superseded)->create(['application_id' => $application->id])->fresh();
+
+        $this->assertSame(FollowUpStatus::Pending, $pending->status);
+        $this->assertNull($pending->recipients);
+        $this->assertNotNull($pending->drafted_at);
+
+        $this->assertSame(FollowUpStatus::Sent, $sent->status);
+        $this->assertSame(['pat@example.com'], $sent->recipients);
+        $this->assertSame('2026-03-01 10:00:00', $sent->sent_at->toDateTimeString());
+
+        $this->assertSame(FollowUpStatus::Failed, $failed->status);
+        $this->assertSame('Timed out.', $failed->failure_reason);
+
+        $this->assertSame(FollowUpStatus::Discarded, $discarded->status);
+        $this->assertSame(FollowUpDiscardReason::Superseded, $discarded->discard_reason);
+        $this->assertNotNull($discarded->discarded_at);
+
+        $this->assertSame([$pending->id, $sent->id, $failed->id, $discarded->id], $application->followUps()->pluck('id')->all());
+        $this->assertTrue($application->pendingFollowUp->is($pending));
+    }
+
+    public function test_pending_follow_up_is_null_without_a_pending_draft(): void
+    {
+        $application = Application::factory()->create();
+        ApplicationFollowUp::factory()->sent()->create(['application_id' => $application->id]);
+
+        $this->assertNull($application->pendingFollowUp);
+    }
+
+    public function test_contacts_and_follow_ups_are_deleted_with_a_hard_deleted_application(): void
+    {
+        $application = Application::factory()->withContact()->create();
+        ApplicationFollowUp::factory()->create(['application_id' => $application->id]);
+
+        $application->forceDelete();
+
+        $this->assertDatabaseMissing('application_contacts', ['application_id' => $application->id]);
+        $this->assertDatabaseMissing('application_follow_ups', ['application_id' => $application->id]);
     }
 
     private function statusUpdate(Application $application, ApplicationStatus $status, string $occurredAt): ApplicationStatusUpdate

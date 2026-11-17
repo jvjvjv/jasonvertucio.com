@@ -93,6 +93,40 @@ class ApplicationStatusTest extends TestCase
     }
 
     /**
+     * @return array<string, array{0: ApplicationStatus, 1: bool}>
+     */
+    public static function receivesFollowUpsProvider(): array
+    {
+        return [
+            'draft' => [ApplicationStatus::Draft, false],
+            'passed' => [ApplicationStatus::Passed, false],
+            'applied' => [ApplicationStatus::Applied, true],
+            'interviewing' => [ApplicationStatus::Interviewing, false],
+            'interviewed' => [ApplicationStatus::Interviewed, true],
+            'offered' => [ApplicationStatus::Offered, true],
+            'ghosted' => [ApplicationStatus::Ghosted, false],
+            'accepted' => [ApplicationStatus::Accepted, false],
+            'hired' => [ApplicationStatus::Hired, false],
+            'rejected' => [ApplicationStatus::Rejected, false],
+            'withdrawn' => [ApplicationStatus::Withdrawn, false],
+        ];
+    }
+
+    #[DataProvider('receivesFollowUpsProvider')]
+    public function test_receives_follow_ups_only_while_applied_interviewed_or_offered(ApplicationStatus $status, bool $expected): void
+    {
+        $this->assertSame($expected, $status->receivesFollowUps());
+    }
+
+    public function test_the_follow_up_provider_covers_every_status(): void
+    {
+        $this->assertEqualsCanonicalizing(
+            array_column(ApplicationStatus::cases(), 'value'),
+            array_keys(self::receivesFollowUpsProvider()),
+        );
+    }
+
+    /**
      * @return array<string, array{0: ApplicationStatus, 1: array<int, ApplicationStatus>}>
      */
     public static function allowedNextProvider(): array

@@ -44,6 +44,22 @@ enum ApplicationStatus: string
     }
 
     /**
+     * Whether an application in this status may get a follow-up email: one
+     * waiting on the employer. Not while an interview is in progress, not
+     * once ghosted (the follow-ups were already ignored), and not once the
+     * process is over. Deliberately has no default arm, so a new status must
+     * be classified here.
+     */
+    public function receivesFollowUps(): bool
+    {
+        return match ($this) {
+            self::Applied, self::Interviewed, self::Offered => true,
+            self::Draft, self::Passed, self::Interviewing, self::Ghosted,
+            self::Accepted, self::Hired, self::Rejected, self::Withdrawn => false,
+        };
+    }
+
+    /**
      * @return array<int, self>
      */
     public function allowedNext(): array

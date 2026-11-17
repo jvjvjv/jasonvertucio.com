@@ -173,6 +173,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Follow-ups
+    |--------------------------------------------------------------------------
+    |
+    | An application with follow-ups switched on is due for an AI-drafted
+    | follow-up once `cadence_days` have passed since the later of its latest
+    | status entry and its last sent follow-up, until `max_per_status` have
+    | been sent since that entry was recorded. Each new draft is announced to
+    | `notification_email`, which is also blind-copied on every sent
+    | follow-up. Nothing is sent without the admin's approval.
+    |
+    */
+
+    'follow_ups' => [
+        'cadence_days' => (int) env('RESUME_FOLLOW_UP_CADENCE_DAYS', 7),
+        'max_per_status' => (int) env('RESUME_FOLLOW_UP_MAX_PER_STATUS', 3),
+        'notification_email' => env('RESUME_FOLLOW_UP_NOTIFICATION_EMAIL', 'me@jasonvertucio.com'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | AI Persona Edit Batch Window
     |--------------------------------------------------------------------------
     |

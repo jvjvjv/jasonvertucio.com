@@ -29,6 +29,7 @@ class UpdateApplicationRequest extends FormRequest
             'job_description' => ['sometimes', 'string'],
             'fit_score' => ['nullable', 'integer', 'min:1', 'max:100'],
             'fit_summary' => ['nullable', 'string'],
+            'follow_ups_enabled' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -44,6 +45,7 @@ class UpdateApplicationRequest extends FormRequest
             'fit_score.integer' => 'The fit score must be a whole number from 1 to 100.',
             'fit_score.min' => 'The fit score must be a whole number from 1 to 100.',
             'fit_score.max' => 'The fit score must be a whole number from 1 to 100.',
+            'follow_ups_enabled.boolean' => 'The follow-up switch must be on or off.',
         ];
     }
 
@@ -59,12 +61,17 @@ class UpdateApplicationRequest extends FormRequest
      *     location?: ?string,
      *     job_description?: string,
      *     fit_score?: ?int,
-     *     fit_summary?: ?string
+     *     fit_summary?: ?string,
+     *     follow_ups_enabled?: bool
      * }
      */
     public function details(): array
     {
         $details = $this->validated();
+
+        if (array_key_exists('follow_ups_enabled', $details)) {
+            $details['follow_ups_enabled'] = $this->boolean('follow_ups_enabled');
+        }
 
         if (array_key_exists('job_title', $details)) {
             $details['position'] = $details['job_title'];

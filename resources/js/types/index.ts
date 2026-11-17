@@ -325,6 +325,53 @@ export interface ApplicationListItem {
         scope: "role" | "company";
         company_name: string | null;
     } | null;
+    /** A follow-up draft is waiting for review. */
+    has_pending_follow_up: boolean;
+}
+
+/** A person involved in an application's hiring process. */
+export interface ApplicationContact {
+    id: number;
+    /** Stored lower-cased; unique within the application. */
+    email: string;
+    name: string | null;
+    role: string | null;
+    notes: string | null;
+}
+
+export type FollowUpStatus =
+    "pending" | "sending" | "sent" | "failed" | "discarded";
+
+/** An AI-drafted follow-up email to an application's contacts. */
+export interface ApplicationFollowUp {
+    id: number;
+    status: FollowUpStatus;
+    subject: string;
+    body: string;
+    /** The addresses recorded at approval; null until approved. */
+    recipients: string[] | null;
+    drafted_at: string | null;
+    sent_at: string | null;
+    discarded_at: string | null;
+    discard_reason: "manual" | "superseded" | "disabled" | null;
+    failure_reason: string | null;
+}
+
+/**
+ * An application's contacts and follow-ups, as the Discussion page receives
+ * them and every contact and follow-up endpoint answers.
+ */
+export interface FollowUpState {
+    follow_ups_enabled: boolean;
+    contacts: ApplicationContact[];
+    pending_follow_up: ApplicationFollowUp | null;
+    /** Sending, sent and failed follow-ups, newest first. */
+    follow_up_history: ApplicationFollowUp[];
+    /** An active chat AI system is the `application-follow-up` default. */
+    follow_up_system_configured: boolean;
+    sent_since_status_change: number;
+    max_per_status: number;
+    cadence_days: number;
 }
 
 /** The AI session attached to an application, when it has one. */

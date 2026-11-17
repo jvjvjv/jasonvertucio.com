@@ -28,6 +28,7 @@ trait ValidatesAiSystemRole
         'targeted-resume' => AiSystemRole::Chat,
         'cover-letter' => AiSystemRole::Chat,
         'company-intel' => AiSystemRole::Chat,
+        'application-follow-up' => AiSystemRole::Chat,
         'voice:dictation' => AiSystemRole::Transcription,
         'voice:speech' => AiSystemRole::Audio,
     ];

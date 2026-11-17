@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
 use App\Models\Application;
+use App\Models\ApplicationFollowUp;
 use App\Models\ResumeVersion;
 use App\Models\User;
 use App\Services\ApplicationService;
@@ -99,6 +100,26 @@ class ApplicationListTest extends TestCase
             "Please begin the analysis on the following job description\n\nJob Title: {$jobTitle}\n\nJob Description:\n\n{$jobDescription}",
             $messages[1]->content,
         );
+    }
+
+    public function test_rows_mark_applications_with_a_follow_up_waiting(): void
+    {
+        $waiting = Application::factory()->create();
+        ApplicationFollowUp::factory()->pending()->create(['application_id' => $waiting->id]);
+        $sentOnly = Application::factory()->create();
+        ApplicationFollowUp::factory()->sent()->create(['application_id' => $sentOnly->id]);
+        $none = Application::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('applications', function ($applications) use ($waiting, $sentOnly, $none): bool {
+                $flags = collect($applications)->pluck('has_pending_follow_up', 'id');
+
+                return $flags[$waiting->id] === true
+                    && $flags[$sentOnly->id] === false
+                    && $flags[$none->id] === false;
+            }));
     }
 
     public function test_index_defaults_to_no_status_filter(): void
