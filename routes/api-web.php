@@ -3,7 +3,9 @@
 use App\Http\Controllers\Admin\AiChatBotController;
 use App\Http\Controllers\Admin\AiSystemController;
 use App\Http\Controllers\Admin\AiSystemPromptController;
+use App\Http\Controllers\Admin\ApplicationContactController;
 use App\Http\Controllers\Admin\ApplicationController;
+use App\Http\Controllers\Admin\ApplicationFollowUpController;
 use App\Http\Controllers\Admin\ApplicationSessionController;
 use App\Http\Controllers\Admin\ApplicationStatusUpdateController;
 use App\Http\Controllers\Admin\CompanyIntelSessionController;
@@ -94,6 +96,24 @@ Route::middleware(['auth', 'can:edit-resume'])
                 Route::delete('/status-updates/{statusUpdate}', [ApplicationStatusUpdateController::class, 'destroy'])
                     ->whereNumber('statusUpdate')
                     ->name('status-updates.destroy');
+
+                Route::post('/contacts', [ApplicationContactController::class, 'store'])->name('contacts.store');
+                Route::put('/contacts/{contact}', [ApplicationContactController::class, 'update'])
+                    ->whereNumber('contact')
+                    ->name('contacts.update');
+                Route::delete('/contacts/{contact}', [ApplicationContactController::class, 'destroy'])
+                    ->whereNumber('contact')
+                    ->name('contacts.destroy');
+
+                Route::put('/follow-ups/{followUp}', [ApplicationFollowUpController::class, 'update'])
+                    ->whereNumber('followUp')
+                    ->name('follow-ups.update');
+                Route::post('/follow-ups/{followUp}/approve', [ApplicationFollowUpController::class, 'approve'])
+                    ->whereNumber('followUp')
+                    ->name('follow-ups.approve');
+                Route::post('/follow-ups/{followUp}/discard', [ApplicationFollowUpController::class, 'discard'])
+                    ->whereNumber('followUp')
+                    ->name('follow-ups.discard');
             });
     });
 

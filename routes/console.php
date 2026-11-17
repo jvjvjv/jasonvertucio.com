@@ -43,3 +43,7 @@ Schedule::command('mcp:sweep-call-log')
 Schedule::command('applications:mark-ghosted')
     ->dailyAt('03:00')
     ->withoutOverlapping();
+
+Schedule::command('applications:draft-follow-ups')
+    ->dailyAt('09:00')
+    ->withoutOverlapping();

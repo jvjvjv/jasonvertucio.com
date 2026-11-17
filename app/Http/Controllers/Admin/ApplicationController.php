@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\FollowUpStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApplyApplicationRequest;
 use App\Http\Requests\StoreApplicationRequest;
@@ -64,6 +65,7 @@ class ApplicationController extends Controller
                     ->withLastMessageAt()
                     ->withCount(['messages' => fn ($messages) => $messages->where('role', '!=', 'system')]),
             ])
+            ->withExists(['followUps as has_pending_follow_up' => fn (Builder $followUps) => $followUps->where('status', FollowUpStatus::Pending->value)])
             ->when($statuses !== [], fn (Builder $query) => $query->whereIn('status', $statuses))
             ->when($usesTargetedResume === self::USES_TARGETED_RESUME_YES, fn (Builder $query) => $query->whereNotNull('targeted_resume_id'))
             ->when($usesTargetedResume === self::USES_TARGETED_RESUME_NO, fn (Builder $query) => $query->whereNull('targeted_resume_id'))
@@ -223,6 +225,7 @@ class ApplicationController extends Controller
             'currentResumeVersionId' => ResumeVersion::current()->value('id'),
             'systems' => $this->payload->selectableSystems(),
             'defaultSystemId' => AiSystem::defaultForFeature('targeted-resume')?->id,
+            'followUps' => $this->payload->followUpState($application),
         ]);
     }
 
@@ -236,6 +239,7 @@ class ApplicationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Application details updated.',
+            'follow_ups' => $this->payload->followUpState($application),
         ]);
     }
 
@@ -336,7 +340,8 @@ class ApplicationController extends Controller
      *     usage: ?array{input_tokens: ?int, output_tokens: ?int, total_tokens: ?int, synced_at: ?string},
      *     latest_status_update: ?array{status: string, occurred_at: ?string},
      *     last_activity_at: ?string,
-     *     last_activity_at_iso: ?string
+     *     last_activity_at_iso: ?string,
+     *     has_pending_follow_up: bool
      * }
      */
     /**
@@ -427,6 +432,7 @@ class ApplicationController extends Controller
             'last_activity_at' => $lastActivityAt?->diffForHumans(),
             'last_activity_at_iso' => $lastActivityAt?->toIso8601String(),
             'intel' => $this->intelCell($application, $companyIntel),
+            'has_pending_follow_up' => (bool) $application->has_pending_follow_up,
         ];
     }
 

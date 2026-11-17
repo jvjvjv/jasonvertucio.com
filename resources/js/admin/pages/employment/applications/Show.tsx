@@ -30,6 +30,7 @@ import type {
     Application,
     ApplicationConversation,
     CoverLetter,
+    FollowUpState,
     Message,
     ResumeVersionOption,
     SharedProps,
@@ -63,6 +64,8 @@ interface ShowProps {
     defaultSystemId: number | null;
     /** The application's own intel, when it has any. */
     roleIntel: { id: number; status: string } | null;
+    /** The application's contacts and follow-ups. */
+    followUps: FollowUpState;
 }
 
 export default function Show({
@@ -77,6 +80,7 @@ export default function Show({
     systems,
     defaultSystemId,
     roleIntel,
+    followUps,
 }: ShowProps) {
     const page = usePage<SharedProps>();
     const isAuthenticated = !!page.props.auth.user;
@@ -461,6 +465,7 @@ export default function Show({
                         conversation={conversation}
                         targetedResume={targetedResume}
                         coverLetter={coverLetter}
+                        followUps={followUps}
                         deleteStatusUpdate={handleDeleteStatusUpdate}
                         onDiscardResume={handleDiscardResume}
                     />

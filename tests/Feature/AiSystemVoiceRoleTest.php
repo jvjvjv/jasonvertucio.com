@@ -279,6 +279,49 @@ class AiSystemVoiceRoleTest extends TestCase
         $this->assertNull(AiSystem::defaultForFeature('voice:speech'));
     }
 
+    public function test_a_chat_system_can_be_the_application_follow_up_default_replacing_the_previous_one(): void
+    {
+        $previous = AiSystem::factory()->create(['duplicated_at' => null]);
+        $previous->featureDefaults()->create(['feature' => 'application-follow-up']);
+        $system = AiSystem::factory()->create(['duplicated_at' => null]);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.ai.systems.update', $system), $this->updatePayload($system, [
+                'role' => AiSystemRole::Chat->value,
+                'max_tokens' => 4096,
+                'feature_defaults' => ['application-follow-up'],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($system->id, AiSystem::defaultForFeature('application-follow-up')?->id);
+        $this->assertSame(1, AiSystemFeatureDefault::query()->where('feature', 'application-follow-up')->count());
+    }
+
+    public function test_a_transcription_system_cannot_be_the_application_follow_up_default(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.ai.systems.store'), $this->voicePayload([
+                'role' => AiSystemRole::Transcription->value,
+                'name' => 'Speaches STT',
+                'feature_defaults' => ['application-follow-up'],
+            ]))
+            ->assertSessionHasErrors(['feature_defaults.0' => 'Only a chat system can be the application-follow-up default.']);
+
+        $this->assertDatabaseMissing('ai_systems', ['name' => 'Speaches STT']);
+        $this->assertNull(AiSystem::defaultForFeature('application-follow-up'));
+    }
+
+    public function test_an_unknown_feature_default_is_still_refused(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.ai.systems.store'), $this->chatPayload([
+                'feature_defaults' => ['application-follow-ups'],
+            ]))
+            ->assertSessionHasErrors('feature_defaults.0');
+
+        $this->assertDatabaseMissing('ai_systems', ['name' => 'Claude']);
+    }
+
     public function test_the_default_voice_round_trips_without_disturbing_other_config(): void
     {
         $this->actingAs($this->admin())

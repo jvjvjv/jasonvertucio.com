@@ -101,7 +101,12 @@ interface AiSystemFormProps {
     domainsWithHeaders?: { [domain: string]: boolean };
 }
 
-const CHAT_FEATURES = ["targeted-resume", "cover-letter", "company-intel"];
+const CHAT_FEATURES = [
+    "targeted-resume",
+    "cover-letter",
+    "company-intel",
+    "application-follow-up",
+];
 const CHAT_PROVIDERS = providersFor("chat");
 
 const AUTH_TYPES = ["bearer", "x-api-key", "none", "custom"];
@@ -276,7 +281,7 @@ export default function AiSystemForm({
     }, [toolsUnsupported]);
 
     // Prompt id locked by feature defaults: targeted-resume locks to 4,
-    // cover-letter to 5, company-intel to 6
+    // cover-letter to 5, company-intel to 6, application-follow-up to 7
     const featureLockedPromptId: number | null = data.feature_defaults.includes(
         "targeted-resume",
     )
@@ -285,7 +290,9 @@ export default function AiSystemForm({
           ? 5
           : data.feature_defaults.includes("company-intel")
             ? 6
-            : null;
+            : data.feature_defaults.includes("application-follow-up")
+              ? 7
+              : null;
     const isPromptLocked = featureLockedPromptId !== null;
     const effectivePromptId = isPromptLocked
         ? featureLockedPromptId

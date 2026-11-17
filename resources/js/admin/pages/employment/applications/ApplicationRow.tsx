@@ -9,6 +9,7 @@ import {
     TableRow,
     TableCell,
     Box,
+    Chip,
     IconButton,
     CircularProgress,
 } from "@mui/material";
@@ -79,6 +80,17 @@ export default memo(function ApplicationRow({
                                 : undefined
                         }
                     />
+                    {application.has_pending_follow_up ? (
+                        <Chip
+                            label="Follow-up ready"
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            component={InertiaLink}
+                            href={showUrl}
+                            clickable
+                        />
+                    ) : null}
                 </Box>
 
                 {application.position ? (

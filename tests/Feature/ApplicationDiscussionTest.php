@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Models\AiConversation;
 use App\Models\Application;
+use App\Models\ApplicationFollowUp;
 use App\Models\ApplicationStatusUpdate;
 use App\Models\CoverLetter;
 use App\Models\JobUrl;
@@ -66,6 +67,61 @@ class ApplicationDiscussionTest extends TestCase
     // ---------------------------------------------------------------------
     // Requirement: Application Discussion page
     // ---------------------------------------------------------------------
+
+    public function test_the_discussion_page_carries_the_contacts_and_follow_ups(): void
+    {
+        $application = Application::factory()
+            ->followUpsEnabled()
+            ->withContact(['email' => 'pat@example.com', 'name' => 'Pat Lee', 'role' => 'Recruiter'])
+            ->create(['status' => ApplicationStatus::Applied]);
+        ApplicationStatusUpdate::factory()->create([
+            'application_id' => $application->id,
+            'status' => ApplicationStatus::Applied,
+            'occurred_at' => now()->subDays(20),
+            'created_at' => now()->subDays(20),
+        ]);
+        $sent = ApplicationFollowUp::factory()->sent(now()->subDays(10), ['pat@example.com'])->create(['application_id' => $application->id]);
+        $failed = ApplicationFollowUp::factory()->failed('Refused.')->create(['application_id' => $application->id]);
+        ApplicationFollowUp::factory()->discarded()->create(['application_id' => $application->id]);
+        $pending = ApplicationFollowUp::factory()->pending()->create(['application_id' => $application->id, 'subject' => 'Checking in']);
+        config(['resume.follow_ups.max_per_status' => 3]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.show', $application))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('followUps.follow_ups_enabled', true)
+                ->where('followUps.contacts', [[
+                    'id' => $application->contacts()->sole()->id,
+                    'email' => 'pat@example.com',
+                    'name' => 'Pat Lee',
+                    'role' => 'Recruiter',
+                    'notes' => $application->contacts()->sole()->notes,
+                ]])
+                ->where('followUps.pending_follow_up.id', $pending->id)
+                ->where('followUps.pending_follow_up.subject', 'Checking in')
+                ->where('followUps.follow_up_history', fn ($history): bool => collect($history)->pluck('id')->sort()->values()->all() === collect([$sent->id, $failed->id])->sort()->values()->all())
+                ->where('followUps.follow_up_system_configured', false)
+                ->where('followUps.sent_since_status_change', 1)
+                ->where('followUps.max_per_status', 3)
+                ->where('followUps.cadence_days', 7)
+            );
+    }
+
+    public function test_a_new_application_has_no_contacts_or_follow_ups_on_the_discussion_page(): void
+    {
+        $application = Application::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.show', $application))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('followUps.follow_ups_enabled', false)
+                ->where('followUps.contacts', [])
+                ->where('followUps.pending_follow_up', null)
+                ->where('followUps.follow_up_history', [])
+                ->where('followUps.sent_since_status_change', 0)
+            );
+    }
 
     public function test_application_with_an_ai_session(): void
     {

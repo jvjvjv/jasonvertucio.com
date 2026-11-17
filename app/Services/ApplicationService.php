@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\FollowUpDiscardReason;
 use App\Exceptions\ApplicationAlreadyHasConversationException;
 use App\Exceptions\ApplicationInPipelineException;
 use App\Exceptions\ApplicationStatusUpdateMismatchException;
@@ -39,6 +40,7 @@ class ApplicationService
     public function __construct(
         private TargetedResumeService $targetedResumeService,
         private CompanyIntelService $companyIntel,
+        private ApplicationFollowUpService $followUps,
     ) {}
 
     /**
@@ -195,6 +197,7 @@ class ApplicationService
     /**
      * Update the job details. Only the keys present are touched. `title` is
      * the AI session's title and is ignored for an application without one.
+     * Switching follow-ups off discards any pending draft.
      *
      * @param  array{
      *     title?: ?string,
@@ -204,7 +207,8 @@ class ApplicationService
      *     job_description?: ?string,
      *     job_url_id?: ?string,
      *     fit_score?: ?int,
-     *     fit_summary?: ?string
+     *     fit_summary?: ?string,
+     *     follow_ups_enabled?: bool
      * }  $details
      */
     public function updateDetails(Application $application, array $details): Application
@@ -224,6 +228,14 @@ class ApplicationService
                 $application->unsetRelation('jobUrl');
             }
 
+            if (array_key_exists('follow_ups_enabled', $details)) {
+                $application->follow_ups_enabled = (bool) $details['follow_ups_enabled'];
+
+                if (! $application->follow_ups_enabled) {
+                    $this->followUps->discardPending($application, FollowUpDiscardReason::Disabled);
+                }
+            }
+
             return $this->targetedResumeService->updateConversationMetadata($application, $details);
         });
     }
@@ -231,7 +243,9 @@ class ApplicationService
     /**
      * Add a status-history entry and move the application to its status.
      * Which status may follow which is advisory ({@see ApplicationStatus::allowedNext()}
-     * drives the choices offered); only a terminal application refuses.
+     * drives the choices offered); only a terminal application refuses. A
+     * pending follow-up draft was written against the old facts, so it is
+     * discarded.
      *
      * @throws NonPipelineStatusException
      * @throws TerminalApplicationException
@@ -258,6 +272,8 @@ class ApplicationService
             $application->status = $status;
             $application->save();
             $application->unsetRelation('statusUpdates')->unsetRelation('latestStatusUpdate');
+
+            $this->followUps->discardPending($application, FollowUpDiscardReason::Superseded);
 
             if ($status === ApplicationStatus::Applied) {
                 DB::afterCommit(fn () => $this->companyIntel->autoStart($application));

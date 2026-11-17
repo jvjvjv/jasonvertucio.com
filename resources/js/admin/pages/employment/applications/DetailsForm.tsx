@@ -9,6 +9,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
+import FollowUpsCard from "./FollowUpsCard";
 import ResumeCard from "./ResumeCard";
 import StatusHistoryList from "./StatusHistoryList";
 import StatusUpdateForm from "./StatusUpdateForm";
@@ -18,6 +19,7 @@ import type {
     Application,
     ApplicationConversation,
     CoverLetter,
+    FollowUpState,
     TargetedResume,
 } from "@/types";
 import type { SyntheticEvent } from "react";
@@ -127,6 +129,7 @@ interface DetailsFormProps extends Omit<
     conversation: ApplicationConversation | null;
     targetedResume: TargetedResume | null;
     coverLetter: CoverLetter | null;
+    followUps: FollowUpState;
     deleteStatusUpdate: (statusUpdateId: number) => void;
     onDiscardResume: () => void;
 }
@@ -136,6 +139,8 @@ export default function DetailsForm({
     conversation,
     targetedResume,
     coverLetter,
+    followUps,
+    status,
     statusUpdates,
     allowedNextStatuses,
     hasApplied,
@@ -469,6 +474,15 @@ export default function DetailsForm({
                         onStatusOccurredAtChange={setStatusOccurredAt}
                         onStatusNotesChange={setStatusNotes}
                         onSubmit={addStatusUpdate}
+                    />
+                </Box>
+
+                <Box sx={sectionSx}>
+                    <FollowUpsCard
+                        applicationId={application.id}
+                        status={status}
+                        statusUpdates={statusUpdates}
+                        followUps={followUps}
                     />
                 </Box>
 
