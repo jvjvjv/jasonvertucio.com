@@ -33,25 +33,28 @@
         @endif
         @if($candidate['status'] === 'pending')
         <div class="mt-3 flex flex-wrap gap-2 items-center">
-            <form method="POST" action="{{ route('admin.resume.candidates.approve', $candidate['id']) }}" class="flex flex-wrap gap-2 items-center">
+            <form id="approve-candidate" method="POST" action="{{ route('admin.resume.candidates.approve', $candidate['id']) }}" class="flex gap-2 items-center">
                 @csrf
                 <input type="hidden" name="redirect_to" value="preview">
                 <label for="approve-version" class="text-sm text-blue-900">Publish as version</label>
                 <input type="text" id="approve-version" name="version" value="{{ $candidate['suggested_version'] }}"
                        pattern="\d{4}\.\d+\.\d+" required
                        class="px-2 py-1 border border-blue-300 rounded text-sm w-32">
-                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium cursor-pointer">
+            </form>
+            {{-- The two actions stay together when the row wraps on a narrow screen --}}
+            <div class="flex gap-2 items-center">
+                <button type="submit" form="approve-candidate" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium cursor-pointer">
                     Approve
                 </button>
-            </form>
-            <form method="POST" action="{{ route('admin.resume.candidates.reject', $candidate['id']) }}"
-                  onsubmit="return confirm('Reject and permanently delete this draft revision? This cannot be undone.');">
-                @csrf
-                <input type="hidden" name="redirect_to" value="preview">
-                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium cursor-pointer">
-                    Reject
-                </button>
-            </form>
+                <form method="POST" action="{{ route('admin.resume.candidates.reject', $candidate['id']) }}"
+                      onsubmit="return confirm('Reject and permanently delete this draft revision? This cannot be undone.');">
+                    @csrf
+                    <input type="hidden" name="redirect_to" value="preview">
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium cursor-pointer">
+                        Reject
+                    </button>
+                </form>
+            </div>
         </div>
         @endif
     </div>
