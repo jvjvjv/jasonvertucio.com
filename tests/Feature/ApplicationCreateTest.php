@@ -386,7 +386,7 @@ class ApplicationCreateTest extends TestCase
             ->assertJsonPath('status', 'applied')
             ->assertJsonCount(1, 'status_updates')
             ->assertJsonPath('status_updates.0.status', 'applied')
-            ->assertJsonPath('allowed_next_statuses', ['interviewing', 'offered', 'rejected', 'withdrawn']);
+            ->assertJsonPath('allowed_next_statuses', ['interviewing', 'offered', 'ghosted', 'rejected', 'withdrawn']);
 
         $application->refresh();
 

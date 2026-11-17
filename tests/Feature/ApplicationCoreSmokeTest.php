@@ -346,7 +346,8 @@ class ApplicationCoreSmokeTest extends TestCase
         $context = ToolContext::forConversation(BaseAiConversation::query()->findOrFail($application->ai_conversation_id));
 
         $job = ToolResultConverter::toArray((new GetJobDescriptionTool($context))->handle(new Request([])));
-        $this->assertSame(['job_description' => 'Build things.', 'job_title' => 'Engineer', 'company_name' => null], $job);
+        $this->assertSame(['job_description' => 'Build things.', 'job_title' => 'Engineer', 'company_name' => null], array_diff_key($job, ['company_ghosting' => true]));
+        $this->assertSame(0, $job['company_ghosting']['ghosted_applications']);
 
         $fit = ToolResultConverter::toArray((new UpdateFitAssessmentTool($context))->handle(new Request([
             'fit_score' => 81,
@@ -392,6 +393,32 @@ class ApplicationCoreSmokeTest extends TestCase
         $this->assertSame(ApplicationStatus::Withdrawn, $application->status);
         $this->assertSame(ApplicationStatus::Withdrawn, $application->latestStatusUpdate->status);
         $this->assertSame('Took another offer.', $application->latestStatusUpdate->notes);
+    }
+
+    public function test_update_status_tool_records_being_ghosted(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo('save-resume');
+        $application = Application::factory()->applied(Carbon::parse('2026-06-01 12:00:00'))->create([
+            'ai_conversation_id' => BaseAiConversation::factory()->create(['user_id' => $user->id])->id,
+        ]);
+        $context = ToolContext::forConversation(BaseAiConversation::query()->findOrFail($application->ai_conversation_id));
+        $tool = app()->makeWith(UpdateStatusTool::class, ['context' => $context]);
+
+        $this->assertContains('ghosted', $tool->schema(new JsonSchemaTypeFactory)['status']->toArray()['enum']);
+
+        $status = ToolResultConverter::toArray($tool->handle(new Request([
+            'status' => 'ghosted',
+            'occurred_at' => '2026-06-15',
+            'notes' => 'No reply to two follow-ups.',
+        ])));
+
+        $this->assertTrue($status['success']);
+        $this->assertSame('ghosted', $status['status']);
+        $application = $application->fresh();
+        $this->assertSame(ApplicationStatus::Ghosted, $application->status);
+        $this->assertSame(ApplicationStatus::Ghosted, $application->latestStatusUpdate->status);
+        $this->assertSame('No reply to two follow-ups.', $application->latestStatusUpdate->notes);
     }
 
     public function test_metrics_filter_by_applied_date_inclusive_of_both_ends(): void

@@ -17,12 +17,13 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { memo } from "react";
 
+import FitScore from "./FitScore";
+
 import type { ApplicationListItem } from "@/types";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
 import { INTEL_PAGES } from "@/admin/pages/employment/company-intel/types";
-import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { formatCalendarDate, getLocaleDateTime } from "@/utils/date";
 
 const LIST_URL = "/admin/employment/applications";
@@ -30,7 +31,6 @@ const EM_DASH = "—";
 
 interface ApplicationRowProps {
     application: ApplicationListItem;
-    ghostedAfterDays: number;
     onPass: (id: number) => void;
     onDelete: (application: ApplicationListItem) => void;
     onBeginIntel: (id: number) => void;
@@ -44,7 +44,6 @@ interface ApplicationRowProps {
  */
 export default memo(function ApplicationRow({
     application,
-    ghostedAfterDays,
     onPass,
     onDelete,
     onBeginIntel,
@@ -52,11 +51,6 @@ export default memo(function ApplicationRow({
 }: ApplicationRowProps) {
     const showUrl = `${LIST_URL}/${application.id}`;
     const latestOccurredAt = application.latest_status_update?.occurred_at;
-    const displayStatus = resolveApplicationDisplayStatus(
-        application.status,
-        latestOccurredAt,
-        ghostedAfterDays,
-    );
 
     return (
         <TableRow hover>
@@ -77,7 +71,7 @@ export default memo(function ApplicationRow({
                         </Typography>
                     </Link>
                     <StatusChip
-                        status={displayStatus}
+                        status={application.status}
                         size={"small"}
                         tip={
                             latestOccurredAt
@@ -94,9 +88,11 @@ export default memo(function ApplicationRow({
                 ) : null}
             </TableCell>
             <TableCell>
-                {application.fit_score !== null
-                    ? `${application.fit_score}%`
-                    : EM_DASH}
+                <FitScore
+                    fitScore={application.fit_score}
+                    ghosting={application.ghosting}
+                    layout="cell"
+                />
             </TableCell>
             <TableCell>{application.resume_version ?? EM_DASH}</TableCell>
             <TableCell>

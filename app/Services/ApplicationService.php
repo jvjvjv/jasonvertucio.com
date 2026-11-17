@@ -28,6 +28,14 @@ use Jvjvjv\CodeTalker\Models\AiSystem;
  */
 class ApplicationService
 {
+    /**
+     * Statuses that wait on the employer, and so become ghosted when the
+     * employer stays silent past the threshold.
+     *
+     * @var list<ApplicationStatus>
+     */
+    public const array GHOSTABLE_STATUSES = [ApplicationStatus::Applied, ApplicationStatus::Interviewed];
+
     public function __construct(
         private TargetedResumeService $targetedResumeService,
         private CompanyIntelService $companyIntel,
@@ -257,6 +265,56 @@ class ApplicationService
 
             return $statusUpdate;
         });
+    }
+
+    /**
+     * Mark an application ghosted when it has sat in a status that waits on
+     * the employer for longer than `$days`. The `ghosted` entry is dated the
+     * day the threshold was crossed, not today, so the history says when the
+     * silence began. The row is locked and the conditions re-checked first,
+     * so an entry added meanwhile, or a second run, leaves it alone.
+     *
+     * When it marks, `$application` is refreshed from the locked row, so any
+     * unsaved changes on it are discarded. Pass a clean model.
+     *
+     * @return ApplicationStatusUpdate|null the new entry, or null when the
+     *                                      application is not (or no longer) silent
+     */
+    public function markGhosted(Application $application, int $days): ?ApplicationStatusUpdate
+    {
+        return DB::transaction(function () use ($application, $days): ?ApplicationStatusUpdate {
+            $locked = Application::query()->whereKey($application->getKey())->lockForUpdate()->first();
+
+            if ($locked === null || ! in_array($locked->status, self::GHOSTABLE_STATUSES, true)) {
+                return null;
+            }
+
+            $latest = $locked->latestStatusUpdate()->first();
+
+            if ($latest === null || ! $latest->occurred_at->lessThan(now()->subDays($days))) {
+                return null;
+            }
+
+            $statusUpdate = $this->addStatusUpdate(
+                $locked,
+                ApplicationStatus::Ghosted,
+                self::ghostedNote($days),
+                $latest->occurred_at->copy()->addDays($days),
+            );
+
+            $application->setRawAttributes($locked->getAttributes(), true);
+            $application->unsetRelation('statusUpdates')->unsetRelation('latestStatusUpdate');
+
+            return $statusUpdate;
+        });
+    }
+
+    /**
+     * The note on an entry the daily run recorded.
+     */
+    public static function ghostedNote(int $days): string
+    {
+        return "Marked ghosted automatically after {$days} days with no update.";
     }
 
     /**

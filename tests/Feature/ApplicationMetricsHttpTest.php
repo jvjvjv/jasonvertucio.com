@@ -138,6 +138,7 @@ class ApplicationMetricsHttpTest extends TestCase
         $before = $this->applied('2001-02-28 23:59:59');
         $after = $this->applied('2001-04-01 00:00:00');
         $this->entry($firstSecond, ApplicationStatus::Rejected, '2001-03-06 00:00:00');
+        $this->entry($lastSecond, ApplicationStatus::Ghosted, '2001-04-30 23:59:59');
         $this->entry($after, ApplicationStatus::Interviewing, '2001-04-11 00:00:00');
         $this->entry($after, ApplicationStatus::Offered, '2001-04-21 00:00:00');
 

@@ -15,6 +15,7 @@ use App\Models\RoleIntel;
 use App\Models\TargetedResume;
 use App\Services\AiSession\SessionSystemSwitcher;
 use App\Services\ApplicationService;
+use App\Services\CompanyGhostingTally;
 use App\Services\TargetedResumeSystems;
 use App\Support\AnalysisSystemGuard;
 use App\Support\ApplicationPayload;
@@ -41,6 +42,7 @@ class ApplicationController extends Controller
     public function __construct(
         private ApplicationService $applicationService,
         private ApplicationPayload $payload,
+        private CompanyGhostingTally $ghosting,
     ) {}
 
     /**
@@ -78,7 +80,8 @@ class ApplicationController extends Controller
             ->values();
 
         $companyIntel = $this->companyIntelByName($applications);
-        $applications = $applications->map(fn (Application $application): array => $this->listRow($application, $companyIntel));
+        $ghostingTally = $this->ghosting->forApplications($applications);
+        $applications = $applications->map(fn (Application $application): array => $this->listRow($application, $companyIntel, $ghostingTally[$application->id] ?? 0));
 
         return Inertia::render('employment/applications/Index', [
             'applications' => $applications,
@@ -91,7 +94,6 @@ class ApplicationController extends Controller
                 'uses_targeted_resume' => $usesTargetedResume,
                 'search' => $search,
             ],
-            'ghostedAfterDays' => (int) config('resume.ghosted_after_days'),
         ]);
     }
 
@@ -162,7 +164,7 @@ class ApplicationController extends Controller
             'targetedResume.resumeVersion:id,version',
             'conversation.aiSystem',
             'conversation.messages',
-            'roleIntel:id,application_id,status',
+            'roleIntel:id,application_id,status,company_id',
         ]);
 
         $conversation = $application->conversation;
@@ -183,6 +185,7 @@ class ApplicationController extends Controller
                 'job_url' => $application->jobUrl?->url,
                 'fit_score' => $application->fit_score,
                 'fit_summary' => $application->fit_summary,
+                'ghosting' => $this->ghosting->summary($application->fit_score, $this->ghosting->forApplication($application)),
                 'resume_version' => $application->resumeVersion ? [
                     'id' => $application->resumeVersion->id,
                     'version' => $application->resumeVersion->version,
@@ -220,7 +223,6 @@ class ApplicationController extends Controller
             'currentResumeVersionId' => ResumeVersion::current()->value('id'),
             'systems' => $this->payload->selectableSystems(),
             'defaultSystemId' => AiSystem::defaultForFeature('targeted-resume')?->id,
-            'ghostedAfterDays' => (int) config('resume.ghosted_after_days'),
         ]);
     }
 
@@ -326,6 +328,7 @@ class ApplicationController extends Controller
      *     location: ?string,
      *     status: string,
      *     fit_score: ?int,
+     *     ghosting: array{count: int, penalty: int, adjusted_fit_score: ?int},
      *     resume_version: ?string,
      *     targeted_resume_id: ?int,
      *     has_conversation: bool,
@@ -398,7 +401,7 @@ class ApplicationController extends Controller
     /**
      * @param  array<string, RoleIntel>  $companyIntel
      */
-    private function listRow(Application $application, array $companyIntel = []): array
+    private function listRow(Application $application, array $companyIntel = [], int $ghostingTally = 0): array
     {
         $conversation = $application->conversation;
         $latestStatusUpdate = $application->latestStatusUpdate;
@@ -411,6 +414,7 @@ class ApplicationController extends Controller
             'location' => $application->location,
             'status' => $application->status->value,
             'fit_score' => $application->fit_score,
+            'ghosting' => $this->ghosting->summary($application->fit_score, $ghostingTally),
             'resume_version' => $application->resumeVersion?->version,
             'targeted_resume_id' => $application->targeted_resume_id,
             'has_conversation' => $conversation !== null,

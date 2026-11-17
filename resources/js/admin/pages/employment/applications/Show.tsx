@@ -433,6 +433,7 @@ export default function Show({
                                 status={status.status}
                                 statusUpdates={status.statusUpdates}
                                 fitScore={application.fit_score}
+                                ghosting={application.ghosting}
                             />
                             <BeginAnalysisPanel
                                 applicationId={application.id}

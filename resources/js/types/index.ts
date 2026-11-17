@@ -265,7 +265,7 @@ export interface TargetedResume {
 /** A tracked job, as the Application Discussion page receives it. */
 export interface Application {
     id: number;
-    /** One of the nine `ApplicationStatus` values. */
+    /** One of the eleven `ApplicationStatus` values. */
     status: string;
     company_name: string;
     position: string;
@@ -274,12 +274,26 @@ export interface Application {
     job_url: string | null;
     fit_score: number | null;
     fit_summary: string | null;
+    ghosting: CompanyGhosting;
     /** The main resume version recorded for the application. */
     resume_version: { id: number; version: string } | null;
     status_updates: ApplicationStatusUpdate[];
     allowed_next_statuses: string[];
     /** An `applied` history entry exists: the resume is the record of what was sent. */
     has_applied: boolean;
+}
+
+/**
+ * How many of the owner's other applications this company is currently
+ * ghosting, and what that takes off the displayed fit score. The stored
+ * `fit_score` is never changed.
+ */
+export interface CompanyGhosting {
+    count: number;
+    /** Points taken off the fit score in total. */
+    penalty: number;
+    /** The fit score to display; null when there is no fit score yet. */
+    adjusted_fit_score: number | null;
 }
 
 /** A row of the Applications list. */
@@ -290,6 +304,7 @@ export interface ApplicationListItem {
     location: string | null;
     status: string;
     fit_score: number | null;
+    ghosting: CompanyGhosting;
     resume_version: string | null;
     targeted_resume_id: number | null;
     has_conversation: boolean;

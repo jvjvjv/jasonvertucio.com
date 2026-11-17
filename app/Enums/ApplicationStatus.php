@@ -10,6 +10,7 @@ enum ApplicationStatus: string
     case Interviewing = 'interviewing';
     case Interviewed = 'interviewed';
     case Offered = 'offered';
+    case Ghosted = 'ghosted';
     case Accepted = 'accepted';
     case Hired = 'hired';
     case Rejected = 'rejected';
@@ -49,9 +50,10 @@ enum ApplicationStatus: string
     {
         return match ($this) {
             self::Draft, self::Passed => [self::Applied],
-            self::Applied => [self::Interviewing, self::Offered, self::Rejected, self::Withdrawn],
+            self::Applied => [self::Interviewing, self::Offered, self::Ghosted, self::Rejected, self::Withdrawn],
             self::Interviewing => [self::Interviewed, self::Rejected, self::Withdrawn],
-            self::Interviewed => [self::Interviewing, self::Offered, self::Rejected, self::Withdrawn],
+            self::Interviewed => [self::Interviewing, self::Offered, self::Ghosted, self::Rejected, self::Withdrawn],
+            self::Ghosted => [self::Interviewing, self::Offered, self::Rejected, self::Withdrawn],
             self::Offered => [self::Accepted, self::Hired, self::Rejected, self::Withdrawn],
             default => [],
         };

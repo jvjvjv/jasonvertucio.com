@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\ApplicationStatus;
 use App\Models\Application;
 use App\Models\ApplicationStatusUpdate;
-use App\Support\ApplicationStatusResolver;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -32,8 +31,8 @@ class ApplicationMetricsService
      * to the applications applied to within a period. Both ends are whole
      * days and inclusive; either may be left open. The period is applied
      * before any section is computed, so every section agrees on which
-     * applications it covers. "Ghosted" is still judged against the real
-     * present, not the end of the period, and the ghost rate is withheld for
+     * applications it covers. "Ghosted" is the stored status, as of today
+     * rather than the end of the period, and the ghost rate is withheld for
      * a period too recent for anything in it to have gone ghosted.
      *
      * @return array{
@@ -57,12 +56,12 @@ class ApplicationMetricsService
         return [
             'ghostedAfterDays' => $ghostedAfterDays,
             'ghostRateApplicable' => $ghostRateApplicable,
-            'kpis' => $this->kpis($applications, $ghostedAfterDays, $ghostRateApplicable),
+            'kpis' => $this->kpis($applications, $ghostRateApplicable),
             'funnel' => $this->funnel($applications),
-            'outcomes' => $this->outcomes($applications, $ghostedAfterDays),
+            'outcomes' => $this->outcomes($applications),
             'overTime' => $this->overTime($applications),
             'cycleTimes' => $this->cycleTimes($applications),
-            'timeline' => $this->timeline($applications, $ghostedAfterDays),
+            'timeline' => $this->timeline($applications),
         ];
     }
 
@@ -161,9 +160,11 @@ class ApplicationMetricsService
     /**
      * The bucketed outcome for the donut: accepted, rejected, withdrawn,
      * ghosted, or in_progress. The employer's decision outranks a withdrawal
-     * should a history ever hold both.
+     * should a history ever hold both. Ghosted is the latest entry, so an
+     * application whose company replied after going quiet is judged by the
+     * reply.
      */
-    private function outcome(Application $application, int $ghostedAfterDays): string
+    private function outcome(Application $application): string
     {
         $statuses = $this->statusValues($application);
 
@@ -179,22 +180,14 @@ class ApplicationMetricsService
             return 'withdrawn';
         }
 
-        $latest = $application->statusUpdates->last();
-
-        $display = ApplicationStatusResolver::resolve(
-            $latest?->status->value,
-            $latest?->occurred_at,
-            $ghostedAfterDays,
-        );
-
-        return $display === ApplicationStatusResolver::GHOSTED ? 'ghosted' : 'in_progress';
+        return $application->statusUpdates->last()?->status === ApplicationStatus::Ghosted ? 'ghosted' : 'in_progress';
     }
 
     /**
      * @param  Collection<int, Application>  $applications
      * @return array<string, mixed>
      */
-    private function kpis(Collection $applications, int $ghostedAfterDays, bool $ghostRateApplicable): array
+    private function kpis(Collection $applications, bool $ghostRateApplicable): array
     {
         $total = $applications->count();
 
@@ -212,7 +205,7 @@ class ApplicationMetricsService
             || in_array('rejected', $this->statusValues($r), true))->count();
         $interviewed = $applications->filter(fn (Application $r) => $this->maxRank($r) >= 2)->count();
         $offered = $applications->filter(fn (Application $r) => $this->maxRank($r) >= 4)->count();
-        $ghosted = $applications->filter(fn (Application $r) => $this->outcome($r, $ghostedAfterDays) === 'ghosted')->count();
+        $ghosted = $applications->filter(fn (Application $r) => $this->outcome($r) === 'ghosted')->count();
 
         return [
             'totalApplied' => $total,
@@ -250,7 +243,7 @@ class ApplicationMetricsService
      * @param  Collection<int, Application>  $applications
      * @return array<int, array{outcome: string, label: string, count: int}>
      */
-    private function outcomes(Collection $applications, int $ghostedAfterDays): array
+    private function outcomes(Collection $applications): array
     {
         $labels = [
             'accepted' => 'Accepted',
@@ -261,7 +254,7 @@ class ApplicationMetricsService
         ];
 
         $counts = $applications
-            ->groupBy(fn (Application $r) => $this->outcome($r, $ghostedAfterDays))
+            ->groupBy(fn (Application $r) => $this->outcome($r))
             ->map->count();
 
         return collect($labels)
@@ -313,7 +306,7 @@ class ApplicationMetricsService
             }
 
             $firstResponse = $application->statusUpdates
-                ->first(fn (ApplicationStatusUpdate $u) => ! in_array($u->status->value, ['applied', 'withdrawn'], true));
+                ->first(fn (ApplicationStatusUpdate $u) => ! in_array($u->status->value, ['applied', 'withdrawn', 'ghosted'], true));
 
             if ($firstResponse !== null) {
                 $toResponse[] = $appliedAt->diffInDays($firstResponse->occurred_at);
@@ -345,12 +338,12 @@ class ApplicationMetricsService
      * @param  Collection<int, Application>  $applications
      * @return array<int, array<string, mixed>>
      */
-    private function timeline(Collection $applications, int $ghostedAfterDays): array
+    private function timeline(Collection $applications): array
     {
         $now = Carbon::now();
 
         return $applications
-            ->map(function (Application $application) use ($ghostedAfterDays, $now) {
+            ->map(function (Application $application) use ($now) {
                 $appliedAt = $this->appliedAt($application);
 
                 if ($appliedAt === null) {
@@ -358,7 +351,7 @@ class ApplicationMetricsService
                 }
 
                 $updates = $application->statusUpdates->values();
-                $outcome = $this->outcome($application, $ghostedAfterDays);
+                $outcome = $this->outcome($application);
                 $segments = [];
 
                 foreach ($updates as $index => $update) {
@@ -372,9 +365,6 @@ class ApplicationMetricsService
                         $to = $from;
                     } else {
                         $to = $now;
-                        if ($outcome === 'ghosted') {
-                            $status = ApplicationStatusResolver::GHOSTED;
-                        }
                     }
 
                     $segments[] = [

@@ -60,10 +60,10 @@ class ResumeMetricsTest extends TestCase
         $this->assertSame(1, $metrics['kpis']['totalApplied']);
     }
 
-    public function test_silence_past_threshold_resolves_to_ghosted(): void
+    public function test_a_ghosted_entry_is_the_ghosted_outcome_and_silence_alone_is_not(): void
     {
+        $this->application([[ApplicationStatus::Applied, 70], [ApplicationStatus::Ghosted, 40]]);
         $this->application([[ApplicationStatus::Applied, 40]]);
-        $this->application([[ApplicationStatus::Applied, 10]]);
 
         $metrics = $this->service->build();
         $outcomes = collect($metrics['outcomes'])->keyBy('outcome');

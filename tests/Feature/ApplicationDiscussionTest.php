@@ -11,11 +11,13 @@ use App\Models\JobUrl;
 use App\Models\ResumeVersion;
 use App\Models\TargetedResume;
 use App\Models\User;
+use App\Services\ApplicationService;
 use App\Services\CoverLetterDocumentService;
 use App\Support\AnalysisSystemGuard;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
@@ -192,7 +194,8 @@ class ApplicationDiscussionTest extends TestCase
         return [
             'draft' => [ApplicationStatus::Draft, ['applied']],
             'passed' => [ApplicationStatus::Passed, ['applied']],
-            'interviewed' => [ApplicationStatus::Interviewed, ['interviewing', 'offered', 'rejected', 'withdrawn']],
+            'interviewed' => [ApplicationStatus::Interviewed, ['interviewing', 'offered', 'ghosted', 'rejected', 'withdrawn']],
+            'ghosted' => [ApplicationStatus::Ghosted, ['interviewing', 'offered', 'rejected', 'withdrawn']],
             'offered' => [ApplicationStatus::Offered, ['accepted', 'hired', 'rejected', 'withdrawn']],
             'withdrawn' => [ApplicationStatus::Withdrawn, []],
         ];
@@ -211,6 +214,31 @@ class ApplicationDiscussionTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('application.allowed_next_statuses', $expected)
+            );
+    }
+
+    public function test_discussion_page_carries_the_company_ghosting_tally(): void
+    {
+        config()->set('resume.ghosted_fit_penalty', 10);
+        $company = 'Ghostly '.Str::random(8);
+        $ghosted = Application::factory()->applied(now()->subDays(60))->create(['company_name' => $company]);
+        app(ApplicationService::class)->markGhosted($ghosted, 30);
+        $application = Application::factory()->create(['company_name' => $company, 'fit_score' => 15]);
+        $quiet = Application::factory()->create(['company_name' => 'Quiet '.Str::random(8), 'fit_score' => null]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.show', $application))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('application.fit_score', 15)
+                ->where('application.ghosting', ['count' => 1, 'penalty' => 10, 'adjusted_fit_score' => 5])
+            );
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.show', $quiet))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('application.ghosting', ['count' => 0, 'penalty' => 0, 'adjusted_fit_score' => null])
+                ->missing('ghostedAfterDays')
             );
     }
 

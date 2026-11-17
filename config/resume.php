@@ -149,13 +149,27 @@ return [
     | Ghosted Threshold
     |--------------------------------------------------------------------------
     |
-    | Number of days an application can sit in the "applied" state with no
-    | further status update before it is treated as "ghosted". This is a
-    | computed display status; it is never stored on the record.
+    | Number of days an application can sit in "applied" or "interviewed"
+    | with no further status update before the daily
+    | `applications:mark-ghosted` run records a "ghosted" history entry and
+    | stores the status. The entry is dated the day the threshold was crossed.
     |
     */
 
     'ghosted_after_days' => (int) env('RESUME_GHOSTED_AFTER_DAYS', 30),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ghosted Fit Penalty
+    |--------------------------------------------------------------------------
+    |
+    | Points taken off the displayed fit score of an application for each
+    | other application at the same company that is currently ghosted. The
+    | stored fit score is never changed, and the result is never below 1.
+    |
+    */
+
+    'ghosted_fit_penalty' => (int) env('RESUME_GHOSTED_FIT_PENALTY', 10),
 
     /*
     |--------------------------------------------------------------------------

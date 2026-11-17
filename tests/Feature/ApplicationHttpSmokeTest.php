@@ -114,7 +114,7 @@ class ApplicationHttpSmokeTest extends TestCase
                 ->where('application.has_applied', true)
                 ->where('application.resume_version.id', $application->resume_version_id)
                 ->has('application.status_updates', 1)
-                ->where('application.allowed_next_statuses', ['interviewing', 'offered', 'rejected', 'withdrawn'])
+                ->where('application.allowed_next_statuses', ['interviewing', 'offered', 'ghosted', 'rejected', 'withdrawn'])
                 ->where('application.job_url', null)
                 ->where('conversation', null)
                 ->where('messages', [])
@@ -125,7 +125,7 @@ class ApplicationHttpSmokeTest extends TestCase
                 ->has('currentResumeVersionId')
                 ->has('systems')
                 ->has('defaultSystemId')
-                ->has('ghostedAfterDays')
+                ->missing('ghostedAfterDays')
             );
     }
 

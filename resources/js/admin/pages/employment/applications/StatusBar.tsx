@@ -1,23 +1,23 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
-import useGhostedAfterDays from "./useGhostedAfterDays";
+import FitScore from "./FitScore";
 
-import type { ConversationUsage, StatusUpdate } from "@/types";
+import type { CompanyGhosting, ConversationUsage, StatusUpdate } from "@/types";
 import type { SxProps } from "@mui/material";
 import type { ReactNode } from "react";
 
 import StatusChip from "@/admin/components/StatusChip";
 import UsageChip from "@/admin/components/UsageChip";
-import { resolveApplicationDisplayStatus } from "@/admin/utils/applicationStatus";
 import { formatCalendarDate } from "@/utils/date";
 import mergeSx from "@/utils/mergeSx";
 
 interface StatusBarProps {
-    /** The application's stored status; the ghosted display status is derived here. */
+    /** The application's stored status. */
     status: string;
     statusUpdates: StatusUpdate[];
     fitScore: number | null;
+    ghosting: CompanyGhosting;
     /** AI usage of the application's session; omit when it has none. */
     usage?: ConversationUsage | null;
     /** Shown at the end of the bar, pushed to the right. */
@@ -29,6 +29,7 @@ export default function StatusBar({
     status,
     statusUpdates,
     fitScore,
+    ghosting,
     usage,
     action,
     sx,
@@ -37,13 +38,6 @@ export default function StatusBar({
         statusUpdates.length > 0
             ? statusUpdates[statusUpdates.length - 1]
             : null;
-
-    const ghostedAfterDays = useGhostedAfterDays();
-    const displayStatus = resolveApplicationDisplayStatus(
-        status,
-        latestUpdate?.occurred_at,
-        ghostedAfterDays,
-    );
 
     return (
         <Box
@@ -58,13 +52,9 @@ export default function StatusBar({
                 sx,
             )}
         >
-            <StatusChip status={displayStatus} />
+            <StatusChip status={status} />
             {usage ? <UsageChip usage={usage} /> : null}
-            {fitScore !== null ? (
-                <Typography variant="caption" color="text.secondary">
-                    Fit: {fitScore}%
-                </Typography>
-            ) : null}
+            <FitScore fitScore={fitScore} ghosting={ghosting} layout="inline" />
             {latestUpdate ? (
                 <Typography variant="caption" color="text.secondary">
                     {latestUpdate.status.charAt(0).toUpperCase() +
