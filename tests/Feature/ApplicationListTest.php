@@ -3,15 +3,17 @@
 namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
-use Jvjvjv\CodeTalker\Models\AiConversation;
 use App\Models\Application;
 use App\Models\ResumeVersion;
 use App\Models\User;
+use App\Services\ApplicationService;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
+use Jvjvjv\CodeTalker\Models\AiConversation;
 use Jvjvjv\CodeTalker\Models\AiConversationMessage;
 use Jvjvjv\CodeTalker\Models\AiSystem;
 use Tests\TestCase;
@@ -285,6 +287,66 @@ class ApplicationListTest extends TestCase
             ->component('employment/applications/Index', false)
             ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$draft->id])
         );
+    }
+
+    public function test_ghosted_is_its_own_status_filter_and_applied_excludes_it(): void
+    {
+        $applied = Application::factory()->applied(now()->subDays(5))->create();
+        $ghosted = Application::factory()->applied(now()->subDays(60))->create();
+        app(ApplicationService::class)->markGhosted($ghosted, 30);
+        $created = [$applied, $ghosted];
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index', ['status' => ['ghosted']]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.statuses', ['ghosted'])
+                ->where('allStatuses', fn ($statuses) => collect($statuses)->contains('value', 'ghosted'))
+                ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$ghosted->id])
+                ->missing('ghostedAfterDays')
+            );
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index', ['status' => ['applied']]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('applications', fn ($applications) => $this->listedIds($applications, $created) === [$applied->id])
+            );
+    }
+
+    public function test_rows_carry_the_company_ghosting_tally_and_adjusted_fit_score(): void
+    {
+        config()->set('resume.ghosted_fit_penalty', 10);
+        $company = 'Ghostly '.Str::random(8);
+        $first = Application::factory()->applied(now()->subDays(60))->create(['company_name' => $company]);
+        $second = Application::factory()->applied(now()->subDays(60))->create(['company_name' => $company]);
+        app(ApplicationService::class)->markGhosted($first, 30);
+        app(ApplicationService::class)->markGhosted($second, 30);
+        $penalised = Application::factory()->create(['company_name' => $company, 'fit_score' => 78]);
+        $elsewhere = Application::factory()->create(['company_name' => 'Elsewhere '.Str::random(8), 'fit_score' => 78]);
+
+        $row = fn (array $applications, Application $application): array => collect($applications)->firstWhere('id', $application->id);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('applications', function ($applications) use ($row, $penalised, $elsewhere): bool {
+                    $applications = collect($applications)->map(fn ($item) => (array) $item)->all();
+
+                    return $row($applications, $penalised)['ghosting'] == ['count' => 2, 'penalty' => 20, 'adjusted_fit_score' => 58]
+                        && $row($applications, $penalised)['fit_score'] === 78
+                        && $row($applications, $elsewhere)['ghosting'] == ['count' => 0, 'penalty' => 0, 'adjusted_fit_score' => 78];
+                })
+            );
+
+        app(ApplicationService::class)->addStatusUpdate($first->fresh(), ApplicationStatus::Rejected);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.employment.applications.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('applications', fn ($applications): bool => $row(collect($applications)->map(fn ($item) => (array) $item)->all(), $penalised)['ghosting']['count'] === 1)
+            );
     }
 
     public function test_filter_by_multiple_statuses(): void

@@ -4,6 +4,7 @@ namespace App\Services\Mcp\Tools\TargetedResume;
 
 use App\Models\Application;
 use App\Models\User;
+use App\Services\CompanyGhostingTally;
 use Jvjvjv\CodeTalker\Support\ToolContext;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -48,6 +49,29 @@ abstract class AuthorizedResumeTool extends Tool
         $conversation = $this->context->conversation;
 
         return $conversation !== null ? Application::forConversation($conversation) : null;
+    }
+
+    /**
+     * How many of the owner's other applications this company is currently
+     * ghosting. The system lowers the displayed fit score for it, so the
+     * model is told to score the role on its merits rather than apply the
+     * penalty a second time.
+     *
+     * @return array{ghosted_applications: int, penalty_per_ghosting: int, note: string}
+     */
+    protected function companyGhosting(Application $application): array
+    {
+        $penalty = (int) config('resume.ghosted_fit_penalty');
+        $tally = app(CompanyGhostingTally::class)->forApplication($application);
+
+        return [
+            'ghosted_applications' => $tally,
+            'penalty_per_ghosting' => $penalty,
+            'note' => $tally === 0
+                ? 'This company is not ghosting any of the owner\'s other applications; no penalty applies.'
+                : "The system lowers this company's displayed fit score by {$penalty} points per ghosted application. "
+                    .'Score the role on its merits; do not apply this penalty yourself.',
+        ];
     }
 
     /**

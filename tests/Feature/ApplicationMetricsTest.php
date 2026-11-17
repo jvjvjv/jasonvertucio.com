@@ -413,9 +413,10 @@ class ApplicationMetricsTest extends TestCase
         $this->assertNull($april['cycleTimes']['toFirstResponse']);
     }
 
-    public function test_ghosted_is_judged_against_the_present_not_the_end_of_the_range(): void
+    public function test_ghosted_is_the_status_today_not_at_the_end_of_the_range(): void
     {
         $silent = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($silent, ApplicationStatus::Ghosted, '2001-03-31 09:00:00');
         $fresh = Application::factory()->applied(now()->subDays(self::GHOSTED_AFTER_DAYS - 1))->create();
 
         $march = $this->metrics->build(Carbon::parse('2001-03-01'), Carbon::parse('2001-03-15'));
@@ -423,8 +424,8 @@ class ApplicationMetricsTest extends TestCase
         $this->assertSame(['ghosted' => 1], $this->outcomeCounts($march));
         $this->assertSame(100.0, $march['kpis']['ghostRate']);
         $this->assertSame('ghosted', $march['timeline'][0]['outcome']);
-        $this->assertSame(['ghosted'], array_column($march['timeline'][0]['segments'], 'status'));
-        $this->assertSame(ApplicationStatus::Applied, $silent->fresh()->status);
+        $this->assertSame(['applied', 'ghosted'], array_column($march['timeline'][0]['segments'], 'status'));
+        $this->assertSame(ApplicationStatus::Ghosted, $silent->fresh()->status);
 
         $both = $this->year2001();
 
@@ -461,7 +462,8 @@ class ApplicationMetricsTest extends TestCase
 
     public function test_ghost_rate_applies_to_a_period_starting_a_day_before_the_threshold_date(): void
     {
-        Application::factory()->applied(Carbon::parse('2001-05-31 13:00:00'))->create();
+        $silent = Application::factory()->applied(Carbon::parse('2001-05-31 13:00:00'))->create();
+        $this->entry($silent, ApplicationStatus::Ghosted, '2001-06-30 13:00:00');
         Application::factory()->applied(Carbon::parse('2001-06-20 09:00:00'))->create();
 
         $metrics = $this->metrics->build(Carbon::parse('2001-05-31'), Carbon::parse('2001-07-01'));
@@ -472,7 +474,8 @@ class ApplicationMetricsTest extends TestCase
 
     public function test_ghost_rate_applies_to_a_period_with_no_start_date(): void
     {
-        Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $silent = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($silent, ApplicationStatus::Ghosted, '2001-03-31 09:00:00');
 
         $this->assertTrue($this->metrics->build()['ghostRateApplicable']);
 
@@ -508,6 +511,7 @@ class ApplicationMetricsTest extends TestCase
     public function test_an_application_on_the_first_day_past_the_threshold_still_shows_as_ghosted(): void
     {
         $silent = Application::factory()->applied(Carbon::parse('2001-06-01 09:00:00'))->create();
+        $this->entry($silent, ApplicationStatus::Ghosted, '2001-07-01 09:00:00');
 
         $metrics = $this->metrics->build(Carbon::parse('2001-06-01'), Carbon::parse('2001-07-01'));
 
@@ -597,6 +601,81 @@ class ApplicationMetricsTest extends TestCase
         $this->assertSame(['applied', 'withdrawn'], array_column($row['segments'], 'status'));
         $this->assertSame($withdrawnAt, $row['segments'][0]['to']);
         $this->assertSame(['status' => 'withdrawn', 'from' => $withdrawnAt, 'to' => $withdrawnAt], $row['segments'][1]);
+    }
+
+    // ---------------------------------------------------------------------
+    // Requirement: Ghosted applications in metrics
+    // ---------------------------------------------------------------------
+
+    public function test_ghosted_after_an_interview_keeps_the_stage_it_reached(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Interviewing, '2001-03-06 09:00:00');
+        $this->entry($application, ApplicationStatus::Interviewed, '2001-03-10 09:00:00');
+        $this->entry($application, ApplicationStatus::Ghosted, '2001-04-09 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(100.0, $metrics['kpis']['responseRate']);
+        $this->assertSame(100.0, $metrics['kpis']['interviewRate']);
+        $this->assertSame(100.0, $metrics['kpis']['ghostRate']);
+        $this->assertSame(['ghosted' => 1], $this->outcomeCounts($metrics));
+        $this->assertSame(1, $this->funnelCounts($metrics)['interviewing']);
+        $this->assertSame(0, $this->funnelCounts($metrics)['offered']);
+        $this->assertSame(5.0, $metrics['cycleTimes']['toFirstResponse']);
+    }
+
+    public function test_ghosting_is_not_a_response(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Ghosted, '2001-03-31 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(0.0, $metrics['kpis']['responseRate']);
+        $this->assertNull($metrics['cycleTimes']['toFirstResponse']);
+        $this->assertSame(1, $metrics['kpis']['totalApplied']);
+    }
+
+    public function test_a_company_that_replied_after_ghosting_is_judged_by_the_reply(): void
+    {
+        $rejected = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($rejected, ApplicationStatus::Ghosted, '2001-03-31 09:00:00');
+        $this->entry($rejected, ApplicationStatus::Rejected, '2001-04-10 09:00:00');
+
+        $interviewing = Application::factory()->applied(Carbon::parse('2001-03-02 09:00:00'))->create();
+        $this->entry($interviewing, ApplicationStatus::Ghosted, '2001-04-01 09:00:00');
+        $this->entry($interviewing, ApplicationStatus::Interviewing, '2001-04-12 09:00:00');
+
+        $metrics = $this->year2001();
+
+        $this->assertEqualsCanonicalizing(['rejected' => 1, 'in_progress' => 1], $this->outcomeCounts($metrics));
+        $this->assertSame(0.0, $metrics['kpis']['ghostRate']);
+        $this->assertSame(40.5, $metrics['cycleTimes']['toFirstResponse']);
+    }
+
+    public function test_silence_without_a_ghosted_entry_is_in_progress(): void
+    {
+        Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+
+        $metrics = $this->year2001();
+
+        $this->assertSame(['in_progress' => 1], $this->outcomeCounts($metrics));
+        $this->assertSame(0.0, $metrics['kpis']['ghostRate']);
+    }
+
+    public function test_ghosted_application_on_the_timeline_runs_from_its_ghosted_entry_to_today(): void
+    {
+        $application = Application::factory()->applied(Carbon::parse('2001-03-01 09:00:00'))->create();
+        $this->entry($application, ApplicationStatus::Ghosted, '2001-03-31 09:00:00');
+
+        $row = $this->year2001()['timeline'][0];
+        $ghostedAt = Carbon::parse('2001-03-31 09:00:00')->toIso8601String();
+
+        $this->assertSame('ghosted', $row['outcome']);
+        $this->assertSame(['applied', 'ghosted'], array_column($row['segments'], 'status'));
+        $this->assertSame($ghostedAt, $row['segments'][0]['to']);
+        $this->assertSame(['status' => 'ghosted', 'from' => $ghostedAt, 'to' => now()->toIso8601String()], $row['segments'][1]);
     }
 
     /**

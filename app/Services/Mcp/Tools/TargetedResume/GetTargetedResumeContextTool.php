@@ -139,6 +139,7 @@ class GetTargetedResumeContextTool extends AuthorizedResumeTool
                 'status' => $this->reportedStatus($application),
                 'title' => $application->targetedResume?->title,
             ],
+            'company_ghosting' => $this->companyGhosting($application),
         ];
     }
 }

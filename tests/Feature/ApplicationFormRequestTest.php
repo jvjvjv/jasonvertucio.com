@@ -354,7 +354,6 @@ class ApplicationFormRequestTest extends TestCase
             'unknown status' => [['status' => 'dancing'], 'status', $pipelineMessage],
             'draft is not a pipeline status' => [['status' => 'draft'], 'status', $pipelineMessage],
             'passed is not a pipeline status' => [['status' => 'passed'], 'status', $pipelineMessage],
-            'ghosted is a display, not a status' => [['status' => 'ghosted'], 'status', $pipelineMessage],
             'finalized is no longer a status' => [['status' => 'finalized'], 'status', $pipelineMessage],
             'status in the wrong case' => [['status' => 'Interviewing'], 'status', $pipelineMessage],
             'status that is a list' => [['status' => ['interviewing']], 'status'],

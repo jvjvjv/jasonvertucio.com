@@ -51,8 +51,6 @@ interface IndexProps {
     applications: ApplicationListItem[];
     allStatuses: StatusOption[];
     filters: IndexFilters;
-    /** Days without an update after which an applied application shows as ghosted. */
-    ghostedAfterDays: number;
 }
 
 /**
@@ -91,7 +89,6 @@ export default function Index({
     applications,
     allStatuses,
     filters,
-    ghostedAfterDays,
 }: IndexProps) {
     const [filtersOpen, setFiltersOpen] = useState(false);
     /** Bumped to remount the search field when the filters are cleared. */
@@ -299,7 +296,6 @@ export default function Index({
                                     <ApplicationRow
                                         key={application.id}
                                         application={application}
-                                        ghostedAfterDays={ghostedAfterDays}
                                         onPass={handlePass}
                                         onDelete={handleDelete}
                                         onBeginIntel={handleBeginIntel}

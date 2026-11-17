@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class ApplicationStatusTest extends TestCase
 {
-    public function test_it_has_exactly_the_ten_statuses_with_their_string_values(): void
+    public function test_it_has_exactly_the_eleven_statuses_with_their_string_values(): void
     {
         $this->assertSame(
             [
@@ -18,6 +18,7 @@ class ApplicationStatusTest extends TestCase
                 'Interviewing' => 'interviewing',
                 'Interviewed' => 'interviewed',
                 'Offered' => 'offered',
+                'Ghosted' => 'ghosted',
                 'Accepted' => 'accepted',
                 'Hired' => 'hired',
                 'Rejected' => 'rejected',
@@ -30,7 +31,13 @@ class ApplicationStatusTest extends TestCase
     public function test_finalized_is_not_a_status(): void
     {
         $this->assertNull(ApplicationStatus::tryFrom('finalized'));
-        $this->assertNull(ApplicationStatus::tryFrom('ghosted'));
+    }
+
+    public function test_ghosted_is_a_stored_pipeline_status_that_is_not_terminal(): void
+    {
+        $this->assertSame(ApplicationStatus::Ghosted, ApplicationStatus::tryFrom('ghosted'));
+        $this->assertTrue(ApplicationStatus::Ghosted->isPipeline());
+        $this->assertFalse(ApplicationStatus::Ghosted->isTerminal());
     }
 
     /**
@@ -45,6 +52,7 @@ class ApplicationStatusTest extends TestCase
             'interviewing' => [ApplicationStatus::Interviewing, true],
             'interviewed' => [ApplicationStatus::Interviewed, true],
             'offered' => [ApplicationStatus::Offered, true],
+            'ghosted' => [ApplicationStatus::Ghosted, true],
             'accepted' => [ApplicationStatus::Accepted, true],
             'hired' => [ApplicationStatus::Hired, true],
             'rejected' => [ApplicationStatus::Rejected, true],
@@ -70,6 +78,7 @@ class ApplicationStatusTest extends TestCase
             'interviewing' => [ApplicationStatus::Interviewing, false],
             'interviewed' => [ApplicationStatus::Interviewed, false],
             'offered' => [ApplicationStatus::Offered, false],
+            'ghosted' => [ApplicationStatus::Ghosted, false],
             'accepted' => [ApplicationStatus::Accepted, true],
             'hired' => [ApplicationStatus::Hired, true],
             'rejected' => [ApplicationStatus::Rejected, true],
@@ -91,10 +100,11 @@ class ApplicationStatusTest extends TestCase
         return [
             'draft' => [ApplicationStatus::Draft, [ApplicationStatus::Applied]],
             'passed' => [ApplicationStatus::Passed, [ApplicationStatus::Applied]],
-            'applied' => [ApplicationStatus::Applied, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
+            'applied' => [ApplicationStatus::Applied, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Ghosted, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
             'interviewing' => [ApplicationStatus::Interviewing, [ApplicationStatus::Interviewed, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
-            'interviewed' => [ApplicationStatus::Interviewed, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
+            'interviewed' => [ApplicationStatus::Interviewed, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Ghosted, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
             'offered' => [ApplicationStatus::Offered, [ApplicationStatus::Accepted, ApplicationStatus::Hired, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
+            'ghosted' => [ApplicationStatus::Ghosted, [ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected, ApplicationStatus::Withdrawn]],
             'accepted' => [ApplicationStatus::Accepted, []],
             'hired' => [ApplicationStatus::Hired, []],
             'rejected' => [ApplicationStatus::Rejected, []],
@@ -142,6 +152,7 @@ class ApplicationStatusTest extends TestCase
                 ApplicationStatus::Interviewing,
                 ApplicationStatus::Interviewed,
                 ApplicationStatus::Offered,
+                ApplicationStatus::Ghosted,
                 ApplicationStatus::Accepted,
                 ApplicationStatus::Hired,
                 ApplicationStatus::Rejected,

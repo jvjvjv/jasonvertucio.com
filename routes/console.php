@@ -39,3 +39,7 @@ Schedule::command('voice:sweep-cache')
 Schedule::command('mcp:sweep-call-log')
     ->daily()
     ->withoutOverlapping();
+
+Schedule::command('applications:mark-ghosted')
+    ->dailyAt('03:00')
+    ->withoutOverlapping();

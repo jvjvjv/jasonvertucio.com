@@ -91,6 +91,9 @@ export default memo(function ChatPanel({
 }: ChatPanelProps) {
     const page = usePage<SharedProps>();
     const sessionExpiresAt = page.props.session.expiresAt;
+    /** The fit score as the owner should weigh it, after any ghosting penalty. */
+    const displayedFit =
+        application.ghosting.adjusted_fit_score ?? application.fit_score;
     const [isStreaming, setIsStreaming] = useState(false);
 
     const handleStreamResponse = useCallback(() => {
@@ -161,7 +164,7 @@ export default memo(function ChatPanel({
                                 onFinalize={onFinalizeResume}
                                 caption={
                                     targetedResume
-                                        ? `${application.company_name} — ${application.position}${application.fit_score !== null ? ` · Fit: ${application.fit_score}%` : ""}`
+                                        ? `${application.company_name} — ${application.position}${displayedFit !== null ? ` · Fit: ${displayedFit}%` : ""}`
                                         : undefined
                                 }
                                 extraActions={
@@ -253,6 +256,7 @@ export default memo(function ChatPanel({
                             status={status}
                             statusUpdates={statusUpdates}
                             fitScore={application.fit_score}
+                            ghosting={application.ghosting}
                             usage={conversation.usage}
                             action={
                                 <SessionSystemSwitch

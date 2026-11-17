@@ -22,7 +22,6 @@ use App\Models\User;
 use App\Services\ApplicationService;
 use App\Services\CompanyIntel\CompanyIntelService;
 use App\Services\TargetedResumeService;
-use App\Support\ApplicationStatusResolver;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Jvjvjv\CodeTalker\Enums\AiConversationStatus;
@@ -417,67 +416,131 @@ class ApplicationServiceTest extends TestCase
         $this->assertSame('2026-05-04 14:30:00', $entries[0]->occurred_at->toDateTimeString());
     }
 
-    public function test_ghosted_display_once_the_latest_entry_is_older_than_the_threshold(): void
+    public function test_mark_ghosted_records_a_backdated_entry_once_an_applied_application_is_silent(): void
     {
         $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
-        $threshold = (int) config('resume.ghosted_after_days');
-        $this->assertGreaterThan(0, $threshold);
 
-        $application = Application::factory()->applied(now()->subDays($threshold)->subSecond())->create()->fresh();
-        $latest = $application->latestStatusUpdate;
+        $application = Application::factory()->applied(Carbon::parse('2026-05-15 11:00:00'))->create();
 
-        $this->assertSame(
-            ApplicationStatusResolver::GHOSTED,
-            ApplicationStatusResolver::resolve($application->status->value, $latest->occurred_at),
-        );
-        $this->assertSame('ghosted', ApplicationStatusResolver::GHOSTED);
+        $entry = $this->service()->markGhosted($application, 30);
+
+        $this->assertNotNull($entry);
+        $this->assertSame(ApplicationStatus::Ghosted, $entry->status);
+        $this->assertSame('2026-06-14 11:00:00', $entry->occurred_at->toDateTimeString());
+        $this->assertSame('Marked ghosted automatically after 30 days with no update.', $entry->notes);
+        $this->assertSame(ApplicationStatus::Ghosted, $application->status);
+        $this->assertSame('ghosted', $application->fresh()->getRawOriginal('status'));
+        $this->assertSame(ApplicationStatus::Ghosted, $application->fresh()->latestStatusUpdate->status);
+    }
+
+    public function test_mark_ghosted_also_marks_a_silent_interviewed_application(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $application = Application::factory()->applied(Carbon::parse('2026-04-01 12:00:00'))->create();
+        $this->service()->addStatusUpdate($application, ApplicationStatus::Interviewed, null, Carbon::parse('2026-05-01 12:00:00'));
+
+        $entry = $this->service()->markGhosted($application->fresh(), 30);
+
+        $this->assertSame('2026-05-31 12:00:00', $entry?->occurred_at->toDateTimeString());
+        $this->assertSame(ApplicationStatus::Ghosted, $application->fresh()->status);
+    }
+
+    public function test_mark_ghosted_leaves_an_application_inside_or_on_the_threshold_alone(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $justInside = Application::factory()->applied(now()->subDays(30)->addSecond())->create();
+        $onTheThreshold = Application::factory()->applied(now()->subDays(30))->create();
+
+        $this->assertNull($this->service()->markGhosted($justInside, 30));
+        $this->assertNull($this->service()->markGhosted($onTheThreshold, 30));
+        $this->assertSame(ApplicationStatus::Applied, $justInside->fresh()->status);
+        $this->assertSame(ApplicationStatus::Applied, $onTheThreshold->fresh()->status);
+        $this->assertSame(1, $justInside->statusUpdates()->count());
+    }
+
+    /**
+     * @return array<string, array{0: ApplicationStatus}>
+     */
+    public static function neverGhostedProvider(): array
+    {
+        return [
+            'interviewing' => [ApplicationStatus::Interviewing],
+            'offered' => [ApplicationStatus::Offered],
+            'rejected' => [ApplicationStatus::Rejected],
+            'withdrawn' => [ApplicationStatus::Withdrawn],
+            'accepted' => [ApplicationStatus::Accepted],
+        ];
+    }
+
+    #[DataProvider('neverGhostedProvider')]
+    public function test_mark_ghosted_never_marks_a_status_that_does_not_wait_on_the_employer(ApplicationStatus $status): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $application = Application::factory()->applied(now()->subDays(120))->create();
+        $this->service()->addStatusUpdate($application, $status, null, now()->subDays(90));
+
+        $this->assertNull($this->service()->markGhosted($application->fresh(), 30));
+        $this->assertSame($status, $application->fresh()->status);
+    }
+
+    public function test_mark_ghosted_ignores_draft_and_passed_applications(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $this->assertNull($this->service()->markGhosted(Application::factory()->create(['created_at' => now()->subYear()]), 30));
+        $this->assertNull($this->service()->markGhosted(Application::factory()->passed()->create(), 30));
+    }
+
+    public function test_mark_ghosted_twice_adds_one_entry(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $application = Application::factory()->applied(now()->subDays(45))->create();
+
+        $this->assertNotNull($this->service()->markGhosted($application, 30));
+        $this->assertNull($this->service()->markGhosted($application->fresh(), 30));
+        $this->assertSame(1, $application->statusUpdates()->where('status', ApplicationStatus::Ghosted)->count());
+    }
+
+    public function test_mark_ghosted_judges_the_stored_state_not_a_stale_copy(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $application = Application::factory()->applied(now()->subDays(45))->create();
+        $staleCopy = $application->fresh();
+        $this->service()->addStatusUpdate($application, ApplicationStatus::Interviewing, null, now());
+
+        $this->assertNull($this->service()->markGhosted($staleCopy, 30));
+        $this->assertSame(ApplicationStatus::Interviewing, $application->fresh()->status);
+    }
+
+    public function test_a_ghosted_application_moves_on_when_the_company_replies(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $application = Application::factory()->applied(now()->subDays(45))->create();
+        $this->service()->markGhosted($application, 30);
+
+        $this->service()->addStatusUpdate($application->fresh(), ApplicationStatus::Interviewing, null, now());
+
+        $this->assertSame(ApplicationStatus::Interviewing, $application->fresh()->status);
+    }
+
+    public function test_deleting_the_ghosted_entry_falls_back_and_the_next_run_marks_it_again(): void
+    {
+        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
+
+        $application = Application::factory()->applied(now()->subDays(40))->create();
+        $entry = $this->service()->markGhosted($application, 30);
+
+        $this->service()->deleteStatusUpdate($application->fresh(), $entry);
         $this->assertSame(ApplicationStatus::Applied, $application->fresh()->status);
-        $this->assertSame('applied', $application->fresh()->getRawOriginal('status'));
-        $this->assertSame(ApplicationStatus::Applied, $latest->fresh()->status);
-    }
 
-    public function test_ghosted_display_does_not_apply_inside_the_threshold(): void
-    {
-        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
-        $threshold = (int) config('resume.ghosted_after_days');
-
-        $justInside = Application::factory()->applied(now()->subDays($threshold)->addSecond())->create()->fresh();
-        $onTheThreshold = Application::factory()->applied(now()->subDays($threshold))->create()->fresh();
-
-        $this->assertSame('applied', ApplicationStatusResolver::resolve($justInside->status->value, $justInside->latestStatusUpdate->occurred_at));
-        $this->assertSame('applied', ApplicationStatusResolver::resolve($onTheThreshold->status->value, $onTheThreshold->latestStatusUpdate->occurred_at));
-    }
-
-    public function test_a_withdrawn_application_is_never_displayed_as_ghosted(): void
-    {
-        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
-        $threshold = (int) config('resume.ghosted_after_days');
-
-        $application = Application::factory()->applied(now()->subDays($threshold * 3))->create();
-        $this->service()->addStatusUpdate($application, ApplicationStatus::Withdrawn, null, now()->subDays($threshold * 2));
-        $application = $application->fresh();
-
-        $this->assertSame(ApplicationStatus::Withdrawn, $application->status);
-        $this->assertSame('withdrawn', ApplicationStatusResolver::resolve($application->status->value, $application->latestStatusUpdate->occurred_at));
-    }
-
-    public function test_ghosted_display_is_judged_by_the_latest_entry_and_only_for_applied(): void
-    {
-        $this->travelTo(Carbon::parse('2026-06-15 12:00:00'));
-        $threshold = (int) config('resume.ghosted_after_days');
-        $longAgo = now()->subDays($threshold * 3);
-
-        $reapplied = Application::factory()->applied($longAgo)->create();
-        $this->service()->addStatusUpdate($reapplied, ApplicationStatus::Applied, 'Followed up', now()->subDay());
-        $reapplied = $reapplied->fresh();
-
-        $this->assertSame('applied', ApplicationStatusResolver::resolve($reapplied->status->value, $reapplied->latestStatusUpdate->occurred_at));
-
-        foreach ([ApplicationStatus::Draft, ApplicationStatus::Passed, ApplicationStatus::Interviewing, ApplicationStatus::Offered, ApplicationStatus::Rejected] as $status) {
-            $this->assertSame($status->value, ApplicationStatusResolver::resolve($status->value, $longAgo));
-        }
-
-        $this->assertSame('draft', ApplicationStatusResolver::resolve('draft', null));
+        $this->assertNotNull($this->service()->markGhosted($application->fresh(), 30));
+        $this->assertSame(ApplicationStatus::Ghosted, $application->fresh()->status);
     }
 
     public function test_having_a_targeted_resume_is_not_a_status(): void

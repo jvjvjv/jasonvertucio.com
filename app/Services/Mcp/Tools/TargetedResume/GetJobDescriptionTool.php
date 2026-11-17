@@ -34,6 +34,7 @@ class GetJobDescriptionTool extends AuthorizedResumeTool
             'job_description' => $application?->job_description ?? '',
             'job_title' => $application?->knownPosition(),
             'company_name' => $application?->knownCompanyName(),
+            'company_ghosting' => $application !== null ? $this->companyGhosting($application) : null,
         ]);
     }
 }

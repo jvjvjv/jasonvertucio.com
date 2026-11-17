@@ -36,7 +36,7 @@ function toDateInputValue(isoDate: string): string {
 }
 
 export interface UseStatusUpdatesResult {
-    /** The application's stored status (not the ghosted display status). */
+    /** The application's stored status. */
     status: string;
     statusUpdates: StatusUpdate[];
     allowedNextStatuses: string[];
