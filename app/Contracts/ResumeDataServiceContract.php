@@ -2,16 +2,19 @@
 
 namespace App\Contracts;
 
+use App\Models\ResumeVersion;
 use Illuminate\Validation\ValidationException;
 
 interface ResumeDataServiceContract
 {
     /**
-     * Get all editable data for the editor.
+     * Get all editable data for the editor: the given version's, or the
+     * current version's when none is given. Loading a version never makes
+     * it current. Drivers without versions ignore the argument.
      *
      * @return array{personal: array, skills: array, experience: array, education: array, projects: array}
      */
-    public function getAllEditableData(): array;
+    public function getAllEditableData(?ResumeVersion $version = null): array;
 
     /**
      * Save all editable data from the editor.

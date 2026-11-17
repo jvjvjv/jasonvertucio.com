@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ResumeEditCandidate;
 use App\Models\ResumeVersion;
 use App\Models\User;
+use App\Services\DatabaseResumeDataService;
 use App\Services\ResumeEditCandidateService;
 use BSPDX\Keystone\Models\KeystonePermission as Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -22,6 +23,18 @@ class ResumeEditCandidateReviewTest extends TestCase
         $admin->givePermissionTo('edit-resume');
 
         return $admin;
+    }
+
+    /**
+     * Someone who may open the résumé page and review drafts on it.
+     */
+    private function reviewer(): User
+    {
+        Permission::firstOrCreate(['name' => 'read-resume']);
+        $reviewer = $this->admin();
+        $reviewer->givePermissionTo('read-resume');
+
+        return $reviewer;
     }
 
     private function liveVersion(): ResumeVersion
@@ -177,5 +190,138 @@ class ResumeEditCandidateReviewTest extends TestCase
 
         $this->actingAs($user)->post("/admin/resume/candidates/{$candidate->id}/approve")->assertForbidden();
         $this->actingAs($user)->post("/admin/resume/candidates/{$candidate->id}/reject")->assertForbidden();
+    }
+
+    /**
+     * The live version from liveVersion(), as a draft snapshot, with one
+     * bullet reworded and one skill added.
+     *
+     * @return array<string, mixed>
+     */
+    private function editedSnapshot(ResumeVersion $base): array
+    {
+        $base->personalInfo->update(['summary' => 'Builds things.']);
+        $base->experiences()->first()->bullets()->create(['content' => 'Led a team of 4 engineers', 'sort_order' => 0]);
+        $base->skillCategories()->create(['group' => 'top', 'title' => 'Languages', 'sort_order' => 0])
+            ->skills()->create(['name' => 'PHP', 'sort_order' => 0]);
+
+        $snapshot = app(DatabaseResumeDataService::class)->getAllEditableData($base->fresh());
+        $snapshot['experience'][0]['bullets'][0] = 'Led a team of 6 engineers';
+        $snapshot['skills']['top'][0]['list'][] = 'Rust';
+
+        return $snapshot;
+    }
+
+    public function test_a_revision_is_compared_with_the_version_it_branched_from_by_default(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $base = $this->liveVersion();
+        $candidate = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'snapshot' => $this->editedSnapshot($base)]);
+
+        $response = $this->actingAs($this->reviewer())->get("/resume?revision={$candidate->id}");
+
+        $response->assertOk()
+            ->assertViewHas('baseline', fn ($baseline): bool => $baseline->mode === 'base')
+            ->assertViewHas('diff', fn ($diff): bool => $diff->count() === 2)
+            ->assertSee('2 changes')
+            ->assertSee("Compared with version {$base->version}, the one it branched from.", false)
+            ->assertSee('<del class="rd-del">4</del>', false)
+            ->assertSee('<ins class="rd-ins">6</ins>', false)
+            ->assertSee('x-data="resumeDiffToggle"', false)
+            ->assertDontSee('name="compare"', false);
+    }
+
+    public function test_a_stale_revision_can_be_compared_with_the_live_resume(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $base = $this->liveVersion();
+        $candidate = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'snapshot' => $this->editedSnapshot($base)]);
+        $base->update(['is_current' => false]);
+        $live = $this->liveVersion();
+
+        $response = $this->actingAs($this->reviewer())->get("/resume?revision={$candidate->id}&compare=live");
+
+        $response->assertOk()
+            ->assertViewHas('baseline', fn ($baseline): bool => $baseline->mode === 'live')
+            ->assertSee("Compared with the live resume, version {$live->version}.", false)
+            ->assertSee('<option value="live" selected>', false)
+            ->assertSee('<option value="base"', false);
+    }
+
+    public function test_a_revision_can_be_compared_with_the_previous_revision(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $base = $this->liveVersion();
+        $snapshot = $this->editedSnapshot($base);
+        ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'revision_number' => 1, 'snapshot' => $snapshot]);
+        $snapshot['projects'][0]['description'] = 'Now with a description';
+        $second = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'revision_number' => 2, 'snapshot' => $snapshot]);
+
+        $response = $this->actingAs($this->reviewer())->get("/resume?revision={$second->id}&compare=previous");
+
+        $response->assertOk()
+            ->assertViewHas('diff', fn ($diff): bool => $diff->count() === 1)
+            ->assertSee('1 change')
+            ->assertSee('Compared with revision #1.', false);
+    }
+
+    public function test_an_unavailable_baseline_falls_back_with_a_notice(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $base = $this->liveVersion();
+        $candidate = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'snapshot' => $this->editedSnapshot($base)]);
+
+        $this->actingAs($this->reviewer())->get("/resume?revision={$candidate->id}&compare[]=live")
+            ->assertOk()
+            ->assertViewHas('baseline', fn ($baseline): bool => $baseline->mode === 'base' && ! $baseline->fellBack);
+
+        foreach (['previous', 'sideways'] as $requested) {
+            $this->actingAs($this->reviewer())->get("/resume?revision={$candidate->id}&compare={$requested}")
+                ->assertOk()
+                ->assertViewHas('baseline', fn ($baseline): bool => $baseline->mode === 'base' && $baseline->fellBack)
+                ->assertSee("That comparison isn't available for this revision", false);
+        }
+    }
+
+    public function test_an_unauthorized_viewer_gets_no_diff(): void
+    {
+        Permission::firstOrCreate(['name' => 'read-resume']);
+        $reader = User::factory()->create();
+        $reader->givePermissionTo('read-resume');
+        $base = $this->liveVersion();
+        $candidate = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id]);
+
+        $this->actingAs($reader)->get("/resume?revision={$candidate->id}&compare=live")->assertForbidden();
+        $this->get("/resume?revision={$candidate->id}")->assertForbidden();
+    }
+
+    public function test_json_and_plain_text_revisions_are_unchanged(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $base = $this->liveVersion();
+        $snapshot = $this->editedSnapshot($base);
+        $candidate = ResumeEditCandidate::factory()->create(['base_resume_version_id' => $base->id, 'snapshot' => $snapshot]);
+        $admin = $this->reviewer();
+
+        $this->actingAs($admin)->getJson("/resume?revision={$candidate->id}&compare=base")
+            ->assertOk()
+            ->assertExactJson($snapshot);
+
+        $plain = $this->actingAs($admin)->get("/resume?revision={$candidate->id}", ['Accept' => 'text/plain']);
+        $plain->assertOk();
+        $this->assertStringNotContainsString('rd-', $plain->getContent());
+        $this->assertStringContainsString('Led a team of 6 engineers', $plain->getContent());
+    }
+
+    public function test_the_resume_without_a_revision_has_no_panel_or_toggle(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $this->liveVersion();
+
+        $this->actingAs($this->reviewer())->get('/resume')
+            ->assertOk()
+            ->assertViewHas('diff', null)
+            ->assertDontSee('rd-panel', false)
+            ->assertDontSee('resumeDiffToggle', false);
     }
 }

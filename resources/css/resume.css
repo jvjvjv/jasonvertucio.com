@@ -197,3 +197,410 @@
         @apply bottom-4 right-4 w-12 h-12;
     }
 }
+
+/* ============================================
+   REVISION REVIEW: Changes panel and tracked changes
+   Only rendered for a draft revision (`?revision=`). Meaning is carried by
+   underline (inserted), strike-through (deleted) and words (tags, kinds);
+   the tints only reinforce it.
+   ============================================ */
+[x-cloak] {
+    display: none !important;
+}
+
+.resume-container {
+    --rd-ins-ink: #1d6a43;
+    --rd-ins-wash: #e4f3ea;
+    --rd-del-ink: #9a2f1f;
+    --rd-del-wash: #fae6e1;
+    --rd-move-ink: var(--color-primary);
+    --rd-move-wash: #e6eff5;
+    --rd-rule: #e5e7eb;
+    --rd-muted: #6b7280;
+}
+
+/* Inline marks */
+.rd-ins {
+    color: var(--rd-ins-ink);
+    background: var(--rd-ins-wash);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    border-radius: 2px;
+}
+
+.rd-del {
+    color: var(--rd-del-ink);
+    background: var(--rd-del-wash);
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    border-radius: 2px;
+}
+
+/* Announce marks to screen readers, which ignore <ins> and <del> */
+.rd-ins::before,
+.rd-ins::after,
+.rd-del::before,
+.rd-del::after {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(100%);
+    white-space: nowrap;
+}
+
+.rd-ins::before {
+    content: " [inserted: ";
+}
+
+.rd-del::before {
+    content: " [deleted: ";
+}
+
+.rd-ins::after,
+.rd-del::after {
+    content: "] ";
+}
+
+/* Whole entries */
+.rd-entry.rd-added,
+.rd-entry.rd-removed,
+.rd-entry.rd-moved {
+    border-left: 3px solid;
+    padding-left: 0.875rem;
+}
+
+.rd-entry.rd-added {
+    border-left-color: var(--rd-ins-ink);
+}
+
+.rd-entry.rd-removed {
+    border-left-color: var(--rd-del-ink);
+    color: var(--rd-muted);
+}
+
+.rd-entry.rd-removed :is(h3, p, li) {
+    text-decoration: line-through;
+    text-decoration-color: var(--rd-del-ink);
+    color: var(--rd-muted);
+}
+
+.rd-entry.rd-moved:not(.rd-added, .rd-removed) {
+    border-left-style: dashed;
+    border-left-color: var(--rd-move-ink);
+}
+
+.rd-tags {
+    display: flex;
+    gap: 0.375rem;
+    margin-bottom: 0.25rem;
+}
+
+.rd-entry.rd-removed .rd-tags {
+    text-decoration: none;
+}
+
+.rd-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    padding: 0 0.375rem;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+}
+
+.rd-tag--added {
+    color: var(--rd-ins-ink);
+    background: var(--rd-ins-wash);
+}
+
+.rd-tag--removed {
+    color: var(--rd-del-ink);
+    background: var(--rd-del-wash);
+}
+
+.rd-tag--moved {
+    color: var(--rd-move-ink);
+    background: var(--rd-move-wash);
+}
+
+/* Changes panel */
+.rd-panel {
+    margin-bottom: 2rem;
+    border: 1px solid var(--rd-rule);
+    border-top: 4px solid var(--color-primary);
+    border-radius: 0.375rem;
+}
+
+.rd-panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding: 1.25rem 1.25rem 1rem;
+}
+
+.rd-panel__title {
+    font-family: var(--font-family-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-primary);
+}
+
+.rd-panel__basis {
+    margin-top: 0.25rem;
+    color: var(--color-dark);
+}
+
+.rd-panel__notice {
+    margin-top: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
+    color: #7a4a06;
+    background: #fdf3e2;
+    border-left: 3px solid var(--color-secondary);
+}
+
+.rd-compare {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: min(100%, 16rem);
+}
+
+.rd-compare__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-dark);
+}
+
+.rd-compare__select {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.9375rem;
+    border: 1px solid #9ca3af;
+    border-radius: 0.25rem;
+    background: white;
+}
+
+.rd-compare__select:focus-visible,
+.rd-compare__submit:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.rd-compare__submit {
+    align-self: flex-start;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--color-primary);
+    border-radius: 0.25rem;
+    color: var(--color-primary);
+}
+
+.rd-panel__section {
+    border-top: 1px solid var(--rd-rule);
+    padding: 0.875rem 1.25rem 1rem;
+}
+
+.rd-panel__section-title {
+    font-family: var(--font-family-heading);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.rd-rows {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.rd-row {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: baseline;
+}
+
+.rd-kind {
+    justify-self: start;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    padding: 0 0.375rem;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    color: var(--color-dark);
+}
+
+.rd-kind--added {
+    color: var(--rd-ins-ink);
+    background: var(--rd-ins-wash);
+}
+
+.rd-kind--removed {
+    color: var(--rd-del-ink);
+    background: var(--rd-del-wash);
+}
+
+.rd-kind--modified,
+.rd-kind--formatting {
+    color: var(--color-dark);
+    background: #f3f4f6;
+}
+
+.rd-kind--moved,
+.rd-kind--order_changed {
+    color: var(--rd-move-ink);
+    background: var(--rd-move-wash);
+}
+
+.rd-row__where {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.rd-row__item {
+    font-weight: 700;
+    color: var(--color-dark);
+}
+
+.rd-row__field {
+    color: var(--rd-muted);
+}
+
+.rd-row__hidden {
+    font-size: 0.75rem;
+    color: var(--rd-muted);
+    font-style: italic;
+}
+
+.rd-row__what {
+    margin-top: 0.125rem;
+    color: #1f2937;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    max-width: 70ch;
+}
+
+.rd-row__note {
+    margin-left: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--rd-muted);
+}
+
+.rd-row__arrow {
+    color: var(--rd-muted);
+    margin: 0 0.25rem;
+}
+
+/* Show changes switch */
+.rd-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rd-rule);
+}
+
+.rd-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-dark);
+}
+
+.rd-switch__input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.rd-switch__track {
+    position: relative;
+    width: 2.5rem;
+    height: 1.375rem;
+    border-radius: 999px;
+    background: #9ca3af;
+    transition: background-color 120ms ease;
+}
+
+.rd-switch__track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(1.375rem - 6px);
+    height: calc(1.375rem - 6px);
+    border-radius: 999px;
+    background: white;
+    transition: transform 120ms ease;
+}
+
+.rd-switch__input:checked + .rd-switch__track {
+    background: var(--color-primary);
+}
+
+.rd-switch__input:checked + .rd-switch__track::after {
+    transform: translateX(1.125rem);
+}
+
+.rd-switch__input:focus-visible + .rd-switch__track {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.rd-toggle__hint {
+    font-size: 0.875rem;
+    color: var(--rd-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rd-switch__track,
+    .rd-switch__track::after {
+        transition: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .rd-panel__head,
+    .rd-panel__section {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .rd-panel__title {
+        font-size: 1.625rem;
+    }
+
+    .rd-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.25rem;
+    }
+}
+
+/* A printed review keeps the marked-up revision and the panel */
+@media print {
+    [data-revision-review] .rd-panel,
+    [data-revision-review] [data-rd-view="marked"],
+    [data-revision-review] [data-rd-view="marked"] :is(.resume-skills, .resume-experience, .resume-education, .resume-projects) {
+        display: block !important;
+    }
+
+    [data-revision-review] [data-rd-view="clean"],
+    [data-revision-review] .rd-toggle,
+    [data-revision-review] .print-message {
+        display: none !important;
+    }
+}

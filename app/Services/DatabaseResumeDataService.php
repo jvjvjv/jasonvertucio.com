@@ -12,11 +12,13 @@ use Illuminate\Validation\ValidationException;
 class DatabaseResumeDataService implements ResumeDataServiceContract
 {
     /**
-     * Get all editable data for the editor.
+     * Get all editable data for the editor: the given version's, or the
+     * current version's when none is given. The version is only read, never
+     * made current.
      */
-    public function getAllEditableData(): array
+    public function getAllEditableData(?ResumeVersion $version = null): array
     {
-        $version = $this->getCurrentVersion();
+        $version ??= $this->getCurrentVersion();
 
         if (! $version) {
             return [

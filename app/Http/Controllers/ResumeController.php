@@ -9,6 +9,8 @@ use App\Models\ResumeEditCandidate;
 use App\Models\ResumeShareCode;
 use App\Models\ResumeVersion;
 use App\Services\DocumentDownloadLogger;
+use App\Services\Resume\Diff\ResumeDiffBaseline;
+use App\Services\Resume\Diff\ResumeSnapshotDiffer;
 use App\Services\ResumeEditCandidateService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +27,8 @@ class ResumeController extends Controller
         protected ResumeVersionServiceContract $versionService,
         protected ResumeEditCandidateService $candidateService,
         protected DocumentDownloadLogger $downloadLogger,
+        protected ResumeDiffBaseline $diffBaseline,
+        protected ResumeSnapshotDiffer $differ,
     ) {}
 
     /**
@@ -91,10 +95,20 @@ class ResumeController extends Controller
         }
 
         $liveVersion = ResumeVersion::current()->first();
+        $baseline = null;
+        $diff = null;
+
+        if ($candidate) {
+            $requestedBaseline = $request->query('compare');
+            $baseline = $this->diffBaseline->resolve($candidate, is_string($requestedBaseline) ? $requestedBaseline : null, $liveVersion);
+            $diff = $this->differ->diff($baseline->data, is_array($data) ? $data : []);
+        }
 
         // Default: HTML
         return view('resume.index', [
             'data' => $data,
+            'baseline' => $baseline,
+            'diff' => $diff,
             'version' => $liveVersion?->version,
             'canSave' => $canSave,
             'docxExists' => $liveVersion !== null,

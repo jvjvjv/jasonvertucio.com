@@ -39,6 +39,25 @@ class DatabaseResumeDataServiceTest extends TestCase
         $this->assertSame([], $data['projects']);
     }
 
+    public function test_get_all_editable_data_loads_a_given_version_without_making_it_current(): void
+    {
+        ResumeVersion::query()->update(['is_current' => false]);
+        $old = ResumeVersion::factory()->create(['is_current' => false]);
+        ResumePersonalInfo::factory()->create(['version_id' => $old->id, 'name' => 'Old Name', 'title' => 'Old Title']);
+        ResumeSkillCategory::factory()->create(['version_id' => $old->id, 'group' => 'top', 'title' => 'Old Skills', 'sort_order' => 0]);
+
+        $current = ResumeVersion::factory()->create(['is_current' => true]);
+        ResumePersonalInfo::factory()->create(['version_id' => $current->id, 'name' => 'New Name', 'title' => 'New Title']);
+
+        $data = $this->service->getAllEditableData($old);
+
+        $this->assertSame('Old Name', $data['personal']['name']);
+        $this->assertSame('Old Skills', $data['skills']['top'][0]['title']);
+        $this->assertSame('New Name', $this->service->getAllEditableData()['personal']['name']);
+        $this->assertFalse($old->fresh()->is_current);
+        $this->assertTrue($current->fresh()->is_current);
+    }
+
     public function test_get_all_editable_data_returns_correct_structure(): void
     {
         $version = ResumeVersion::factory()->create(['is_current' => true]);
