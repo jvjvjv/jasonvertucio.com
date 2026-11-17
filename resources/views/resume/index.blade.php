@@ -7,7 +7,7 @@
 @endsection
 
 @section('main')
-<div class="resume-container max-w-4xl mx-auto px-4 py-8">
+<div class="resume-container max-w-4xl mx-auto px-4 py-8" @if(! empty($diff)) data-revision-review @endif>
 
     {{-- Outcome of an approve/reject posted from the revision banner below --}}
     @if(session('error'))
@@ -32,8 +32,8 @@
         </p>
         @endif
         @if($candidate['status'] === 'pending')
-        <div class="mt-3 flex gap-2 items-center">
-            <form method="POST" action="{{ route('admin.resume.candidates.approve', $candidate['id']) }}" class="flex gap-2 items-center">
+        <div class="mt-3 flex flex-wrap gap-2 items-center">
+            <form method="POST" action="{{ route('admin.resume.candidates.approve', $candidate['id']) }}" class="flex flex-wrap gap-2 items-center">
                 @csrf
                 <input type="hidden" name="redirect_to" value="preview">
                 <label for="approve-version" class="text-sm text-blue-900">Publish as version</label>
@@ -84,27 +84,39 @@
         $personal = is_array($data['personal'] ?? null) ? $data['personal'] : [];
     @endphp
 
-    {{-- Header with name, title, and summary --}}
-    <x-resume.header
-        :name="$personal['name'] ?? ''"
-        :title="$personal['title'] ?? ''"
-        :summary="$personal['summary'] ?? ''"
-        :revision-label="$revisionLabel"
-    />
+    @if(! empty($diff))
+    <x-resume.diff.changes-panel :diff="$diff" :baseline="$baseline" :revision-id="$candidate['id']" />
 
-    {{-- Technical Skills --}}
-    <x-resume.skills :skills="$data['skills'] ?? []" />
+    <div x-data="resumeDiffToggle">
+        <div class="rd-toggle">
+            <label class="rd-switch">
+                <input type="checkbox" role="switch" class="rd-switch__input" x-model="show" checked>
+                <span class="rd-switch__track" aria-hidden="true"></span>
+                <span class="rd-switch__label">Show changes</span>
+            </label>
+            <p class="rd-toggle__hint" x-show="show">Insertions are underlined and deletions struck through.</p>
+            <p class="rd-toggle__hint" x-show="!show" x-cloak>Showing the revision as it would be published.</p>
+        </div>
 
-    {{-- Experience --}}
-    <x-resume.experience :experience="$data['experience'] ?? []" />
+        {{-- The revision with its differences from the baseline marked in place --}}
+        <div class="rd-view" data-rd-view="marked" x-show="show">
+            <x-resume.diff.header :section="$diff->section('personal')" :revision-label="$revisionLabel" />
+            <x-resume.diff.skills :section="$diff->section('skills')" />
+            <x-resume.diff.experience :section="$diff->section('experience')" />
+            @if($diff->section('education')->entries !== [])
+            <x-resume.diff.education :section="$diff->section('education')" />
+            @endif
+            <x-resume.diff.projects :section="$diff->section('projects')" />
+        </div>
 
-    {{-- Education (only present for authorized viewers or a candidate revision) --}}
-    @if(!empty($data['education']))
-    <x-resume.education :education="$data['education']" />
+        {{-- The same revision rendered exactly as before, without marks --}}
+        <div data-rd-view="clean" x-show="!show" x-cloak>
+            @include('resume.sections')
+        </div>
+    </div>
+    @else
+    @include('resume.sections')
     @endif
-
-    {{-- Selected Projects --}}
-    <x-resume.projects :projects="$data['projects'] ?? []" />
 
     {{-- Print-only message - shows when user tries to print --}}
     <div class="print-message">
