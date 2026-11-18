@@ -89,6 +89,23 @@
         @endif
     </div>
 
+    @if (config('comments.reply_notifications.enabled'))
+        <div class="{{ $compact ? 'mt-2' : 'mt-3' }} flex items-start gap-2">
+            <input type="checkbox"
+                   id="notify-replies-{{ $parentId ?? 'root' }}"
+                   name="notify_replies"
+                   value="1"
+                   @checked($isTarget && old('notify_replies'))
+                   class="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+            <label for="notify-replies-{{ $parentId ?? 'root' }}" class="{{ $compact ? 'text-xs' : 'text-sm' }} text-gray-700">
+                Email me when someone replies
+                @unless (auth()->user()?->hasVerifiedEmail())
+                    <span class="block text-xs text-gray-500">We'll send a link to confirm first. Every email has an unsubscribe link.</span>
+                @endunless
+            </label>
+        </div>
+    @endif
+
     <button type="submit"
             class="{{ $compact ? 'mt-2 px-3 py-1.5 text-sm' : 'mt-3 px-4 py-2' }} rounded bg-primary font-semibold text-white hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
         {{ $compact ? 'Post reply' : 'Post comment' }}

@@ -55,4 +55,25 @@ return [
         'window_hours' => (int) env('COMMENT_SPAM_ESCALATION_WINDOW_HOURS', 24),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reply Notifications
+    |--------------------------------------------------------------------------
+    |
+    | A commenter who opts in is emailed when someone replies directly to
+    | their comment. Anonymous commenters confirm by email first. A reply
+    | email waits `delay_minutes`, then everything is re-checked before it
+    | sends, so spam and deletions caught in that time never reach anyone.
+    | Both per-address caps compare addresses case-insensitively.
+    |
+    */
+
+    'reply_notifications' => [
+        'enabled' => (bool) env('COMMENT_REPLY_NOTIFICATIONS_ENABLED', true),
+        'delay_minutes' => (int) env('COMMENT_REPLY_NOTIFICATIONS_DELAY_MINUTES', 10),
+        'confirmation_expires_days' => (int) env('COMMENT_REPLY_NOTIFICATIONS_CONFIRMATION_EXPIRES_DAYS', 7),
+        'confirmations_per_address_per_day' => (int) env('COMMENT_REPLY_NOTIFICATIONS_CONFIRMATIONS_PER_DAY', 3),
+        'notifications_per_address_per_hour' => (int) env('COMMENT_REPLY_NOTIFICATIONS_PER_HOUR', 5),
+    ],
+
 ];

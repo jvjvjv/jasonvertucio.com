@@ -20,4 +20,15 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
         ];
     }
+
+    /**
+     * An account whose address this site does not hold as verified, as after
+     * an email change made at bspdx.com.
+     */
+    public function unverified(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
+    }
 }

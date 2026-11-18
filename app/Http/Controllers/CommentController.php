@@ -5,12 +5,18 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCommentRequest;
 use App\Http\Requests\UpdateCommentRequest;
 use App\Models\Comment;
+use App\Models\CommentEmailOptOut;
 use Illuminate\Http\RedirectResponse;
 
 class CommentController extends Controller
 {
     /**
      * Store a comment against a published post.
+     *
+     * A request for reply emails stands at once, and lifts any earlier
+     * opt-out of the address, only for a signed-in user whose account
+     * address this site holds as verified. Signing in is not proof of the
+     * address by itself, so everyone else waits for an emailed confirmation.
      */
     public function store(StoreCommentRequest $request): RedirectResponse
     {
@@ -20,8 +26,10 @@ class CommentController extends Controller
 
         $user = $request->user();
         $parent = $request->parentComment();
+        $wantsReplyEmails = $request->boolean('notify_replies')
+            && config('comments.reply_notifications.enabled');
 
-        $comment = Comment::create([
+        $comment = new Comment([
             'post_id' => $request->targetPost()->id,
             'parent_id' => $parent?->id,
             'user_id' => $user?->id,
@@ -33,7 +41,15 @@ class CommentController extends Controller
             'is_spam' => false,
             'ip_address' => $this->clientAddress($request),
             'user_agent' => $request->userAgent(),
+            'notify_replies' => $wantsReplyEmails,
         ]);
+
+        if ($wantsReplyEmails && $user?->hasVerifiedEmail()) {
+            $comment->notify_replies_confirmed_at = now();
+            CommentEmailOptOut::lift($user->email);
+        }
+
+        $comment->save();
 
         return $this->accepted($request, $comment);
     }

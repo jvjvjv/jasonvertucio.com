@@ -42,6 +42,7 @@ class StoreCommentRequest extends FormRequest
             'email' => [$this->user() ? 'nullable' : 'required', 'email', 'max:128'],
             'message' => ['required', 'string', 'max:5000'],
             'parent_id' => ['nullable', 'integer', Rule::exists('comments', 'id')->whereNull('deleted_at')],
+            'notify_replies' => ['nullable', 'boolean'],
             // The honeypot must never fail validation: a rejected submission
             // would tell a bot the field exists. The controller silently
             // discards it instead, via looksAutomated().
@@ -63,6 +64,7 @@ class StoreCommentRequest extends FormRequest
             'message.required' => 'A comment needs something to say.',
             'message.max' => 'Comments are limited to 5,000 characters.',
             'parent_id.exists' => 'That comment is no longer available.',
+            'notify_replies.boolean' => 'The reply email choice is either on or off.',
         ];
     }
 

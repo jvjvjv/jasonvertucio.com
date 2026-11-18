@@ -2,12 +2,14 @@
 
 use App\Exceptions\ApplicationException;
 use App\Exceptions\ApplicationExceptionRenderer;
+use App\Http\Controllers\CommentReplyNotificationController;
 use App\Http\Middleware\IpMiddleware;
 use App\Http\Middleware\PreventFraming;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -47,9 +49,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // /posts accepts unauthenticated POSTs from external callers, so it
-        // cannot carry a CSRF token.
+        // cannot carry a CSRF token. Nor can a mail client's one-click
+        // unsubscribe (RFC 8058); its signed URL is what authorizes it.
         $middleware->preventRequestForgery(except: [
             '/posts',
+            'comments/*/reply-emails/unsubscribe',
         ]);
 
         // Framework defaults: an unauthenticated non-JSON request redirects
@@ -67,5 +71,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->dontReport(ApplicationException::class);
         $exceptions->render(
             fn (ApplicationException $exception, Request $request) => app(ApplicationExceptionRenderer::class)->render($exception, $request)
+        );
+
+        // A comment-email link that fails its signature check keeps its 403,
+        // but says whether it expired (offering a new link) or is not valid.
+        $exceptions->render(
+            fn (InvalidSignatureException $exception, Request $request) => $request->routeIs('comments.reply-emails.*')
+                ? app(CommentReplyNotificationController::class)->invalidLink($request)
+                : null
         );
     })->create();
