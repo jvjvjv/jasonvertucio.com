@@ -41,6 +41,28 @@ class CommentFactory extends Factory
         ]);
     }
 
+    /**
+     * The commenter asked for reply emails but has not confirmed yet.
+     */
+    public function wantsReplyEmails(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'notify_replies' => true,
+            'notify_replies_confirmed_at' => null,
+        ]);
+    }
+
+    /**
+     * The commenter asked for reply emails and the request is confirmed.
+     */
+    public function subscribedToReplies(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'notify_replies' => true,
+            'notify_replies_confirmed_at' => now(),
+        ]);
+    }
+
     public function asReply(?Comment $parent = null): self
     {
         return $this->state(fn (array $attributes) => [

@@ -40,6 +40,7 @@ class Comment extends Model
         'depth',
         'ip_address',
         'user_agent',
+        'notify_replies',
         'created_at',
         'updated_at',
     ];
@@ -51,6 +52,8 @@ class Comment extends Model
             'edited_at' => 'datetime',
             'is_spam' => 'boolean',
             'depth' => 'integer',
+            'notify_replies' => 'boolean',
+            'notify_replies_confirmed_at' => 'datetime',
         ];
     }
 
@@ -173,6 +176,35 @@ class Comment extends Model
             'is_spam' => false,
             'approved_at' => now(),
         ]);
+    }
+
+    /**
+     * Determine whether this comment's author is to be emailed about replies.
+     *
+     * The commenter must have asked, and the request must be confirmed: at
+     * posting time for a signed-in user, by email for an anonymous one.
+     */
+    public function hasActiveReplySubscription(): bool
+    {
+        return $this->notify_replies && $this->notify_replies_confirmed_at !== null;
+    }
+
+    /**
+     * The address reply emails for this comment go to.
+     *
+     * A signed-in author is reached at their account's current address only
+     * while this site holds it as verified. Otherwise it is the address
+     * recorded with the comment: the one that was confirmed by email, or that
+     * was verified when they opted in. An unverified address change made at
+     * bspdx.com therefore cannot redirect reply emails.
+     */
+    public function replyNotificationAddress(): ?string
+    {
+        if ($this->user !== null && $this->user->hasVerifiedEmail()) {
+            return $this->user->email;
+        }
+
+        return $this->email;
     }
 
     /**

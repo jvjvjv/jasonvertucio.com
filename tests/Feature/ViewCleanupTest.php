@@ -21,7 +21,7 @@ class ViewCleanupTest extends TestCase
     {
         $bundle = File::get(resource_path('js/app.js'));
 
-        $this->assertStringContainsString("from 'alpinejs'", $bundle);
+        $this->assertMatchesRegularExpression('/from ["\']alpinejs["\']/', $bundle);
         $this->assertStringContainsString('Alpine.start()', $bundle);
     }
 
