@@ -43,22 +43,18 @@ class CommentObserver
             return;
         }
 
-        CommentReplyEmails::requestConfirmation($comment);
+        CommentReplyEmails::requestConfirmation($comment, $comment->ip_address);
     }
 
     /**
-     * Determine whether the site owner wrote this comment themselves.
+     * Determine whether the site owner wrote this comment themselves,
+     * comparing mailboxes so a tagged spelling of the owner's address counts.
      */
     protected function isOwnComment(Comment $comment): bool
     {
-        $owner = config('comments.owner_email');
-
-        if (blank($owner)) {
-            return false;
-        }
-
-        $author = $comment->user?->email ?? $comment->email;
-
-        return filled($author) && strcasecmp($author, $owner) === 0;
+        return CommentReplyEmails::sameAddress(
+            $comment->user?->email ?? $comment->email,
+            config('comments.owner_email'),
+        );
     }
 }

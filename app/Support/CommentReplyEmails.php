@@ -5,9 +5,12 @@ namespace App\Support;
 use App\Mail\CommentReplyConfirmationMail;
 use App\Models\Comment;
 use App\Models\CommentEmailOptOut;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Links, confirmation requests and per-address throttle keys for comment
@@ -21,23 +24,51 @@ use Illuminate\Support\Facades\URL;
 class CommentReplyEmails
 {
     /**
-     * Queue a confirmation email for a comment, unless its address has had
-     * its share of confirmation emails today. Returns whether one was queued.
-     *
-     * An opted-out address is not skipped: the opt-out is not permanent, and
-     * is lifted only when the address owner completes the confirmation.
+     * How long a send waits for another request counting against the same
+     * cap before giving up and sending nothing.
      */
-    public static function requestConfirmation(Comment $comment): bool
+    private const CAP_LOCK_WAIT_SECONDS = 2;
+
+    /**
+     * Queue a confirmation email for a comment, unless the client asking, or
+     * its mailbox, has had its share of confirmation emails today. Returns
+     * whether one was queued.
+     *
+     * The client's cap is taken first, and a client over it spends nothing
+     * from the mailbox's cap, so a blocked client cannot use up the share of
+     * an inbox it does not own. A send the mailbox cap refuses still spends a
+     * count from the client's; that only ever sends less. A blank client IP
+     * shares one bucket. An opted-out address is not skipped: the opt-out is
+     * not permanent, and is lifted only when the address owner completes the
+     * confirmation.
+     *
+     * Nothing is sent to an address the comment form would refuse (see
+     * isPlainAddress()). The form already checks anonymous comments; this
+     * covers a signed-in user's account address, which bspdx.com supplies.
+     */
+    public static function requestConfirmation(Comment $comment, ?string $clientIp): bool
     {
-        if (blank($comment->email)) {
+        if (blank($comment->email) || ! self::isPlainAddress($comment->email)) {
             return false;
         }
 
-        if (! self::takeFromCap(
+        $withinIpCap = self::takeFromCap(
+            self::confirmationIpThrottleKey($clientIp),
+            (int) config('comments.reply_notifications.confirmations_per_ip_per_day'),
+            86400,
+        );
+
+        if (! $withinIpCap) {
+            return false;
+        }
+
+        $withinAddressCap = self::takeFromCap(
             self::confirmationThrottleKey($comment->email),
             (int) config('comments.reply_notifications.confirmations_per_address_per_day'),
             86400,
-        )) {
+        );
+
+        if (! $withinAddressCap) {
             return false;
         }
 
@@ -47,14 +78,34 @@ class CommentReplyEmails
     }
 
     /**
-     * Count one send against a per-address cap, before sending.
+     * Count one send against a cap, before sending.
      *
-     * The hit is an atomic cache increment taken first, so concurrent
-     * requests cannot all pass a check before any of them is counted.
+     * The count is taken under a cache lock on the key. RateLimiter::hit()
+     * is only atomic on some stores: the file store, which production uses,
+     * reads the count and writes it back, so without the lock concurrent
+     * requests could all read the same count and all pass. A send that
+     * cannot get the lock in time is refused, never sent uncounted.
      */
     public static function takeFromCap(string $key, int $max, int $decaySeconds): bool
     {
-        return RateLimiter::hit($key, $decaySeconds) <= $max;
+        try {
+            return Cache::lock('lock:'.$key, 10)->block(
+                self::CAP_LOCK_WAIT_SECONDS,
+                fn (): bool => RateLimiter::hit($key, $decaySeconds) <= $max,
+            );
+        } catch (LockTimeoutException) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine whether an address is one the comment form accepts: valid,
+     * with no RFC warnings. Quoted local parts and comments, which reach a
+     * mailbox the mailbox key cannot fold, are refused.
+     */
+    public static function isPlainAddress(string $email): bool
+    {
+        return Validator::make(['email' => $email], ['email' => ['email:strict']])->passes();
     }
 
     /**
@@ -109,6 +160,14 @@ class CommentReplyEmails
     }
 
     /**
+     * The throttle key counting confirmation emails one client has caused.
+     */
+    public static function confirmationIpThrottleKey(?string $clientIp): string
+    {
+        return 'comment-reply-confirm-ip:'.sha1(filled($clientIp) ? $clientIp : 'unknown');
+    }
+
+    /**
      * The throttle key counting reply emails sent to an address.
      */
     public static function notificationThrottleKey(string $email): string
@@ -117,7 +176,7 @@ class CommentReplyEmails
     }
 
     /**
-     * Determine whether two addresses are the same, ignoring case.
+     * Determine whether two addresses are the same mailbox.
      */
     public static function sameAddress(?string $first, ?string $second): bool
     {
