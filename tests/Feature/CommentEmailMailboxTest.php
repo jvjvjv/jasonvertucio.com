@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -113,14 +114,58 @@ class CommentEmailMailboxTest extends TestCase
         $this->assertTrue(CommentReplyEmails::sameAddress('first.last@googlemail.com', 'firstlast@gmail.com'));
     }
 
-    public function test_an_opt_out_is_stored_as_the_mailbox_key_and_covers_every_spelling(): void
+    public function test_an_opt_out_keeps_the_address_and_its_mailbox_and_covers_every_spelling(): void
     {
-        $optOut = CommentEmailOptOut::optOut('Name+Blog@Example.com');
+        $optOut = CommentEmailOptOut::optOut('Name+Blog@Example.com')->fresh();
 
-        $this->assertSame('name@example.com', $optOut->fresh()->email);
+        $this->assertSame('name+blog@example.com', $optOut->email);
+        $this->assertSame('name@example.com', $optOut->mailbox);
         $this->assertTrue(CommentEmailOptOut::covers('name@example.com'));
         $this->assertTrue(CommentEmailOptOut::covers('name+other@example.com'));
         $this->assertFalse(CommentEmailOptOut::covers('names@example.com'));
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function addressKeys(): array
+    {
+        return [
+            'tag kept on an unknown domain' => ['Bob+X@Corp.Example', 'bob+x@corp.example'],
+            'gmail tag and dots dropped' => ['First.Last+news@GoogleMail.com', 'firstlast@gmail.com'],
+            'outlook tag dropped, dots kept' => ['first.last+news@outlook.com', 'first.last@outlook.com'],
+            'icloud tag dropped' => ['name+x@iCloud.com', 'name@icloud.com'],
+            'fullwidth domain still converted' => ['victim+1@ｇmail.com', 'victim@gmail.com'],
+            'tag-only local part kept' => ['+a@gmail.com', '+a@gmail.com'],
+        ];
+    }
+
+    #[DataProvider('addressKeys')]
+    public function test_the_address_key(string $address, string $expected): void
+    {
+        $this->assertSame($expected, CommentEmailOptOut::addressKey($address));
+    }
+
+    public function test_an_opt_out_from_another_spelling_is_told_apart_from_the_addresss_own(): void
+    {
+        CommentEmailOptOut::optOut('bob+x@corp.example');
+
+        $this->assertTrue(CommentEmailOptOut::coveredByAnotherAddress('bob@corp.example'));
+        $this->assertFalse(CommentEmailOptOut::coveredByAnotherAddress('bob+x@corp.example'));
+        $this->assertFalse(CommentEmailOptOut::coveredByAnotherAddress('alice@corp.example'));
+        $this->assertFalse(CommentEmailOptOut::coveredByAnotherAddress(null));
+    }
+
+    public function test_lifting_removes_only_the_addresss_own_opt_out(): void
+    {
+        CommentEmailOptOut::optOut('bob@corp.example');
+        CommentEmailOptOut::optOut('bob+x@corp.example');
+
+        CommentEmailOptOut::lift('bob+x@corp.example');
+
+        $this->assertFalse(CommentEmailOptOut::query()->where('email', 'bob+x@corp.example')->exists());
+        $this->assertTrue(CommentEmailOptOut::query()->where('email', 'bob@corp.example')->exists());
+        $this->assertTrue(CommentEmailOptOut::covers('bob+x@corp.example'));
     }
 
     public function test_an_opt_out_covers_a_fullwidth_spelling_of_the_domain(): void
@@ -260,18 +305,88 @@ class CommentEmailMailboxTest extends TestCase
         Mail::assertSent(CommentReplyMail::class, fn (CommentReplyMail $mail): bool => $mail->hasTo('First.Last+news@googlemail.com'));
     }
 
-    public function test_confirming_a_tagged_spelling_lifts_the_mailboxs_opt_out(): void
+    private function pendingComment(string $email): Comment
     {
-        CommentEmailOptOut::optOut('name@example.com');
-        $comment = Comment::withoutEvents(fn () => Comment::factory()->anonymous()->forPost($this->makePost())->wantsReplyEmails()->create([
-            'email' => 'name+again@example.com',
+        return Comment::withoutEvents(fn () => Comment::factory()->anonymous()->forPost($this->makePost())->wantsReplyEmails()->create([
+            'email' => $email,
             'approved_at' => now(),
         ]));
+    }
 
+    private function confirm(Comment $comment): TestResponse
+    {
         $url = parse_url(CommentReplyEmails::confirmUrl($comment));
-        $this->post($url['path'].'?'.$url['query'])->assertOk();
 
-        $this->assertFalse(CommentEmailOptOut::covers('name@example.com'));
+        return $this->post($url['path'].'?'.$url['query']);
+    }
+
+    public function test_confirming_a_tagged_gmail_spelling_lifts_the_mailboxs_opt_out(): void
+    {
+        CommentEmailOptOut::optOut('victim@gmail.com');
+
+        $this->confirm($this->pendingComment('Vic.Tim+again@googlemail.com'))
+            ->assertOk()
+            ->assertSee('Reply emails confirmed')
+            ->assertDontSee('won\'t get them yet', false);
+
+        $this->assertFalse(CommentEmailOptOut::covers('victim@gmail.com'));
+    }
+
+    public function test_a_tagged_spelling_on_another_domain_cannot_lift_someone_elses_opt_out(): void
+    {
+        CommentEmailOptOut::optOut('bob@corp.example');
+
+        $this->confirm($this->pendingComment('bob+x@corp.example'))->assertOk();
+
+        $this->assertTrue(CommentEmailOptOut::covers('bob@corp.example'));
+        $this->assertTrue(CommentEmailOptOut::query()->where('email', 'bob@corp.example')->exists());
+    }
+
+    public function test_confirming_while_another_spelling_is_opted_out_says_so_and_sends_nothing(): void
+    {
+        CommentEmailOptOut::optOut('bob+x@corp.example');
+        $parent = $this->pendingComment('bob@corp.example');
+
+        $this->confirm($parent)
+            ->assertOk()
+            ->assertSee('Reply emails confirmed')
+            ->assertSee('won\'t get them yet', false);
+
+        $this->assertNotNull($parent->fresh()->notify_replies_confirmed_at);
+        $this->assertTrue(CommentEmailOptOut::covers('bob@corp.example'));
+
+        $reply = Comment::withoutEvents(fn () => Comment::factory()->anonymous()->forPost($parent->post)->asReply($parent)->create([
+            'email' => 'replier@example.com',
+            'depth' => 1,
+            'approved_at' => now(),
+        ]));
+        (new NotifyCommentReplyRecipient($reply->id))->handle();
+
+        Mail::assertNotSent(CommentReplyMail::class);
+    }
+
+    public function test_the_confirmation_email_promises_a_lift_only_when_confirming_would_lift(): void
+    {
+        CommentEmailOptOut::optOut('own@corp.example');
+        CommentEmailOptOut::optOut('bob+x@corp.example');
+
+        $own = (new CommentReplyConfirmationMail($this->pendingComment('own@corp.example')))->render();
+        $other = (new CommentReplyConfirmationMail($this->pendingComment('bob@corp.example')))->render();
+
+        $this->assertStringContainsString('confirming turns them back on', $own);
+        $this->assertStringNotContainsString('confirming turns them back on', $other);
+    }
+
+    public function test_a_verified_users_tagged_address_cannot_lift_another_spellings_opt_out(): void
+    {
+        CommentEmailOptOut::optOut('bob@corp.example');
+        $user = User::factory()->create(['email' => 'bob+'.Str::random(5).'@corp.example']);
+
+        $this->actingAs($user)
+            ->post(route('comments.store', $this->makePost()->slug), ['message' => 'Hello', 'notify_replies' => '1'])
+            ->assertRedirect();
+
+        $this->assertTrue(CommentEmailOptOut::covers('bob@corp.example'));
     }
 
     public function test_one_ip_is_capped_across_many_mailboxes(): void

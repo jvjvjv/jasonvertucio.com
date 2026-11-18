@@ -6,7 +6,8 @@
         <section class="rounded-lg border border-gray-200 bg-white p-6 sm:p-8" aria-labelledby="reply-emails-heading">
             <h1 id="reply-emails-heading" class="font-heading text-2xl font-bold leading-tight text-primary sm:text-3xl">
                 @switch($state)
-                    @case('confirmed') Reply emails confirmed @break
+                    @case('confirmed')
+                    @case('confirmed-blocked') Reply emails confirmed @break
                     @case('unavailable') This comment can't get reply emails @break
                     @default Confirm reply emails
                 @endswitch
@@ -22,6 +23,11 @@
                 @case('confirmed')
                     <p class="mt-4 text-gray-700" role="status">
                         We'll email you when someone replies to your comment. Every email has a link to stop them.
+                    </p>
+                    @break
+                @case('confirmed-blocked')
+                    <p class="mt-4 text-gray-700" role="status">
+                        This address won't get them yet. All comment emails were stopped from another spelling of it, such as one with a +tag. To turn them back on, opt in from that spelling and confirm.
                     </p>
                     @break
                 @case('unavailable')
