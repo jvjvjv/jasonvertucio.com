@@ -1,0 +1,35 @@
+{
+  "jobs": [
+    {
+      "requisitionId": "62ce0900-21e6-45b9-a786-96050a3843cb",
+      "jobTitle": "Agentic Developer",
+      "workAddress": { "administrativeArea": "TX", "locality": "Westlake" },
+      "postedDate": "2026-11-17T19:47:52.1Z",
+      "workRemote": true,
+      "jobType": "Perm",
+      "payRate": { "min": 155000, "max": 225000, "currency": "USD", "type": "Annually" },
+      "jobStatus": "active"
+    },
+    {
+      "requisitionId": "7fa0fb34-2bdc-4dcb-bb70-d83322892684",
+      "jobTitle": "Full Stack Engineer",
+      "workAddress": { "administrativeArea": "TN", "locality": "Nashville" },
+      "postedDate": "2026-11-16T15:10:36.1Z",
+      "workRemote": false,
+      "jobType": "Contract",
+      "payRate": { "min": 67.91, "currency": "USD", "type": "Hourly" },
+      "jobStatus": "active"
+    },
+    {
+      "requisitionId": "8de6809f-fa96-48fb-8584-803812064032",
+      "jobTitle": "Full Stack Engineering Lead",
+      "workAddress": { "administrativeArea": "FL", "locality": "Boca Raton" },
+      "postedDate": "2026-11-15T13:48:37.1Z",
+      "workRemote": false,
+      "jobType": "Contract To Perm",
+      "payRate": { "min": 65.00, "max": 75.00, "currency": "USD", "type": "Hourly" },
+      "jobStatus": "active"
+    }
+  ],
+  "pageMetadata": { "size": 3, "number": 1, "totalElements": 5, "totalPages": 2 }
+}

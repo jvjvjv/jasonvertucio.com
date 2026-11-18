@@ -1,0 +1,24 @@
+{
+  "jobs": [
+    {
+      "requisitionId": "6cd6c6ed-018c-4bf6-95e7-170c9800ad7c",
+      "jobTitle": "Full Stack .NET Developer",
+      "workAddress": { "administrativeArea": "PA", "locality": "Philadelphia" },
+      "postedDate": "2026-11-13T18:46:17.1Z",
+      "workRemote": false,
+      "jobType": "Contract, perm possible",
+      "jobStatus": "active"
+    },
+    {
+      "requisitionId": "2765bcfc-26c3-4550-aaa3-a214fb54300d",
+      "jobTitle": "Sr. Software Engineer (Java)",
+      "workAddress": { "administrativeArea": "CA", "locality": "Concord" },
+      "postedDate": "2026-10-08T23:09:41.1Z",
+      "workRemote": false,
+      "jobType": "Perm",
+      "payRate": { "min": 120000.00, "max": 150000.00, "currency": "USD", "type": "Annually" },
+      "jobStatus": "active"
+    }
+  ],
+  "pageMetadata": { "size": 2, "number": 2, "totalElements": 5, "totalPages": 2 }
+}
