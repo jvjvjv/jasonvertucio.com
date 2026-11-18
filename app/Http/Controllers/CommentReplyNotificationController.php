@@ -36,7 +36,8 @@ class CommentReplyNotificationController extends Controller
      *
      * Confirming proves the owner of the address the confirmation went to
      * (the one recorded on the comment) wants comment emails, so it also
-     * lifts any earlier opt-out of that address.
+     * lifts any earlier opt-out of that address. An opt-out made from
+     * another spelling of the mailbox stays, and the page says so.
      */
     public function confirm(Comment $comment): Response
     {
@@ -167,6 +168,10 @@ class CommentReplyNotificationController extends Controller
      */
     protected function confirmPage(Comment $comment, string $state): Response
     {
+        if ($state === 'confirmed' && CommentEmailOptOut::coveredByAnotherAddress($comment->replyNotificationAddress())) {
+            $state = 'confirmed-blocked';
+        }
+
         return response()->view('comment-reply-emails.confirm', [
             'state' => $state,
             'postTitle' => $this->postTitle($comment),

@@ -52,7 +52,8 @@ class CommentReplyConfirmationMail extends Mailable implements ShouldQueue
                 'confirmUrl' => CommentReplyEmails::confirmUrl($this->comment),
                 'unsubscribeUrl' => CommentReplyEmails::unsubscribeUrl($this->comment),
                 'expiresInDays' => (int) config('comments.reply_notifications.confirmation_expires_days'),
-                'wasOptedOut' => CommentEmailOptOut::covers($this->comment->email),
+                'wasOptedOut' => CommentEmailOptOut::covers($this->comment->email)
+                    && ! CommentEmailOptOut::coveredByAnotherAddress($this->comment->email),
             ],
         );
     }
