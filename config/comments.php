@@ -64,7 +64,8 @@ return [
     | their comment. Anonymous commenters confirm by email first. A reply
     | email waits `delay_minutes`, then everything is re-checked before it
     | sends, so spam and deletions caught in that time never reach anyone.
-    | Both per-address caps compare addresses case-insensitively.
+    | The per-address caps compare mailboxes (case, +tags and Gmail dots are
+    | ignored), and confirmation emails are also capped per client IP.
     |
     */
 
@@ -73,6 +74,7 @@ return [
         'delay_minutes' => (int) env('COMMENT_REPLY_NOTIFICATIONS_DELAY_MINUTES', 10),
         'confirmation_expires_days' => (int) env('COMMENT_REPLY_NOTIFICATIONS_CONFIRMATION_EXPIRES_DAYS', 7),
         'confirmations_per_address_per_day' => (int) env('COMMENT_REPLY_NOTIFICATIONS_CONFIRMATIONS_PER_DAY', 3),
+        'confirmations_per_ip_per_day' => (int) env('COMMENT_REPLY_NOTIFICATIONS_CONFIRMATIONS_PER_IP_PER_DAY', 5),
         'notifications_per_address_per_hour' => (int) env('COMMENT_REPLY_NOTIFICATIONS_PER_HOUR', 5),
     ],
 

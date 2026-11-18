@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCommentRequest;
 use App\Http\Requests\UpdateCommentRequest;
 use App\Models\Comment;
 use App\Models\CommentEmailOptOut;
+use App\Support\ClientAddress;
 use Illuminate\Http\RedirectResponse;
 
 class CommentController extends Controller
@@ -39,7 +40,7 @@ class CommentController extends Controller
             'depth' => $parent === null ? 0 : $parent->depth + 1,
             'approved_at' => now(),
             'is_spam' => false,
-            'ip_address' => $this->clientAddress($request),
+            'ip_address' => ClientAddress::from($request),
             'user_agent' => $request->userAgent(),
             'notify_replies' => $wantsReplyEmails,
         ]);
@@ -120,15 +121,5 @@ class CommentController extends Controller
         return redirect()
             ->to(route('post', $request->route('slug')).$anchor)
             ->with('comment_posted', true);
-    }
-
-    /**
-     * Resolve the originating client address, preferring Cloudflare's header.
-     *
-     * Mirrors the resolution order in App\Http\Middleware\IpMiddleware.
-     */
-    protected function clientAddress(StoreCommentRequest $request): ?string
-    {
-        return $request->header('CF-Connecting-IP') ?? $request->ip();
     }
 }

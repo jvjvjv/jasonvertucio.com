@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UnsubscribeCommentReplyEmailsRequest;
 use App\Models\Comment;
 use App\Models\CommentEmailOptOut;
+use App\Support\ClientAddress;
 use App\Support\CommentReplyEmails;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -86,9 +87,10 @@ class CommentReplyNotificationController extends Controller
 
     /**
      * Email a fresh confirmation link, from the button on an expired link's
-     * page. Answers 429 once the address has had its share for the day.
+     * page. Answers 429 once the requester's IP, or the mailbox, has had its
+     * share for the day.
      */
-    public function resend(Comment $comment): Response
+    public function resend(Request $request, Comment $comment): Response
     {
         $state = $this->confirmState($comment);
 
@@ -96,7 +98,7 @@ class CommentReplyNotificationController extends Controller
             return $this->linkPage($comment, $state === 'confirmed' ? 'already-confirmed' : 'unavailable', 410);
         }
 
-        return CommentReplyEmails::requestConfirmation($comment)
+        return CommentReplyEmails::requestConfirmation($comment, ClientAddress::from($request))
             ? $this->linkPage($comment, 'resent', 200)
             : $this->linkPage($comment, 'capped', 429);
     }

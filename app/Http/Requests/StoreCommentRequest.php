@@ -39,7 +39,7 @@ class StoreCommentRequest extends FormRequest
     {
         return [
             'name' => [$this->user() ? 'nullable' : 'required', 'string', 'max:128'],
-            'email' => [$this->user() ? 'nullable' : 'required', 'email', 'max:128'],
+            'email' => [$this->user() ? 'nullable' : 'required', 'email:strict', 'max:128'],
             'message' => ['required', 'string', 'max:5000'],
             'parent_id' => ['nullable', 'integer', Rule::exists('comments', 'id')->whereNull('deleted_at')],
             'notify_replies' => ['nullable', 'boolean'],
